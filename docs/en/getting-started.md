@@ -126,6 +126,7 @@ curl -X POST "http://localhost:8080/api/v1/drivers/runtime/start?devicePath=root
 
 ### Where to go next
 
+- **[Troubleshooting](troubleshooting.md)** — the console will not open, sign-in rejects `admin` / `admin`, or `demo-sensor-01` stays still.
 - **[How ISPF works](learn.md)** — follow **Path B** to build your first own station/device project.
 - **[Solution developer guide](solution-developer-guide.md)** — package SQL tables, functions, and dashboards into a repeatable `bundle.json` (`ispf pack` / `ispf validate` / `ispf deploy`). `ispf login` and `ispf doctor` are in [tools/ispf-cli/README.md](../../tools/ispf-cli/README.md).
 - **[Common design mistakes](anti-patterns.md)** — seven practical rules to keep screens fast and configurations clean.

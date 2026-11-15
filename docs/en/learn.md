@@ -127,6 +127,7 @@ Ready-to-explore reference examples in `examples/`: [Lab training](lab-training.
 | Question | Page |
 |----------|------|
 | How do I install and start ISPF? | [Getting started](getting-started.md) · [Deployment](deployment.md) |
+| The console, login, or demo sensor failed | [Troubleshooting](troubleshooting.md) |
 | What does a specific term mean? | [Glossary](glossary.md) |
 | Which functions are available in formulas? | [Expression language](expression-language.md) |
 | What mistakes should I avoid? | [Common design mistakes](anti-patterns.md) |

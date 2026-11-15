@@ -4,9 +4,22 @@
 
 > **Status:** Stable — Honesty hub. Tags: [doc-status.md](doc-status.md).
 
-Single page for what ISPF **does not claim** yet, what is **parked**, and what stays **deferred** on purpose. Use this with [competitive-scorecard](competitive-scorecard.md) and [parked-backlog](parked-backlog.md) — not instead of them.
+Single page for what ISPF does not claim yet, what is parked, and what stays deferred on purpose. If the server will not start, sign-in fails, or the demo sensor is silent, use [Troubleshooting](troubleshooting.md) first. Use this page with [competitive-scorecard](competitive-scorecard.md) and [parked-backlog](parked-backlog.md).
 
 Policy: [roadmap — quality over features](roadmap.md#execution-policy--quality-over-features).
+
+The short IDs in the parked table (`P-OT`, `P-WEBAUTHN`, and the rest) are the labels on that board, so a later task finds the same row.
+
+## On an evaluation laptop
+
+| You get this | You do not get this |
+|--------------|---------------------|
+| Portable zip, container, and `bootRun` load the small driver set (`virtual`, `modbus`, `mqtt`, `http`, `jdbc`, and the rest of that set) | OPC UA, SNMP, and the rest of the 160+ catalog |
+| Local profile: embedded H2 and the accounts `admin` / `admin`, `developer` / `developer`, `operator` / `operator` | Those passwords on a `prod` or OIDC server. Change them before the machine is reachable on a network |
+| History on the laptop is that local database | A ClickHouse cluster created by ISPF, or a second copy of the historian buffer on another ISPF node |
+| Disk spool in front of sole-store ClickHouse exists and is off | The spool turning itself on, or applying to JDBC / dual-write |
+| `ispf validate` warns when logic sits on a `DEVICE` | `--strict` or the marketplace catalog accepting that bundle |
+| TOTP can be turned on for login | WebAuthn or passkeys as the login method |
 
 ---
 
@@ -38,10 +51,10 @@ Policy: [roadmap — quality over features](roadmap.md#execution-policy--quality
 
 | Claim | Status |
 |-------|--------|
-| TOTP MFA (BL-153) | **Done** |
-| WebAuthn / passkeys / IdP OTP (BL-194) | **Parked** — [ADR-0056](decisions/0056-webauthn-idp-mfa.md), [parked-backlog](parked-backlog.md) **P-WEBAUTHN** |
-| External KMS / HSM / Vault / GOST providers | **Not claimed** until tender — [ADR-0076](decisions/0076-external-secrets-providers.md) |
-| Third-party pen-test report (G-01) | **Parked** — vendor pack ready; [parked-backlog](parked-backlog.md) **P-PENTEST** |
+| TOTP one-time codes for login | **Done** |
+| WebAuthn / passkeys / identity-provider OTP | **Parked** — [ADR-0056](decisions/0056-webauthn-idp-mfa.md), [parked-backlog](parked-backlog.md) **P-WEBAUTHN** |
+| External KMS / HSM / Vault / GOST providers | **Not claimed** until a named tender — [ADR-0076](decisions/0076-external-secrets-providers.md) |
+| A third-party penetration-test report | **Parked** — the vendor pack is ready; [parked-backlog](parked-backlog.md) **P-PENTEST** |
 | Cosign on customer host / separate ui-pack origin | Tooling lab ≠ customer-host Done — [adr-tension-resolution](adr-tension-resolution.md), [ADR-0073](decisions/0073-hosted-ui-pack-trust.md) |
 
 ---
@@ -54,7 +67,7 @@ Resume only with a **named** plant, customer, or vendor task:
 |----|------|
 | **P-OT** | OT Trust field pilots (lab soak stopped; not field Done) |
 | **P-HMI-FIELD** | On-site tablet / offline soak |
-| **P-ERP** | Live ERP connector (BL-169) — simulate catalog may exist |
+| **P-ERP** | Live ERP connector — a simulate catalog may exist |
 | **P-BPMN** | BPMN/DMN depth beyond [ADR-0047](decisions/0047-custom-bpmn-subset-engine.md) freeze |
 | **P-WEBAUTHN** | WebAuthn / IdP MFA |
 | **P-PENTEST** | Hired pen-test + retest |
@@ -93,6 +106,7 @@ Board: [parked-backlog](parked-backlog.md).
 
 ## Related
 
+- [Troubleshooting](troubleshooting.md) — first session will not start
 - [competitive-scorecard](competitive-scorecard.md) — scored honesty
 - [parked-backlog](parked-backlog.md) — unpark criteria
 - [adr-tension-resolution](adr-tension-resolution.md) — ADR vs claim conflicts

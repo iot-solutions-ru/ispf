@@ -1,64 +1,113 @@
 > **Язык:** русская версия. Канонический английский: [en/known-limitations.md](../en/known-limitations.md).
 
-# Известные ограничения и non-claims
+# Известные ограничения
 
-> **Статус:** Stable — хаб честности. Теги: [doc-status.md](doc-status.md).
+> **Статус:** Stable — страница честных границ. Теги: [doc-status.md](doc-status.md).
 
-Краткая выжимка; полный перечень таблиц — в каноне [en/known-limitations.md](../en/known-limitations.md). Читать вместе с [competitive-scorecard](competitive-scorecard.md) и [parked-backlog](parked-backlog.md).
+Здесь собрано, чего ISPF пока не обещает, что стоит на паузе и что отложено намеренно. Если сервер не стартует, вход не проходит или демо-датчик молчит, сначала откройте [Если первая сессия не завелась](troubleshooting.md). Эту страницу читайте вместе с [сравнением с аналогами](competitive-scorecard.md) и [доской паузы](parked-backlog.md).
 
 Политика: [roadmap — качество вместо фич](roadmap.md#политика-исполнения--качество-вместо-фич).
 
+Короткие идентификаторы в таблице паузы (`P-OT`, `P-WEBAUTHN` и остальные) — подписи строк на этой доске, чтобы следующая задача нашла ту же строку.
+
+## На ноутбуке для оценки
+
+| Это есть | Этого нет |
+|----------|-----------|
+| Архив, контейнер и `bootRun` загружают короткий набор драйверов (`virtual`, `modbus`, `mqtt`, `http`, `jdbc` и остальные из этого набора) | OPC UA, SNMP и остальные 160+ протоколов |
+| Локальный профиль: встроенный H2 и учётные записи `admin` / `admin`, `developer` / `developer`, `operator` / `operator` | Эти пароли на сервере `prod` или с OIDC. Смените их до того, как машина станет доступна в сети |
+| История на ноутбуке — эта локальная база | Кластер ClickHouse, который создаёт ISPF, или вторая копия буфера историка на другом узле ISPF |
+| Дисковый буфер перед единственным хранилищем ClickHouse есть и выключен | Буфер сам не включается и не работает для JDBC и двойной записи |
+| `ispf validate` предупреждает, если логика лежит на `DEVICE` | `--strict` и каталог marketplace такой бандл не примут |
+| Одноразовые коды TOTP для входа можно включить | WebAuthn и ключи доступа как способ входа |
+
 ---
 
-## Дефолты и гигиена оператора
+## Значения по умолчанию
 
-| Тема | Реальность |
-|------|------------|
-| Учётные данные по умолчанию | Demo / getting-started могут использовать `admin` / `admin`. **Смените до любой сетевой экспозиции** — [security](security.md), [deployment](deployment.md). |
-| Unsigned bundles / RBAC off / WS origins `*` | `dev`/default — обычно **warn**; в `application-prod.yml` — `strict-startup=true` (отказ старта при RBAC off / role header / WS `*`). `local`/`test` полностью пропускают `StartupSecurityGuard` (без warn; env-флаг игнорируется) — Docker/Helm/`local` VPS должны уйти с `local` (например `prod`, или non-`local` + `ISPF_SECURITY_STRICT_STARTUP=true`). Unsigned bundles warn, пока не `require-signed-bundles=true`. Таблица: [deployment](deployment.md#отгруженные-entrypoint-и-профили) · [EN](../en/deployment.md#shipped-entrypoints-and-profiles). |
-| Java-функции | Держите `ISPF_FUNCTION_JAVA_ENABLED=false`, пока не принимаете sandbox gaps ([ADR-0045](../en/decisions/0045-java-function-sandbox.md)). |
+| Тема | Как есть на самом деле |
+|------|------------------------|
+| Учётные данные по умолчанию | Демо и быстрый старт могут использовать `admin` / `admin`. **Смените до любого выхода в сеть** — [безопасность](security.md), [развёртывание](deployment.md). |
+| Неподписанные бандлы / выключенный RBAC / источники WebSocket `*` | `dev` и профиль по умолчанию обычно только **предупреждают**. `application-prod.yml` ставит `ispf.security.strict-startup=true` (отказ старта при выключенном RBAC, отладочном заголовке роли или WebSocket `*`). `local` и `test` пропускают `StartupSecurityGuard` целиком (предупреждения нет, флаг окружения не действует). Docker, Helm и VPS на профиле `local` должны уйти с `local` (например `prod`, либо профиль не `local` плюс `ISPF_SECURITY_STRICT_STARTUP=true`), иначе строгий режим не сработает. Неподписанные бандлы остаются предупреждением, пока не задано `require-signed-bundles=true`. Таблица точек входа: [развёртывание](deployment.md#отгруженные-entrypoint-и-профили). |
+| Функции на Java | Держите `ISPF_FUNCTION_JAVA_ENABLED=false`, пока не принимаете пробелы песочницы ([ADR-0045](decisions/0045-java-function-sandbox.md)). |
 
 ---
 
 ## Историк
 
-| Заявление | Статус |
-|-----------|--------|
-| JDBC + dual-write catch-up + sole-store ClickHouse | **Отгружено** — [variable-history](variable-history.md), [ADR-0035](../en/decisions/0035-historian-dual-write.md) |
-| Локальный disk spool перед sole-store CH (`ispf.variable-history.spool`) | **Отгружено**, **выкл. по умолчанию** — [variable-history](variable-history.md) § Disk spool |
-| Dual-write catch-up gauges + lab Prometheus alert rules | **Отгружено** — `…catchup.ranges` / `.oldest_age_ms` (возраст open range по sample clock) / `.wal_bytes`; это не CH-vs-PG lag ([ADR-0035](../en/decisions/0035-historian-dual-write.md)) |
-| Настоящая метрика lag ClickHouse vs primary | **Открыта** — не трактовать `oldest_age_ms` как CH lag |
-| Вторая копия буфера историана на другом узле ISPF | **Отложено** — не делать без явной просьбы |
-| ISPF создаёт / управляет кластером ClickHouse | **Отложено** — репликацией CH владеет оператор |
-| Parquet / Cassandra-Scylla `quality` наравне с flagship | **Gap / experimental** — [ADR-0074](../en/decisions/0074-historian-quality-persistence.md) |
+| Утверждение | Статус |
+|-------------|--------|
+| JDBC, догонка двойной записи и единственное хранилище ClickHouse | **Отгружено** — [история переменных](variable-history.md), [ADR-0035](decisions/0035-historian-dual-write.md) |
+| Локальный дисковый буфер перед единственным ClickHouse (`ispf.variable-history.spool`) | **Отгружено**, **выключен по умолчанию** — [история переменных](variable-history.md) § Disk spool |
+| Датчики догонки двойной записи и лабораторные правила Prometheus | **Отгружено** — `…catchup.ranges` / `.oldest_age_ms` (возраст незакрытого диапазона по часам сэмпла) / `.wal_bytes`. Это не ряд отставания ClickHouse от PostgreSQL ([ADR-0035](decisions/0035-historian-dual-write.md)) |
+| Настоящая метрика отставания ClickHouse от основной базы | **Открыта** — не читать `oldest_age_ms` как отставание ClickHouse |
+| Вторая копия буфера историка на другом узле ISPF до приёма | **Отложено** — не делать без явной просьбы |
+| ISPF создаёт или ведёт кластер ClickHouse | **Отложено** — репликацией ClickHouse владеет оператор |
+| `quality` у Parquet и Cassandra/Scylla наравне с основными хранилищами | **Пробел / опыт** — [ADR-0074](decisions/0074-historian-quality-persistence.md) |
 
 ---
 
-## Безопасность и trust
+## Безопасность
 
-| Заявление | Статус |
-|-----------|--------|
-| TOTP MFA (BL-153) | **Done** |
-| WebAuthn / passkeys / IdP OTP (BL-194) | **Parked** — [ADR-0056](../en/decisions/0056-webauthn-idp-mfa.md), [parked-backlog](parked-backlog.md) **P-WEBAUTHN** |
-| Внешний KMS / HSM / Vault / GOST | **Не заявлено** до тендера — [ADR-0076](../en/decisions/0076-external-secrets-providers.md) |
-| Сторонний pen-test (G-01) | **Parked** — [parked-backlog](parked-backlog.md) **P-PENTEST** |
-| Cosign на хосте заказчика / отдельный origin ui-pack | Lab tooling ≠ customer-host Done |
+| Утверждение | Статус |
+|-------------|--------|
+| Одноразовые коды TOTP для входа | **Готово** |
+| WebAuthn, ключи доступа, одноразовые коды у поставщика идентификации | **На паузе** — [ADR-0056](decisions/0056-webauthn-idp-mfa.md), [доска паузы](parked-backlog.md) **P-WEBAUTHN** |
+| Внешний KMS, HSM, Vault, ГОСТ | **Не заявлено**, пока нет именного тендера — [ADR-0076](decisions/0076-external-secrets-providers.md) |
+| Отчёт стороннего теста на проникновение | **На паузе** — пакет для исполнителя готов; [доска паузы](parked-backlog.md) **P-PENTEST** |
+| Cosign на хосте заказчика и отдельный origin ui-pack | Лабораторная оснастка — не сданный хост заказчика — [согласование ADR](adr-tension-resolution.md), [ADR-0073](decisions/0073-hosted-ui-pack-trust.md) |
 
 ---
 
-## Field и интеграции (parked)
+## Площадка и интеграции (на паузе)
 
-Снимать с паузы только с **именованной** площадкой / заказчиком / вендором — см. [parked-backlog](parked-backlog.md).
+Снимать с паузы только с **названной** площадкой, заказчиком или поставщиком:
 
-## OT / драйверы (кратко)
+| Идентификатор | Что на паузе |
+|---------------|--------------|
+| **P-OT** | Полевые пилоты OT Trust (лабораторная выдержка остановлена; полевой сдачи нет) |
+| **P-HMI-FIELD** | Планшет на площадке и выдержка без сети |
+| **P-ERP** | Живой коннектор ERP — каталог имитации может уже быть |
+| **P-BPMN** | Глубина BPMN/DMN дальше заморозки [ADR-0047](decisions/0047-custom-bpmn-subset-engine.md) |
+| **P-WEBAUTHN** | WebAuthn и MFA у поставщика идентификации |
+| **P-PENTEST** | Заказной тест на проникновение и повторная проверка |
 
-DNP3 — **PRODUCTION** `POLL`+`WRITE` (CROB latch + analog float; не полный control profile). `opc-da` / `opc-bridge` — **BETA**. Полная таблица: [en/known-limitations.md](../en/known-limitations.md) § OT / drivers.
+Доска: [parked-backlog](parked-backlog.md).
+
+---
+
+## OT и драйверы
+
+| Утверждение | Статус |
+|-------------|--------|
+| DNP3 | **PRODUCTION** `POLL` + `WRITE` — защёлка CROB `g12v1` и аналоговый float `g41v3` (по умолчанию direct operate; необязательно `commandMode=sbo`). Импульс, trip-close и полный профиль управления **не** сделаны. `BINARY_INPUT`, `ANALOG_INPUT` и `COUNTER` остаются только чтением — [ADR-0057](decisions/0057-ot-trust-wave1-dnp3-poll-only.md), обновление 2026-11-11 |
+| `opc-da` / `opc-bridge` | Оболочки **BETA** |
+
+---
+
+## Авторство и сдача
+
+| Тема | Как есть на самом деле |
+|------|------------------------|
+| Логика на `ObjectType.DEVICE` | При авторстве по умолчанию **предупреждение**. Сдача, `--strict` и marketplace — **ошибка** — [частые ошибки](anti-patterns.md), [ADR-0060](decisions/0060-solution-authoring-constraints.md) |
+| Тяжёлые выражения в виджетах | Предупреждение бандла `HEAVY_WIDGET_EXPRESSION` |
+| Отраслевой интерфейс оператора в этом репозитории | Отраслевые приложения сдаются как **ui-pack** и BFF, не как страницы внутри `apps/web-console` — [внешний интерфейс](external-ide.md) |
+
+---
+
+## Доказательства DR и кластера
+
+| Тема | Как есть на самом деле |
+|------|------------------------|
+| Уровни резервного копирования и DR | Описаны в [ADR-0068](decisions/0068-backup-and-dr.md). Лабораторная тренировка дампа и восстановления T2 есть (`deploy/tools/dr-restore-drill.sh`, [материалы](../evidence/dr-restore/README.md)). Площадочный DR заказчика и датированные полевые протоколы по-прежнему отсутствуют — не продавать их как сделанные |
+| Два владельца в кластере и нагрузка федерации | Проверка исключительности JDBC-аренды в CI есть (`DriverOwnershipServiceTest`). Двойной ввод-вывод на нескольких узлах и нагрузка федерации от 10 узлов остаются открытыми — [ADR-0069](decisions/0069-cluster-consistency.md). Лаборатория — не площадка |
 
 ---
 
 ## Связанное
 
-- [competitive-scorecard](competitive-scorecard.md)
-- [parked-backlog](parked-backlog.md)
-- [adr-tension-resolution](../en/adr-tension-resolution.md)
-- [anti-patterns](anti-patterns.md)
+- [Если первая сессия не завелась](troubleshooting.md)
+- [Сравнение с аналогами](competitive-scorecard.md)
+- [Доска паузы](parked-backlog.md)
+- [Согласование ADR](adr-tension-resolution.md)
+- [Частые ошибки при проектировании](anti-patterns.md)

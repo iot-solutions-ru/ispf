@@ -24,6 +24,7 @@ If you are opening ISPF for the first time, read these four pages in order:
 
 | What you want to do | Where to read |
 |---------------------|---------------|
+| **The first start, login, or demo sensor failed** | [Troubleshooting](troubleshooting.md) |
 | **Understand what ISPF does and who uses it** | [Product overview](product.md) · [Glossary](glossary.md) |
 | **Operate screens, alarms, and shift tasks** | [Operator guide](operator-guide.md) · [Web Console](web-console.md) |
 | **Connect PLCs, sensors, brokers, or databases** | [Device drivers](drivers.md) · [Custom driver SDK (DDK)](driver-ddk.md) · [Field pilot runbook](field-pilot-playbook.md) |
@@ -49,6 +50,7 @@ Document maturity labels (`Stable`, `Beta`, `Lab`, `Charter`, `Internal`) are ex
 |----------|--------|----------|
 | [Learning guide](learn.md) | Stable | Mental model, first-hour walkthrough, first-project plan, curriculum |
 | [Getting started](getting-started.md) | Stable | Local installation, first login, demo sensor, contributor QA |
+| [Troubleshooting](troubleshooting.md) | Stable | Console, login, demo sensor, drivers, validate, and empty trends |
 | [Product overview](product.md) | Stable | Capabilities, typical scenarios, user roles |
 | [Architecture](architecture.md) | Stable | Server components, runtime layers, package layout |
 | [Object model](object-model.md) | Stable | Object tree paths, typed variables (`DataRecord`), events, functions |
