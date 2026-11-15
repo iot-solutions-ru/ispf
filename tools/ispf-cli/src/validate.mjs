@@ -1,6 +1,7 @@
 import Ajv2020 from "ajv/dist/2020.js";
 import { packDirectory } from "./pack.mjs";
 import { applyStrictShipCanon } from "./shipCanon.mjs";
+import { authHeaders, resolveBaseUrl } from "./session.mjs";
 import { compactStringify, defaultSchemaPath, readJsonFile, resolveInput } from "./util.mjs";
 
 export function validateLocal(manifest, schemaPath = defaultSchemaPath()) {
@@ -20,12 +21,8 @@ function formatAjvError(err) {
 }
 
 export async function validateRemote(appId, manifest, { dryRun = false, strict = false } = {}) {
-  const baseUrl = (process.env.ISPF_BASE_URL ?? "http://localhost:8080").replace(/\/$/, "");
-  const token = process.env.ISPF_API_TOKEN ?? "";
-  const headers = { "Content-Type": "application/json" };
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
+  const baseUrl = resolveBaseUrl();
+  const headers = authHeaders({ "Content-Type": "application/json" });
   const params = new URLSearchParams();
   if (dryRun) params.set("dryRun", "true");
   if (strict) params.set("strict", "true");

@@ -1,5 +1,6 @@
 import { packDirectory } from "./pack.mjs";
 import { applyStrictShipCanon } from "./shipCanon.mjs";
+import { authHeaders, resolveBaseUrl } from "./session.mjs";
 import { compactStringify } from "./util.mjs";
 import { validateLocal, validateRemote } from "./validate.mjs";
 import { defaultSchemaPath } from "./util.mjs";
@@ -28,12 +29,8 @@ export async function deployDirectory(dir, appId, { schemaPath, strict = false, 
     throw err;
   }
 
-  const baseUrl = (process.env.ISPF_BASE_URL ?? "http://localhost:8080").replace(/\/$/, "");
-  const token = process.env.ISPF_API_TOKEN ?? "";
-  const headers = { "Content-Type": "application/json" };
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
+  const baseUrl = resolveBaseUrl();
+  const headers = authHeaders({ "Content-Type": "application/json" });
 
   const params = new URLSearchParams();
   if (strict) {

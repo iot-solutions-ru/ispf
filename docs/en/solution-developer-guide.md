@@ -258,7 +258,7 @@ BPMN `userTask` steps automatically appear in the operator's **Work Queue**. Det
 
 ## Repository layout (solution-as-repo)
 
-Instead of editing one huge JSON file by hand, keep your project in Git as a structured folder and compile it into `bundle.json` with **`tools/ispf-cli`** (`ispf pack | unpack | validate | diff | deploy`):
+Instead of editing one huge JSON file by hand, keep your project in Git as a structured folder and compile it into `bundle.json` with **`tools/ispf-cli`** (`login`, `doctor`, `pack`, `unpack`, `validate`, `diff`, `deploy`, `fork`, `init-solution`). Command reference: [tools/ispf-cli/README.md](../../tools/ispf-cli/README.md).
 
 | File / folder in Git | Compiled section in `bundle.json` |
 |----------------------|-----------------------------------|
@@ -284,10 +284,14 @@ node bin/ispf.mjs pack ../../examples/demo-app -o ../../examples/demo-app/bundle
 # Validate locally (add --strict before release)
 node bin/ispf.mjs validate ../../examples/demo-app --local
 
+# Save a token, then confirm the server and the virtual driver
+node bin/ispf.mjs login --username admin --password admin
+node bin/ispf.mjs doctor
+
 # Compare local folder against a running server
 node bin/ispf.mjs diff ../../examples/demo-app --app demo
 
-# Deploy to server (uses ISPF_BASE_URL and ISPF_API_TOKEN)
+# Deploy to server (ISPF_BASE_URL, then ISPF_API_TOKEN or the saved login)
 node bin/ispf.mjs deploy ../../examples/demo-app --app demo
 ```
 

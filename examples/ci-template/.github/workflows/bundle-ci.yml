@@ -27,8 +27,15 @@ jobs:
           BUNDLE_PATH: examples/warehouse-app/bundle.json
           APP_ID: warehouse
         run: |
-          if [ -z "$ISPF_BASE_URL" ]; then
-            echo "ISPF_BASE_URL secret not set — skipping remote validate (copy template and configure secrets)"
-            exit 0
+          if [ ! -f tools/ispf-cli/package.json ]; then
+            echo "tools/ispf-cli is not in this checkout. Install the ISPF CLI and point this step at it."
+            exit 1
           fi
-          node tools/bundle-validate-cli/validate.mjs "$BUNDLE_PATH" "$APP_ID"
+          npm ci --prefix tools/ispf-cli
+          CLI="node tools/ispf-cli/bin/ispf.mjs"
+          if [ -z "$ISPF_BASE_URL" ]; then
+            echo "ISPF_BASE_URL is not set — checking schema and ship-canon only"
+            $CLI validate "$BUNDLE_PATH" --local --strict
+          else
+            $CLI validate "$BUNDLE_PATH" --app "$APP_ID" --strict
+          fi

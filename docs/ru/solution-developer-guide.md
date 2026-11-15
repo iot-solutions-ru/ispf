@@ -258,7 +258,7 @@ Content-Type: application/json
 
 ## Хранение проекта в Git и сборка через `ispf-cli`
 
-Чтобы не редактировать один огромный `bundle.json` вручную, храните исходники проекта разложенными по папкам и собирайте пакет утилитой **`tools/ispf-cli`** (`ispf pack | unpack | validate | diff | deploy`):
+Чтобы не редактировать один огромный `bundle.json` вручную, храните исходники проекта разложенными по папкам и собирайте пакет утилитой **`tools/ispf-cli`** (`login`, `doctor`, `pack`, `unpack`, `validate`, `diff`, `deploy`, `fork`, `init-solution`). Справка по командам: [tools/ispf-cli/README.md](../../tools/ispf-cli/README.md).
 
 | Файл / папка в репозитории | Куда попадает при сборке `bundle.json` |
 |----------------------------|----------------------------------------|
@@ -284,10 +284,14 @@ node bin/ispf.mjs pack ../../examples/demo-app -o ../../examples/demo-app/bundle
 # Проверить проект локально (перед сдачей добавляйте --strict)
 node bin/ispf.mjs validate ../../examples/demo-app --local
 
+# Сохранить токен и проверить сервер вместе с драйвером virtual
+node bin/ispf.mjs login --username admin --password admin
+node bin/ispf.mjs doctor
+
 # Сравнить локальную папку с тем, что сейчас загружено на сервере
 node bin/ispf.mjs diff ../../examples/demo-app --app demo
 
-# Загрузить решение на сервер (использует ISPF_BASE_URL и ISPF_API_TOKEN)
+# Загрузить решение на сервер (ISPF_BASE_URL, затем ISPF_API_TOKEN или сохранённый вход)
 node bin/ispf.mjs deploy ../../examples/demo-app --app demo
 ```
 

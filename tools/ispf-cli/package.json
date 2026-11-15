@@ -1,7 +1,7 @@
 {
   "name": "@ispf/cli",
   "version": "0.1.0",
-  "description": "ISPF solution-as-repo CLI (pack, unpack, validate, diff, deploy)",
+  "description": "ISPF solution-as-repo CLI (login, doctor, pack, unpack, validate, diff, deploy)",
   "type": "module",
   "license": "MIT",
   "bin": {

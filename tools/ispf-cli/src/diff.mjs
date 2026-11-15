@@ -1,4 +1,5 @@
 import { packDirectory } from "./pack.mjs";
+import { authHeaders, resolveBaseUrl } from "./session.mjs";
 import { compactStringify, sortMaps } from "./util.mjs";
 
 export async function diffDirectory(dir, appId) {
@@ -9,12 +10,8 @@ export async function diffDirectory(dir, appId) {
 }
 
 async function fetchRemoteManifest(appId) {
-  const baseUrl = (process.env.ISPF_BASE_URL ?? "http://localhost:8080").replace(/\/$/, "");
-  const token = process.env.ISPF_API_TOKEN ?? "";
-  const headers = {};
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
+  const baseUrl = resolveBaseUrl();
+  const headers = authHeaders();
   const response = await fetch(
     `${baseUrl}/api/v1/applications/${encodeURIComponent(appId)}/export?canonical=true`,
     { headers }

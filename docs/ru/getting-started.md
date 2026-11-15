@@ -125,7 +125,7 @@ curl -X POST "http://localhost:8080/api/v1/drivers/runtime/start?devicePath=root
 ### Куда двигаться дальше
 
 - **[Как устроен ISPF](learn.md)** — пройдите **Маршрут Б**, чтобы за день собрать свой первый проект с оборудованием и расчётами.
-- **[Руководство разработчика решений](solution-developer-guide.md)** — как оформить таблицы SQL, функции и экраны в переносимый пакет `bundle.json` (`ispf pack` / `validate` / `deploy`).
+- **[Руководство разработчика решений](solution-developer-guide.md)** — как оформить таблицы SQL, функции и экраны в переносимый пакет `bundle.json` (`ispf pack` / `validate` / `deploy`). Команды `ispf login` и `ispf doctor` описаны в [tools/ispf-cli/README.md](../../tools/ispf-cli/README.md).
 - **[Частые ошибки при проектировании](anti-patterns.md)** — семь практических правил, которые уберегут от тормозов и путаницы в проекте.
 - **[Разработка своего React-интерфейса](external-ide.md)** — как написать кастомный веб-интерфейс оператора (`ui-pack`) в Cursor или VS Code.
 
