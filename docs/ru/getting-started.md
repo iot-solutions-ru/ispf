@@ -49,6 +49,20 @@ docker run --rm -p 8080:8080 -v ispf-data:/opt/ispf/data ghcr.io/iot-solutions-r
 
 В образ вшит тот же оценочный набор, каталог `/opt/ispf/drivers`. Том в команде выше — только данные H2. Монтирование `-v ispf-data:/opt/ispf/data` драйверы не подменяет. Полного каталога протоколов в образе нет.
 
+#### ISPF, Mosquitto и подчинённый Modbus
+
+`deploy/docker-compose.evaluate.yml` поднимает опубликованный образ, брокер и лабораторный фикстур Modbus TCP. PostgreSQL и Keycloak он не запускает. Корневой `docker compose up` делает обратное и ISPF не запускает. Не поднимайте оба, если порт 1883 уже занят.
+
+```bash
+docker compose -f deploy/docker-compose.evaluate.yml up -d
+```
+
+Откройте **http://127.0.0.1:8080** и войдите под **`admin` / `admin`** (в образе профиль `local`). Опубликованные порты привязаны к `127.0.0.1`.
+
+Для другого контейнера в этой сети подчинённый — `modbus:502`. Устройству `mqtt` нужен `brokerUrl` `tcp://mosquitto:1883` (анонимно, без TLS, не для цеховой сети). С ноутбука это `127.0.0.1:1883` и `127.0.0.1:5502`. Holding-регистры 0, 1 и 2 при старте равны `0x1111`, `0x2222`, `0x3333`. Устройство `modbus-tcp`: `host` `modbus`, `port` `502`, точка `1:HOLDING:0`. Формат точки: [modbus-tcp](drivers.md#modbus-tcp-ispf-driver-modbus).
+
+`demo-sensor-01` по-прежнему драйвер `virtual`. Этот compose его опрос не запускает.
+
 ### Вариант В — Запуск из исходного кода
 
 #### Что понадобится
