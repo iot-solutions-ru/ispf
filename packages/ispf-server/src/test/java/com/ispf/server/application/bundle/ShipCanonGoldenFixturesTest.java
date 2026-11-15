@@ -10,7 +10,10 @@ import tools.jackson.databind.ObjectMapper;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -29,32 +32,38 @@ class ShipCanonGoldenFixturesTest {
     private ObjectMapper objectMapper;
 
     @Test
-    void okSingletonHubHasNoLogicHostDevice() throws Exception {
-        assertFixture("ok-singleton-hub", BundleValidationResult.OK, List.of());
-    }
+    void allExpectJsonFixturesMatchStrictShipCanon() throws Exception {
+        Path root = fixturesRoot();
+        JsonNode expectRoot = objectMapper.readTree(Files.readString(root.resolve("expect.json")));
+        assertTrue(expectRoot.isObject() && !expectRoot.isEmpty(), "expect.json must list fixtures");
 
-    @Test
-    void failLogicHostDeviceIsErrorUnderStrict() throws Exception {
-        assertFixture("fail-logic-host-device", BundleValidationResult.ERROR, List.of("LOGIC_HOST_DEVICE"));
-    }
+        Iterator<Map.Entry<String, JsonNode>> fields = expectRoot.properties().iterator();
+        while (fields.hasNext()) {
+            Map.Entry<String, JsonNode> entry = fields.next();
+            String name = entry.getKey();
+            JsonNode wanted = entry.getValue();
+            String strictStatus = wanted.path("strictStatus").asString();
+            List<String> expectedCodes = new ArrayList<>();
+            wanted.path("codes").forEach(n -> expectedCodes.add(n.asString()));
 
-    private void assertFixture(String name, String expectedStatus, List<String> expectedCodes) throws Exception {
-        Path fixture = fixturesRoot().resolve(name + ".json");
-        assertTrue(Files.isRegularFile(fixture), "missing fixture " + fixture);
-        ApplicationBundleDeployService.BundleManifest manifest =
-                objectMapper.readValue(Files.readString(fixture), ApplicationBundleDeployService.BundleManifest.class);
-        BundleValidationResult result = validator.validate(name, manifest, true);
-        assertEquals(expectedStatus, result.status(), String.join("; ", result.errors()));
+            Path fixture = root.resolve(name + ".json");
+            assertTrue(Files.isRegularFile(fixture), "missing fixture " + fixture);
+            ApplicationBundleDeployService.BundleManifest manifest =
+                    objectMapper.readValue(
+                            Files.readString(fixture),
+                            ApplicationBundleDeployService.BundleManifest.class
+                    );
+            BundleValidationResult result = validator.validate(name, manifest, true);
+            assertEquals(strictStatus, result.status(), name + ": " + String.join("; ", result.errors()));
 
-        List<String> codes = result.issues().stream().map(BundleValidationIssue::code).distinct().sorted().toList();
-        List<String> wanted = expectedCodes.stream().sorted().toList();
-        assertEquals(wanted, codes.stream().filter(wanted::contains).toList());
-
-        JsonNode expectRoot = objectMapper.readTree(Files.readString(fixturesRoot().resolve("expect.json")));
-        JsonNode wantedNode = expectRoot.path(name).path("codes");
-        List<String> fromExpect = new ArrayList<>();
-        wantedNode.forEach(n -> fromExpect.add(n.asString()));
-        assertEquals(fromExpect.stream().sorted().toList(), wanted);
+            List<String> shipCodes = result.issues().stream()
+                    .map(BundleValidationIssue::code)
+                    .filter(BundleManifestValidator.SHIP_CANON_CODES::contains)
+                    .distinct()
+                    .sorted()
+                    .toList();
+            assertEquals(expectedCodes.stream().sorted().toList(), shipCodes, name);
+        }
     }
 
     private static Path fixturesRoot() {

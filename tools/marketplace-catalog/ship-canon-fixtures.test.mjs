@@ -15,13 +15,16 @@ function loadFixture(name) {
 for (const [name, wanted] of Object.entries(expect)) {
   test(`catalog shared fixture ${name}`, () => {
     const messages = catalogShipCanonFailures("fixture", loadFixture(name));
-    if (wanted.codes.length === 0) {
-      assert.deepEqual(messages, []);
-      return;
-    }
-    assert.equal(messages.length, wanted.codes.length);
-    for (const code of wanted.codes) {
-      assert.ok(messages.some((m) => m.includes(`[${code}]`)), `missing ${code} in ${messages}`);
-    }
+    const codes = [
+      ...new Set(
+        messages
+          .map((m) => {
+            const match = /\[([A-Z0-9_]+)\]/.exec(m);
+            return match ? match[1] : null;
+          })
+          .filter(Boolean)
+      ),
+    ].sort();
+    assert.deepEqual(codes, [...wanted.codes].sort());
   });
 }

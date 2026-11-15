@@ -53,6 +53,7 @@ jobs:
               - 'tools/ai-pack/**'
               - 'tools/license-audit/**'
               - 'tools/agent-regression/**'
+              - 'tools/ship-canon-fixtures/**'
               - 'examples/**'
             drivers:
               - 'packages/ispf-driver-*/**'
@@ -246,6 +247,18 @@ jobs:
       - name: Tracked binaries / oversized files gate
         run: node tools/repo-hygiene/check-tracked-binaries.mjs
 
+  examples-index:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
+        with:
+          python-version: "3.12"
+
+      - name: Examples folder has a README and an index link
+        run: python tools/examples-index/check_examples_index.py
+
   helm-chart:
     runs-on: ubuntu-latest
     steps:
@@ -316,7 +329,7 @@ jobs:
           key: driver-packs-dev-${{ hashFiles('gradle/driver-packs.json', 'build.gradle.kts', 'buildSrc/**', 'packages/ispf-driver-virtual/**', 'packages/ispf-driver-mqtt/**', 'packages/ispf-driver-modbus/**', 'packages/ispf-driver-http/**', 'packages/ispf-driver-cwmp/**', 'packages/ispf-driver-flexible/**', 'packages/ispf-driver-gps-tracker/**', 'packages/ispf-driver-application/**', 'packages/ispf-driver-jdbc/**') }}
 
   pr-fast-ok:
-    needs: [changes, backend, driver-packs, web-console, agent-regression, marketplace-catalog, helm-chart]
+    needs: [changes, backend, driver-packs, web-console, agent-regression, marketplace-catalog, helm-chart, examples-index]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -328,12 +341,14 @@ jobs:
           echo "agent-regression=${{ needs.agent-regression.result }}"
           echo "marketplace-catalog=${{ needs.marketplace-catalog.result }}"
           echo "helm-chart=${{ needs.helm-chart.result }}"
+          echo "examples-index=${{ needs.examples-index.result }}"
           if [[ "${{ needs.backend.result }}" == "failure"
              || "${{ needs.driver-packs.result }}" == "failure"
              || "${{ needs.web-console.result }}" == "failure"
              || "${{ needs.agent-regression.result }}" == "failure"
              || "${{ needs.marketplace-catalog.result }}" == "failure"
-             || "${{ needs.helm-chart.result }}" == "failure" ]]; then
+             || "${{ needs.helm-chart.result }}" == "failure"
+             || "${{ needs.examples-index.result }}" == "failure" ]]; then
             echo "pr-fast failed"
             exit 1
           fi
@@ -342,7 +357,8 @@ jobs:
              || "${{ needs.web-console.result }}" == "cancelled"
              || "${{ needs.agent-regression.result }}" == "cancelled"
              || "${{ needs.marketplace-catalog.result }}" == "cancelled"
-             || "${{ needs.helm-chart.result }}" == "cancelled" ]]; then
+             || "${{ needs.helm-chart.result }}" == "cancelled"
+             || "${{ needs.examples-index.result }}" == "cancelled" ]]; then
             exit 1
           fi
           echo "pr-fast passed (skipped jobs are OK for path-only changes)"

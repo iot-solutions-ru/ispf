@@ -1,6 +1,6 @@
 # DR restore drill — CI lab T2 (2026-11-14)
 
-> Source: GitHub Actions run [`43648297503`](https://github.com/iot-solutions-ru/ispf/actions/runs/43648297503) on `feat/wave1-ops-harden` (merged as #733).  
+> Source: GitHub Actions run [`43648297503`](https://github.com/iot-solutions-ru/ispf/actions/runs/43648297503) on `feat/wave1-ops-harden` (merged as [#733](https://github.com/iot-solutions-ru/ispf/pull/733)).  
 > Script: `deploy/tools/dr-restore-drill.sh`
 
 ## Claim boundary
