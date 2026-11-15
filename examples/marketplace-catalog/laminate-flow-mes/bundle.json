@@ -145,7 +145,7 @@
       "refreshIntervalMs": 5000
     }
   ],
-  "workflows": null,
+  "workflows": [],
   "blueprints": [
     {
       "name": "laminate-flow-hub",
@@ -955,7 +955,7 @@
       }
     }
   ],
-  "bindings": null,
+  "bindings": [],
   "reports": [
     {
       "reportId": "lf-sales-orders",
@@ -1349,10 +1349,10 @@
       "maxRows": null
     }
   ],
-  "alertRules": null,
-  "correlators": null,
-  "schedules": null,
-  "analyticsFormulas": null,
+  "alertRules": [],
+  "correlators": [],
+  "schedules": [],
+  "analyticsFormulas": [],
   "events": [
     {
       "id": "laminateScheduleMoved",
@@ -1403,7 +1403,7 @@
       "payloadSchema": null
     }
   ],
-  "requires": null,
+  "requires": [],
   "license": {
     "bundleId": "laminate-flow-mes",
     "minPlatformVersion": "0.9.208",

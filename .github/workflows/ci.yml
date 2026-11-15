@@ -241,6 +241,9 @@ jobs:
           npm ci
           node --test test/*.test.mjs
 
+      - name: Validate example bundles (local --strict)
+        run: node tools/ispf-cli/scripts/validate-examples.mjs
+
       - name: Marketplace ship-canon gate + shared fixtures
         run: node --test tools/marketplace-catalog/*.test.mjs
 

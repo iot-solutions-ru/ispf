@@ -11,7 +11,7 @@
       "displayName": "Claims Control (app host)",
       "description": "BFF host for Claims Control",
       "templateId": null,
-      "parameters": null
+      "parameters": {}
     }
   ],
   "dashboards": [
@@ -1488,9 +1488,9 @@
   "alertRules": [],
   "correlators": [],
   "schedules": [],
-  "analyticsFormulas": null,
+  "analyticsFormulas": [],
   "events": [],
-  "tests": null,
+  "tests": [],
   "requires": [],
   "license": {
     "bundleId": "claims-control",
