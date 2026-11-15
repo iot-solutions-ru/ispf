@@ -92,7 +92,7 @@ stubs:
   # camera-ai promoted Wave 5 → PRODUCTION (packages/ispf-driver-camera-ai)
 
   # —— Cloud / messaging bridges ——
-  # azure-iot-hub promoted Wave 4 → PRODUCTION (packages/ispf-driver-azure-iot-hub)
-  # aws-iot-core promoted Wave 4 → PRODUCTION (packages/ispf-driver-aws-iot-core)
+  # azure-iot-hub / aws-iot-core stay BETA until TLS/mTLS is proven (plain-TCP TLS-fails-closed)
+  # (packages/ispf-driver-azure-iot-hub, packages/ispf-driver-aws-iot-core)
   # amqp promoted Wave 4 → PRODUCTION (packages/ispf-driver-amqp)
   # weather-station promoted Wave 4 → PRODUCTION (packages/ispf-driver-weather-station)

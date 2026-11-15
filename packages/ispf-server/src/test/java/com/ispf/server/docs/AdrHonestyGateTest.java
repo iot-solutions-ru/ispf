@@ -126,6 +126,45 @@ class AdrHonestyGateTest {
         }
     }
 
+    @Test
+    void dnp3WriteHonestyMatchesMatrixAndScorecard() throws IOException {
+        Path root = repoRoot();
+        Path matrix = root.resolve(
+                "packages/ispf-server-driver/src/main/java/com/ispf/server/driver/DriverProductionMatrix.java");
+        if (!Files.exists(matrix)) {
+            matrix = root.resolve(
+                    "packages/ispf-server/src/main/java/com/ispf/server/driver/DriverProductionMatrix.java");
+        }
+        String matrixSource = Files.readString(matrix);
+        assertTrue(matrixEntryIsProduction(matrixSource, "dnp3"), "dnp3 must stay PRODUCTION in the matrix");
+        assertTrue(
+                Pattern.compile("entry\\(\\s*\"dnp3\"[^;]*WRITE").matcher(matrixSource).find()
+                        || Pattern.compile("entry\\(\\s*\"dnp3\"[^;]*POLL_WRITE").matcher(matrixSource).find(),
+                "dnp3 matrix entry must advertise WRITE / POLL_WRITE"
+        );
+        String writePoint = Files.readString(root.resolve(
+                "packages/ispf-driver-dnp3/src/main/java/com/ispf/driver/dnp3/Dnp3DeviceDriver.java"));
+        assertFalse(
+                writePoint.contains("DNP3 write not implemented"),
+                "Dnp3DeviceDriver.writePoint must not throw the old not-implemented stub"
+        );
+        String scorecard = Files.readString(root.resolve("docs/en/competitive-scorecard.md"));
+        assertFalse(
+                scorecard.contains("writePoint` still throws") || scorecard.contains("writePoint still throws"),
+                "competitive-scorecard must not claim DNP3 writePoint still throws"
+        );
+        assertFalse(
+                Pattern.compile("(?i)DNP3 PRODUCTION poll-only\\s*—\\s*`?writePoint`? not implemented")
+                        .matcher(scorecard)
+                        .find(),
+                "competitive-scorecard must not keep the poll-only / writePoint-not-implemented integrity row"
+        );
+        String limitations = Files.readString(root.resolve("docs/en/known-limitations.md"));
+        String dnp3Row = rowContaining(limitations, "DNP3");
+        assertTrue(dnp3Row.contains("POLL") && dnp3Row.contains("WRITE"),
+                "known-limitations DNP3 row must state POLL + WRITE");
+    }
+
     private static boolean matrixEntryIsProduction(String matrixSource, String driverId) {
         Matcher matcher = Pattern.compile(
                 "entry\\(\\s*\"" + Pattern.quote(driverId) + "\"\\s*,\\s*DriverMaturity\\.(\\w+)"
