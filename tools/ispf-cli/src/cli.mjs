@@ -1,4 +1,6 @@
+import { readFileSync } from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { packToFile } from "./pack.mjs";
 import { unpackFromFile } from "./unpack.mjs";
 import { runValidate } from "./validate.mjs";
@@ -6,21 +8,39 @@ import { diffDirectory, printDiff } from "./diff.mjs";
 import { deployDirectory } from "./deploy.mjs";
 import { forkSolution } from "./fork.mjs";
 import { initSolution } from "./init-solution.mjs";
+import { login } from "./login.mjs";
+import { doctor, formatDoctor } from "./doctor.mjs";
+import { credentialsPath } from "./session.mjs";
 
-function usage() {
-  console.log(`Usage:
+const pkg = JSON.parse(
+  readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), "../package.json"), "utf8")
+);
+
+export function cliVersion() {
+  return pkg.version;
+}
+
+export function usageText() {
+  return `Usage:
+  ispf --version
+  ispf login --username <user> --password <pass> [--totp <code>]
+  ispf doctor
   ispf pack <dir> [-o bundle.json]
   ispf unpack <bundle.json> <dir>
   ispf validate <dir|bundle.json> [--app id] [--local] [--strict]
   ispf diff <dir> --app <id>
-  ispf deploy <dir> --app <id> [--strict]
+  ispf deploy <dir> --app <id> [--strict] [--with-seeds]
   ispf fork <bundle.json|dir> <dest> --app-id <plant-id>
   ispf init-solution <dest> --app-id <id> [--name <display>]
-  ispf deploy <dir> --app <id> [--strict] [--with-seeds]
 
-Environment: ISPF_BASE_URL, ISPF_API_TOKEN
+Environment: ISPF_BASE_URL (default http://localhost:8080), ISPF_API_TOKEN.
+A token from 'ispf login' is read from the credentials file when ISPF_API_TOKEN is unset.
 
-  --strict  Ship-canon: LOGIC_HOST_DEVICE is ERROR (ADR-0060); validate + deploy use ?strict=true`);
+  --strict  Ship-canon: LOGIC_HOST_DEVICE is ERROR (ADR-0060); validate + deploy use ?strict=true`;
+}
+
+function usage() {
+  console.log(usageText());
 }
 
 function parseArgs(argv) {
@@ -35,6 +55,14 @@ function parseArgs(argv) {
       flags.appId = args[++i];
     } else if (a === "--name") {
       flags.name = args[++i];
+    } else if (a === "--username") {
+      flags.username = args[++i];
+    } else if (a === "--password") {
+      flags.password = args[++i];
+    } else if (a === "--totp") {
+      flags.totp = args[++i];
+    } else if (a === "--version") {
+      flags.version = true;
     } else if (a === "--with-seeds") {
       flags.withSeeds = true;
     } else if (a === "-o" || a === "--output") {
@@ -58,12 +86,33 @@ export async function runCli(argv) {
   const { positional, flags } = parseArgs(argv);
   const cmd = positional[0];
 
+  if (flags.version && !cmd) {
+    console.log(cliVersion());
+    process.exit(0);
+  }
+
   if (flags.help || !cmd) {
     usage();
     process.exit(cmd ? 0 : 2);
   }
 
   switch (cmd) {
+    case "login": {
+      const saved = await login({
+        username: flags.username,
+        password: flags.password,
+        totp: flags.totp,
+      });
+      console.log(`Saved token for ${saved.baseUrl} at ${credentialsPath()}`);
+      if (saved.expiresAt) console.log(`Expires: ${saved.expiresAt}`);
+      break;
+    }
+    case "doctor": {
+      const report = await doctor();
+      console.log(formatDoctor(report));
+      process.exit(report.ok ? 0 : 1);
+      break;
+    }
     case "pack": {
       const dir = positional[1];
       if (!dir) throw new Error("pack requires <dir>");
