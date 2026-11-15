@@ -70,6 +70,7 @@
 | [Частые ошибки при проектировании](anti-patterns.md) | Stable | Типичные ошибки в SCADA/IoT-проектах и как делать правильно в ISPF |
 | [Разработка своего React-интерфейса](external-ide.md) | Stable | Как написать отдельное веб-приложение (SPA), упаковать в `ui-pack` и подключить к ISPF |
 | [API приложений](applications.md) | Stable | Справочник REST API: деплой пакетов, миграции SQL, шлюз `/api/v1/bff/invoke`, расписания, Git |
+| [REST API](api.md) | Stable | Таблица маршрутов. Локальные вызовы: `docs/http/local-session.http`, `.ps1`, Postman. Swagger на сервере нет |
 | [Функции на объектах](object-functions.md) | Stable | Встроенные, скриптовые (JSON/SQL) и Java-функции на узлах дерева |
 | [Контракт манифеста пакета](solution-developer-public-api.md) | Stable | Стабильная схема `bundle.json` и правила совместимости |
 | [Отчёты](reports.md) | Stable | Табличные и шаблонные отчёты по SQL, выгрузка в CSV и документы |
