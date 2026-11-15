@@ -177,7 +177,7 @@ Retention: CH TTL on `sampled_at` / `occurred_at` from `ISPF_VARIABLE_HISTORY_RE
 | `deploy/vps-variable-history-dual-write.sh` | Dual-write enable |
 | `deploy/vps-clickhouse-verify.sh` | Post-rollout verify |
 | `deploy/docker-compose.clickhouse.yml` | Local / lab CH |
-| `examples/historian-tiers/three-tier.env` | BL-159 turnkey historian tiers |
+| `examples/historian-tiers/three-tier.env` | BL-159 ready-to-use historian tiers |
 | `tools/historian-scale/analytics-scale-gate.sh` | BL-161 / BL-210 JVM (+ optional CH) gates |
 
 ---

@@ -1,28 +1,21 @@
 > **Язык:** русская версия. Английский оригинал: [en/tutorial-ot-workflow-journal.md](../en/tutorial-ot-workflow-journal.md).
 
-# Туториал: журнал выполнения workflow
+# Урок 1: Журнал и пошаговая хронология выполнения процесса BPMN
 
-> **Статус:** Beta — ADR-0049 Wave 1. См. также: [OT Automation туториалы](ot-automation-excellence-tutorials.md).
+> **Статус:** Beta — просмотр истории запусков и времени выполнения каждого шага процесса `WORKFLOW`. См. также: [Все уроки серии](ot-automation-excellence-tutorials.md).
 
-## Цель
+## Цель урока
+Запустить процесс BPMN и посмотреть подробную хронологию прохождения его шагов в веб-консоли и через REST API.
 
-Запустить простой BPMN workflow и посмотреть **timeline шагов** в UI и через REST.
+---
 
-## Подготовка
+## Пошаговое выполнение
 
-См. [хаб](ot-automation-excellence-tutorials.md#предварительные-требования). Создайте `WORKFLOW`, например `root.platform.workflows.journal-lab`.
+### Шаг 1. Создайте учебный процесс `WORKFLOW`
+Создайте узел `root.platform.workflows.journal-lab` и в визуальном редакторе BPMN соберите простую цепочку **Старт → Сервисный шаг (`serviceTask` с действием `ispf:action="log"`) → Завершение**, затем переведите процесс в статус **`ACTIVE`**.
 
-## Шаги
-
-### 1. Минимальный BPMN
-
-В Workflow Builder сохраните BPMN с `serviceTask` → `log` (см. EN-пример XML) или нарисуйте Start → Service Task → End и задайте `ispf:action=log` в панели ISPF.
-
-### 2. Запуск
-
-**UI:** Workflow Builder → **Run**.
-
-**API:**
+### Шаг 2. Запустите экземпляр процесса
+Нажмите кнопку **«Запустить» (`Run`)** в редакторе или выполните запрос:
 
 ```bash
 curl -s -X POST "$BASE/api/v1/workflows/by-path/run?path=root.platform.workflows.journal-lab" \
@@ -31,28 +24,19 @@ curl -s -X POST "$BASE/api/v1/workflows/by-path/run?path=root.platform.workflows
   -d '{"input":{}}'
 ```
 
-Запомните `instanceId`.
+Сохраните возвращённый идентификатор экземпляра `instanceId`.
 
-### 3. Timeline в UI
-
-Выберите instance — блок **timeline** с шагами, статусом и таймингом.
-
-### 4. Шаги через API
+### Шаг 3. Посмотрите хронологию шагов в веб-консоли и по API
+В редакторе процесса выберите завершённый запуск — откроется лента шагов с отметками времени и статусами каждого узла диаграммы. Те же данные доступны по API:
 
 ```bash
+# Список запусков процесса
 curl -s "$BASE/api/v1/workflows/by-path/runs?path=root.platform.workflows.journal-lab" \
   -H "Authorization: Bearer $TOKEN" | jq .
 
+# Пошаговый журнал конкретного экземпляра
 curl -s "$BASE/api/v1/workflows/instances/$INSTANCE_ID/steps" \
   -H "Authorization: Bearer $TOKEN" | jq .
 ```
 
-## Проверка
-
-- [ ] Run завершился (`COMPLETED`)
-- [ ] В timeline есть шаг `log`
-- [ ] `GET .../steps` возвращает упорядоченные строки
-
-## Дальше
-
-[Workflow как tool](tutorial-ot-workflow-as-tool.md)
+**Следующий урок:** [Урок 2 — Вызов процесса BPMN как типизированного инструмента](tutorial-ot-workflow-as-tool.md).

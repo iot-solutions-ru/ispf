@@ -1,91 +1,68 @@
 > **Язык:** русская версия. Английский оригинал: [en/reference-mini-tec-walkthrough.md](../en/reference-mini-tec-walkthrough.md).
 
-# Mini-TEC reference walkthrough
+# Разбор эталонного примера: АСУ ТП мини-ТЭЦ (`mini-tec`)
 
-Сквозной **опциональный demo** ISPF для **АСУ ТП мини-ТЭЦ**: 3×ГПУ, ГРПБ, РУМБ, ДГУ, нагрузочный модуль, станционный hub, защиты, operator HMI с однолинейной схемой. Без custom Java в `ispf-server` (bootstrap + bundle). **Не входит в platform roadmap** — см. [ROADMAP.md § Phase 18](roadmap.md).
+> **Статус:** Lab — комплексный демонстрационный пример SCADA и диспетчеризации энергообъекта на базе `bundle.json`. Метки зрелости: [doc-status.md](doc-status.md).
 
-Артефакты: [examples/mini-tec/](../../examples/mini-tec/), `appId` = `mini-tec`.
+Демонстрационное решение **`mini-tec`** показывает, как средствами дерева объектов ISPF (без доработки Java-кода сервера) собирается система диспетчеризации газопоршневой электростанции: три газопоршневые установки (ГПУ), газорегуляторный пункт (ГРПБ), распределительное устройство 10/0,4 кВ (РУМБ), дизель-генератор (ДГУ), нагрузочный модуль, центральный узел станционной логики, защиты, процессы BPMN и однолинейная мнемосхема оператора.
 
-См. также [examples/mini-tec/README.md](readme.md), agent playbook `miniTecReference()` в `AgentPlaybooks.java`.
+Исходные файлы примера: [`examples/mini-tec/`](../../examples/mini-tec/) (`appId = "mini-tec"`).
 
-## Домен
+---
 
-| Сущность | Object path | Blueprint |
-|----------|-------------|--------|
-| **ГПУ 1–3** | `root.platform.devices.mini-tec-plant.gpu-0N` | `mini-tec-gpu-v1` |
-| **ГРПБ** | `...grpb` | `mini-tec-grpb-v1` |
-| **РУМБ 10/0,4 кВ** | `...rumb-10kv` | `mini-tec-rumb-v1` |
-| **ДГУ** | `...dgu` | `mini-tec-dgu-v1` |
-| **Нагрузочный модуль** | `...load-module` | `mini-tec-load-module-v1` |
-| **Станционный hub** | `...station-hub` | `mini-tec-station-hub-v1` |
+## 1. Объекты станции в дереве
 
-Установленная мощность: **4440 кВт** (3×1480). Virtual driver profiles: `tec-gpu`, `tec-grpb`, `tec-rumb`, `tec-dgu`, `tec-load`.
+| Оборудование / узел | Путь в дереве объектов | Шаблон (`Blueprint`) |
+|---------------------|------------------------|----------------------|
+| **Газопоршневые установки (ГПУ 1–3)** | `root.platform.devices.mini-tec-plant.gpu-01` .. `gpu-03` | `mini-tec-gpu-v1` |
+| **Газорегуляторный пункт (ГРПБ)** | `root.platform.devices.mini-tec-plant.grpb` | `mini-tec-grpb-v1` |
+| **Распредустройство 10/0,4 кВ (РУМБ)** | `root.platform.devices.mini-tec-plant.rumb-10kv` | `mini-tec-rumb-v1` |
+| **Дизель-генераторная установка (ДГУ)** | `root.platform.devices.mini-tec-plant.dgu` | `mini-tec-dgu-v1` |
+| **Нагрузочный модуль** | `root.platform.devices.mini-tec-plant.load-module` | `mini-tec-load-module-v1` |
+| **Центральный узел логики станции** | `root.platform.devices.mini-tec-plant.station-hub` | `mini-tec-station-hub-v1` (`SINGLETON`) |
 
-## Шаги сценария
+Суммарная установленная мощность станции: **4 440 кВт** (`3 × 1 480 кВт`). В демонстрационном режиме сигналы имитируются встроенными профилями драйвера `virtual` (`tec-gpu`, `tec-grpb`, `tec-rumb`, `tec-dgu`, `tec-load`).
 
-| # | Действие | API / UI | Эффект |
-|---|----------|----------|--------|
-| 1 | Старт server | `MiniTecPlatformBootstrap` | Модели, объекты, dashboards, workflows, automation, operator UI |
-| 2 | Operator HMI | `?mode=operator&app=mini-tec` | **Интегрированная мнемосхема** `mini-tec-hmi` (по умолчанию) |
-| 3 | Зоны схемы | вкладки Генерация / Газ / Электроснабжение | Mimics `mini-tec-single-line`, `mini-tec-zone-gas`, `mini-tec-zone-electrical` |
-| 4 | Карточка узла | клик по блоку на схеме (`setSelection`) | Панель справа: статус, P, sparkline, chart |
-| 5 | Станционная сводка | dashboard `mini-tec-overview` | KPI hub + ГПУ |
-| 6 | Учебный пожар | `simulate_fire` на ГРПБ | Alarm bar, gas trip **всех** GPU, email/webhook (если relay настроен) |
-| 7 | Недомощность | нагрузка > генерации | correlator → `mini-tec-load-module-auto-unload` |
-| 8 | KPI / тренды | `mini-tec-kpi`, `mini-tec-trends` | OEE/MTBF/MTTR, historian charts |
-| 9 | Суточный журнал | schedule `mini-tec-daily-journal-etl` | `aggregate_daily_journal` → `tec_daily_journal` |
-| 10 | Redeploy bundle | `POST /api/v1/applications/mini-tec/deploy` | Idempotent sync из `examples/mini-tec/bundle.json` |
+---
 
-## Дашборды
+## 2. Как пройти демонстрационный сценарий
 
-| Path | Назначение |
-|------|------------|
-| `root.platform.dashboards.mini-tec-hmi` | **Операторская мнемосхема** (default) |
-| `root.platform.dashboards.mini-tec-overview` | Станционная сводка |
-| `root.platform.dashboards.mini-tec-single-line` | Однолинейная схема (SLD widget) |
-| `root.platform.dashboards.mini-tec-kpi` | KPI (OEE, MTBF, MTTR) |
-| `root.platform.dashboards.mini-tec-trends` | Сравнение трендов |
-| `root.platform.dashboards.mini-tec-gpu-detail` | ГПУ — детально |
-| `root.platform.dashboards.mini-tec-grpb` | ГРПБ (+ учебные симуляции) |
-| `root.platform.dashboards.mini-tec-rumb` | РУМБ |
-| `root.platform.dashboards.mini-tec-dgu` | ДГУ |
-| `root.platform.dashboards.mini-tec-load-module` | Нагрузочный модуль |
-| `root.platform.dashboards.mini-tec-protections` | Защиты |
-| `root.platform.dashboards.mini-tec-exploitation` | Эксплуатация (все 3 ГПУ) |
+| Шаг | Действие | Где открыть / что вызвать | Что происходит |
+|-----|----------|---------------------------|----------------|
+| 1 | Установка решения | Автоматически при старте с демонстрационными данными или через `POST /api/v1/applications/mini-tec/deploy` | Создаются шаблоны, узлы станции, экраны, процессы BPMN и меню оператора |
+| 2 | Вход на пульт оператора | `?mode=operator&app=mini-tec` | Открывается главный экран `mini-tec-hmi` с мнемосхемой и верхней полосой тревог |
+| 3 | Переключение технологических зон | Вкладки **Генерация**, **Газ**, **Электроснабжение** | Отображаются мнемосхемы однолинейной схемы, газового тракта и РУ 10/0,4 кВ |
+| 4 | Просмотр агрегата | Клик по любому агрегату на мнемосхеме | Справа открывается карточка выбранного агрегата с мощностью, статусом, графиком и кнопками пуска/останова |
+| 5 | Сводка по станции | Экран `mini-tec-overview` | Суммарная выработка, резерв мощности и состояние всех трёх ГПУ |
+| 6 | Проверка противоаварийной защиты | Вызов учебной тревоги `simulate_fire` на узле ГРПБ | Срабатывает аварийная сигнализация и процесс автоматического отсечения газа с остановом всех ГПУ |
+| 7 | Проверка автоматической разгрузки | Превышение нагрузки над текущей генерацией | Коррелятор фиксирует дефицит мощности и запускает процесс разгрузки (`mini-tec-load-module-auto-unload`) |
+| 8 | Формирование суточной ведомости | Расписание `mini-tec-daily-journal-etl` | Функция `aggregate_daily_journal` записывает суточные итоги в таблицу `tec_daily_journal` |
 
-## Привязка к REQ-PF / механизмам
+---
 
-| Механизм | Использование |
-|----------|---------------|
-| **Models** | 6 INSTANCE-моделей + binding rules на hub |
-| **Virtual driver** | Профили `tec-*`, poll в `VirtualTecPoll.java` |
-| **Binding rules** | Cross-object агрегаты на `station-hub` (0010) |
-| **Workflow** | 5 BPMN: gas trip, load unload, GPU start, ack protection, shift handover |
-| **Automation** | Alert rules + correlators на защитах |
-| **PF-02** | App SQL: `tec_daily_journal`, `tec_consumer_load` |
-| **Operator UI** | `root.platform.operator-apps` → mini-tec menus |
+## 3. Экраны оператора в составе пакета
 
-## Приёмка (smoke checklist)
+| Путь дашборда | Назначение |
+|---------------|------------|
+| `root.platform.dashboards.mini-tec-hmi` | Главный пульт оператора с мнемосхемой (открывается по умолчанию) |
+| `root.platform.dashboards.mini-tec-overview` | Общестанционная сводка |
+| `root.platform.dashboards.mini-tec-single-line` | Однолинейная электрическая схема |
+| `root.platform.dashboards.mini-tec-kpi` | Показатели надёжности и эффективности (КВУ, наработка, простои) |
+| `root.platform.dashboards.mini-tec-trends` | Сравнительные графики истории параметров |
+| `root.platform.dashboards.mini-tec-gpu-detail` | Детальный экран газопоршневой установки |
+| `root.platform.dashboards.mini-tec-grpb` | Экран ГРПБ и панель учебных имитаций защит |
+| `root.platform.dashboards.mini-tec-rumb` | Экран распредустройства 10/0,4 кВ |
+| `root.platform.dashboards.mini-tec-dgu` | Экран дизель-генератора |
+| `root.platform.dashboards.mini-tec-load-module` | Экран нагрузочного модуля |
+| `root.platform.dashboards.mini-tec-protections` | Сводная таблица уставок и срабатываний защит |
 
-| # | Проверка | Ожидание |
-|---|----------|----------|
-| 1 | `?mode=operator&app=mini-tec` | Интегрированный HMI `mini-tec-hmi`, alarm bar сверху |
-| 2 | Клик ГПУ-2 на схеме | Карточка справа: P, статус, sparkline 1h, пуск/стоп |
-| 3 | ГРПБ → «Пожар (учебный)» | Красная подсветка, звук, gas trip **всех** ГПУ |
-| 4 | Нагрузка > генерации | `stationUnderpower`, авто-сброс, событие в event-feed |
-| 5 | Логин `operator-gas` | `GET` variables `rumb-10kv` → 403; `grpb` → OK |
-| 6 | Экспорт PNG на mimic; CSV тренда P за 24h | Файлы сохраняются |
+---
 
-## RBAC и смена
+## 4. Разграничение прав операторов по участкам (`ACL`)
 
-- `operator-gas` — ACL OWNER на `grpb`; `operator-electrical` — на `rumb-10kv`, `load-module`.
-- `operator-engineer` — полный доступ к устройствам станции (без object ACL на ГПУ/hub).
-- Workflow `mini-tec-shift-handover` — user task подтверждения активных алармов + `aggregate_daily_journal`.
+В примере настроено разделение зон ответственности дежурного персонала:
+- учётная запись `operator-gas` имеет права управления (`OWNER`) на узле газорегуляторного пункта (`grpb`), но не имеет доступа к управлению электроустановками (`rumb-10kv` возвращает `403 Forbidden`);
+- учётная запись `operator-electrical` управляет узлами электроснабжения (`rumb-10kv` и `load-module`);
+- главный инженер смены (`operator-engineer`) видит все участки станции и принимает смену через процесс BPMN `mini-tec-shift-handover`.
 
-## REST / WebSocket / OPC-UA
-
-См. [examples/mini-tec/README.md](readme.md). OPC-UA lab: один ГПУ можно перевести на `opcua` driver profile вместо `virtual` ([drivers](drivers.md)).
-
-## NFR (production)
-
-Для промышленной эксплуатации мнемосхемы ТЭЦ см. [deployment](deployment.md).
+**Связанные разделы:** [Мнемосхемы SCADA](scada.md) · [Дашборды и виджеты](dashboards.md) · [Развёртывание и конфигурация](deployment.md).

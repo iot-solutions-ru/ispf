@@ -26,7 +26,7 @@
 | [0048-server-modularization-seams](0048-server-modularization-seams.md) | ObjectTreePort → AI-модуль → ObjectManager — **Accepted** |
 | [0049-ot-automation-excellence](0049-ot-automation-excellence.md) | OT Automation Excellence (journal, AI-BPMN, analytics AI) — **Accepted** |
 | [0050-manufacturing-patterns-as-solutions](0050-manufacturing-patterns-as-solutions.md) | Производственные паттерны как solution / marketplace configuration — **Accepted** |
-| [0051-poka-yoke-constraints-over-guards](0051-poka-yoke-constraints-over-guards.md) | Poka-yoke: constraints вместо гвардов — **Accepted** |
+| [0051-poka-yoke-constraints-over-guards](0051-poka-yoke-constraints-over-guards.md) | Предотвращение ошибок схемами и валидаторами вместо эвристик — **Accepted** |
 | [0052-ispf-workflow-diagram-editor](0052-ispf-workflow-diagram-editor.md) | Редактор workflow-диаграмм ISPF — **Accepted** |
 | [0053-ispf-template-filler](0053-ispf-template-filler.md) | ISPF Template Filler (POI) вместо YARG для spreadsheet — **Accepted** |
 | [0054-hosted-ui-packs](0054-hosted-ui-packs.md) | Hosted UI packs (`/apps/<appId>/`) для SPA из marketplace — **Accepted** |

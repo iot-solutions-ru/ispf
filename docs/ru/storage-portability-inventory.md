@@ -1,66 +1,48 @@
 > **Язык:** русская версия. Английский оригинал: [en/storage-portability-inventory.md](../en/storage-portability-inventory.md).
 
-# Инвентаризация зависимостей PostgreSQL (ADR-0037)
+# Переносимость реляционного ядра между СУБД (ADR-0037)
 
-Автоматический и ручной аудит PG-спецификаций для переносимости реляционного ядра.
+> **Статус:** Stable — архитектура диалектов реляционной БД метаданных (`RelationalDialect`) и совместимость с PostgreSQL, H2 и MS SQL Server. Метки зрелости: [doc-status.md](doc-status.md).
 
-## Flyway migrations (`db/migration/postgresql/`)
+В соответствии с [ADR-0037](decisions/0037-relational-core-portability.md) все платформенные SQL-запросы к таблицам метаданных изолированы через интерфейс диалекта **`RelationalDialect`**, чтобы ядро сервера могло работать не только на PostgreSQL, но и на встроенной БД H2 и корпоративных реляционных СУБД (например, Microsoft SQL Server).
 
-| Конструкция | Примеры | Портирование |
-|-------------|---------|--------------|
-| `UUID` | V10, V25, V62 | `UNIQUEIDENTIFIER` (MSSQL), `CHAR(36)` (MySQL) |
-| `BYTEA` | V34 | `VARBINARY(MAX)` / `BLOB` |
-| `JSONB` | V38, V52 | `NVARCHAR(MAX)` + JSON / native JSON |
-| `TIMESTAMPTZ` | многие | `DATETIMEOFFSET` / `TIMESTAMP WITH TIME ZONE` |
-| `CREATE SCHEMA` | V10 | dialect-specific |
-| PG indexes | `USING GIN` | пересмотр per engine |
+---
 
-**Об:** один `V1__baseline.sql` в `postgresql/` (сквош Legacy V1–V70, только с нуля). Пакеты Enterprise — **один базовый** на движок (см. ADR-0037 § Greenfield policy).
+## 1. Соответствие типов данных в миграциях Flyway
 
-## Greenfield и смена движка (ADR-0037)
+Базовые скрипты схемы разделены по каталогам диалектов (`db/migration/postgresql/`, `db/migration/mssql/` и др.):
 
-До v1.0: новая установка = новая БД; смена `ISPF_METADATA_DB_KIND` = пустая БД + базовая линия baseline миграций + импорт конфигурации бандлами. Миграция метаданных между PostgreSQL и MSSQL/Oracle **не** входит в область действия.
+| Тип в PostgreSQL | Аналог в MS SQL Server / других СУБД |
+|------------------|--------------------------------------|
+| `UUID` | `UNIQUEIDENTIFIER` (MSSQL), `CHAR(36)` |
+| `BYTEA` | `VARBINARY(MAX)` / `BLOB` |
+| `JSONB` | `NVARCHAR(MAX)` с проверкой JSON / нативный тип `JSON` |
+| `TIMESTAMPTZ` | `DATETIMEOFFSET` / `TIMESTAMP WITH TIME ZONE` |
+| `CREATE SCHEMA` и индексы `GIN` | Специфичные конструкции конкретного диалекта |
 
-## Java — SQL только для PG
+> **Порядок смены СУБД метаданных:** при переходе на другой тип реляционной СУБД (`ISPF_METADATA_DB_KIND`) создаётся чистая база данных, при старте сервера автоматически накатывается базовая миграция выбранного диалекта (`V1__baseline.sql`), а прикладные проекты переносятся импортом пакетов `bundle.json`.
 
-| Область | Файл | Конструкция | Диалектный метод |
-|---------|------|-------------|----------------|
-| Job queue | `PlatformJobService` | `FOR UPDATE SKIP LOCKED` | `queuedJobSelectSql()` |
-| App schemas | `ApplicationSchemaSession` | `SET search_path` | `activateSchemaSql()` |
-| Platform catalog | `PlatformSqlCatalog` | `public.` vs `PUBLIC.` | `platformSchemaPrefix()` |
-| Historian buckets | `JdbcVariableHistoryQueryStore` | `extract(epoch...)`, `to_timestamp` | `variableSampleBucketAggregateSql()` |
-| Timescale | `TimescaleHypertableInitializer` | `create_hypertable` | `supportsTimescale()` |
-| Leader locks | `PlatformLeaderLockService` | PG advisory locks | dialect (future) |
+---
 
-## Хранилища JDBC (необработанный SQL)
+## 2. Изоляция специфичных SQL-конструкций в Java (`RelationalDialect`)
 
-~30 `*Store.java` под `packages/ispf-server/src/main/java/com/ispf/server/` — большинство использования ANSI SQL; PG-спецификация в типах колонок и замков. Консолидация через `RelationalDialect` по мере сертификации движков.
+| Подсистема | Класс в коде | Особенность SQL | Метод в `RelationalDialect` |
+|------------|--------------|-----------------|-----------------------------|
+| Очередь фоновых заданий | `PlatformJobService` | Захват строки без блокировки соседей (`FOR UPDATE SKIP LOCKED`) | `queuedJobSelectSql()` |
+| Изоляция схем приложений | `ApplicationSchemaSession` | Переключение текущей схемы (`SET search_path`) | `activateSchemaSql()` |
+| Системный каталог таблиц | `PlatformSqlCatalog` | Префикс схемы (`public.` против `PUBLIC.`) | `platformSchemaPrefix()` |
+| Интервальная агрегация истории | `JdbcVariableHistoryQueryStore` | Вычисление временных корзин (`extract(epoch...)`, `to_timestamp`) | `variableSampleBucketAggregateSql()` |
+| Гипертаблицы TimescaleDB | `TimescaleHypertableInitializer` | Вызов `create_hypertable` (только при наличии расширения) | `supportsTimescale()` |
 
-## Конфигурация
+---
 
-| Окружение | Назначение |
-|-----|------------|
-| `ISPF_DB_URL` | JDBC URL metadata + jdbc time-series |
-| `ISPF_METADATA_DB_KIND` | `postgresql`, `h2`, `mssql`, `mysql`, `oracle` (optional, auto-detect if empty) |
-| `ISPF_EVENT_JOURNAL_STORE` | `jdbc` = same DB |
-| `ISPF_VARIABLE_HISTORY_STORE` | `jdbc` = same DB |
+## 3. Переменные окружения для выбора хранилища
 
-## Режимы развёртывания
+| Переменная | Назначение |
+|------------|------------|
+| `ISPF_DB_URL` | JDBC-строка подключения к основной реляционной базе метаданных |
+| `ISPF_METADATA_DB_KIND` | Явное указание диалекта: `postgresql`, `h2`, `mssql` (если не указано, определяется автоматически по JDBC URL) |
+| `ISPF_EVENT_JOURNAL_STORE` | Хранилище журнала событий: `jdbc` (та же реляционная БД) или `clickhouse` |
+| `ISPF_VARIABLE_HISTORY_STORE` | Хранилище истории переменных: `jdbc` (та же реляционная БД) или `clickhouse` |
 
-### Одна БД (по умолчанию)
-
-```
-ISPF_DB_URL → PostgreSQL
-ISPF_EVENT_JOURNAL_STORE=jdbc
-ISPF_VARIABLE_HISTORY_STORE=jdbc
-```
-
-### Разделенная телеметрия
-
-```
-ISPF_DB_URL → PostgreSQL (metadata)
-ISPF_EVENT_JOURNAL_STORE=clickhouse
-ISPF_VARIABLE_HISTORY_STORE=clickhouse
-```
-
-См. [clickhouse-prod-playbook](clickhouse-prod-playbook.md).
+**Связанные разделы:** [Развёртывание и конфигурация](deployment.md) · [Настройка ClickHouse](clickhouse-prod-playbook.md) · [ADR-0037](decisions/0037-relational-core-portability.md).

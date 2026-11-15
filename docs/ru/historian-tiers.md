@@ -2,43 +2,43 @@
 
 # Уровни хранения истории (PostgreSQL, ClickHouse, Parquet)
 
-> **Статус:** Beta — настраиваемые профили хранения временных рядов и маршрутизация запросов. Метки зрелости: [doc-status.md](doc-status.md).
+> **Статус:** Beta — трёхуровневая схема архива временных рядов (оперативный, аналитический и долгосрочный архив) и автоматическая маршрутизация запросов. Метки зрелости: [doc-status.md](doc-status.md).
 
-Для систем с большим потоком телеметрии и длительными сроками хранения в ISPF предусмотрена трёхуровневая схема архива (**оперативный → аналитический → долгосрочный архив**), настраиваемая блоком `ispf.historian.tiers` в `application.yml`.
+Для систем с большим потоком телеметрии и многолетними сроками хранения в ISPF предусмотрена трёхуровневая схема архива (**оперативный уровень → аналитический уровень → долгосрочный файловый архив**), настраиваемая в блоке `ispf.historian.tiers` файла `application.yml`.
 
-**Готовые файлы настроек в репозитории:** [examples/historian-tiers/](../../examples/historian-tiers/) (`hot-only.env` — одна база PostgreSQL; `three-tier.env` — связка с ClickHouse и архивом).
+Готовые примеры конфигураций находятся в каталоге [`examples/historian-tiers/`](../../examples/historian-tiers/):
+- `hot-only.env` — хранение всей истории в одной базе PostgreSQL / TimescaleDB;
+- `three-tier.env` — связка PostgreSQL (оперативный слой), ClickHouse (аналитический слой) и выгрузки в Parquet (долгосрочный архив).
 
-**См. также:** [variable-history](variable-history.md), [0035-historian-dual-write](decisions/0035-historian-dual-write.md), [analytics-platform-roadmap](analytics-platform-roadmap.md) (charter / roadmap), [analytics-historian-cookbook](analytics-historian-cookbook.md), [deployment](deployment.md).
-
----
-
-## Модель уровней
-
-| Уровень | Store по умолчанию | Retention | Роль |
-|---------|--------------------|-----------|------|
-| **hot** | PostgreSQL / Timescale (`jdbc`) | 7 дней | Live-запись, тренды оператора, недавние агрегаты |
-| **warm** | ClickHouse | 90 дней | Analytics, длинные дашборды, цель dual-write |
-| **cold** | S3 + Parquet (`cold`) | 10 лет | Compliance-архив, источник bulk-экспорта |
-
-Hot может включить **dual-write** в warm ClickHouse (`dual-write-enabled: true`), пока недавние сэмплы остаются на JDBC; при включённой маршрутизации устаревшие сэмплы уходят в warm автоматически.
+**Связанные разделы:** [История переменных](variable-history.md) · [Рецепты исторических расчётов](analytics-historian-cookbook.md) · [Развёртывание и конфигурация](deployment.md) · [ADR-0035](decisions/0035-historian-dual-write.md).
 
 ---
 
-## Маршрутизация между уровнями
+## 1. Назначение трёх уровней хранения
 
-При `ispf.historian.deploy-profile=three-tier` (по умолчанию) сервер включает **warm tier routing**, если `ispf.historian.tiers.warm.enabled` не задан явно:
+| Уровень | Хранилище по умолчанию | Срок хранения | Назначение |
+|---------|------------------------|---------------|------------|
+| **Оперативный (`hot`)** | PostgreSQL / TimescaleDB (`jdbc`) | 7 дней | Запись текущих показаний, оперативные графики на экранах оператора, быстрые агрегаты за смену |
+| **Аналитический (`warm`)** | ClickHouse (`clickhouse`) | 90 дней | Быстрые аналитические запросы по длинным интервалам и десяткам тегов, параллельная запись (`dual-write`) |
+| **Долгосрочный (`cold`)** | Файлы Parquet (локальный каталог или S3) | До 10 лет | Долговременный архив для регламентной отчётности и внешних аналитических систем |
 
-| Путь | Поведение |
-|------|-----------|
-| **Write** | `TierRoutingVariableHistoryWriteStore` — недавние сэмплы → JDBC hot; старше hot retention → ClickHouse warm; опциональный dual-write для hot-окна |
-| **Read** | `TierRoutingVariableHistoryQueryStore` — диапазоны через hot cutoff объединяют JDBC + ClickHouse |
-| **Cold** | Ночной `HistorianColdArchiveRunner` экспортирует Parquet за день, покидающий warm retention (когда `ispf.historian.cold-archive.enabled=true`). Нужен опциональный модуль `ispf-export-parquet` (в дефолтном `bootJar`; при сборке с `-Pispf.exportParquet=false` его нет — запуск даёт `skipped`, а экспорт `format=parquet` отвечает 501) |
+---
 
-Профиль `hot-only` оставляет только JDBC (`warm.enabled=false`).
+## 2. Как работает маршрутизация при записи и чтении
 
-Java: `HistorianTierDeployProfileEnvironmentPostProcessor`, `HistorianColdArchiveService`.
+При выборе профиля `ispf.historian.deploy-profile=three-tier`:
 
-## Конфигурация по умолчанию
+| Операция | Как обрабатывается сервером |
+|----------|-----------------------------|
+| **Запись точек (`Write`)** | `TierRoutingVariableHistoryWriteStore` сохраняет свежие точки в оперативную БД PostgreSQL (`hot`), а при включённом `dual-write-enabled: true` одновременно дублирует их в ClickHouse (`warm`). Точки со штампом времени старше оперативного окна направляются напрямую в ClickHouse. |
+| **Чтение графиков и агрегатов (`Read`)** | `TierRoutingVariableHistoryQueryStore` при запросе периода, выходящего за пределы оперативного окна (например, за 30 дней), автоматически объединяет данные из PostgreSQL и ClickHouse. |
+| **Выгрузка в долгосрочный архив (`Cold`)** | Ночной планировщик `HistorianColdArchiveRunner` (при `ispf.historian.cold-archive.enabled=true`) выгружает суточные срезы, выходящие за срок хранения уровня `warm`, в сжатые файлы формата **Parquet** (используется модуль `ispf-export-parquet`). |
+
+Если на объекте не требуется ClickHouse, выберите профиль `hot-only` (`ISPF_HISTORIAN_DEPLOY_PROFILE=hot-only`) — тогда вся история хранится только в PostgreSQL (`warm.enabled=false`).
+
+---
+
+## 3. Конфигурация в `application.yml`
 
 ```yaml
 ispf:
@@ -67,16 +67,9 @@ ispf:
           format: parquet
 ```
 
-Java binding: `HistorianTierProperties` + `HistorianTierProfile` (`com.ispf.server.config`).
-
----
-
-## Фрагмент deploy-профиля (prod / VPS)
-
-Однокликовый профиль **three-tier** для production-историка на масштабе. Применять после проверки ClickHouse (`vps-clickhouse-verify.sh`).
+### Переменные окружения для запуска трёхуровневого архива
 
 ```bash
-# /opt/ispf/config/runtime-settings.properties (or env on systemd unit)
 ISPF_HISTORIAN_DEPLOY_PROFILE=three-tier
 ISPF_VARIABLE_HISTORY_STORE=jdbc
 ISPF_HISTORIAN_TIER_HOT_RETENTION_DAYS=7
@@ -85,29 +78,26 @@ ISPF_VARIABLE_HISTORY_CLICKHOUSE_URL=http://127.0.0.1:8123
 ISPF_VARIABLE_HISTORY_CLICKHOUSE_DATABASE=ispf
 ISPF_HISTORIAN_TIER_COLD_BUCKET=ispf-historian-archive
 ISPF_HISTORIAN_TIER_COLD_PREFIX=variable-samples/
-# Optional: enable nightly Parquet export (local tree or S3-mounted path)
+
+# Включение ночной выгрузки в файлы Parquet:
 ISPF_HISTORIAN_COLD_ARCHIVE_ENABLED=true
 ISPF_HISTORIAN_COLD_ARCHIVE_LOCAL_ROOT=/var/lib/ispf/historian-cold
 ```
 
-`three-tier` автоматически ставит `ispf.historian.tiers.warm.enabled=true`. Override: `ISPF_HISTORIAN_TIER_WARM_ENABLED=false`.
-
-**Только lab (один уровень):** `ISPF_HISTORIAN_DEPLOY_PROFILE=hot-only` — только JDBC, без warm routing.
-
-**Cutover warm read (полный CH primary):** `ISPF_VARIABLE_HISTORY_STORE=clickhouse` только после dual-write soak и lab SLO gate — см. [variable-history](variable-history.md). При store=`clickhouse` маршрутизация уровней обходится.
+> Если вы хотите перевести вообще **всю** запись и чтение истории переменных исключительно на ClickHouse (без оперативного слоя в PostgreSQL), установите `ISPF_VARIABLE_HISTORY_STORE=clickhouse` согласно инструкции [Настройка ClickHouse](clickhouse-prod-playbook.md).
 
 **Опциональный disk spool после cutover:** для sole-store ClickHouse включите `ISPF_VARIABLE_HISTORY_SPOOL_ENABLED=true` и укажите `ISPF_VARIABLE_HISTORY_SPOOL_DIRECTORY` на путь в data volume (Helm: `/opt/ispf/data/historian-spool`). Выкл. по умолчанию — [variable-history](variable-history.md) § Disk spool.
 
 ---
 
-## Ops-чеклист
+## 4. Порядок включения на промышленном сервере
 
-1. Включить Timescale hypertable на `variable_samples` (автоматически при наличии extension).
-2. Развернуть ClickHouse; запустить `vps-clickhouse-verify.sh`.
-3. Задать `ISPF_HISTORIAN_DEPLOY_PROFILE=three-tier` и env retention выше.
-4. Следить за ошибками append в CH в логах сервера (warm path на dual-write — best-effort).
-5. Включить `ISPF_HISTORIAN_COLD_ARCHIVE_ENABLED=true`, когда нужен долгосрочный Parquet-архив; синхронизировать `local-root` с объектным хранилищем S3 или смонтировать бакет. Запросы напрямую по холодным файлам Parquet выполняются внешними аналитическими движками (Trino, DuckDB, ClickHouse S3), а сервер ISPF отвечает за их регулярную выгрузку.
-6. После cutover на sole-store ClickHouse при необходимости включить disk spool на persistent volume; следить за `ispf.historian.spool.*`.
+1. Убедитесь, что в PostgreSQL активно расширение TimescaleDB для таблицы `variable_samples`.
+2. Разверните ClickHouse и проверьте доступность базы скриптом `deploy/vps-clickhouse-verify.sh`.
+3. Задайте в окружении сервера `ISPF_HISTORIAN_DEPLOY_PROFILE=three-tier` и нужные сроки хранения уровней `hot` и `warm`.
+4. Следите за ошибками append в ClickHouse в логах сервера (warm path на dual-write — best-effort).
+5. При необходимости многолетнего файлового архива включите `ISPF_HISTORIAN_COLD_ARCHIVE_ENABLED=true` и укажите каталог `ISPF_HISTORIAN_COLD_ARCHIVE_LOCAL_ROOT` (например, смонтированный раздел сетевого хранилища или S3-совместимого бакета). Чтение архивных файлов Parquet за прошлые годы выполняется стандартными средствами аналитики (DuckDB, ClickHouse, Trino).
+6. После cutover на sole-store ClickHouse при необходимости включите disk spool на persistent volume; следите за `ispf.historian.spool.*` — [variable-history](variable-history.md) § Disk spool.
 
 ---
 

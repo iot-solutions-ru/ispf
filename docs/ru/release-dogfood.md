@@ -1,33 +1,19 @@
 > **Язык:** русская версия. Английский оригинал: [en/release-dogfood.md](../en/release-dogfood.md).
 
-# Чеклист dogfood перед релизом
+# Контрольный список предрелизной проверки сервера
 
-> **Статус:** Internal — Чеклист релиза. Метки зрелости: [doc-status.md](doc-status.md).
+> **Статус:** Internal — быстрая 15-минутная проверка основных экранов и конвейера тревог перед выпуском нового тега релиза. Метки зрелости: [doc-status.md](doc-status.md).
 
-Короткий шлюз перед тегом релиза. Лучше провалить шаг, чем пропустить его.
+Перед публикацией новой версии ISPF выполните этот короткий проверочный маршрут на стенде.
 
-Связано: [demostands](demostands.md), [observability](observability.md), [golden-path-alarm-smoke](../../deploy/tools/golden-path-alarm-smoke.py).
+| № | Проверяемый узел | Как проверить |
+|---|------------------|---------------|
+| 1 | **Сквозной путь тревоги** | Запустить `python deploy/tools/golden-path-alarm-smoke.py` на стенде с устройством `demo-sensor-01` |
+| 2 | **Встроенная диагностика нагрузки** | Открыть **Система → Метрики**, проверить карточку диагностики нагрузки и системный дашборд `root.platform.dashboards.platform-metrics` |
+| 3 | **Стартовые приложения оператора** | Открыть `?mode=operator` и проверить запуск пультов тревог и рабочей очереди задач |
+| 4 | **Живое обновление дашборда** | Открыть дашборд `demo-sensor` и убедиться, что показания меняются по WebSocket без перезагрузки страницы |
+| 5 | **Редактор и просмотр мнемосхемы** | Открыть любую мнемосхему SCADA и убедиться в отсутствии ошибок в консоли браузера |
+| 6 | **Запуск процесса BPMN** | Запустить процесс `demo-alarm-handler` и проверить прохождение шагов |
+| 7 | **Федерация (при использовании)** | Проверить индикатор состояния соседнего узла в разделе **Федерация** |
 
-## Шлюз (вручную или CI)
-
-| # | Проверка | Как |
-|---|--------|-----|
-| 1 | **Golden alarm path** | `python deploy/tools/golden-path-alarm-smoke.py` (fixtures / demostand с `demo-sensor-01`) |
-| 2 | **Self-diagnostics** | Admin → System → Metrics: карточка hot-path показывает числа; открыть дашборд `root.platform.dashboards.platform-metrics` |
-| 3 | **Operator starters** | `?mode=operator` → Alarm Console / Work Queue / HMI Wall открываются (или Install starters) |
-| 4 | **Dashboard bind** | Открыть `demo-sensor` (или любой HMI): live value обновляется без полной перезагрузки страницы |
-| 5 | **Mimic** | Открыть mimic (если есть): canvas загружается, без ошибок в console |
-| 6 | **Workflow** | Запустить или просмотреть `demo-alarm-handler` (или site workflow): instance появляется / завершается |
-| 7 | **Federation (если используется)** | Peer health / connect wizard smoke — пропустить на single-node |
-
-## Критерии выхода
-
-- Шаги 1–3 зелёные на целевом стенде (local fixtures или staging).
-- Шаги 4–6 зелёные для product surfaces, которые вы отгружаете в этом теге.
-- Нет известных P0 в journal / WS silence / auth.
-
-## Не этот чеклист
-
-- Полный load-test suite ([load-testing](load-testing.md))
-- Внешний импорт Grafana (только опциональный export)
-- Clean-install без fixtures (starters устанавливаются через API/launcher)
+**Связанные разделы:** [Профили развёртывания (`demostands.md`)](demostands.md) · [Мониторинг и диагностика (`observability.md`)](observability.md).

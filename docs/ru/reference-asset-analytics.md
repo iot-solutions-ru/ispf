@@ -1,42 +1,14 @@
 > **Язык:** русская версия. Английский оригинал: [en/reference-asset-analytics.md](../en/reference-asset-analytics.md).
 
-# Аналитика активов (BL-160 / BL-201)
+# Расчётные аналитические показатели на объектах оборудования
 
-Облегчённый AF-подобный каркас: каталог KPI-шаблонов, historian rollup, runtime **производные теги**, typed inspector в Explorer и apply workflow.
+> **Статус:** Stable — вычисление скользящих агрегатов, скорости изменения и OEE по истории переменных оборудования. Метки зрелости: [doc-status.md](doc-status.md).
 
-**Статус:** БЛ-201 Done — editor + CRUD API + `derivedValue` runtime + example.
+В ISPF аналитические показатели по оборудованию (скользящее среднее, скорость изменения параметра, суточный расход, сменный OEE) настраиваются непосредственно на узлах дерева объектов через исторические правила расчёта (`kind: "historian"` в переменной `@bindingRules`).
 
-## Модель объектов
+Подробные примеры формул и пошаговая настройка приведены в разделах:
+- **[Рецепты исторических расчётов (`analytics-historian-cookbook.md`)](analytics-historian-cookbook.md)** — готовые примеры скользящего среднего, скорости изменения, OEE и каскадных цепочек из нескольких тегов;
+- **[Каталог аналитических формул (`analytics-formulas-and-packs.md`)](analytics-formulas-and-packs.md)** — сохранение собственных параметризованных шаблонов формул (`{{параметр}}`) в разделе **Система → Формулы аналитики**;
+- **[Каталог аналитических тегов (`analytics-tag-catalog.md`)](analytics-tag-catalog.md)** — просмотр всех развёрнутых расчётных тегов, их статуса качества (`@historianRuleMeta`) и построение многорядных графиков через `POST /api/v1/platform/analytics/query`.
 
-| Путь | Тип | Назначение |
-| --- | --- | --- |
-| `root.platform.analytics` | `ANALYTICS` | Каталог |
-| `root.platform.analytics.<templateId>` | `ANALYTICS_TEMPLATE` | Определение rollup/KPI |
-
-Переменные шаблона: `templateId`, `helper`, `sourcePath`, `sourceVariable`, `sourceField`, `windowBucket`, `blueprintName`, `enabled`.
-
-## Встроенные шаблоны
-
-- **rollingAvg** — среднее historian за `windowBucket` → `derivedValue`
-- **rateOfChange** — дельта между bucket → `derivedValue`
-- **oee** — A×P×Q → `oeePct` и компоненты
-
-Blueprints: `rolling-avg-v1`, `rate-of-change-v1`, `oee-v1`.
-
-## Планировщик derived tags
-
-`AnalyticsDerivedTagRunner` периодически обновляет runtime-переменные через `VariableHistoryService.aggregate`.
-
-Конфиг `ispf.analytics`: `derived-tag-enabled`, `derived-tag-tick-ms`.
-
-Ручной refresh: `POST /api/v1/platform/analytics/derived-tags/refresh?devicePath=…`
-
-## Web console
-
-В Explorer: папка analytics → список; шаблон → инспектор **Шаблон аналитики** (форма, превью, применение к устройству).
-
-Виджет chart: поле `analyticsTemplateId` задаёт helper и bucket агрегации.
-
-## Пример
-
-[examples/analytics-rolling-avg/README.md](../../examples/analytics-rolling-avg/README.md)
+Учебный пакет с примером настройки скользящего среднего находится в каталоге [`examples/analytics-rolling-avg/`](../../examples/analytics-rolling-avg/README.md).

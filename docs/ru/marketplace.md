@@ -1,16 +1,18 @@
 > **Язык:** русская версия. Английский оригинал: [en/marketplace.md](../en/marketplace.md).
 
-# Интеграция с маркетплейсом
+# Витрина решений и пакетов расширений (Marketplace)
 
-> **Статус:** Stable — каталог пакетов, установка бесплатных и платных бандлов, подпись и офлайн-установка (BL-183…185). Метки зрелости: [doc-status.md](doc-status.md).
+> **Статус:** Stable — подключение к каталогу готовых решений, установка бесплатных и коммерческих пакетов (`bundle.json`), библиотек символов SCADA (`symbol-pack`), аналитических модулей (`analytics-pack`) и веб-интерфейсов (`ui-pack`). Метки зрелости: [doc-status.md](doc-status.md).
 
-ISPF умеет просматривать **удалённые серверы маркетплейса**, ставить бесплатные `bundle.json` и активировать платные позиции по ключу entitlement.
+Сервер ISPF умеет подключаться к удалённым каталогам решений (маркетплейсам), устанавливать бесплатные пакеты в один клик и активировать платные коммерческие поставки по ключу активации (`entitlement`).
 
-Что уже есть в продукте: просмотр каталога, установка, подпись, версии, локальная офлайн-установка, несколько endpoint партнёров и проверка каталога в CI. Пакеты символов SCADA — BL-185 (`ISPF_SYMBOL_PACKS_DIR` + scada API); `GET /api/v1/marketplace/symbols` отдаёт bundled/local (`source`: `bundled` | `local`), не удалённый магазин символов. Справочник партнёров (BL-184) — см. [Партнёрская программа](partner-program.md). Seeded URL партнёров — плейсхолдеры `.example`; боевые хосты задаются в `ispf.marketplace.endpoints`. Синхронизация с Partner Portal остаётся внешней.
+**Связанные разделы:** [Прикладные решения (`applications.md`)](applications.md) · [Коммерческое лицензирование (`commercial-licensing.md`)](commercial-licensing.md) · [Библиотеки символов SCADA (`symbol-marketplace.md`)](symbol-marketplace.md) · [Каталог аналитических формул (`analytics-formulas-and-packs.md`)](analytics-formulas-and-packs.md) · [Внешний React-интерфейс (`external-ide.md`)](external-ide.md).
 
-URL маркетплейса по умолчанию **настраивается** (`ISPF_MARKETPLACE_DEFAULT_URL`). Для production укажите свой совместимый хост.
+---
 
-## Конфигурация
+## 1. Настройка адресов каталога (`application.yml`)
+
+Адрес основного каталога решений и дополнительных партнёрских витрин задаётся в блоке `ispf.marketplace`:
 
 ```yaml
 ispf:
@@ -24,132 +26,66 @@ ispf:
         contact-url: ${ISPF_MARKETPLACE_CONTACT_URL:https://vendor.example.invalid}
         default-endpoint: true
       - id: acme
-        name: Acme Solutions Store
+        name: Каталог решений партнёра
         base-url: https://marketplace.acme.example
         contact-url: mailto:sales@acme.example
 ```
 
-| Переменная | По умолчанию | Описание |
-|----------|---------|-------------|
-| `ISPF_MARKETPLACE_ENABLED` | `true` | Включить удалённый каталог в System → Solutions |
-| `ISPF_MARKETPLACE_DEFAULT_URL` | `https://marketplace.ispf.ai` | Базовый URL основного каталога |
-| `ISPF_MARKETPLACE_CONTACT_URL` | сайт вендора | Запасная ссылка «связаться с вендором» |
+| Переменная окружения | По умолчанию | Назначение |
+|----------------------|--------------|------------|
+| `ISPF_MARKETPLACE_ENABLED` | `true` | Включает вкладку витрины решений в разделе **Система → Решения** |
+| `ISPF_MARKETPLACE_DEFAULT_URL` | `https://marketplace.ispf.ai` | Базовый URL основного каталога решений |
+| `ISPF_MARKETPLACE_CONTACT_URL` | адрес поставщика | Ссылка для связи с поставщиком платного пакета |
 
-## Web Console
+---
 
-**System → Solutions → Marketplace**
+## 2. Работа с каталогом в веб-консоли и по API
 
-![Каталог Marketplace — просмотр и установка solution bundles](../assets/ispf-marketplace.png)
+![Витрина решений в консоли администратора](../assets/ispf-marketplace.png)
 
-- Выбор endpoint маркетплейса
-- Поиск и фильтрация (free / paid)
-- **Free** — установка в один клик (платформа проксирует download + deploy). Unsigned-манифесты допускаются только на этом пути marketplace install при `ispf.license.require-signed-bundles=true`; прямой `POST .../deploy` по-прежнему требует подписанный блок `license`.
-- **Paid** — ввод кода активации → deploy подписанного bundle; без ключа — ссылка на вендора
+В разделе **Система → Решения → Маркетплейс** администратор может:
+- переключаться между подключёнными витринами (`endpoints`);
+- искать пакеты по названию, тегам и типу лицензии (бесплатные / платные);
+- **устанавливать бесплатные пакеты (`free`)** одной кнопкой **«Установить»** — сервер скачивает манифест и сразу разворачивает решение;
+- **активировать платные пакеты (`paid`)** — после ввода полученного от поставщика кода активации сервер проверяет цифровую подпись и устанавливает пакет.
 
-## Platform API
+### Методы REST API платформы
 
-| Method | Path |
-|--------|------|
-| GET | `/api/v1/solutions/marketplaces` |
-| GET | `/api/v1/solutions/marketplaces/{id}/catalog?q=&pricing=` |
-| POST | `/api/v1/solutions/marketplaces/{id}/listings/{slug}/install` |
-| POST | `/api/v1/solutions/marketplaces/{id}/listings/{slug}/activate` |
+| Метод | Путь | Назначение |
+|-------|------|------------|
+| `GET` | `/api/v1/solutions/marketplaces` | Список настроенных витрин решений |
+| `GET` | `/api/v1/solutions/marketplaces/{id}/catalog?q=&pricing=` | Список позиций выбранной витрины с фильтрацией |
+| `POST` | `/api/v1/solutions/marketplaces/{id}/listings/{slug}/install` | Установка бесплатного пакета |
+| `POST` | `/api/v1/solutions/marketplaces/{id}/listings/{slug}/activate` | Активация и установка платного пакета (`{ "activationCode": "..." }`) |
 
-Paid activate body: `{ "activationCode": "..." }` — `installationId` добавляется на стороне сервера.
+---
 
-## Контракт сервера маркетплейса
+## 3. Типы поставляемых пакетов (`artifactKind`)
 
-Совместим с API совместимого marketplace-сервера:
+Через единый механизм витрины распространяются четыре вида пакетов:
 
-- `GET /api/v1/catalog` → `{ listings: [...] }`
-- `GET /api/v1/catalog/{slug}/download` (free) — опционально `?installationId=` возвращает RSA-подписанный bundle при настроенном ключе маркетплейса
-- `POST /api/v1/entitlements/activate` (paid)
+| Значение `artifactKind` | Куда устанавливается на сервере | Подробная документация |
+|-------------------------|---------------------------------|------------------------|
+| *(не указано / `bundle`)* | Устанавливается как прикладное решение `bundle.json` (схема БД, объекты, функции, дашборды, процессы) | [Прикладные решения (`applications.md`)](applications.md) |
+| `symbol-pack` | Распаковывается в каталог `ISPF_SYMBOL_PACKS_DIR` и появляется в палитре редактора мнемосхем SCADA | [Маркетплейс символов SCADA](symbol-marketplace.md) |
+| `analytics-pack` | Устанавливается в `ISPF_ANALYTICS_PACKS_DIR` и регистрирует новые функции расчёта в каталоге аналитики | [Каталог аналитических формул](analytics-formulas-and-packs.md) |
+| `ui-pack` | Устанавливается в `ISPF_UI_PACKS_DIR` и раздаётся сервером как веб-приложение оператора по адресу `/apps/<appId>/` ([ADR-0054](decisions/0054-hosted-ui-packs.md)) | [Разработка собственного React-интерфейса](external-ide.md) |
 
-Поля листинга, используемые UI: `slug`, `title`, `description`, `pricing`, `appId`, `artifactKind`, `packId`, `vendorName`, `vendorLegalName`, `vendorInn`, `vendorSellerKind` (`company` | `individual`), `vendorContactPerson`, `vendorContactEmail`, `vendorContactPhone`, `priceCents`, `latestVersion`, `minIspfVersion`, `tags`.
+> **Важная настройка nginx для пакетов `ui-pack`:** если перед `ispf-server` стоит внешний nginx, обязательно проксируйте префикс `location ^~ /apps/` на `ispf-server` (аналогично `/api/`), чтобы запросы к `/apps/<appId>/` не перехватывались статикой консоли администратора (см. пример в `deploy/nginx-ispf.conf`).
 
-### Виды артефактов (`artifactKind`)
+---
 
-| `artifactKind` | Куда устанавливается | Документ |
-|----------------|----------------------|----------|
-| *(по умолчанию / не указан)* | Deploy application bundle | [applications](applications.md) |
-| `symbol-pack` | `ISPF_SYMBOL_PACKS_DIR` (REAL — BL-185) | [symbol-marketplace](symbol-marketplace.md) |
-| `analytics-pack` | `ISPF_ANALYTICS_PACKS_DIR` | [analytics-formulas-and-packs](analytics-formulas-and-packs.md) |
-| `ui-pack` | `ISPF_UI_PACKS_DIR` → раздача `/apps/<appId>/` (ADR-0054) | [0054-hosted-ui-packs](decisions/0054-hosted-ui-packs.md), [external-ide](external-ide.md) |
+## 4. Формат паспорта позиции в каталоге (`listing.manifest.json`)
 
-Платные **analytics extension packs** (Tier C historian-функции) используют тот же install/activate API, что и приложения. После установки helpers появляются в `GET /api/v1/platform/analytics/catalog` с `pack: <packId>`.
+Примеры готовых позиций каталога находятся в [`examples/marketplace-catalog/`](../../examples/marketplace-catalog/) и [`examples/marketplace-demo/listing.manifest.json`](../../examples/marketplace-demo/listing.manifest.json). Основные поля карточки:
+- `slug`, `title`, `description`, `tags` — идентификатор, название, описание и поисковые метки;
+- `pricing` (`free` или `paid`), `priceCents` — модель распространения и цена;
+- `appId`, `artifactKind`, `packId` — целевой идентификатор приложения или пакета расширения;
+- `latestVersion`, `minIspfVersion` — версия пакета и минимально требуемая версия сервера ISPF;
+- реквизиты поставщика: `vendorName`, `vendorLegalName`, `vendorInn`, `vendorContactEmail`, `vendorContactPhone`.
 
-**UI packs:** zip + `ui-pack.json` (`appId`, `entry`, `version`). Установка — Solutions marketplace или локально `POST /api/v1/marketplace/ui-packs/{id}/install`. В листинге приложения можно указать `uiPackSlug`, чтобы one-click ставил BFF и SPA вместе. Для SPA: Vite `base: '/apps/<appId>/'` и same-origin `/api/v1`. Поля бандла `operatorUi.externalSpaUrl` / `spaNav` / `uiPack` сохраняются при deploy — кнопка Operator **Open app UI** не требует повторного configure. **Как собирать SPA в Cursor / VS Code** (MCP, BFF, раскладка, анти-паттерны): [external-ide](external-ide.md).
-
-**Split nginx:** `location ^~ /apps/` **обязан** идти `proxy_pass` на `ispf-server` (как `/api/`). Иначе `try_files … /index.html` отдаёт админ-консоль на `/apps/<appId>/`. См. [ADR-0054](decisions/0054-hosted-ui-packs.md) и `deploy/nginx-ispf.conf`.
-
-**PWA web-console:** после визита в Admin/Operator SW контролирует same-origin navigations. В `navigateFallbackDenylist` должен быть `/apps`, иначе **Open app UI** открывает оболочку консоли вместо ui-pack. Кнопка Open app UI снимает SW на время открытия same-origin `/apps` — без Ctrl+F5 после деплоя консоли.
-Локальный symbol catalog (dev/lab, не remote partner store): `GET /api/v1/marketplace/symbols` → `MarketplaceSymbolListingService` (`source`: `bundled` | `local`). Drop-in install + mimic palette: BL-185 Done — см. [symbol-marketplace](symbol-marketplace.md).
-
-## Чеклист готовности маркетплейса (BL-183)
-
-База для готовности маркетплейса Phase 32. Отслеживание в планировании релизов; не все пункты обязательны для dev/lab browse. Не читать каждый статус «Реализовано» как полный внешний/partner GA.
-
-**BL-183 Готово** (Phase 32 in-repo GA). П. 7 остаётся База (поля есть, без жёсткой schema). Partner Portal / hosted partner SaaS sync — вне repo.
-
-| # | Пункт | Статус |
-|---|------|--------|
-| 1 | Просмотр удалённого каталога (System → Solutions) | Реализовано |
-| 2 | Бесплатная установка в один клик (платформа проксирует download + deploy) | Реализовано |
-| 3 | Платная активация с ключом entitlement | Реализовано |
-| 4 | Проверка подписи bundle при install | Реализовано — paid activate; free `/download?installationId=` подписывает на маркетплейсе; trusted fallback при unsigned |
-| 5 | Version pinning + upgrade path (`latestVersion`, semver) | Реализовано — `updateAvailable` в каталоге, `installedVersion` / `upgrade` при install |
-| 6 | Проверка `minIspfVersion` перед install | Реализовано |
-| 7 | Юридические поля вендора в манифесте листинга | База — есть в `examples/marketplace-catalog/` + демо; не schema-enforced |
-| 8 | Offline/air-gapped импорт bundle (тот же манифест) | Реализовано через deploy API + local `/api/v1/marketplace/bundles` |
-| 9 | Runbook reseed артефактов сервера маркетплейса | Реализовано — см. Troubleshooting |
-| 10 | 10+ подписанных production bundle | Реализовано — `examples/marketplace-catalog/` (17 листингов); `publish-marketplace-catalog.ps1` |
-| 11 | 3 внешних партнёра / partner catalogs | **Реализовано (честно)** — 3 DB partners с `marketplaceUrl` (`PartnerProgramService` `source=db`, BL-184); multi-endpoint `ispf.marketplace.endpoints` — путь partner catalogs (см. Конфигурация). Seeded URL — плейсхолдеры `.example`, не live SaaS. |
-| 12 | CI: bundle validate on publish | **Реализовано** — `node tools/marketplace-catalog/validate-catalog.mjs` на каждом PR (job `marketplace-catalog` в `.github/workflows/ci.yml`); live API dry-run — `tools/bundle-validate-cli/validate.mjs` |
-
-### Манифест демо-листинга
-
-Эталонный листинг + bundle для seeding сервера маркетплейса и интеграционных тестов:
-
-| Файл | Назначение |
-|------|---------|
-| [examples/marketplace-demo/listing.manifest.json](../../examples/marketplace-demo/listing.manifest.json) | Поля записи каталога (slug, vendor, pricing) |
-| [examples/marketplace-demo/bundle.json](../../examples/marketplace-demo/bundle.json) | Устанавливаемый application bundle (`appId=marketplace-demo`) |
-| [examples/marketplace-analytics-pack-demo/listing.manifest.json](../../examples/marketplace-analytics-pack-demo/listing.manifest.json) | Листинг Tier C analytics pack (`artifactKind: analytics-pack`) |
-
-Поток публикации (сервер маркетплейса):
-
-1. Скопируйте `bundle.json` в хранилище артефактов маркетплейса как `marketplace-demo__1.0.0.json`
-2. Зарегистрируйте `listing.manifest.json` в индексе каталога
-3. Проверьте `GET /api/v1/catalog/marketplace-demo/download` и ISPF **Установить**
-
-Массовая публикация каталога:
-
-```powershell
-.\deploy\tools\publish-marketplace-catalog.ps1
-```
-
-Платные analytics packs: marketplace `activate` подписывает `analytics-pack.json` внутри zip (`patch-marketplace-analytics-pack-signing.sh`).
-
-## Troubleshooting
-
-### `ENOENT ... warehouse-reference__1.0.0.json` on download / ISPF install 502
-
-Каталог (`GET /api/v1/catalog`) работает, но **Скачать bundle** или ISPF **Установить** падает — JSON bundle отсутствует на сервере маркетплейса (несовпадение host path и Docker volume).
-
-На **marketplace VPS** (`marketplace.example.invalid`):
+Проверка целостности всех позиций локального каталога решений выполняется скриптом:
 
 ```bash
-cd /opt/ispf-marketplace
-git pull origin main
-bash deploy/vps-reseed-artifacts.sh
+node tools/marketplace-catalog/validate-catalog.mjs
 ```
-
-ISPF только проксирует download; исправление всегда на хосте маркетплейса (см. deploy runbook того сервера).
-
-## См. также
-
-- [competitive-scorecard](competitive-scorecard.md) — измерение 12 (экосистема / маркетплейс)
-- [commercial-licensing](commercial-licensing.md)
-- [plugins](plugins.md)
-- [applications](applications.md)
-- [analytics-formulas-and-packs](analytics-formulas-and-packs.md) — Tier C packs в маркетплейсе

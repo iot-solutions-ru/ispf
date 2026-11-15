@@ -68,7 +68,7 @@
 | Эталон prod + дашборд + скрипты deploy/tools | ✅ |
 | API `/templates/*` | устарело, не для новых конфигураций |
 
-Полная таблица сверки — [cookbook § Сверка с планом](../analytics-historian-cookbook.md#сверка-с-планом-adr-0040--adr-0041).
+Примеры и рецепты — в [analytics-historian-cookbook.md](../analytics-historian-cookbook.md).
 
 ## См. также
 

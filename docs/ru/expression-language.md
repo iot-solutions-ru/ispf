@@ -2,267 +2,148 @@
 
 # Справочник языка выражений (CEL и функции расчёта)
 
-> **Статус:** Stable — справочник синтаксиса CEL, встроенных функций обработки сигналов и исторических агрегатов. Метки зрелости: [doc-status.md](doc-status.md).
+> **Статус:** Stable — синтаксис Google CEL, встроенные функции обработки сигналов и исторические агрегаты. Метки зрелости: [doc-status.md](doc-status.md).
 
-Полный справочник языка выражений ISPF: правила привязок, условия алертов, gateway в BPMN и historian-вычисления.
+Этот справочник описывает язык выражений ISPF, который используется в правилах пересчёта переменных (`@bindingRules`), условиях тревог (`ALERT`), развилках процессов BPMN (`WORKFLOW`) и исторических расчётах (`kind: historian`).
 
-| Связанные документы | |
-|---------------------|---|
-| Правила привязок / активаторы / targets | [bindings](bindings.md) |
-| Модель WHEN → IF → THEN | [platform-logic](platform-logic.md) |
-| Рецепты historian | [analytics-historian-cookbook](analytics-historian-cookbook.md) |
-| Пакеты формул / catalog API | [analytics-formulas-and-packs](analytics-formulas-and-packs.md) |
-| Живой каталог | `GET /api/v1/platform/analytics/catalog` |
-| Валидация (compile + formal) | `POST /api/v1/expressions/validate` |
-| Formal verify | `POST /api/v1/expressions/verify` · `…/verify-equivalence` |
-| Решение | [ADR-0055](../en/decisions/0055-cel-formal-verification-ai-gate.md) |
-
-**Реализация в коде:** каталоги `PlatformBindingRegistry` / `PlatformBindingCatalog` (`ispf-expression`), `AnalyticsEvaluatorRegistry` и `HistorianCelPreprocessor`, исполнение Google CEL через `ExpressionEngine`, формальная проверка — `ExpressionFormalVerifier` / `ExpressionFormalVerificationService` (CEL verifier + Z3).
+| Связанные разделы | Ссылка |
+|-------------------|--------|
+| Правила расчёта переменных и активаторы | [Правила расчёта (`bindings.md`)](bindings.md) |
+| Единая схема правил `КОГДА → ЕСЛИ → ТО` | [Единая модель правил (`platform-logic.md`)](platform-logic.md) |
+| Примеры исторических расчётов и OEE | [Рецепты исторических расчётов (`analytics-historian-cookbook.md`)](analytics-historian-cookbook.md) |
+| Шаблоны формул и каталог функций | [Каталог аналитических формул (`analytics-formulas-and-packs.md`)](analytics-formulas-and-packs.md) |
+| Проверка выражений по API | `POST /api/v1/expressions/validate` и `POST /api/v1/expressions/verify` ([ADR-0055](decisions/0055-cel-formal-verification-ai-gate.md)) |
 
 ---
 
-## Формальная проверка выражений (ADR-0055)
+## 1. Автоматическая логическая проверка условий (ADR-0055)
 
-Булевы выражения CEL в тревогах, правилах расчёта, контексте экрана, BPMN на этапе проектирования и в ИИ-инструментах проверяются **CEL verifier 0.14** (через Z3). По умолчанию при apply/validate отклоняются невыполнимые и тавтологичные условия (`ispf.expression.formal-verification.*`).
+Булевы выражения CEL в правилах тревог, условиях привязок и развилках BPMN проходят не только синтаксическую компиляцию, но и **формальную проверку выполнимости** (через решатель Z3 в `ExpressionFormalVerifier`). По умолчанию система заранее предупреждает или отклоняет заведомо невыполнимые условия (`UNSATISFIABLE`, например `x > 10 && x < 5`) и бессмысленные тавтологии (`TAUTOLOGY`, всегда `true`).
 
-| API | Назначение |
-| --- | ---------- |
-| `POST /api/v1/expressions/validate` | Компиляция + формальная проверка; при enforce поле `valid` может стать `false` |
-| `POST /api/v1/expressions/verify` | Только формальная проверка |
-| `POST /api/v1/expressions/verify-equivalence` | Доказать эквивалентность `left ≡ right` |
-
-Коды результатов: `SATISFIABLE`, `UNSATISFIABLE`, `TAUTOLOGY` и др. — [ADR-0055](../en/decisions/0055-cel-formal-verification-ai-gate.md). Пример прогона на демостенде 0.9.202: [`docs/evidence/cel-formal/2026-08-31-ispf-vps-0.9.202-verify-smoke.json`](../evidence/cel-formal/2026-08-31-ispf-vps-0.9.202-verify-smoke.json).
-
-**Вне объёма продукта:** пакеты CEL Policy aggregate — не пользовательская поверхность ISPF.
+| Метод API | Назначение |
+|-----------|------------|
+| `POST /api/v1/expressions/validate` | Проверка синтаксиса и формальная проверка выполнимости условия |
+| `POST /api/v1/expressions/verify` | Только формальная проверка булева выражения |
+| `POST /api/v1/expressions/verify-equivalence` | Доказательство математической эквивалентности двух выражений (`left ≡ right`) |
 
 ---
 
-## 1. Два режима выражений
+## 2. Три режима записи выражений
 
-| Режим | Когда | Ограничение |
-|-------|-------|-------------|
-| **Platform binding** | Вся строка — один builtin (`movingAvg(...)`, `read(...)`, …) | **Только целиком** — нельзя смешивать с `+` / CEL в той же строке |
-| **CEL** | Всё остальное, что компилируется как Google CEL | `self` / `context` / `input`; внутри CEL нет зарегистрированных ISPF-функций |
-
-Historian-правила (`kind: historian`) используют **helpers** (`avg`, `oee`, …) и/или **CEL-композиции**, где helpers сначала раскрываются в числа.
-
----
-
-## 2. Литералы и операторы (CEL)
-
-Используется **Google CEL**. Числа телеметрии в `self` приводятся к **double**.
-
-### Литералы
-
-| Тип | Примеры | Заметки |
-|-----|---------|---------|
-| Boolean | `true`, `false` | |
-| Null | `null` | |
-| Integer | `42`, `-1` | При смешении с double / historian лучше **`42.0`** |
-| Double | `3.14`, `2.0`, `0.0` | **Предпочтительный** вид для арифметики |
-| String | `"alarm"`, `'ok'` | Экранирование `\"` / `\'` |
-| List | `[1.0, 2.0]` | |
-| Map | `{"a": 1.0}` | |
-
-### Операторы
-
-| Класс | Операторы |
-|-------|-----------|
-| Арифметика | `+`, `-`, `*`, `/`, `%` |
-| Сравнение | `==`, `!=`, `<`, `<=`, `>`, `>=` |
-| Логика | `&&`, `\|\|`, `!` |
-| Тернарный | `cond ? thenExpr : elseExpr` |
-
-Стандартные builtins CEL (`size()` и др.) — см. [спецификацию CEL](https://github.com/google/cel-spec).
-
-### Доступ к полям
-
-| Форма | Пример | Заметки |
-|-------|--------|---------|
-| Точка | `self.temperature.value` | Предпочтительна |
-| Скобки | `self.temperature["value"]` | Перед компиляцией переписывается в точку |
+| Режим | Когда используется | Важное правило |
+|-------|--------------------|----------------|
+| **Встроенная функция сигнала (`Platform binding`)** | Вся строка выражения представляет собой один вызов функции (`movingAvg(...)`, `counterRate(...)`, `read(...)`) | Записывается **только целиком** — нельзя складывать `movingAvg(...) + 1` в одной реактивной строке |
+| **Выражение Google CEL** | Любая арифметика, сравнения и логика (`self.temperature.value * 1.8 + 32.0`) | Работает с полями `self`, `context` / `input` и `payload` |
+| **Историческое выражение (`kind: historian`)** | В правилах с `kind: "historian"` | Допускает как одиночные функции (`avg(@/temperature, 5m)`), так и их комбинации внутри CEL (`(avg(a, 5m) + avg(b, 5m)) / 2.0`) |
 
 ---
 
-## 3. Идентификаторы в CEL
+## 3. Константы, операторы и переменные в Google CEL
 
-| Имя | Когда появляется | Смысл |
-|-----|------------------|--------|
-| `self` | Есть `self` в тексте | Локальные переменные → карты полей (`value`, …). Числа — `double`. |
-| `parent` | Упомянут | **Всегда пустой `{}`** — не использовать |
-| `context` | Упомянут | Входной map контекста вызова |
-| `input` | Упомянут | **Тот же map, что `context`** |
-| `payload` | Только `evaluateWithPayload` | Payload алерта/события — **нет** в обычном binding CEL |
+Все числовые поля телеметрии внутри объекта `self` приводятся к вещественному типу **`double`**.
 
----
+| Тип константы | Примеры | Рекомендация |
+|---------------|---------|--------------|
+| Логический (`bool`) | `true`, `false` | |
+| Пустое значение | `null` | |
+| Целое число (`int`) | `42`, `-1` | При арифметике с полями `double` всегда пишите точку: **`42.0`** |
+| Вещественное (`double`) | `3.14`, `2.0`, `0.0` | **Основной числовой формат** для расчётов |
+| Строка (`string`) | `"alarm"`, `'ok'` | |
+| Список и словарь | `[1.0, 2.0]`, `{"a": 1.0}` | |
 
-## 4. PlatformRef (адреса)
+**Операторы:**
+- Арифметические: `+`, `-`, `*`, `/`, `%`
+- Сравнения: `==`, `!=`, `<`, `<=`, `>`, `>=`
+- Логические: `&&` (И), `||` (ИЛИ), `!` (НЕ)
+- Условный оператор: `условие ? значение_если_да : значение_если_нет`
 
-| Вид | Форма | Пример |
-|-----|-------|--------|
-| Variable | `<object>/<name>[/<field>]` | `@/temperature` |
-| Function | `<object>/fn/<name>` | `@/fn/calculate` |
-| Event | `<object>/evt/<name>` | `@/evt/alarmRaised` |
-| Tag | `<object>/tag/<ruleId>` | `.../tag/avg-temp-5m` |
-
-`@` = объект, на котором выполняется правило. Подробнее: [bindings](bindings.md).
-
----
-
-## 5. Reactive platform bindings
-
-Выражение должно быть **целиком** одним вызовом. Stateful-состояние — в `@bindingState`.
-
-### Сигнал
-
-| Функция | Синтаксис | Описание | Пример |
-|---------|-----------|----------|--------|
-| `selectField` | `selectField(<source>[, field])` | Поле DataRecord | `selectField(temperature)` |
-| `scale` | `scale(<source>, inMin, inMax, outMin, outMax[, field])` | Линейный масштаб | `scale(level, 0, 100, 0, 1)` |
-| `clamp` | `clamp(<source>, min, max[, field])` | Ограничение диапазона | `clamp(pressure, 0, 100)` |
-| `format` | `format("<printf>", <source>[, field])` | Число → строка | `format("%.1f", temperature)` |
-| `unitConvert` | `unitConvert(<source>, from, to[, field])` | Температура `C`/`F`/`K` | `unitConvert(temperature, C, F)` |
-
-### Stateful
-
-| Функция | Синтаксис | Описание | Пример |
-|---------|-----------|----------|--------|
-| `delta` | `delta(<source>[, field])` | Разница с предыдущим | `delta(flowRate)` |
-| `rate` | `rate(<source>[, field])` | Скорость в секунду | `rate(counter)` |
-| `counterRate` | `counterRate(<source>[, wrapBits?][, field])` | Счётчик SNMP с wrap | `counterRate(ifInOctets)` |
-| `counterDelta` | `counterDelta(<source>[, wrapBits?][, field])` | Дельта счётчика | `counterDelta(ifInOctets)` |
-| `movingAvg` | `movingAvg(<source>, windowSec[, field])` | Скользящее среднее — **секунды** | `movingAvg(temperature, 60)` |
-| `movingMin` | `movingMin(<source>, windowSec[, field])` | Скользящий минимум | `movingMin(pressure, 30)` |
-| `movingMax` | `movingMax(<source>, windowSec[, field])` | Скользящий максимум | `movingMax(pressure, 30)` |
-| `deadband` | `deadband(<source>, band[, field])` | Подавление мелких изменений | `deadband(level, 1.0)` |
-| `hysteresis` | `hysteresis(<source>, on, off[, field])` | Гистерезис (bool) | `hysteresis(level, 80, 70)` |
-
-### Cross-object / действия
-
-| Функция | Синтаксис | Описание | Пример |
-|---------|-----------|----------|--------|
-| `read` | `read("<ref>")` | Живое чтение переменной (slash ref в кавычках) | `read("root.platform.devices.a/temperature")`, `read("root.../coordinates/latitude")` |
-| `write` | `write(<ref>, <value>)` | Запись поля | `write(@/setpoint, 42)` |
-| `call` | `call(<fnRef>[, <inputRef>])` | Вызов функции дерева | `call(@/fn/ack, @/payload)` |
-| `fire` | `fire(<evtRef>)` | Публикация события | `fire(@/evt/alarmRaised)` |
-| `queryScalar` | `queryScalar(<spec>, "<agg>"[, "<field>"])` | Object Query скаляр | `queryScalar(@/downIfSpec, "count")` |
-| `queryRows` | `queryRows(<spec>)` | Object Query строки (JSON) | `queryRows(@/downIfSpec)` |
-| `executeQuery` | `executeQuery(<spec>)` | Алиас `queryRows` | |
-| `countScan` | `countScan("<pattern>"[, "<filter>"])` | Число объектов по шаблону | `countScan("root.platform.devices.*")` |
-| `sumScan` | `sumScan("<pattern>", "<ref>"[, "<filter>"])` | Сумма поля по скану | |
-| `sumRecordField` | `sumRecordField(<tableVar>, "<field>")` | Сумма колонки таблицы | `sumRecordField(orders, "amount")` |
+**Доступные корневые объекты в CEL:**
+- `self` — переменные текущего объекта (`self.temperature.value`). Запись `self.temperature["value"]` также поддерживается.
+- `context` (или синоним `input`) — входные параметры вызова или контекст экрана `@dashboardContext`.
+- `payload` — поля поступившего события (доступно только при проверке события в тревоге или корреляторе).
+- `parent` — зарезервировано (всегда пустой `{}` — не используйте в формулах).
 
 ---
 
-## 6. Historian helpers
+## 4. Единый формат ссылок на сущности дерева (`PlatformRef`)
 
-В правилах `kind: historian`. Окна — **duration-токены**, не секунды.
+| Сущность | Формат ссылки | Пример |
+|----------|---------------|--------|
+| Переменная объекта | `<путь_объекта>/<переменная>[/<поле>]` | `@/temperature` или `root.platform.devices.pump-01/temperature/value` |
+| Функция объекта | `<путь_объекта>/fn/<имя_функции>` | `@/fn/calculate` |
+| Событие объекта | `<путь_объекта>/evt/<имя_события>` | `@/evt/alarmRaised` |
+| Аналитический тег | `<путь_объекта>/tag/<id_правила>` | `root.platform.devices.sensor-a/tag/avg-temp-5m` |
 
-### Standalone-оценщики
+Символ `@` означает «текущий объект, на котором выполняется правило».
 
-| Функция | Синтаксис | Описание | Пример |
-|---------|-----------|----------|--------|
-| `avg` | `avg(<ref>, <bucket?>)` | Среднее по окну | `avg(@/temperature, 5m)` |
-| `min` / `max` | `min|max(<ref>, <bucket?>)` | Экстремумы | `min(@/pressure, 30m)` |
-| `last` | `last(<ref>)` | Последний сэмпл (+ live fallback) | `last(@/temperature)` |
-| `rateOfChange` | `rateOfChange(<ref>, <bucket?>)` | Δ средних бакетов | `rateOfChange(@/level, 1h)` |
-| `totalizer` | `totalizer(<ref>, <bucket?>)` | Накопление | `totalizer(@/energy, 1h)` |
-| `oee` | `oee('<path>', '<A>', '<P>', '<Q>', '<bucket?>')` | OEE % | см. EN / cookbook |
+---
 
-Устаревшее имя **`rollingAvg`** → **`avg`**. Префикс `hist.` в runtime **не используется**.
+## 5. Встроенные реактивные функции обработки сигналов
 
-### CEL-композиции
+Каждая из перечисленных ниже функций записывается как **единственное выражение** реактивного правила (состояние скользящих окон и счётчиков хранится в служебной переменной `@bindingState`):
 
-Внутри CEL на historian-правиле: `avg` / `min` / `max` / `last` / `sum` / `live` раскрываются в числа, затем считается CEL.
+### Масштабирование и форматирование
+
+| Функция | Синтаксис | Назначение | Пример |
+|---------|-----------|------------|--------|
+| `selectField` | `selectField(<источник>[, поле])` | Извлечение одного поля из многопольной переменной | `selectField(temperature)` |
+| `scale` | `scale(<источник>, inMin, inMax, outMin, outMax[, поле])` | Линейное масштабирование диапазона | `scale(level, 0, 100, 0, 1)` |
+| `clamp` | `clamp(<источник>, min, max[, поле])` | Ограничение значения сверху и снизу | `clamp(pressure, 0, 100)` |
+| `format` | `format("<шаблон_printf>", <источник>[, поле])` | Форматирование числа в строку | `format("%.1f", temperature)` |
+| `unitConvert` | `unitConvert(<источник>, из, в[, поле])` | Перевод единиц температуры (`C`, `F`, `K`) | `unitConvert(temperature, C, F)` |
+
+### Скользящие окна в реальном времени, скорость и подавление дребезга
+
+| Функция | Синтаксис | Назначение | Пример |
+|---------|-----------|------------|--------|
+| `delta` | `delta(<источник>[, поле])` | Разница между текущим и предыдущим значением | `delta(flowRate)` |
+| `rate` | `rate(<источник>[, поле])` | Скорость изменения в секунду | `rate(counter)` |
+| `counterRate` | `counterRate(<источник>[, бит_переполнения][, поле])` | Скорость прироста сетевого/энергетического счётчика с учётом переполнения (32/64 бит) | `counterRate(ifInOctets)` |
+| `counterDelta` | `counterDelta(<источник>[, бит_переполнения][, поле])` | Прирост счётчика за один такт опроса | `counterDelta(ifInOctets)` |
+| `movingAvg` | `movingAvg(<источник>, окно_в_секундах[, поле])` | Оперативное скользящее среднее (окно задаётся **в секундах**) | `movingAvg(temperature, 60)` |
+| `movingMin` / `movingMax` | `movingMin(<источник>, окно_в_секундах[, поле])` | Скользящий минимум или максимум в памяти | `movingMin(pressure, 30)` |
+| `deadband` | `deadband(<источник>, порог[, поле])` | Игнорирование мелких колебаний меньше `порога` | `deadband(level, 1.0)` |
+| `hysteresis` | `hysteresis(<источник>, порог_вкл, порог_выкл[, поле])` | Двухпороговый переключатель (`true` / `false`) с защитой от дребезга | `hysteresis(level, 80, 70)` |
+
+### Чтение и запись между объектами, вызов функций и запросы по дереву
+
+| Функция | Синтаксис | Назначение | Пример |
+|---------|-----------|------------|--------|
+| `read` | `read("<ссылка>")` | Чтение значения переменной с другого объекта дерева | `read("root.platform.devices.a/temperature")` |
+| `write` | `write(<ссылка>, <значение>)` | Запись значения в переменную | `write(@/setpoint, 42)` |
+| `call` | `call(<ссылка_на_функцию>[, <вход>])` | Вызов функции объекта | `call(@/fn/ack, @/payload)` |
+| `fire` | `fire(<ссылка_на_событие>)` | Публикация события на объекте | `fire(@/evt/alarmRaised)` |
+| `queryScalar` | `queryScalar(<спецификация>, "<агрегат>"[, "<поле>"])` | Вычисление скалярного агрегата по выборке объектов дерева | `queryScalar(@/downIfSpec, "count")` |
+| `queryRows` | `queryRows(<спецификация>)` | Табличная выборка объектов дерева | `queryRows(@/downIfSpec)` |
+| `countScan` / `sumScan` | `countScan("<маска_пути>"[, "<фильтр>"])` | Подсчёт числа объектов или суммы поля по маске пути | `countScan("root.platform.devices.*")` |
+| `sumRecordField` | `sumRecordField(<табличная_переменная>, "<поле>")` | Сумма числовой колонки внутри табличной переменной | `sumRecordField(orders, "amount")` |
+
+---
+
+## 6. Функции расчёта по архиву истории (`kind: historian`)
+
+В правилах с типом `kind: "historian"` размер окна задаётся **символьным обозначением интервала**: `1m`, `5m`, `15m`, `30m`, `1h`, `6h`, `8h`, `1d`.
+
+| Функция | Синтаксис | Назначение | Пример |
+|---------|-----------|------------|--------|
+| `avg` | `avg(<ссылка>, <окно>)` | Среднее по архиву за окно | `avg(@/temperature, 5m)` |
+| `min` / `max` | `min(<ссылка>, <окно>)` / `max(...)` | Минимум и максимум за окно | `min(@/pressure, 30m)` |
+| `last` | `last(<ссылка>)` | Последняя записанная точка из архива | `last(@/temperature)` |
+| `rateOfChange` | `rateOfChange(<ссылка>, <окно>)` | Изменение среднего уровня за окно | `rateOfChange(@/level, 1h)` |
+| `totalizer` | `totalizer(<ссылка>, <окно>)` | Интегральный накопитель за окно | `totalizer(@/energy, 1h)` |
+| `oee` | `oee('<путь>', '<A>', '<P>', '<Q>', '<окно>')` | Производственный показатель OEE (%) | `oee('root.../line-01', 'avail', 'perf', 'qual', '8h')` |
+
+Внутри исторического правила функции `avg`, `min`, `max`, `last`, `sum` и `live` можно свободно соединять арифметикой CEL:
 
 ```cel
 (avg(root.platform.devices.a/temperature, 5m) + avg(root.platform.devices.b/temperature, 5m)) / 2.0
 ```
 
-`sum` — **только** в CEL-композиции. `live` лучше внутри CEL (не как единственный helper).
-
-### Бакеты длительности
-
-Допустимые: **`1m`**, **`5m`**, **`15m`**, **`30m`**, **`1h`**, **`6h`**, **`8h`**, **`1d`** (≥1m и ≤7d).
-
-| Контекст | Единица окна |
-|----------|--------------|
-| `movingAvg(x, 60)` | **Секунды** |
-| `avg(x, 5m)` | **Duration bucket** |
-
 ---
 
-## 7. Где пишут выражения
+## 7. Памятка: как избежать частых ошибок в формулах
 
-| Место | Пример | Режим |
-|-------|--------|-------|
-| Binding `expression` | `movingAvg(@/temperature, 60)` | Platform или CEL |
-| Binding `condition` | `self.temperature.value > 80.0` | CEL |
-| Alert condition | `self.temperature.value > self.threshold.value` | CEL |
-| Workflow gateway | CEL | CEL |
-| Historian rule | `avg(@/temperature, 5m)` | Historian / CEL |
-
----
-
-## 8. Примеры
-
-**Алерт по порогу**
-
-```cel
-self.temperature.value > self.threshold.value
-```
-
-**Масштаб 0–100 → 0–1**
-
-```text
-scale(level, 0, 100, 0, 1)
-```
-
-**Гистерезис**
-
-```text
-hysteresis(temperature, 80, 70)
-```
-
-**Зеркало удалённого значения**
-
-```text
-read("root.platform.devices.cluster.dev-03/sineWave")
-```
-
-**Historian среднее**
-
-```text
-avg(root.platform.devices.sensor-a/temperature, 5m)
-```
-
-**Вызов функции**
-
-```text
-call(@/fn/dispatch, @/lastIngress)
-```
-
----
-
-## 9. Частые ошибки
-
-1. Platform binding = **целое** выражение; `counterRate(...) + 1.0` так не работает.
-2. `read(...)` — не CEL-функция; для локального CEL используйте `self.var.field`.
-3. Пишите **`2.0`**, не `2`, рядом с live/historian.
-4. `parent` пустой — не опирайтесь на него.
-5. `movingAvg(..., 60)` ≠ `avg(..., 5m)` (секунды vs бакет).
-6. `sum` / часто `live` — в CEL-композиции; для «последнего» удобен `last`.
-7. Без префикса `hist.` — `avg(...)`.
-8. Проверяйте **Validate** в UI или `POST /api/v1/expressions/validate`.
-
----
-
-## 10. Каталог в продукте
-
-| Место | Что даёт |
-|-------|----------|
-| Computations → редактор выражений | Сниппеты + function catalog |
-| `GET /api/v1/platform/analytics/catalog` | Метаданные Tier A/B/C |
-| System → Analytics formulas | Пользовательские формулы Tier B |
-
-Если каталог API и эта страница расходятся — для установленных packs доверяйте **API**; правьте справочник в том же PR, что и registry.
+1. **Не смешивайте реактивную встроенную функцию с плюсом в одной строке:** если нужно посчитать `counterRate(ifInOctets)` и затем умножить его на коэффициент, положите `counterRate(ifInOctets)` в промежуточную переменную, а во втором правиле умножьте её через обычный CEL.
+2. **Всегда пишите `.0` у констант в CEL** (`self.temperature.value > 80.0`), чтобы типы `double` и `int` не конфликтовали при строгой проверке.
+3. **Не путайте единицы времени:** в реактивной функции `movingAvg(x, 60)` второй аргумент — **секунды** (`60`), а в исторической `avg(x, 5m)` — **интервал архива** (`5m`).
+4. **Проверяйте формулу перед сохранением** кнопкой **«Проверить»** в редакторе выражений или вызовом `POST /api/v1/expressions/validate`.

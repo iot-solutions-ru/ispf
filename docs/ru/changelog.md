@@ -1,4 +1,4 @@
-> **Language:** Russian summary. Canonical changelog: [../../CHANGELOG.md](../../CHANGELOG.md) (Keep a Changelog, English).
+> **Язык:** русская версия. Английский оригинал: [../../CHANGELOG.md](../../CHANGELOG.md).
 
 # Журнал изменений (ISPF)
 

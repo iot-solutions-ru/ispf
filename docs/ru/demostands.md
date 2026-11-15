@@ -1,261 +1,126 @@
 > **Язык:** русская версия. Английский оригинал: [en/demostands.md](../en/demostands.md).
 
-# Профили развёртывания ISPF
+# Профили развёртывания и подбор ресурсов сервера
 
-> **Статус:** Lab — промышленная площадка, нагрузочный стенд, демо и edge. Метки зрелости: [doc-status.md](doc-status.md).
+> **Статус:** Lab — выбор конфигурации под промышленную площадку, нагрузочный стенд, демонстрационный сервер и периферийный шлюз (Edge). Метки зрелости: [doc-status.md](doc-status.md).
 
-Как выбрать конфигурацию под задачу: **промышленная эксплуатация**, **высокая пропускная способность**, **демо / HMI** или **edge со слабым CPU**.
+Это руководство помогает выбрать подходящий профиль работы `ispf-server` в зависимости от задачи и доступных ресурсов оборудования. Готовые файлы окружения и скрипты находятся в каталоге [`deploy/`](../../deploy/).
 
-Не привязано к конкретному хосту. Примеры скриптов и env — в [`deploy/`](../../deploy/).
-
-**Связанные разделы:** [Показ заказчику](customer-demo-playbook.md) · [Развёртывание](deployment.md) · [Безопасность](security.md) · [Кластер](cluster.md) · [Нагрузочное тестирование](load-testing.md) · [Наблюдаемость](observability.md) · [Приложения оператора](operator-apps.md) · [ADR-0026](decisions/0026-elastic-telemetry-ingress.md) · [ADR-0033](decisions/0033-prod-idle-demostand-tuning.md).
-
-## Как выбрать профиль
-
-| Профиль | Типичная цель | Устройства / сообщ./с | CPU / RAM | Топология |
-|---------|---------------|------------------------|-----------|-----------|
-| **Производство** | Эксплуатация на объекте, SLA, операторы 24/7 | десятки–сотни устройств, умеренный–высокий поток | 4+ vCPU на JVM; кластер при HA | 1–N реплик, elastic по нагрузке, PG + Timescale/ClickHouse |
-| **Пропускная способность** | Нагрузочный тест, бенчмарк, оценка ёмкости | сотни–тысячи сообщ./с | 4+ vCPU, 8+ ГБ на JVM | 1–N реплик, elastic **вкл.**, ClickHouse/Scylla |
-| **Демо / idle** | Публичный демостенд, учебный стенд | единицы–десятки устройств, редкий опрос | 2–4 vCPU, **одна** JVM | один узел, elastic **выкл.** |
-| **Edge** | Шлюз у оборудования, слабый CPU | 1–5 устройств | 1–2 ядра, 512 МБ–2 ГБ | один узел; драйверы локально или API к hub |
-
-```text
-  Эксплуатация, SLA ──► Production     cluster?, elastic ON, PG+TS/CH, RBAC
-  Benchmark         ──► Throughput      elastic ON, peak tuning
-  Мало устройств    ──► Demo / idle     elastic OFF, prod-idle.env
-  Мало CPU          ──► Edge            minimal pools, coalesce↑
-```
-
-**Главное правило:** значения по умолчанию ([0026-elastic-telemetry-ingress](decisions/0026-elastic-telemetry-ingress.md)) — для **производительности** и нагрузочного теста. Профиль **demo-idle** (`prod-idle.env`) — **не** заменяет prod при реальной нагрузке. Для продукта с малым фоном на одной JVM можно сознательно вырезать пулы, но не копировать оверлей без анализа очередей.
-
-**Предпочтительны именованные профили.** Выберите строку выше и примените её оверлей (`ISPF_DEPLOY_PROFILE` = `production` | `demo-idle` | `edge` | `throughput`). Отдельные `ISPF_*_WORKERS` / `ISPF_*_THREADS` — **устаревший аварийный рычаг** для разбора бага профиля ([0033](decisions/0033-prod-idle-demostand-tuning.md)). После recreate оператор читает `GET /api/v1/platform/effective-config`: `profile` и `resolvedPools` (снимок min/max, не дамп окружения).
+**Связанные разделы:** [Показ платформы заказчику](customer-demo-playbook.md) · [Развёртывание и конфигурация](deployment.md) · [Безопасность](security.md) · [Кластер ISPF](cluster.md) · [Нагрузочное тестирование](load-testing.md) · [Мониторинг и диагностика](observability.md).
 
 ---
 
-## Профиль: Производство (промышленная эксплуатация)
+## 1. Как выбрать профиль
 
-**Когда:** рабочий объект, MES/SCADA, постоянные операторы, требования к доступности и аудиту.
-
-Отличие от **demo-idle:** производится **реальная** автоматизация (`FULL` на нужных устройствах), сохранение, резервное копирование, мониторинг и (при необходимости) высокая доступность. Отличие от **теста пропускной способности**: продукт балансирует задержку, стоимость и устойчивость, а не максимальное количество событий/с.
-
-### Подварианты по масштабу
-
-| Подвариант | Устройства | Топология | Журнал / историк |
-|------------|------------|-----------|---------------------|
-| **Prod S** — один объект, один узел | &lt; ~50 активных драйверов, умеренный опрос | `ISPF_CLUSTER_ENABLED=false`, `replicaRole=all` | `jdbc` + Timescale (образ PostgreSQL по умолчанию) |
-| **Prod M** — HA, горизонтальный API | 50–500+, операторы, аварийное переключение REST/WS | 2–4 реплики, nginx, NATS + Redis ([cluster](cluster.md)) | Timescale или журнал ClickHouse при росте событий |
-| **Prod L** — телеметрия с высоким потоком | устойчивые сотни–тысячи сообщ./с | Кластер + выделенные `io` / `compute` реплики ([0032-replica-profiles-and-capabilities](decisions/0032-replica-profiles-and-capabilities.md)) | ClickHouse / Scylla ([0016-clickhouse-event-journal](decisions/0016-clickhouse-event-journal.md), [0025-cassandra-scylla-timeseries-store](decisions/0025-cassandra-scylla-timeseries-store.md)) |
-
-Правило размера: **не более 1 JVM на 2 vCPU** при постоянной нагрузке драйверов и автоматизации. Четыре реплики на четырёх vCPU — только если большую часть времени узлы простаивают.
-
-### Топология и роли
-
-**Один сайт (Prod S):**
+| Профиль (`ISPF_DEPLOY_PROFILE`) | Назначение | Масштаб нагрузки | Рекомендуемые ресурсы | Топология |
+|---------------------------------|------------|------------------|-----------------------|-----------|
+| **`production`** | Боевая эксплуатация на предприятии, работа смен 24/7 | Десятки и сотни устройств, умеренный и высокий поток телеметрии | От 4 vCPU на каждую JVM; при требовании отказоустойчивости — кластер | 1..N реплик, эластичные пулы потоков включены, PostgreSQL + TimescaleDB (или ClickHouse) |
+| **`throughput`** | Нагрузочные испытания, стресс-тесты, проверка пиковой пропускной способности | Сотни и тысячи сообщений в секунду | От 4 vCPU и 8+ ГБ ОЗУ на JVM | 1..N реплик, эластичные пулы включены, ClickHouse или ScyllaDB |
+| **`demo-idle`** | Публичный демостенд, учебный сервер с минимальным потреблением CPU в простое | Единицы и десятки устройств, редкий опрос | 2–4 vCPU, одна JVM | Одиночный узел, эластичные пулы отключены (`prod-idle.env`) |
+| **`edge`** | Цеховой шлюз или одноплатный компьютер со слабым процессором | 1–5 локальных устройств | 1–2 ядра CPU, от 512 МБ до 2 ГБ ОЗУ | Одиночный узел с минимальными пулами потоков и укрупнением пакетов телеметрии |
 
 ```text
-Operators → nginx (TLS) → ISPF unified (:8081)
-              PostgreSQL (Timescale), Redis (опционально)
+  Промышленная эксплуатация ──► production   (эластичные пулы ВКЛ, PostgreSQL + Timescale/ClickHouse, RBAC)
+  Нагрузочный стенд         ──► throughput   (эластичные пулы ВКЛ, пиковые очереди)
+  Демостенд / учебный хост  ──► demo-idle    (эластичные пулы ВЫКЛ, фиксированные малые пулы)
+  Слабый промышленный шлюз  ──► edge         (по 1 потоку на пул, интервал слияния телеметрии 2–5 с)
 ```
 
-Compose-пример: [`deploy/docker-compose.prod-stack.yml`](../../deploy/docker-compose.prod-stack.yml). Удаленная установка: [`deploy/remote-setup-ispf.sh`](../../deploy/remote-setup-ispf.sh).
+> **Главное правило:** базовые настройки `application.yml` ([ADR-0026](decisions/0026-elastic-telemetry-ingress.md)) рассчитаны на **промышленную нагрузку (`production`)**. Экономный профиль **`demo-idle`** (`deploy/ispf-server.prod-idle.env`) создан специально для демонстрационных VPS, чтобы сервер почти не расходовал CPU в простое — **не используйте `prod-idle.env` на реальном заводе с сотнями активных датчиков**.
 
-**Кластер высокой доступности (Prod M/L):**
+Выбранный профиль задаётся переменной `ISPF_DEPLOY_PROFILE` (`production`, `demo-idle`, `edge` или `throughput`). Проверить фактически применённый профиль и размеры пулов потоков на работающем сервере можно запросом `GET /api/v1/platform/effective-config` (поля `profile` и `resolvedPools`).
 
-```text
-Operators → nginx (ip_hash / health) → replica-1..N
-              PostgreSQL, Redis, NATS (JetStream)
-              опционально: ClickHouse, Scylla
-```
+---
 
-См. [cluster](cluster.md), [`deploy/docker-compose.vps-cluster.yml`](../../deploy/docker-compose.vps-cluster.yml), развертывание [`vps-cluster-rollout.sh`](../../deploy/vps-cluster-rollout.sh).
+## 2. Профиль `production` (промышленная эксплуатация)
 
-| `ISPF_REPLICA_PROFILE` | Когда |
-|--------|-------|
-| `unified` / `all` | Универсальный узел (малый prod) |
-| `io` | Выделенные driver I/O при кластере |
-| `compute` | Async reports / platform jobs |
-| `edge-api` | Удалённая площадка без локальных драйверов ([federation](federation.md)) |
+**Когда использовать:** действующее производство, системы SCADA и MES, постоянная работа диспетчеров, требования к сохранности архивов, аудиту и отказоустойчивости.
 
-### Эластичные пулы и конвейер
+### Варианты масштаба
 
-На production **elastic по умолчанию включён**, если есть:
+| Масштаб | Количество устройств | Топология серверов | Хранение истории и журнала событий |
+|---------|----------------------|--------------------|------------------------------------|
+| **Малый (Prod S)** — одна площадка, один сервер | До ~50 активных драйверов, умеренная частота опроса | Одиночный сервер (`ISPF_CLUSTER_ENABLED=false`, `replicaRole=all`) | Единая БД PostgreSQL с расширением TimescaleDB (`jdbc`) |
+| **Средний (Prod M)** — высокая доступность | От 50 до 500+ устройств, резервирование интерфейса операторов | 2–4 реплики за nginx, шина NATS + Redis ([Кластер ISPF](cluster.md)) | PostgreSQL / TimescaleDB или вынос журнала событий в ClickHouse |
+| **Крупный (Prod L)** — интенсивный поток телеметрии | Устойчивый поток сотен и тысяч сообщений в секунду | Кластер с выделением ролей `edge-api`, `io`, `compute`, `analytics` ([ADR-0032](decisions/0032-replica-profiles-and-capabilities.md)) | ClickHouse или ScyllaDB ([Уровни хранения истории](historian-tiers.md)) |
 
-- MQTT/push ingress с Burst;
-- много binding/alert rules на `FULL` устройствах;
-- рост `objectChangeQueueSize` / `eventJournalQueueSize` в пике.
+**Правило расчёта ядер CPU:** при постоянной работе драйверов и правил автоматизации выделяйте **не менее 2 ядер vCPU на каждую JVM-реплику**. Размещать 4 реплики на 4 ядрах допустимо только на тестовом стенде, где большую часть времени нет нагрузки.
 
-ввести настройки по умолчанию `application.yml`; при устойчивом отставании — увеличьте максимальное количество рабочих и емкость очереди ([`deploy/vps-event-journal-peak-tuning.sh`](../../deploy/vps-event-journal-peak-tuning.sh) как образец для журнала).
+### Роли реплик в кластере (`ISPF_REPLICA_PROFILE`)
 
-**Не применяйте** [`ispf-server.prod-idle.env`](../../deploy/ispf-server.prod-idle.env) на prod с визуализацией автоматизации — это профиль **demo-idle**, нерабочий prod.
+| Профиль реплики | Назначение |
+|-----------------|------------|
+| `unified` (`all`) | Универсальный одиночный сервер (выполняет и опрос драйверов, и запросы UI, и фоновые расчёты) |
+| `edge-api` | Обслуживание HTTP API и WebSocket для веб-консоли (ставится за балансировщиком nginx) |
+| `hmi-read` | Выделенные узлы только на чтение для экранов дежурных операторов (`/hmi/api/`, `/hmi/ws/`) |
+| `io` | Выделенные узлы опроса оборудования (держат соединения с ПЛК и блокировки драйверов) |
+| `compute` | Выполнение фоновых заданий и тяжёлых отчётов (`platform_jobs`) |
+| `analytics` | Материализация агрегатов истории и пересчёт исторических витрин |
 
-Точечное урезание (если один узел и стабильно низкая очередь): зафиксируйте рабочие через env, но проверьте метрики после каждого изменения.
+### Настройка режимов публикации телеметрии (`telemetryPublishMode`)
 
-### Драйверы и режим публикации
+Чтобы не перегружать процессор лишними проверками правил на чисто информационных точках, выбирайте подходящий режим на каждом устройстве:
 
-| Сценарий | Режим | Заметки |
-|----------|-------|---------|
-| PLC/Modbus/SNMP, много точек, historian | `TELEMETRY_ONLY` | Coalesce по SLA (1–5s) |
-| Алерты, привязки, рабочие процессы на устройстве | `FULL` | Только там, где нужна автоматизация |
-| Высокий поток событий без CEL | `EVENT_JOURNAL_ONLY` | [0027-event-journal-ingress-fast-path](decisions/0027-event-journal-ingress-fast-path.md) |
-| Устройство в дереве, но не требуется | `STOPPED` | Не держать БЕГ «на всякий случай» |
+| Сценарий использования устройства | Рекомендуемый режим | Пояснение |
+|-----------------------------------|---------------------|-----------|
+| Опрос десятков и сотен регистров ПЛК/Modbus/SNMP для графиков и экрана | `TELEMETRY_ONLY` | Обновляет значения в памяти и пишет в архив истории без запуска цепочек правил и корреляторов; интервал слияния (`telemetryCoalesceMs`) 1–5 с |
+| Устройство, по сигналам которого срабатывают правила расчёта, тревоги (`ALERT`) или процессы BPMN | `FULL` | Полный проход через конвейер автоматизации |
+| Поток сырых событий в архив без проверки формул CEL | `EVENT_JOURNAL_ONLY` | Прямая пакетная запись в журнал событий ([ADR-0027](decisions/0027-event-journal-ingress-fast-path.md)) |
+| Резервное или неиспользуемое устройство в дереве | `STOPPED` | Не оставляйте ненужные драйверы запущенными (`RUNNING`) |
 
-Драйверы: зрелость зависит от `driverId` — см. honesty-заметку в [drivers](drivers.md) (registry **PRODUCTION** ≠ ready-for-field для всех ID) и [0022-driver-production-matrix](decisions/0022-driver-production-matrix.md).
+### Обязательные настройки безопасности для боевого сервера
 
-### Безопасность и соответствие
+| Параметр | Значение на боевом сервере |
+|----------|----------------------------|
+| `ISPF_BOOTSTRAP_FIXTURES_ENABLED` | **`false`** (не создавать демонстрационные устройства и шаблоны) |
+| Аутентификация | Вход по токенам или через корпоративный Keycloak (OIDC); смена всех паролей по умолчанию до подключения к сети ([Безопасность](security.md)) |
+| Шифрование трафика (TLS) | Завершение HTTPS/WSS на уровне nginx или внешнего балансировщика |
+| Диагностика `/actuator/*` | Закрыта от внешнего мира на уровне nginx; метрики `/actuator/prometheus` доступны только роли `admin` |
+| Подтверждение изменений от ИИ-агента | `ispf.ai.agent-require-approval-for-mutate=true` |
+| Хранение секретов | Файл `/opt/ispf/ispf-server.env` с правами `chmod 600` и заданным ключом `ISPF_SECURITY_SECRETS_KEY` |
 
-| Параметр | Производство |
-|----------|------------|
-| `ISPF_BOOTSTRAP_FIXTURES_ENABLED` | **false** |
-| Аутентификация | OIDC/RBAC ([security](security.md)), не дефолтный `admin/admin` в сети |
-| ТЛС | nginx/ingress завершает HTTPS |
-| Actuator | `/actuator/*` не публично; Prometheus — admin role |
-| AI mutate tools | `ispf.ai.agent-require-approval-for-mutate=true` на prod |
-| Секреты | `/opt/ispf/ispf-server.env` chmod 600, не в git |
-| Пакеты драйверов | `permissive` развертывание профиля ([license-compliance](license-compliance.md)) |
-
-### Стойкость и удержание
-
-| Данные | Прод С/М | Прод Л |
-|--------|----------|--------|
-| Конфигурация, ACL, объекты | PostgreSQL | PostgreSQL |
-| Variable history | Timescale `variable_samples` (jdbc) | ClickHouse / Scylla опционально |
-| Журнал событий | Timescale `event_history` (jdbc) | ClickHouse (см. [развёртывание](deployment.md)) |
-| Удержание | `ISPF_*_RETENTION_DAYS`, Политика временных рамок ([0009-timescaledb-retention](decisions/0009-timescaledb-retention.md)) | + архив CH |
-
-Пролетный путь: прибытие при старте; перед обновлением — резервное копирование БД. Ремонт: [`deploy/vps-flyway-repair.sh`](../../deploy/vps-flyway-repair.sh).
-
-### Наблюдаемость и эксплуатация
-
-- **Метрики:** `/actuator/prometheus` или OTLP ([observability](observability.md)).
-- **Диагностика:** Администратор → Система → Метрики; при инциденте — `GET /api/v1/platform/metrics`, кластерная диагностика.
-- **Проверка метрик:** только во время событий (переключение времени выполнения), а не при загрузке продукта.
-- **Backup:** регулярный `pg_dump`; проверка restore.
-- **Развертывание:** промежуточный jar + пользовательский интерфейс, последовательный перезапуск реплики ([`vps-deploy-direct.ps1`](../../deploy/vps-deploy-direct.ps1)); в Docker — **пересоздать** при смене env.
-- **Не делать** сброс настроек при рассинхронизации конфига — [0030-cluster-config-structure-replica-sync](decisions/0030-cluster-config-structure-replica-sync.md), `vps-cluster-verify.sh --config-sync`.
-
-### Env-ориентиры (прод, не простаивает)
+### Пример файла окружения для промышленного сервера (`production`)
 
 ```properties
-# Идентичность
 ISPF_ENVIRONMENT=prod
+ISPF_DEPLOY_PROFILE=production
 ISPF_BOOTSTRAP_FIXTURES_ENABLED=false
 ISPF_PLATFORM_METRICS_PROBE_ENABLED=false
 
-# Кластер (Prod M/L)
+# Для многоузлового кластера (Prod M / Prod L):
 ISPF_CLUSTER_ENABLED=true
 ISPF_NATS_ENABLED=true
 ISPF_REDIS_ENABLED=true
 
-# Elastic — defaults (не задавать false без обоснования)
-# ISPF_OBJECT_CHANGE_ELASTIC_WORKERS=true  # default
+# Память JVM (подбирается по объёму ОЗУ хоста):
+JAVA_OPTS=-Xms512m -Xmx2048m -XX:+UseG1GC
 
-# JVM (подбор по heap % и GC)
-JAVA_OPTS=-Xms512m -Xmx1024m -XX:+UseG1GC
-
-# Historian/journal — по масштабу (Prod S)
+# Хранилище истории и событий (для Prod S/M — jdbc, для Prod L — clickhouse):
 ISPF_VARIABLE_HISTORY_STORE=jdbc
 ISPF_EVENT_JOURNAL_STORE=jdbc
 ```
 
-Prod L: добавьте `ISPF_EVENT_JOURNAL_STORE=clickhouse`, `ISPF_VARIABLE_HISTORY_STORE=clickhouse` и URL/учетные данные — см. [DEPLOYMENT.md § ClickHouse](deployment.md).
-
-### Проверка здоровья prod
-
-1. `GET /api/v1/info` — ожидаемая версия, `environment=prod`.
-2. Состояние кластера (если включен): все реплики UP, блокировки драйверов консистентны.
-3. Очереди конвейера ≈ 0 в установившемся режиме; допустимы краткие пики.
-4. Нет повторяющихся ОШИБОК/транзакция только для чтения в логах.
-5. Журнал/историк пишется (проверка UI или SQL).
-6. TLS, логин, RBAC работают с операторскими местами.
-
-### Типичные ошибки на продукте
-
-| Ошибка | Последствие |
-|--------|-------------|
-| `prod-idle.env` на объекте с сотнями устройств | Отставание, задержка, потеря событий при пике |
-| 4 реплики на 4 vCPU без запаса | Постоянная высокая нагрузка, давление на GC |
-| Все драйверы `FULL` | Лишний CPU, лавина object-change |
-| `docker restart` после смены env | Старая конфигурация в контейнере |
-| Сброс к заводским настройкам при рассинхронизации | Потеря данных вместо развертывания fix |
+> **Важно при работе с Docker:** команда `docker restart` **не перечитывает** изменённый файл `.env`. После изменения переменных окружения обязательно пересоздавайте контейнер (`docker compose up -d --force-recreate`).
 
 ---
 
-## Общие принципы (все профили)
+## 3. Профиль `throughput` (нагрузочное тестирование)
 
-### Режим публикации драйвера (`telemetryPublishMode`)
+**Когда использовать:** стендовые испытания максимальной пропускной способности, генерация интенсивного потока MQTT-сообщений, определение пределов оборудования перед проектом.
 
-| Режим | Трубопровод | процессор |
-|-------|----------|-----|
-| `TELEMETRY_ONLY` | RAM + historian (при включённом history) | Низкий |
-| `EVENT_JOURNAL_ONLY` | Журнал асинхронных событий ([0027-event-journal-ingress-fast-path](decisions/0027-event-journal-ingress-fast-path.md)) | Низкий–средний |
-| `FULL` | Object-change → bindings → alerts → workflows | Высокий |
-
-Опросные драйверы с многими точками — **`TELEMETRY_ONLY`** + слияние. **`FULL`** — только там, где нужна автоматизация.
-
-### Объединение
-
-- **Per-device:** `telemetryCoalesceMs` в configure driver API.
-- **Platform:** `ISPF_RUNTIME_TELEMETRY_COALESCE_MS`, ingress queue coalesce (L3).
-
-### Горячие пути только для чтения
-
-Методы с `@Transactional(readOnly = true)` на частных тиках **не следует** включать INSERT/UPDATE. См. [0033-prod-idle-demostand-tuning](decisions/0033-prod-idle-demostand-tuning.md).
-
-### Перезапуск и env (Docker)
-
-`docker restart` **не** перечитывает `env_file`. После смены env — **recreate** контейнера.
-
-### Остановка драйверов
-
-В демо-версии не лечите CPU массовым STOP. На проде — РАБОТАЮТ только у реально опрашиваемых устройств.
+- Эластичные пулы потоков (`ISPF_*_ELASTIC`) включены и масштабируются от 4 до 32 рабочих потоков по мере роста очередей.
+- Для записи сотен тысяч точек в минуту подключается ClickHouse или ScyllaDB.
+- Скрипт пиковой настройки очередей журнала: [`deploy/vps-event-journal-peak-tuning.sh`](../../deploy/vps-event-journal-peak-tuning.sh). Подробная методика замеров: **[Нагрузочное тестирование](load-testing.md)**.
 
 ---
 
-## Профиль: Пропускная способность (высокая нагрузка/тест)
+## 4. Профиль `demo-idle` (демостенд с минимальной нагрузкой в простое)
 
-**Когда:** нагрузочные тесты, MQTT-флуд, планирование мощности. Близок к **Prod L**, но цель — предел, а не SLA.
+**Когда использовать:** круглосуточный демонстрационный сервер или учебный стенд с несколькими устройствами, где важно не тратить ресурсы процессора в фоновом режиме.
 
-### Топология
-
--Одна мощная JVM **или** [кластер](cluster.md) — при достаточном процессоре на каждую JVM.
-- Журнал: ClickHouse или Scylla. Историк: CH/Cassandra при высокой частоте дискретизации.
-
-### Эластичные пулы — **включены** (по умолчанию)
-
-| Уровень | Компонент | Типичный диапазон |
-|---------|-----------|-------------------|
-| Л0–Л1 | Входной буфер драйвера, обратный вызов MQTT | 4→32 |
-| L3 | `TelemetryIngressDispatcher` | 4→32 |
-| Л5 | Журнал событий / авторы переменной истории | 4→32 |
-
-Пиковая настройка: [`deploy/vps-event-journal-peak-tuning.sh`](../../deploy/vps-event-journal-peak-tuning.sh). См. [load-testing](load-testing.md).
-
----
-
-## Профиль: Демо/холостой ход (малая нагрузка)
-
-**Когда:** общедоступный демостенд, учебная лаборатория, постоянно включенный HMI с несколькими подъемными устройствами, низкий фоновый процессор.
-
-### Топология
-
-- **Одна unified JVM:** `ISPF_CLUSTER_ENABLED=false`, `ISPF_REPLICA_ROLE=all`.
-- PostgreSQL (+ Redis при ACL/корреляторе) — достаточно; Scylla/ClickHouse **не обязателен**.
-- `ISPF_BOOTSTRAP_FIXTURES_ENABLED=false` на внешнем prod (fixtures — для lab).
-
-### Эластичные пулы — **выключены**, фиксированный размер
-
-При `ISPF_*_ELASTIC=false` Spring берёт **фиксированные** `*_WORKERS` / `*_THREADS`, а не min/max:
-
-| Подсистема | Пример окружения |
-|------------|------------|
-| Object-change telemetry / automation | `ISPF_OBJECT_CHANGE_TELEMETRY_WORKERS=2`, `ISPF_OBJECT_CHANGE_AUTOMATION_WORKERS=2` |
-| Binding async | `ISPF_BINDING_ASYNC_THREADS=2` |
-| L3 ingress | `ISPF_RUNTIME_TELEMETRY_INGRESS_ELASTIC_WORKERS=false`, min/max 1–2 |
-| Driver I/O / ingress buffer | `ISPF_DRIVER_IO_THREADS=2`, `ISPF_DRIVER_INGRESS_BUFFER_THREADS=1` |
-
-Готовый оверлей: [`deploy/ispf-server.prod-idle.env`](../../deploy/ispf-server.prod-idle.env). Применение (объединить + **пересоздать** контейнер): [`deploy/vps-apply-prod-idle-env.sh`](../../deploy/vps-apply-prod-idle-env.sh).
-
-Дополнительно для простоя:
+- Одна универсальная JVM (`ISPF_CLUSTER_ENABLED=false`, `ISPF_REPLICA_ROLE=all`).
+- Все эластичные пулы отключены (`ISPF_*_ELASTIC=false`), задано по 1–2 фиксированных потока на подсистему.
+- Готовый файл настроек: [`deploy/ispf-server.prod-idle.env`](../../deploy/ispf-server.prod-idle.env) (применяется скриптом [`deploy/vps-apply-prod-idle-env.sh`](../../deploy/vps-apply-prod-idle-env.sh)).
 
 ```properties
 ISPF_VARIABLE_HISTORY_STORE=jdbc
@@ -268,68 +133,17 @@ ISPF_RUNTIME_TELEMETRY_COALESCE_MS=1000
 SERVER_TOMCAT_THREADS_MAX=50
 ```
 
-### Драйверы
-
-| Тип | Рекомендация |
-|-----|--------------|
-| SNMP / Modbus с многими точками | `TELEMETRY_ONLY`, poll ≥ 5s, `telemetryCoalesceMs` = poll |
-| 1–2 устройства для алертов/workflow | `FULL`, умеренный poll (2–5s) |
-| Остальные объекты в дереве | `STOPPED`, не RUNNING |
-
-Пример настройки API-скрипта: [`deploy/vps-demostand-tune-drivers.sh`](../../deploy/vps-demostand-tune-drivers.sh) (шаблон — подставьте свои `devicePath`).
-
-### Диагностика
-
-- Пользовательский интерфейс: Администратор → Система → Метрики → **Диагностика нагрузки**.
-- CLI: [`deploy/vps-idle-thread-sample.py`](../../deploy/vps-idle-thread-sample.py).
-
-**Здоровый простой:** очередь изменения объекта/журнала/историка = 0; `pressureScore` &lt; 25; потоки `binding-async` и `telemetry-ingress` — результат, не десятки.
-
-### Типичные ошибки
-
-| Симптом | Причина |
-|---------|---------|
-| Высокий CPU при 2 устройствах | Defaults throughput + SNMP `FULL` |
-| Env не применился | `docker restart` вместо recreate |
-| 4 JVM на небольшом VPS | Кластер без запаса процессора |
-
 ---
 
-## Профиль: Edge (ограниченный процессор)
+## 5. Профиль `edge` (промышленный шлюз с ограниченными ресурсами)
 
-**Когда:** промышленный шлюз (ARM, 1–2 ядра, 512 МБ–1 ГБ ОЗУ), локальный сбор с несколькими устройствами **или** тонкий API-узел к центральному хабу.
+**Когда использовать:** компактный промышленный компьютер или ARM-шлюз (1–2 ядра CPU, 512 МБ – 1 ГБ ОЗУ) рядом с контроллерами в цеху.
 
-Два подварианта:
-
-### A. Edge шлюз — локальные драйверы
-
-ISPF на устройстве опрашивает ПЛК/датчики и отдаёт HMI локально либо синхронизируется с центральным hub ([федерация](federation.md)).
-
-| Параметр | Рекомендация |
-|----------|--------------|
-| Роль | `ISPF_REPLICA_ROLE=all` (нужны drivers) |
-| Кластер | `ISPF_CLUSTER_ENABLED=false` |
-| JVM heap | `-Xms128m -Xmx256m` … `-Xmx512m` (подбор по `docker stats` / heap %) |
-| Elastic | **все** `ISPF_*_ELASTIC=false` |
-| Пулы потоков | **1** (минимум) или **2** (если есть 2 ядра); при нехватке CPU уменьшайте дальше |
-| Tomcat | `SERVER_TOMCAT_THREADS_MAX=20` … `30` |
-| Historian | `jdbc`; `ISPF_VARIABLE_HISTORY_MIN_INTERVAL_MS=10000`+; writers=1 |
-| Journal | `jdbc`; writers=1; `ISPF_EVENT_JOURNAL_ELASTIC_WRITER=false` |
-| Coalesce | `ISPF_RUNTIME_TELEMETRY_COALESCE_MS=2000`–`5000`; per-device coalesce = poll |
-| Интервал опроса | ≥ 5 с (10–60 с для медленных сигналов) |
-| Publish mode | **`TELEMETRY_ONLY`** или **`EVENT_JOURNAL_ONLY`**; избегать `FULL` |
-| Активные драйверы | Только реально нужные (1–5); остальное ОСТАНОВЛЕНО |
-| Metrics probe | `false` |
-| Job consumer | `ISPF_CLUSTER_JOB_CONSUMER_ENABLED=false` |
-| ИИ/ОТЛП | выключены |
-| Redis | `ISPF_REDIS_ENABLED=false` если не нужны correlator windows / cluster ACL |
-| NATS | `ISPF_NATS_ENABLED=false` |
-| Fixtures bootstrap | `ISPF_BOOTSTRAP_FIXTURES_ENABLED=false` |
-| Процесс | **systemd** предпочтительный Docker на слабом ARM (меньше накладных расходов) |
-
-Минимальный env-фрагмент (выполняется на холостом ходу, ещё агрессивнее):
+### Вариант А. Автономный шлюз с локальным опросом драйверов
+Шлюз сам опрашивает локальные ПЛК/счётчики, ведёт небольшой буфер и передаёт данные на центральный сервер по исходящему туннелю федерации ([Федерация серверов](federation.md)).
 
 ```properties
+ISPF_DEPLOY_PROFILE=edge
 ISPF_OBJECT_CHANGE_TELEMETRY_WORKERS=1
 ISPF_OBJECT_CHANGE_AUTOMATION_WORKERS=1
 ISPF_BINDING_ASYNC_THREADS=1
@@ -344,70 +158,39 @@ ISPF_RUNTIME_TELEMETRY_COALESCE_MS=5000
 JAVA_OPTS=-Xms128m -Xmx256m -XX:+UseG1GC
 ```
 
-**Не включайте на edge:** кластер, elastic-масштабирование, десятки параллельных правил тревог на каждый опрос, рассылку WebSocket сразу на многих клиентов.
+Рекомендации для слабого шлюза:
+- запускайте только реально подключённые драйверы (1–5 штук) в режиме `TELEMETRY_ONLY` с периодом опроса от 5 секунд;
+- не включайте на шлюзе кластер, NATS, Redis и ИИ-студию;
+- на устройствах с малым объёмом ОЗУ предпочтительнее запуск через `systemd`, чтобы не тратить память на демон Docker (готовый профиль для ARM64 в Docker: [`deploy/edge/arm64/README.md`](../../deploy/edge/arm64/README.md)).
 
-### B. Edge API — без локальных драйверов
-
-Узел только REST/WS к оператору; телеметрия с площадки идет на хаб ([cluster](cluster.md) — профиль `edge-api`).
-
-| Параметр | Рекомендация |
-|----------|--------------|
-| `ISPF_REPLICA_PROFILE` | `edge-api` |
-| Drivers / schedulers | нет (capabilities без `drivers`) |
-| Туннель Федерации | к центральному узлу |
-| JVM | можно ещё меньше — нет драйвера ввода/вывода |
-
-Настройка, когда на шлюзе **нет** смысла крутить JVM с опросами: вся SCADA на центральном, периферийном уровне — тонкий API.
-
-### Проверка края стенда
-
-1. `GET /api/v1/info` — одна реплика, `clusterEnabled=false`.
-2. Логи старта: `elastic=false`, рабочие 1–1 или 1–2.
-3. `GET /api/v1/platform/metrics` — `processCpuPercent` в какое-то &lt; 15% при заданном опросе.
-4. Нет роста `objectChangeQueueSize`/`eventJournalQueueSize` в устойчивом состоянии.
+### Вариант Б. Тонкий узел интерфейса (`edge-api`)
+Если на площадке не нужен локальный опрос драйверов, а требуется только точка входа REST/WebSocket для местных экранов, используйте `ISPF_REPLICA_PROFILE=edge-api`.
 
 ---
 
-## Сравнение профилей (кратко)
+## 6. Сводное сравнение профилей
 
-| Аспект | Производство | Пропускная способность | Демо / простой | Край |
-|--------|------------|------------|-------------|------|
-| `ISPF_*_ELASTIC` | true (default) | true | false | false |
-| Входные рабочие | резинка 4–32 | резинка 4–32 | исправлено 1–2 | исправлено 1 |
-| Рабочие по смене объектов | эластичный | эластичный | исправлено 2 | исправлено 1 |
-| Журнал / историк | jdbc (S/M) или CH (L) | CH / Сцилла | jdbc | jdbc |
-| `telemetryPublishMode` | по проекту: `TELEMETRY_ONLY` + `FULL` где нужно | `EVENT_JOURNAL_ONLY` | `TELEMETRY_ONLY` + 1× `FULL` | `TELEMETRY_ONLY` |
-| Кластер / НАТС | при ГА (M/L) | опционально | нет | нет |
-| Светильники начальной загрузки | ложный | очистка перед тестом | ложный | ложный |
-| Проверка показателей при загрузке | ложный | по необходимости | ложный | ложный |
-| JVM-куча | 512м–2г+ | 512м–2г+ | 256–512 м | 128–256 м |
-| `prod-idle.env` | **не использовать** | не использовать | **да** | база, урезать до 1 рабочего |
+| Параметр | `production` | `throughput` | `demo-idle` | `edge` |
+|----------|--------------|--------------|-------------|--------|
+| Эластичные пулы (`ISPF_*_ELASTIC`) | Включены (`true`) | Включены (`true`) | Выключены (`false`) | Выключены (`false`) |
+| Потоки приёма телеметрии | 4..32 (авто) | 4..32 (авто) | Фиксированно 1–2 | Фиксированно 1 |
+| Потоки обработки изменений | Эластично | Эластично | Фиксированно 2 | Фиксированно 1 |
+| Хранилище истории и событий | PostgreSQL/Timescale (S/M) или ClickHouse (L) | ClickHouse / ScyllaDB | PostgreSQL (`jdbc`) | PostgreSQL / H2 (`jdbc`) |
+| Режим публикации драйверов | `TELEMETRY_ONLY` + `FULL` на узлах с логикой | `EVENT_JOURNAL_ONLY` | `TELEMETRY_ONLY` + 1 демо-датчик `FULL` | `TELEMETRY_ONLY` |
+| Кластер (NATS + Redis) | Да (для Prod M/L) | Опционально | Нет | Нет |
+| Демо-устройства (`FIXTURES`) | Выключены (`false`) | Выключены (`false`) | По необходимости | Выключены (`false`) |
+| Память JVM (`-Xmx`) | 1–4+ ГБ | 2–8+ ГБ | 256–512 МБ | 128–256 МБ |
 
 ---
 
-## Артефакты в репозиториях
+## 7. Готовые файлы конфигурации в каталоге `deploy/`
 
-| Файл | Профиль |
-|------|---------|
-| [`deploy/docker-compose.prod-stack.yml`](../../deploy/docker-compose.prod-stack.yml) | Продукция S (PG + ISPF + nginx) |
-| [`deploy/docker-compose.vps-cluster.yml`](../../deploy/docker-compose.vps-cluster.yml) | Производство M/L (мультиреплика) |
-| [`deploy/vps-deploy-direct.ps1`](../../deploy/vps-deploy-direct.ps1) | Deploy jar + UI (staging) |
-| [`deploy/vps-cluster-rollout.sh`](../../deploy/vps-cluster-rollout.sh) | Rolling restart реплик |
-| [`deploy/docker-compose.edge-arm.yml`](../../deploy/docker-compose.edge-arm.yml) | Edge ARM64 (legacy path) |
-| [`deploy/edge/arm64/docker-compose.yml`](../../deploy/edge/arm64/docker-compose.yml) | Шлюз Edge ARM64 (**BL-187 Готово**, профиль Pi) — см. [`deploy/edge/arm64/README.md`](../../deploy/edge/arm64/README.md) |
-| [`deploy/helm/ispf/`](../../deploy/helm/ispf/) | K8s Helm chart (**BL-186 Готово**) — `bash deploy/helm/ispf/validate.sh` |
-| [`deploy/ispf-server.prod-idle.env`](../../deploy/ispf-server.prod-idle.env) | **Только** демо-холостой ход/пограничная базовая линия |
-| [`deploy/vps-apply-prod-idle-env.sh`](../../deploy/vps-apply-prod-idle-env.sh) | Merge idle env + recreate |
-| [`deploy/vps-event-journal-peak-tuning.sh`](../../deploy/vps-event-journal-peak-tuning.sh) | Пропускная способность / Журнал Prod L |
-| [`deploy/vps-idle-thread-sample.py`](../../deploy/vps-idle-thread-sample.py) | Диагностика потоков |
-| [`deploy/loadtest-cleanup.py`](../../deploy/loadtest-cleanup.py) | Подготовка к load-test |
-
----
-
-## Связанные решения
-
-- [0026-elastic-telemetry-ingress](decisions/0026-elastic-telemetry-ingress.md) — многоуровневый вход, эластичные значения по умолчанию.
-- [0027-event-journal-ingress-fast-path](decisions/0027-event-journal-ingress-fast-path.md) — быстрый путь к журналу
-- [0033-prod-idle-demostand-tuning](decisions/0033-prod-idle-demostand-tuning.md) — обоснование IDLE-профиля
-- [load-testing](load-testing.md) — скрипты пропускной способности
-- [cluster](cluster.md) — когда нужно несколько реплик вместо одного узла
+| Файл / каталог | Назначение |
+|----------------|------------|
+| [`deploy/docker-compose.prod-stack.yml`](../../deploy/docker-compose.prod-stack.yml) | Одноузловой промышленный стек (PostgreSQL + Redis + `ispf-server` + nginx) |
+| [`deploy/docker-compose.vps-cluster.yml`](../../deploy/docker-compose.vps-cluster.yml) | Многоузловой кластер высокой доступности (Prod M/L) |
+| [`deploy/edge/arm64/docker-compose.yml`](../../deploy/edge/arm64/docker-compose.yml) | Стек для периферийного шлюза ARM64 (Raspberry Pi / промышленный ПК) |
+| [`deploy/helm/ispf/`](../../deploy/helm/ispf/) | Helm-чарт для развёртывания в Kubernetes |
+| [`deploy/ispf-server.prod-idle.env`](../../deploy/ispf-server.prod-idle.env) | Настройки экономного профиля `demo-idle` |
+| [`deploy/vps-event-journal-peak-tuning.sh`](../../deploy/vps-event-journal-peak-tuning.sh) | Настройка очередей для пиковой пропускной способности журнала событий |
+| [`deploy/vps-idle-thread-sample.py`](../../deploy/vps-idle-thread-sample.py) | Скрипт диагностики нагрузки потоков JVM |

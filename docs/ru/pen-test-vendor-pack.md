@@ -1,13 +1,15 @@
-# Пакет для подрядчика — pen-test ISPF (G-01)
+> **Язык:** русская версия. Английский оригинал: [en/pen-test-vendor-pack.md](../en/pen-test-vendor-pack.md).
 
-> **Статус:** Prep, готовый к отправке вендору. **Не** означает «pentest passed».  
-> Канон (EN, для фирмы): [en/pen-test-vendor-pack.md](../en/pen-test-vendor-pack.md).
+# Комплект документов для подрядчика по тестированию на проникновение
 
-Кратко:
+> **Статус:** Internal — оглавление пакета материалов, передаваемых внешней лаборатории при запросе коммерческого предложения на проведение pen-test. Метки зрелости: [doc-status.md](doc-status.md).
 
-1. Прикрепить к RFP/SOW: scope, RoE, questionnaire, cases, prep, lab inventory + preflight 2026-09-09.
-2. Секреты и аккаунты — только в vault / OOB.
-3. Закрытие G-01 / **P-PENTEST** — только после отчёта + retest letter в `docs/evidence/security-pentest/`.
-4. Внутренний engineering review (defensive) — [`2026-09-09-engineering-review`](../evidence/security-pentest/2026-09-09-engineering-review/); **≠** hired pen-test.
+При направлении запроса во внешнюю лабораторию информационной безопасности приложите следующие документы из репозитория:
 
-См. также: [pen-test-scope.md](pen-test-scope.md) · [pen-test-prep.md](pen-test-prep.md) · [compliance-tender-pack](../en/compliance-tender-pack.md) **G-01**.
+1. **Границы и объекты проверки:** [pen-test-scope.md](pen-test-scope.md) ([EN](../en/pen-test-scope.md)).
+2. **Правила взаимодействия и раскрытия уязвимостей (RoE):** [en/pen-test-roe.md](../en/pen-test-roe.md).
+3. **Анкета для подрядчика:** [en/pen-test-questionnaire.md](../en/pen-test-questionnaire.md).
+4. **Перечень обязательных тестовых сценариев:** [en/pen-test-cases.md](../en/pen-test-cases.md).
+5. **Инструкция по подготовке стенда и снимок preflight:** [pen-test-prep.md](pen-test-prep.md).
+
+Учётные данные тестового стенда передаются подрядчику только по защищённому каналу после подписания соглашения о конфиденциальности (NDA).

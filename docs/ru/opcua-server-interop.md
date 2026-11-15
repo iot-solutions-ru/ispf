@@ -1,104 +1,71 @@
 > **Язык:** русская версия. Английский оригинал: [en/opcua-server-interop.md](../en/opcua-server-interop.md).
 
-# Драйвер сервера OPC UA — Руководство по взаимодействию (BL-143)
+# Встроенный сервер OPC UA (`opcua-server`) — настройка и взаимодействие
 
-Встроенный драйвер **сервера** OPC UA (`opcua-server`) предоставляет переменные устройства ISPF внешним клиентам OPC UA через Eclipse Milo. Партнер по обратной связи для драйвера `opcua` **клиента**.
+> **Статус:** Stable — публикация переменных дерева объектов ISPF по протоколу OPC UA для внешних систем SCADA/MES и двусторонняя запись уставок. Метки зрелости: [doc-status.md](doc-status.md).
 
-## Роль на платформе
+Драйвер **`opcua-server`** (на базе стека Eclipse Milo) позволяет любому узлу `DEVICE` в ISPF выступать в роли **сервера OPC UA**, отдавая значения своих переменных внешним клиентам (UAExpert, Prosys, верхнеуровневым SCADA и MES) и принимая от них запись уставок.
 
-| Драйвер | Направление | Модуль |
-|--------|-----------|--------|
-| `opcua-server` | ISPF → OPC UA wire | `packages/ispf-driver-opcua-server` |
-| `opcua` | OPC UA wire → ISPF | `packages/ispf-driver-opcua` |
+---
 
-Матрица производства: `DriverProductionMatrix` строка `opcua-server` — зрелость **ПРОИЗВОДСТВО**, возможности **чтения**, **записи**, **качества**.
+## 1. Назначение драйверов `opcua` и `opcua-server`
 
-## Конечная точка провода
+| Драйвер | Направление обмена | Модуль в репозитории |
+|---------|--------------------|----------------------|
+| **`opcua`** (клиент) | Внешний ПЛК / сервер OPC UA → переменные ISPF | `packages/ispf-driver-opcua` |
+| **`opcua-server`** (сервер) | Переменные ISPF ↔ внешние клиенты OPC UA | `packages/ispf-driver-opcua-server` |
 
-| Настройка | По умолчанию | Описание |
-|---------|---------|-------------|
-| URL | `opc.tcp://localhost:4840/ispf` | Built from `bindPort` + fixed path `/ispf` |
-| Transport | `TCP_UASC_UABINARY` | Milo binary protocol |
-| Security | `None` (по умолчанию) или `Sign` / `SignAndEncrypt` | Lab может оставить `None`. Production: `securityPolicy` + `pkiDir` и обмен `application.cer` |
-| Авторизация | Аноним или имя пользователя | Валидатор имени пользователя принимает любые учетные данные |
-| Application URI | `urn:ispf:driver:opcua-server` | Milo application identity |
-| Namespace URI | `urn:ispf:opcua:server` | Custom namespace index (default **2**) |
+Оба драйвера имеют уровень зрелости **`PRODUCTION`** и поддерживают чтение, запись и передачу признака качества сигнала (`GOOD` / `BAD`).
 
-Constants and helpers: `OpcUaServerInterop.java` in the driver module.
+---
 
-## Адресное пространство
+## 2. Параметры конечной точки и безопасности
 
-Просмотр дерева:
+| Параметр | Значение по умолчанию | Описание |
+|----------|-----------------------|----------|
+| Адрес подключения (`Endpoint URL`) | `opc.tcp://localhost:4840/ispf` | Формируется из порта `bindPort` и фиксированного пути `/ispf` |
+| Протокол транспорта | `TCP_UASC_UABINARY` | Бинарный протокол OPC UA поверх TCP |
+| Политика безопасности (`securityPolicy`) | `None` (на стенде) или `Basic256Sha256` | На боевом контуре используйте `Sign` или `SignAndEncrypt` с каталогом сертификатов `pkiDir` |
+| URI приложения (`Application URI`) | `urn:ispf:driver:opcua-server` | Идентификатор сервера в сертификате OPC UA |
+| Пространство имён (`Namespace URI`) | `urn:ispf:opcua:server` | Индекс пространства имён по умолчанию: `2` |
+
+### Адресное пространство переменных
+
+Внешний клиент видит опубликованные теги в папке `Objects/IspfVariables`:
 
 ```text
 Objects
   └── IspfVariables
-        └── {mapped tags from pointMappings}
+        └── <Опубликованные теги из pointMappings>
 ```
 
-- Variable type: `BaseDataVariableType`, datatype **String**, read/write.
-- Nodes are created lazily on first `readPoints()`.
-- Browse path pattern: `Objects/IspfVariables/{TagName}`.
+---
 
-## Конфигурация устройства
+## 3. Настройка устройства `opcua-server`
 
-| Ключ | По умолчанию | Заметки |
-|-----|---------|-------|
-| `bindPort` | `4840` | TCP listen port |
-| `namespace` | `2` | Namespace index for bare identifiers |
-| `timeoutMs` | `5000` | Server startup/shutdown timeout |
-| `endpointPath` | `/ispf` | Documented in metadata; not user-overridable in v0.1 |
-| `securityPolicy` | `None` | `None` или политика Milo (`Basic256Sha256`, …). Для значения не `None` нужен `pkiDir`. |
-| `securityMode` | `None` при политике `None`; иначе `SignAndEncrypt` | `None`, `Sign` или `SignAndEncrypt` |
-| `pkiDir` | (пусто; temp при `None`) | PKCS12-идентичность + trust list. Обязателен, если `securityPolicy` не `None`. Скопируйте клиентский `application.cer` в `pkiDir/trusted/certs`. |
+| Ключ конфигурации | По умолчанию | Описание |
+|-------------------|--------------|----------|
+| `bindPort` | `4840` | TCP-порт, который слушает сервер OPC UA |
+| `namespace` | `2` | Индекс пространства имён для тегов |
+| `timeoutMs` | `5000` | Тайм-аут запуска и остановки сервера в мс |
+| `securityPolicy` | `None` | `None` или криптографическая политика Milo (`Basic256Sha256` и др.) |
+| `securityMode` | `None` (или `SignAndEncrypt`) | Режим подписи и шифрования сообщений (`None`, `Sign`, `SignAndEncrypt`) |
+| `pkiDir` | пусто | Каталог ключей и доверенных сертификатов (`identity.p12`, `trusted/certs/`); обязателен при включённом шифровании |
 
-Отображение точек: строка OPC UA `NodeId`, например. `ns=2;s=Temperature` или пустой `Temperature` (использует настроенное пространство имен).
+В привязке точек (`pointMappings`) указывается идентификатор узла OPC UA, например `ns=2;s=Temperature` (или короткое имя `Temperature`). Переменная на устройстве использует схему из трёх полей: `value` (значение), `quality` (`GOOD`) и `nodeId`.
 
-## Чтение/запись схемы
+---
 
-Driver variable schema `opcUaServerValue`:
+## 4. Проверка взаимодействия клиента и сервера
 
-| Поле | Описание |
-|-------|-------------|
-| `value` | String node value |
-| `quality` | Always `StatusCode.GOOD` |
-| `nodeId` | Mapping text |
-
-Write expects `value` field in the incoming `DataRecord`.
-
-## Тестирование взаимодействия
-
-### Серверный модуль (CI-шлюз)
+Запустить автоматические тесты серверного и клиентского модулей (включая проверку подписки и обратной записи от внешнего клиента `OpcUaServerSubscriptionWriteBackIntegrationTest`):
 
 ```bash
 ./gradlew :packages:ispf-driver-opcua-server:test
-```
-
-Обложки:
-
-- `OpcUaServerPointTest` — NodeId parsing
-- `OpcUaServerDeviceDriverTest` — connect, read, write round-trip on ephemeral port
-- `OpcUaServerSubscriptionWriteBackIntegrationTest` — подписка + запись внешнего клиента Milo → обратная запись переменной ISPF (BL-143)
-
-### Петля клиента + сервера (полный стек)
-
-```bash
 ./gradlew :packages:ispf-driver-opcua:test
 ```
 
-`OpcUaDeviceDriverTest` запускает процесс `OpcUaServerDeviceDriver`, затем выполняет просмотр, запись и подписку клиента на `opc.tcp://localhost:{port}/ispf`.
-
-### Отчет о взаимодействии с топ-20
-
-```bash
-bash deploy/tools/driver-interop-report.sh
-```
-
-CI workflow: `.github/workflows/driver-interop.yml` includes `ispf-driver-opcua-server`.
-
-## Драйвер партнерского клиента
-
-Configure `opcua` client device:
+Пример настройки ответного клиентского устройства `opcua` для подключения к локальному `opcua-server`:
 
 ```json
 {
@@ -108,25 +75,4 @@ Configure `opcua` client device:
 }
 ```
 
-Point mapping: same NodeId as server mapping, e.g. `ns=2;s=Temperature`.
-
-См. также [drivers](drivers.md) § клиент opcua и [driver-interop-lab](driver-interop-lab.md).
-
-## Ограничения (v0.1)
-
-– Только строковые значения (без сопоставления типизированных вариантов).
-- По умолчанию остаётся SecurityPolicy None (lab). Sign / SignAndEncrypt требуют постоянного `pkiDir` и взаимного доверия `application.cer`. GetEndpoints идёт на `/ispf/discovery` с SecurityPolicy None (соглашение OPC UA).
-- Username-токен по-прежнему принимает любые учётные данные (безопасность канала — идентичность приложения)
-— Нет просмотра REST для серверных устройств (используйте просмотр OPC UA в проводном режиме).
-- Уведомления о внешних подписках зависят от обратных вызовов мониторинга сервера Milo (обратная запись в переменные ISPF рассматривается в рамках интеграционного теста BL-143)
-- Самоподписанная идентичность создаётся один раз в `pkiDir` (`identity.p12`); без `pkiDir` при `None` по-прежнему используется временный каталог
-
-## Связанные файлы
-
-| Путь | Цель |
-|------|---------|
-| `packages/ispf-driver-opcua-server/.../OpcUaServerDeviceDriver.java` | Driver SPI |
-| `packages/ispf-driver-opcua-server/.../OpcUaServerInterop.java` | Documented endpoint contract |
-| `packages/ispf-driver-opcua-server/.../IspfOpcUaNamespace.java` | Address space |
-| `packages/ispf-driver-opcua/.../OpcUaDeviceDriverTest.java` | Cross-driver loopback |
-| `packages/ispf-server/.../DriverProductionMatrix.java` | Production gate |
+**Связанные разделы:** [Справочник драйверов](drivers.md) · [Лаборатория совместимости драйверов](driver-interop-lab.md) · [Регламент полевых испытаний](field-pilot-playbook.md).

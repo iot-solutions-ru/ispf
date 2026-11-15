@@ -1,53 +1,37 @@
 > **Язык:** русская версия. Английский оригинал: [en/ot-automation-excellence-tutorials.md](../en/ot-automation-excellence-tutorials.md).
 
-# OT Automation Excellence — туториалы
+# Практические уроки: промышленная автоматизация, BPMN и ИИ-инструменты
 
-> **Статус:** Beta — практические руководства по ADR-0049. Метки зрелости: [doc-status.md](doc-status.md).
+> **Статус:** Beta — цикл из 6 коротких практических руководств по работе с процессами BPMN, вебхуками, расписаниями, хранилищем секретов и аналитическими функциями ИИ ([ADR-0049](decisions/0049-ot-automation-excellence.md)). Метки зрелости: [doc-status.md](doc-status.md).
 
-Решение: [0049-ot-automation-excellence](decisions/0049-ot-automation-excellence.md).  
-Справочник: [workflows](workflows.md), [формулы аналитики](analytics-formulas-and-packs.md), [AI development](ai-development.md).
+Эта серия пошаговых уроков показывает, как использовать расширенные возможности процессов BPMN (`WORKFLOW`) и аналитических инструментов в ISPF. Перед началом рекомендуется ознакомиться с общим устройством раздела **[Процессы BPMN (`workflows.md`)](workflows.md)**.
 
-Это **пошаговые** руководства. Сначала умейте открыть Web Console и создать объект `WORKFLOW` ([workflows](workflows.md)).
+---
 
-## Предварительные требования
+## 1. Подготовка к выполнению уроков
 
-- ISPF ≥ **0.9.178**
-- Bearer-токен admin (или эквивалент)
-- Web Console → Automation → Workflows (или дерево → `WORKFLOW`)
-- Опционально: AI (`ISPF_AI_*`) для LLM / Ask AI; MCP (`ispf.mcp.enabled=true`) для публикации `wf_*`
+Получите токен администратора на вашем локальном сервере или учебном стенде:
 
 ```bash
-export BASE=https://ispf.iot-solutions.ru   # или http://localhost:8080
+export BASE=http://localhost:8080
 export TOKEN=$(curl -s -X POST "$BASE/api/v1/auth/login" \
   -H 'Content-Type: application/json' \
   -d '{"username":"admin","password":"admin"}' | jq -r .token)
 ```
 
-## Траектория обучения
+---
 
-| # | Туториал | Время | Чему научитесь |
-|---|----------|-------|----------------|
-| 1 | [Журнал выполнения](tutorial-ot-workflow-journal.md) | ~10 мин | Запуск workflow и timeline шагов |
-| 2 | [Workflow как tool](tutorial-ot-workflow-as-tool.md) | ~15 мин | input/output schema + `invoke_workflow_tool` + MCP `wf_*` |
-| 3 | [AI в BPMN](tutorial-ot-ai-bpmn.md) | ~20 мин | Палитра `llm_complete` / `invoke_agent`, `modelRef` |
-| 4 | [Триггеры и восстановление](tutorial-ot-workflow-triggers.md) | ~15 мин | Webhook, cron, `errorWorkflowPath`, DLQ |
-| 5 | [Credentials vault](tutorial-ot-credentials-vault.md) | ~10 мин | API-ключи; `modelRef` → vault |
-| 6 | [Analytics AI](tutorial-ot-analytics-ai.md) | ~15 мин | Agent analysis tools + Ask AI |
+## 2. Маршрут из 6 практических уроков
 
-Порядок: **1 → 2 → 3**; затем 4–6 по необходимости.
+| № | Урок | Время | Чему вы научитесь |
+|---|------|-------|-------------------|
+| **1** | **[Журнал и пошаговая хронология выполнения процесса](tutorial-ot-workflow-journal.md)** | ~10 мин | Запускать процесс BPMN и просматривать хронологию прохождения каждого шага в интерфейсе и по API |
+| **2** | **[Вызов процесса BPMN как типизированного инструмента (`wf_*`)](tutorial-ot-workflow-as-tool.md)** | ~15 мин | Задавать входную и выходную JSON-схему процесса, вызывать его через `invoke_workflow_tool` и публиковать по протоколу MCP |
+| **3** | **[Шаги обращения к языковой модели (ИИ) внутри BPMN](tutorial-ot-ai-bpmn.md)** | ~20 мин | Добавлять на схему блоки `llm_complete` и `invoke_agent`, передавать переменные и проверять маскирование промптов в журнале |
+| **4** | **[Запуск по HTTP-вебхуку, расписанию и обработка сбоев (DLQ)](tutorial-ot-workflow-triggers.md)** | ~15 мин | Запускать процессы по внешнему вебхуку и таймеру, настраивать повторные попытки и очередь недоставленных заданий (`dead-letters`) |
+| **5** | **[Зашифрованное хранилище ключей и учётных данных (`Credentials Vault`)](tutorial-ot-credentials-vault.md)** | ~10 мин | Безопасно сохранять ключи API внешних сервисов в дереве `root.platform.credentials.*` и ссылаться на них через `modelRef` |
+| **6** | **[Инструменты интеллектуального анализа временных рядов (`Analytics AI`)](tutorial-ot-analytics-ai.md)** | ~15 мин | Использовать статистический поиск аномалий, сравнение периодов и кнопку **«Спросить ИИ»** на аналитических тегах |
 
-## Эталонный example
+Готовый демонстрационный пакет, объединяющий эти приёмы (классификация технологической тревоги по вебхуку с публикацией инструмента MCP `wf_ot_alarm_classify`), находится в каталоге [`examples/ot-alarm-classify/`](../../examples/ot-alarm-classify/).
 
-Демо-пакет: [examples/ot-alarm-classify](../../examples/ot-alarm-classify/) — ACTIVE alarm classify + webhook + MCP `wf_ot_alarm_classify`.  
-Marketplace: [examples/marketplace-catalog/ot-alarm-classify](../../examples/marketplace-catalog/ot-alarm-classify/).
-
-## Вне scope
-
-- Новые **типы элементов** BPMN ([ADR-0047](decisions/0047-custom-bpmn-subset-engine.md))
-- Inline code nodes в BPMN
-- Forecast / ML inference (BL-175+)
-- HITL (`userTask`) через MCP
-
-## Связанное
-
-- [workflows](workflows.md) · [automation](automation.md) · [ai-agent](ai-agent.md)
+**Связанные разделы:** [Процессы BPMN (`workflows.md`)](workflows.md) · [Правила тревог и корреляторы (`automation.md`)](automation.md) · [ИИ-студия и адаптер MCP (`ai-development.md`)](ai-development.md).

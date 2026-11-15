@@ -1,96 +1,64 @@
 > **Язык:** русская версия. Английский оригинал: [en/semantic-demo.md](../en/semantic-demo.md).
 
-# Семантическое демонстрационное прохождение (S23-04/BL-105)
+# Быстрый старт семантической разметки оборудования (Project Haystack и Brick Schema)
 
-Цель: первая семантическая дашборд из запроса Haystack за **≤5 минут** (ускорение KPI S23-04).
+> **Статус:** Stable — пошаговый пример разметки устройства тегами Project Haystack и классами Brick Schema с автоматической привязкой виджетов дашборда за 5 минут. Метки зрелости: [doc-status.md](doc-status.md).
 
-## Предварительные условия
+В ISPF узлы дерева объектов и точки телеметрии можно снабжать стандартными семантическими метаданными **Project Haystack** и **Brick Schema**, чтобы находить однотипные датчики фильтр-запросами (`point and temp`) и автоматически привязывать их к виджетам на дашбордах ([ADR-0021](decisions/0021-haystack-semantic-overlay.md), [ADR-0023](decisions/0023-haystack-query-runtime.md)).
 
-- ISPF server + Web Console running (`local` profile or lab fixtures).
-- Роль оператора (семантические API требуют аутентифицированного сеанса в продукте; тестовый профиль позволяет использовать MockMvc/CI).
+---
 
-## шагов (≈5 мин)
+## Пошаговый сценарий (5 минут)
 
-### 1. Применить миксины (новое устройство)
+### Шаг 1. Подключите шаблоны-примеси (`MIXIN`) к устройству
 
-В **Проводнике** → Устройство → **Чертежи** примените:
+Откройте нужное устройство в **Проводнике → Чертежи (Шаблоны)** и примените две стандартные примеси (на учебном устройстве `root.platform.devices.lab-userA-01` они уже подключены по умолчанию):
 
-| Миксин | Цель |
-| ----- | ------- |
-| `haystack-metadata-v1` | `haystackTags`, `haystackRef`, `haystackKind` |
-| `brick-metadata-v1` | `brickClass` URI |
+| Шаблон-примесь (`MIXIN`) | Какие переменные добавляет |
+|--------------------------|----------------------------|
+| `haystack-metadata-v1` | `haystackTags` (маркеры), `haystackRef`, `haystackKind` |
+| `brick-metadata-v1` | `brickClass` (URI класса в онтологии Brick) |
 
-Lab shortcut: `root.platform.devices.lab-userA-01` already has both mixins from bootstrap.
+То же действие через REST API:
 
 ```http
 POST /api/v1/mixin-blueprints/{blueprintId}/apply?objectPath=root.platform.devices.my-device
 ```
 
-### 2. Установите теги Haystack
+### Шаг 2. Отметьте теги Project Haystack
 
-Вкладка инспектора **Стога сена** → множественный выбор маркера: `equip`, `lab`, `site` на устройстве; удлините `driverPointMappingsJson` с помощью тегов точек (`point`, `sensor`, `temp`) и единиц измерения.
+На вкладке инспектора **«Haystack»** выберите маркеры уровня оборудования (`equip`, `lab`, `site`) и укажите теги точек измерения (`point`, `sensor`, `temp`) и единицы измерения (`°C` для переменной `sineWave`).
 
-Demo device tags `sineWave` with `temp` → °C.
+### Шаг 3. Автоматически определите класс Brick Schema
 
-### 3. Выведите и установите класс Brick
+На вкладке **«Brick»** нажмите кнопку автоопределения (вызывает `GET /api/v1/platform/brick/infer?objectPath=...`) — сервер предложит подходящий класс онтологии (например, `brick:Sensor` или `brick:Temperature_Sensor`). Сохраните выбранный класс.
 
-Вкладка **Кирпич** → **Вывод** (вызов `GET /api/v1/platform/brick/infer?objectPath=…`) → применить предложение → сохранить `brickClass` (демо: `brick:Sensor`).
-
-Вывод только по тегам (без объекта):
-
-```http
-GET /api/v1/platform/brick/infer?tags=equip,meter,energy&haystackKind=equip
-```
-
-### 4. Запрос Haystack
+### Шаг 4. Проверьте поисковый запрос по тегам Haystack
 
 ```http
 GET /api/v1/platform/haystack/query?filter=point%20and%20temp&rootPath=root.platform.devices.lab-userA-01&entityKind=point
 ```
 
-Экспортировать сетку (тот же индекс тега):
+Выгрузить полное семантическое описание ветки дерева:
 
 ```http
 GET /api/v1/platform/haystack/export?rootPath=root.platform.devices.lab-userA-01&includePoints=true
 ```
 
-### 5. Автоматическая привязка панели управления
+### Шаг 5. Автоматически привяжите найденные точки к дашборду
 
-Конструктор дашбордов → Диалоговое окно **Привязка Haystack** → фильтр `point and temp` → привязка виджетов значений/диаграмм к совпадающим точкам (BL-103).
+В конструкторе дашбордов откройте окно **«Привязка по тегам Haystack»**, введите фильтр `point and temp` — найденные точки температуры автоматически привяжутся к карточкам значений и графикам.
 
-### 6. Семантический экспорт (необязательно)
+### Шаг 6. Выгрузите граф в формате Brick JSON-LD / Turtle (при необходимости)
 
-Платформа → **Семантический экспорт**: Haystack JSON + Brick JSON-LD/Turtle для поддерева.
+В разделе **Система → Семантический экспорт** или запросом API:
 
 ```http
 GET /api/v1/platform/brick/export?rootPath=root.platform.devices.lab-userA-01&format=jsonld&includePoints=true
 ```
 
-Brick graph uses `ispf:path` and `urn:ispf:platform:…` IRIs aligned with `BrickExportService.entityIri`; `temp` points map to `brick:Temperature_Sensor`.
-
-## API туда и обратно (CI/S23-03)
-
-`SemanticRoundtripIntegrationTest` verifies for `lab-userA-01`:
-
-- Haystack export ↔ `haystack/query` filter results
-- Блок JSON-LD `@graph` узлов для каждого отмеченного оборудования (когда `brickClass` установлен) и `temp` очков
-- `@id` / `ispf:path` alignment with `BrickExportService.entityIri`
-- `GET /api/v1/platform/brick/infer` for object path and tag-only mode
+Проверить работу семантического контура автотестом:
 
 ```bash
 ./gradlew :packages:ispf-server:test --tests "com.ispf.server.platform.SemanticRoundtripIntegrationTest"
 ```
-
-## Скрипт дыма
-
-Против работающего сервера:
-
-```bash
-bash tools/semantic-demo-check.sh
-# or: ISPF_BASE_URL=${ISPF_BASE_URL:-https://ispf.example.invalid} bash tools/semantic-demo-check.sh
-```
-
-## Ссылки
-
-- [ADR-0021 Семантическое наложение Haystack](decisions/0021-haystack-semantic-overlay.md)
-- [ADR-0023 Время выполнения запроса Haystack](decisions/0023-haystack-query-runtime.md)

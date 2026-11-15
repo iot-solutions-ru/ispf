@@ -1,23 +1,17 @@
 > **Язык:** русская версия. Английский оригинал: [en/tutorial-ot-workflow-triggers.md](../en/tutorial-ot-workflow-triggers.md).
 
-# Туториал: webhook, cron и восстановление после ошибок
+# Урок 4: Запуск процесса по вебхуку, расписанию и обработка сбоев (DLQ)
 
-> **Статус:** Beta — ADR-0049 Wave 3. См. также: [OT Automation туториалы](ot-automation-excellence-tutorials.md).
+> **Статус:** Beta — автоматический старт процессов BPMN по входящему HTTP-вебхуку и таймеру, настройка повторных попыток и очереди неуспешных запусков (`dead-letters`). См. также: [Все уроки серии](ot-automation-excellence-tutorials.md).
 
-## Цель
+## Цель урока
+Настроить на активном процессе (`status = "ACTIVE"`) запуск по внешнему HTTP-вызову (`webhookSlug`), периодический запуск по таймеру (`cronExpression`) и автоматическое восстановление при ошибках.
 
-Стартовать workflow по HTTP webhook и cron; настроить error path / DLQ.
+---
 
-## Подготовка
+## 1. Запуск по входящему HTTP-вебхуку (`webhookSlug`)
 
-Workflow должен быть **ACTIVE**.
-
-## A. Webhook
-
-| Переменная | Пример |
-|------------|--------|
-| `webhookSlug` | `lab-alarm-hook` |
-| `status` | `ACTIVE` |
+Задайте на узле `WORKFLOW` переменную `webhookSlug` (например, `"lab-alarm-hook"`). Теперь внешняя система может запускать процесс простым POST-запросом:
 
 ```bash
 curl -s -X POST "$BASE/api/v1/webhooks/workflows/lab-alarm-hook" \
@@ -25,35 +19,31 @@ curl -s -X POST "$BASE/api/v1/webhooks/workflows/lab-alarm-hook" \
   -d '{"alarmId":"A-9","severity":"high"}' | jq .
 ```
 
-Проверьте новый run в `GET .../by-path/runs`.
+Поля переданного JSON автоматически попадают во входные переменные экземпляра процесса.
 
-## B. Cron
+---
 
-| Переменная | Пример |
-|------------|--------|
-| `cronExpression` | `every:1m` |
-| `status` | `ACTIVE` |
+## 2. Периодический запуск по таймеру (`cronExpression`)
 
-Через 1–2 минуты появятся периодические запуски. На demostand — лёгкий BPMN (`log`). Текущий формат — shorthand `every:…` ([workflows](workflows.md)).
+Задайте на узле `WORKFLOW` переменную `cronExpression`, например `"every:1m"` (или `"every:15m"`, `"every:1h"`). Пока процесс находится в статусе `ACTIVE`, планировщик будет запускать его с указанным интервалом.
 
-## C. Failure recovery
+---
 
-| Переменная | Пример |
-|------------|--------|
-| `errorWorkflowPath` | `root.platform.workflows.error-handler` |
-| `retryMaxAttempts` | `2` |
-| `retryBackoffSeconds` | `30` |
+## 3. Повторные попытки при сбоях и очередь недоставленных запусков (`DLQ`)
 
-При FAILED: если `retryMaxAttempts` &gt; 1 — durable строка в `workflow_retry_schedule` (backoff = `retryBackoffSeconds`), `WorkflowRetryScheduler` перезапускает с `_retryAttempt`; после исчерпания — DLQ `workflow_dead_letters` и опционально `errorWorkflowPath`.
-Список DLQ: `GET /api/v1/workflows/by-path/dead-letters?path=...&unresolvedOnly=true`.
-Resolve: `POST /api/v1/workflows/dead-letters/{id}/resolve`.
+Чтобы процесс не терялся при временной ошибке внешнего сервиса, задайте на узле `WORKFLOW` параметры повтора и резервного маршрута:
 
-## Проверка
+| Переменная узла | Пример значения | Назначение |
+|-----------------|-----------------|------------|
+| `retryMaxAttempts` | `2` | Максимальное число попыток выполнения |
+| `retryBackoffSeconds` | `30` | Пауза в секундах перед повторной попыткой (`WorkflowRetryScheduler`) |
+| `errorWorkflowPath` | `"root.platform.workflows.error-handler"` | Путь к резервному процессу обработки ошибки, запускаемому после исчерпания попыток |
 
-- [ ] Webhook создаёт run с полями payload
-- [ ] Cron даёт периодические runs при ACTIVE
-- [ ] Ошибка видна в journal; при `retryMaxAttempts=2` сначала retry, затем DLQ / error path
+Если все попытки завершились ошибкой, запись сохраняется в таблицу `workflow_dead_letters`. Просмотреть и закрыть такие записи можно методами:
 
-## Дальше
+```http
+GET  /api/v1/workflows/by-path/dead-letters?path=root.platform.workflows.my-flow&unresolvedOnly=true
+POST /api/v1/workflows/dead-letters/{id}/resolve
+```
 
-[Workflow как tool](tutorial-ot-workflow-as-tool.md)
+**Следующий урок:** [Урок 5 — Зашифрованное хранилище учётных данных (`Credentials Vault`)](tutorial-ot-credentials-vault.md).

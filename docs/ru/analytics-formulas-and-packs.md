@@ -1,147 +1,95 @@
 > **Язык:** русская версия. Английский оригинал: [en/analytics-formulas-and-packs.md](../en/analytics-formulas-and-packs.md).
 
-# Формулы analytics и пакеты расширений
+# Каталог аналитических формул и пакеты расширений (уровни A, B, C)
 
-> **Статус:** Stable — пакеты формул и их развёртывание. Метки зрелости: [doc-status.md](doc-status.md).
+> **Статус:** Stable — встроенные функции агрегации (уровень A), параметризованные пользовательские шаблоны формул (уровень B) и подключаемые Java-пакеты (уровень C). Метки зрелости: [doc-status.md](doc-status.md).
 
-Как создавать, переиспользовать и распространять historian-вычисления сверх одного binding rule. Охватывает **Tier A** (встроенные), **Tier B** (свои формулы) и **Tier C** (Java-пакеты + маркетплейс).
+Этот документ объясняет, как в ISPF организован каталог функций для расчёта показателей по истории переменных и как сохранять собственные переиспользуемые формулы для типового оборудования.
 
-**См. также:** [analytics-historian-cookbook](analytics-historian-cookbook.md) (рецепты), [0042-analytics-function-catalog](decisions/0042-analytics-function-catalog.md) (архитектура), [analytics-tag-catalog](analytics-tag-catalog.md) (API развёрнутых тегов).
+> **Не путайте с уровнями хранения:** трёхуровневое хранение данных (PostgreSQL / ClickHouse / Parquet) описано в разделе **[Уровни хранения истории](historian-tiers.md)**, а здесь речь идёт о **трёх уровнях аналитических функций** ([ADR-0042](decisions/0042-analytics-function-catalog.md)).
 
-> **Важно:** [historian-tiers](historian-tiers.md) описывает **уровни хранения** (hot/warm/cold). Здесь — **уровни функций** A/B/C из ADR-0042; это разные темы.
-
----
-
-## Три уровня функций
-
-| Уровень | Что это | Кто создаёт | Пример |
-|---------|---------|-------------|--------|
-| **A — Встроенные** | Core helpers + historian aggregates + open packs | Команда платформы | `avg(ref, 5m)`, `energyDelta` (core-ext) |
-| **B — Своя формула** | Параметризованный шаблон выражения | Оператор / разработчик решения | `rateOfChange({{levelPath}}, 1h) * {{tankArea}}` |
-| **C — Пакет расширений** | JAR с SPI `AnalyticsFunctionProvider` | Партнёр / ISV | `mes-oee-pack`, `water-quality-pack` |
-
-**Принцип:** каталог — для **поиска и вставки**; **binding rule** на устройстве — развёрнутый экземпляр.
-
-```
-Каталог (browse)  →  параметры  →  правило на устройстве  →  live-переменная + historian-тег
-```
+**Связанные разделы:** [Рецепты исторических расчётов](analytics-historian-cookbook.md) · [Каталог аналитических тегов](analytics-tag-catalog.md) · [Справочник языка выражений](expression-language.md).
 
 ---
 
-## Tier A — Встроенные функции
+## 1. Три уровня аналитических функций
 
-### Синтаксис helper (historian)
+| Уровень | Что это такое | Кто создаёт | Пример |
+|---------|---------------|-------------|--------|
+| **Уровень A — встроенные функции** | Базовые агрегаты архива истории и функции из стандартной поставки | Разработчики ядра ISPF | `avg(ref, 5m)`, `rateOfChange(ref, 1h)`, `oee(...)`, `energyDelta(...)` |
+| **Уровень B — шаблоны формул площадки или приложения** | Параметризованное выражение с подстановками `{{имя_параметра}}` | Инженер проекта / разработчик решения | `rateOfChange({{levelPath}}, 1h) * {{tankArea}}` |
+| **Уровень C — внешние пакеты расширений (Java SPI)** | Подключаемый JAR-модуль с реализацией интерфейса `AnalyticsFunctionProvider` | Разработчик специализированных модулей / партнёр | Отраслевые расчёты (`mes-oee-pack`, `water-quality-pack`) |
 
-Источники — **PlatformRef** slash-адреса ([0043-unified-platform-ref](decisions/0043-unified-platform-ref.md)).
+Общий порядок работы: инженер находит функцию или шаблон в **каталоге формул**, подставляет конкретные пути переменных и сохраняет готовое **правило расчёта (`BindingRule`)** на нужном объекте дерева.
+
+---
+
+## 2. Уровень A — встроенные функции
+
+Встроенные функции обращаются к переменным по единому формату адресации `путь_объекта/имя_переменной` ([ADR-0043](decisions/0043-unified-platform-ref.md)):
 
 | Функция | Пример | Назначение |
 |---------|--------|------------|
-| `avg` | `avg(root.devices.pump01/temperature, 5m)` | Скользящее среднее |
-| `min` / `max` / `last` / `sum` | `min(root.devices.pump01/temperature, 1h)` | Агрегаты по buckets |
-| `live` | `live(@/temperature)` | Текущее live-значение |
-| `rateOfChange` | `rateOfChange(root.devices.pump01/level, 1h)` | Дельта avg первого→последнего bucket |
-| `oee` | `oee('root.../line-01', 'avail', 'perf', 'qual', 8h)` | OEE % |
-| `totalizer` | `totalizer(root.devices.pump01/energy, 1h)` | Сумма за окно |
+| `avg` | `avg(root.platform.devices.pump01/temperature, 5m)` | Среднее значение за окно |
+| `min` / `max` / `last` / `sum` | `min(root.platform.devices.pump01/temperature, 1h)` | Минимум, максимум, последнее значение и сумма по интервалам окна |
+| `live` | `live(@/temperature)` | Текущее оперативное значение переменной |
+| `rateOfChange` | `rateOfChange(root.platform.devices.tank01/level, 1h)` | Прирост среднего значения от начала к концу окна |
+| `totalizer` | `totalizer(root.platform.devices.pump01/energy, 1h)` | Накопительный итог за окно |
+| `oee` | `oee('root.../line-01', 'avail', 'perf', 'qual', 8h)` | Коэффициент общей эффективности оборудования (OEE, %) |
 
-### CEL + historian (`helper: cel`)
+Эти функции можно комбинировать внутри арифметических выражений CEL (используйте вещественные константы с точкой, например `2.0`):
 
 ```text
-avg(root.devices.pump01/temperature, 5m)
-min(root.devices.pump01/temperature/value, 1h)
-(avg(root.devices.sensor-a/temperature, 5m) + avg(root.devices.sensor-b/temperature, 5m)) / 2.0
-live(@/temperature)
+(avg(root.platform.devices.sensor-a/temperature, 5m) + avg(root.platform.devices.sensor-b/temperature, 5m)) / 2.0
 ```
 
-Доступны: `avg`, `min`, `max`, `sum`, `last`, `live`.
-
-В CEL используйте **литералы double** (`2.0`, не `2`) при смешении с historian expansions.
-
-### Где найти
-
-- **Web console:** инспектор объекта → **Вычисления** → **+ Правило** → **Historian** → редактор → **каталог функций**.
-- **API:** `GET /api/v1/platform/analytics/catalog` и `GET .../catalog/{functionId}`.
-
-Новый aggregate-примитив **нельзя** добавить из UI — функции historian регистрируются на сервере.
+Полный перечень зарегистрированных на сервере функций возвращается методом `GET /api/v1/platform/analytics/catalog` и отображается в модальном редакторе выражений (вкладка **«Вычисления»** инспектора объекта).
 
 ---
 
-## Tier B — Свои формулы
+<a id="tier-b--свои-формулы"></a>
 
-Tier B — **переиспользуемый шаблон**, не новый runtime-примитив. При компиляции разворачивается в синтаксис Tier A.
+## 3. Уровень B — собственные шаблоны формул
 
-### Синтаксис плейсхолдеров
+Если один и тот же расчёт нужно применить к десяткам однотипных аппаратов (например, скорость заполнения резервуара с учётом площади его сечения), сохраните выражение с параметрами `{{...}}` как **формулу уровня B**:
 
 ```text
-avg({{sourceRef}}, {{window}})
-rateOfChange({{levelRef}}, 1h) * {{tankArea}}
-avg({{deviceRef}}/{{variable}}, {{window}})
+rateOfChange({{levelPath}}, 1h) * {{tankArea}}
 ```
 
-Имена: `[a-zA-Z][a-zA-Z0-9_]*`. Сервер и UI определяют параметры из выражения автоматически.
+Имена параметров (`[a-zA-Z][a-zA-Z0-9_]*`) распознаются редактором и сервером автоматически.
 
-### Создание в web console
+### Как создать и применить формулу в веб-консоли
 
-**Из выражения:**
+1. **Создание:** откройте раздел **Система → Формулы аналитики** (или нажмите **«Сохранить как формулу»** прямо в редакторе выражений на объекте), задайте идентификатор, понятное название и тип (`historian` или `reactive`).
+2. **Применение на объекте:** в редакторе правила расчёта откройте каталог формул, выберите сохранённый шаблон, укажите конкретный путь переменной и коэффициенты — правило сохранит ссылку `formulaRef` и значения `formulaParams`.
+3. **Автоматическое обновление:** если впоследствии поправить текст шаблона формулы в разделе «Система → Формулы аналитики», все привязанные к ней правила на объектах автоматически перестроятся по новому шаблону.
 
-1. Откройте редактор historian-выражения (Вычисления → **+ Правило** → Historian).
-2. Напишите выражение с `{{param}}`.
-3. **Сохранить как формулу**.
-4. Укажите **id**, **название**, **kind** (`historian` или `reactive`).
-5. Сохранение → `@analyticsFormulas` на `root.platform`.
+### Где могут храниться формулы уровня B
 
-**Менеджер формул:**
+| Область (`scope`) | Место хранения | Кто управляет |
+|-------------------|----------------|---------------|
+| Площадка (`site`) | Переменная `@analyticsFormulas` на узле `root.platform` | Администратор сервера |
+| Прикладное решение (`app`) | Файл `analytics-formulas.json` внутри пакета приложения | Разработчик решения |
+| Шаблон примеси (`mixin`) | Поле `analyticsFormulasJson` в определении `MIXIN` | Автор шаблона |
 
-- **Система → Формулы analytics** — список, создание, правка, удаление формул площадки.
+### REST API управления формулами (`/api/v1/platform/analytics/formulas`)
 
-### Применение формулы
+| Метод и путь | Назначение |
+|--------------|------------|
+| `GET /api/v1/platform/analytics/formulas?scope=site` | Список формул площадки |
+| `GET /api/v1/platform/analytics/formulas?scope=app&appId=<id>` | Список формул конкретного приложения |
+| `POST /api/v1/platform/analytics/formulas` | Создать новую формулу |
+| `PUT /api/v1/platform/analytics/formulas/{id}?scope=&appId=` | Обновить формулу и пересчитать связанные правила (`reboundRules`) |
+| `DELETE /api/v1/platform/analytics/formulas/{id}?scope=&appId=` | Удалить формулу |
+| `POST /api/v1/platform/analytics/formulas/{id}/expand` | Проверить подстановку параметров в шаблон |
 
-1. В каталоге редактора найдите формулу (pack `site` или `app:<appId>`).
-2. **Применить** → заполните параметры (пути тегов, окна, числа).
-3. **Проверить** → **Применить** к правилу.
-
-Правила хранят `formulaRef` + `formulaParams`. При обновлении формулы связанные правила **переразворачиваются** автоматически.
-
-### Области хранения
-
-| Область | Где | Кто |
-|---------|-----|-----|
-| Площадка | `root.platform`, переменная `@analyticsFormulas` | Platform admin |
-| Приложение | `analytics-formulas.json` в bundle | Разработчик приложения |
-| Blueprint | `analyticsFormulasJson` в MIXIN blueprint | Автор шаблона |
-
-### REST API
-
-Базовый путь: `/api/v1/platform/analytics/formulas`
-
-| Метод | Путь | Описание |
-|-------|------|----------|
-| GET | `/formulas?scope=site` | Список формул площадки |
-| GET | `/formulas?scope=app&appId=` | Формулы приложения |
-| GET | `/formulas/{id}?scope=&appId=` | Одна формула |
-| POST | `/formulas` | Создать |
-| PUT | `/formulas/{id}?scope=&appId=` | Обновить; в ответе `reboundRules` |
-| DELETE | `/formulas/{id}?scope=&appId=` | Удалить |
-| POST | `/formulas/{id}/expand` | Подставить параметры в шаблон |
-
-**Тело expand:**
-
-```json
-{
-  "scope": "site",
-  "appId": null,
-  "parameters": {
-    "levelPath": "root.platform.devices.tank01.level",
-    "tankArea": "12.5"
-  }
-}
-```
-
-**Пример записи формулы:**
+Пример описания формулы в JSON:
 
 ```json
 {
   "id": "tank-fill-rate",
-  "displayName": "Скорость заполнения бака (м³/ч)",
+  "displayName": "Скорость заполнения резервуара (м³/ч)",
   "kind": "historian",
   "expression": "rateOfChange({{levelPath}}, 1h) * {{tankArea}}",
   "parameters": [
@@ -153,158 +101,27 @@ avg({{deviceRef}}/{{variable}}, {{window}})
 }
 ```
 
-### Ограничения Tier B
+---
 
-| Задача | Альтернатива |
-|--------|--------------|
-| Новая семантика агрегации по buckets | Tier C Java pack |
-| Процедурная логика / внешний IO на каждый tick | Reactive + `callFunction` (только live) |
-| Произвольный JS в historian | Не поддерживается (ломает детерминизм backfill) |
+<a id="tier-c--пакеты-расширений-java-spi"></a>
+<a id="покупка-tier-c-через-маркетплейс"></a>
+
+## 4. Уровень C — подключаемые Java-пакеты расширений (`AnalyticsFunctionProvider`)
+
+Если требуется специализированный алгоритм агрегации по временным рядам, который не выражается комбинацией стандартных функций `avg`/`min`/`max`, его можно реализовать на Java через SPI:
+
+1. Реализуйте интерфейс `com.ispf.analytics.spi.AnalyticsFunctionProvider` (пример в репозитории — модуль `packages/ispf-analytics-core-ext`, функция `energyDelta`).
+2. Зарегистрируйте класс в `META-INF/services/com.ispf.analytics.spi.AnalyticsFunctionProvider`.
+3. Добавьте паспорт пакета `analytics-pack.json` с указанием `packId`, `version`, `licenseType`, `minPlatformVersion` и списка экспортируемых функций `functions[]`.
+
+Пакеты, присутствующие в classpath сервера, автоматически загружаются при старте через `AnalyticsPackLoader` и сразу появляются в общем каталоге `GET /api/v1/platform/analytics/catalog`.
 
 ---
 
-## Tier C — Пакеты расширений (Java SPI)
+## 5. Какой уровень выбрать для вашей задачи
 
-Для **новых historian-safe функций** с собственной логикой по buckets (сертифицированные отраслевые KPI).
-
-### Раскладка на диске (планируется GA)
-
-```text
-${ISPF_ANALYTICS_PACKS_DIR}/
-  acme-mes-kpi/
-    analytics-pack.json
-    acme-mes-kpi.jar
-```
-
-### `analytics-pack.json`
-
-| Поле | Обяз. | Описание |
-|------|:-----:|----------|
-| `packId` | ✓ | Стабильный id (поле `pack` в каталоге) |
-| `version` | ✓ | Semver |
-| `licenseType` | ✓ | SPDX или commercial ref |
-| `minPlatformVersion` | ✓ | Минимальная версия ISPF |
-| `jarFile` | ✓ | Имя JAR в каталоге пакета |
-| `functions[]` | ✓ | Helper id, которые экспортирует пакет |
-| `license` | commercial | RSA-подписанные claims (как у [licensed-driver-packs](licensed-driver-packs.md)) |
-
-### SPI-контракт
-
-1. Реализовать `com.ispf.analytics.spi.AnalyticsFunctionProvider`.
-2. Зарегистрировать в `META-INF/services/com.ispf.analytics.spi.AnalyticsFunctionProvider`.
-3. Вернуть `AnalyticsFunctionDescriptor` + `AnalyticsEvaluator` (historian — только через `HistorianPort`).
-
-**Эталон:** `packages/ispf-analytics-core-ext` — open pack `core-ext`, функция `energyDelta`.
-
-### Runtime (сегодня)
-
-- Open packs в classpath сервера загружаются при старте (`AnalyticsPackLoader`, `ServiceLoader`).
-- Drop-in каталог + проверка лицензии по аналогии с driver packs — **BL-216** (см. [analytics-platform-roadmap](analytics-platform-roadmap.md); charter, не «уже shipped»).
-
-### Конфигурация (планируется GA)
-
-```yaml
-ispf:
-  analytics:
-    packs-dir: ${ISPF_ANALYTICS_PACKS_DIR:/opt/ispf/analytics-packs}
-  license:
-    public-key-pem: ${ISPF_LICENSE_PUBLIC_KEY_PEM:}
-    enforce: ${ISPF_LICENSE_ENFORCE:false}
-```
-
----
-
-## Покупка Tier C через маркетплейс
-
-Коммерческие и community **analytics extension packs** распространяются по тому же контракту, что application bundles и symbol packs ([marketplace](marketplace.md)).
-
-**Статус:** контракт листинга и поток для оператора описаны здесь; установка в `ISPF_ANALYTICS_PACKS_DIR` на платформе — **BL-216** (в работе; roadmap = charter). Open pack `energyDelta` уже в ядре без маркетплейса.
-
-### Поток для оператора
-
-| Шаг | Действие |
-|-----|----------|
-| 1 | **Система → Решения → Маркетплейс** — поиск по `tags: analytics`, `artifactKind: analytics-pack` |
-| 2 | **Бесплатный пакет** — **Установить** → скачивание → распаковка в `ISPF_ANALYTICS_PACKS_DIR` → функции в каталоге analytics |
-| 3 | **Платный пакет** — покупка у вендора → код активации → **Активировать** (как у paid app bundles) |
-| 4 | **Проверка** — `GET /api/v1/platform/analytics/catalog` показывает helpers с `pack: <packId>` |
-| 5 | **Развёртывание** — historian-правила с новыми helpers (напр. `batchYield(path.output, 8h)`) |
-
-Без валидного ключа платный листинг показывает контакт вендора; функции не регистрируются до успешной активации.
-
-### Манифест листинга (вендор)
-
-```json
-{
-  "slug": "acme-mes-kpi",
-  "title": "Acme MES KPI Pack",
-  "description": "Historian-safe batch yield, downtime %, scrap rate.",
-  "pricing": "paid",
-  "artifactKind": "analytics-pack",
-  "appId": null,
-  "packId": "acme-mes-kpi",
-  "vendorName": "Acme Analytics",
-  "priceCents": 49900,
-  "latestVersion": "1.0.0",
-  "minIspfVersion": "0.9.127",
-  "tags": ["analytics", "mes", "kpi", "historian"],
-  "bundleArtifact": "acme-mes-kpi-1.0.0.zip"
-}
-```
-
-Содержимое архива:
-
-```text
-acme-mes-kpi-1.0.0.zip
-  analytics-pack.json
-  acme-mes-kpi.jar
-  LICENSE
-  NOTICE
-```
-
-### API платформы (через маркетплейс)
-
-| Метод | Путь |
-|-------|------|
-| GET | `/api/v1/solutions/marketplaces/{id}/catalog?q=analytics&pricing=` |
-| POST | `/api/v1/solutions/marketplaces/{id}/listings/{slug}/install` |
-| POST | `/api/v1/solutions/marketplaces/{id}/listings/{slug}/activate` |
-
-Тело activate: `{ "activationCode": "..." }` — `installationId` добавляется сервером ([0003-commercial-bundle-licensing](decisions/0003-commercial-bundle-licensing.md)).
-
-### Чеклист вендора
-
-1. Реализовать SPI; тесты против `ispf-analytics-api`.
-2. Собрать подписанный `analytics-pack.json` + JAR ([commercial-licensing](commercial-licensing.md)).
-3. Опубликовать листинг на совместимом marketplace-хосте (см. [marketplace](marketplace.md)) с `artifactKind: analytics-pack`.
-4. Interop CI: функции в каталоге после install на lab ISPF.
-5. Партнёрская программа: OEM tier, revenue share ([partner-program](partner-program.md)).
-
-### Offline / air-gapped
-
-Скопировать zip пакета на сервер в `ISPF_ANALYTICS_PACKS_DIR`; положить RSA-лицензию по `analytics-pack.json`. Перезапуск ISPF или планируемый `POST /api/v1/platform/analytics/packs/reload`.
-
----
-
-## Какой tier выбрать
-
-| Цель | Tier | Сложность |
-|------|------|-----------|
-| Среднее / min / max за окно | A (`hist.*` или helper) | Минуты |
-| Тот же расчёт на многих активах | B (своя формула) | Минуты |
-| Композиция существующих функций | A (CEL) или B (шаблон) | Минуты–часы |
-| Сертифицированный отраслевой KPI | C (Java pack) | Дни–недели |
-| Купить KPI у вендора | C + маркетплейс | Покупка + install |
-
----
-
-## Связанные документы
-
-- [0042-analytics-function-catalog](decisions/0042-analytics-function-catalog.md)
-- [analytics-historian-cookbook](analytics-historian-cookbook.md)
-- [analytics-tag-catalog](analytics-tag-catalog.md)
-- [marketplace](marketplace.md)
-- [licensed-driver-packs](licensed-driver-packs.md)
-- [analytics-platform-roadmap](analytics-platform-roadmap.md) — BL-212…216 (charter)
-
-> **Note:** [analytics-platform-roadmap](analytics-platform-roadmap.md) — charter/roadmap; не трактовать как полный shipped-статус без сверки с EN hub и backlog.
+| Задача | Рекомендуемый уровень | Трудоёмкость |
+|--------|-----------------------|--------------|
+| Среднее, минимум, максимум, сумма или OEE за окно | **Уровень A** (встроенная функция или CEL) | Несколько минут |
+| Типовая формула, повторяющаяся на десятках агрегатов | **Уровень B** (шаблон с параметрами `{{...}}`) | Несколько минут |
+| Сложный отраслевой алгоритм обработки массивов точек на Java | **Уровень C** (модуль SPI `AnalyticsFunctionProvider`) | Разработка отдельного JAR-пакета |

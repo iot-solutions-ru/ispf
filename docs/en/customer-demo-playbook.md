@@ -47,7 +47,7 @@ Talk track: *“One application bundle: tree, functions, operator UI — not a s
 
 ## Track B — OT + HMI + air-gap (~40–60 min)
 
-Talk track: *“Sensors and HMI are live; logic stays on SINGLETON/INSTANCE hubs; offline install is a first-class path.”*
+Talk track: *“Sensors and HMI are live; logic stays on SINGLETON/INSTANCE hubs; offline install is built in.”*
 
 | Min | Show | Do / say |
 |-----|------|----------|

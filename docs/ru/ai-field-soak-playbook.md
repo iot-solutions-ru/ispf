@@ -1,48 +1,46 @@
 > **Язык:** русская версия. Английский оригинал: [en/ai-field-soak-playbook.md](../en/ai-field-soak-playbook.md).
 
-# Playbook полевого soak AI generator (BL-180 / Post-S33)
+# Регламент приёмочных испытаний генератора решений ИИ на площадке
 
-> **Статус:** Lab — полевой runbook со сбором evidence. Метки зрелости: [doc-status.md](doc-status.md).
+> **Статус:** Lab — порядок проверки и оформления протокола приёмки генератора решений (`POST /api/v1/ai/solutions/generate`) с подключённой языковой моделью. Метки зрелости: [doc-status.md](doc-status.md).
 
-Процедура для **живого generator** на именованной площадке. Harness в коде **Готово**; этот документ закрывает хвост Post-S33: **датированный JSON + журнал интегратора**.
+Этот документ описывает порядок проведения контрольных прогонов генератора решений (`apply: true`) и сохранения датированного отчёта о результатах.
 
-См. [ai-agent](ai-agent.md) · [field-pilot-playbook § ready-for-field](field-pilot-playbook.md#ready-for-field-gate-policy).
+**Связанные разделы:** [Работа с ИИ-агентом (`ai-agent.md`)](ai-agent.md) · [Регламент полевых испытаний (`field-pilot-playbook.md`)](field-pilot-playbook.md).
 
 ---
 
-## Быстрый старт
+## 1. Запуск проверочного прогона
 
-### Лаборатория (Gradle)
+### Локально или в лаборатории
 
 ```bash
 export ISPF_LLM_SMOKE=true
-export ISPF_AI_BASE_URL=https://…/v1
+export ISPF_AI_BASE_URL=https://api.openai.com/v1
 export ISPF_AI_MODEL=gpt-4o-mini
-export ISPF_AI_API_KEY=…
+export ISPF_AI_API_KEY=<ваш-ключ>
 export AGENT_LIVE_GENERATOR_DOMAIN=hvac
 bash tools/agent-regression/run-live-generator-oneshot.sh
 ```
 
-### VPS
+### На выделенном сервере (VPS)
 
 ```bash
 export ISPF_VPS_URL=https://ispf.iot-solutions.ru
-export ISPF_VPS_PASSWORD=…
+export ISPF_VPS_PASSWORD=<пароль-администратора>
 bash tools/agent-regression/run-vps-field-soak.sh hvac
 ```
 
-Архив: `docs/evidence/ai-generator/YYYY-MM-DD-<site>-<domain>.json`
+Скрипт сохраняет датированный JSON-отчёт в каталог `docs/evidence/ai-generator/YYYY-MM-DD-<площадка>-<домен>.json`.
 
 ---
 
-## Критерии sign-off
+## 2. Критерии успешного прохождения
 
-| Утверждение | Доказательство |
-| ----------- | -------------- |
-| Один домен live | JSON с `functionalOk: true` |
-| Soft &lt;15 min | `softBudgetMet: true` в том же JSON |
-| Field soak | 3 дня + [журнал](../evidence/ai-generator-soak-journal.template.md) |
+| Проверяемый параметр | Критерий в итоговом отчёте |
+|----------------------|----------------------------|
+| Работоспособность созданного решения | Поле `functionalOk: true` (созданы узел логики `SINGLETON`, устройства, тревоги и экран оператора) |
+| Укладывание в целевой бюджет времени (< 15 минут) | Поле `softBudgetMet: true` (`elapsedMs` ≤ `900000`) |
+| Многодневное наблюдение на стенде | Заполненный журнал по шаблону [`ai-generator-soak-journal.template.md`](../evidence/ai-generator-soak-journal.template.md) |
 
-**Не** заявлять три домена live без трёх отдельных JSON с реальных прогонов.
-
-Пример схемы: [`live-generator-results.example.json`](../../tools/agent-regression/live-generator-results.example.json)
+Пример структуры файла результатов: [`tools/agent-regression/live-generator-results.example.json`](../../tools/agent-regression/live-generator-results.example.json).

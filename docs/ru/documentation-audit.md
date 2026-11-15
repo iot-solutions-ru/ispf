@@ -1,67 +1,43 @@
-# Аудит документации (2026-07-08)
+> **Язык:** русская версия. Английский оригинал: [en/documentation-audit.md](../en/documentation-audit.md).
 
-> **Статус:** Internal — Структура, ссылки. Метки зрелости: [doc-status.md](doc-status.md).
+# Правила ведения и автоматической проверки документации
 
-## Структура
+> **Статус:** Internal — структура двуязычной документации `docs/en/` и `docs/ru/`, правила именования файлов и скрипты проверки ссылок. Метки зрелости: [doc-status.md](doc-status.md).
 
-| Путь | Назначение |
-|------|------------|
-| [docs/README.md](../README.md) | Двуязычный хаб (ссылки на EN + RU оглавления) |
-| [docs/en/](../en/) | **Английский (канон)** — kebab-case |
-| [docs/ru/](.) | **Русский** — вычитанные версии |
+Этот документ описывает организацию каталога `docs/` и автоматические проверки, выполняемые в CI при изменении документации.
 
-## Соглашение об именах
+---
 
-- **Было:** `SCADA_MIMIC.md`, `ROADMAP_PHASE25.md`
-- **Стало:** `scada-mimic.md`, затем `roadmap-phase-25.md` (выделение фаз 25–33)
-- **09.07.2026:** Фазы 25–33 снова влита в единый [roadmap](roadmap.md); `roadmap-phase-25.md` — только redirect stub
-- **ADR:** `decisions/0001-app-platform-boundary.md` (тот же шаблон, lowercase)
+## 1. Структура каталогов документации
 
-## Проверка ссылок
+| Каталог / файл | Назначение |
+|----------------|------------|
+| [`docs/README.md`](../README.md) | Корневая точка входа со ссылками на русское и английское оглавления |
+| [`docs/ru/`](.) | Полная документация на русском языке (основное оглавление — [readme.md](readme.md), быстрое введение — [learn.md](learn.md)) |
+| [`docs/en/`](../en/) | Полная документация на английском языке ([en/readme.md](../en/readme.md)) |
+| `docs/ru/decisions/` и `docs/en/decisions/` | Архитектурные решения (ADR) с номерами `0001-...` |
 
-- Внутренние `.md`-ссылки в `docs/en` и `docs/ru`: **0 битых** (проверено `audit_links.py`)
-- Ссылки по репозиторию обновлены на `docs/en/...` через `fix_repo_links.py`
-- Перекрёстные ссылки ADR: `../roadmap.md`, `../deployment.md` и т.д.
-- Юридические файлы в корне репо: `../../LICENSE-COMMERCIAL.md`, `../../CLA.md`
+Все имена файлов документации записываются в нижнем регистре через дефис (`kebab-case`, например `object-model.md`, `solution-developer-guide.md`).
 
-## Языковая политика
+---
 
-| Расположение | Правило |
-|--------------|---------|
-| `docs/en/` | Канонический технический английский |
-| `docs/ru/` | Русские версии + баннер `> **Язык:** русская версия. Английский оригинал: …` |
-| RU-native (glossary, operator-guide, product, widgets, …) | Исходный русский текст + тот же баннер |
+## 2. Автоматические проверки документации в CI
 
-## Вычитка (2026-07-08)
-
-- Машинный перевод заменён **ручной вычиткой** на ключевых страницах + глоссарий терминов (`proofread_ru_terms.py`).
-- Полностью вычитаны: scorecard, acceleration-program, architecture, getting-started, roadmap (единый, вкл. фазы 25–33), scada, drivers, deployment, security, marketplace, testing, symbol-marketplace, partner-program, agent-regression, hmi-quality-gates, **все ADR (0001–0037)**, **все reference-walkthrough**.
-- ADR и walkthrough — терминологическая правка; углубить по запросу.
-
-## Анонимизация (публичная документация)
-
-В git не должно быть прод-хостов, публичных IP, SSH-пользователей/портов и личных GitHub org. Замены — как в [en/documentation-audit.md § Anonymization](../en/documentation-audit.md#anonymization-policy-public-docs).
-
-Шаблоны lab — [`examples/`](../../examples/); реальные `deploy/lab-*` — только локально (gitignore).
+Перед отправкой изменений запустите проверочные скрипты из корня репозитория:
 
 ```bash
-python deploy/tools/anonymize-repo.py
-rg 'ispf\.iot-solutions|84\.42|iot-solutions\.ru|m5\.wqtt|Michaael/' --glob '!deploy/tools/anonymize-repo.py' --glob '!docs/*/documentation-audit.md'
+# 1. Проверка отсутствия битых относительных ссылок в docs/en и docs/ru
+python tools/docs-audit/audit_links.py
+
+# 2. Проверка отсутствия случайной кириллицы в английских документах docs/en
+python tools/docs-audit/audit_en_language.py
+
+# 3. Проверка соответствия таблиц статуса в документации реальному коду сервера
+./gradlew :packages:ispf-server:test --tests "com.ispf.server.docs.AdrHonestyGateTest" -Dispf.test.skipLoad=true
 ```
 
-## Скрипты сопровождения
+При добавлении новых возможностей или примеров `examples/*/bundle.json` также пересоберите пакет знаний для ИИ-студии:
 
 ```bash
-python tools/docs-audit/migrate_docs.py      # полная миграция (деструктивно)
-python tools/docs-audit/fix_repo_links.py    # ссылки в репо → docs/en/
-python tools/docs-audit/fix_remaining_links.py
-python tools/docs-audit/audit_links.py       # CI: exit 1 при битых внутренних ссылках
-python tools/docs-audit/proofread_ru_terms.py             # глоссарий терминов (не re-translate)
-python tools/docs-audit/translate_to_ru.py --workers 6   # только первичный черновик EN→RU
-python tools/docs-audit/fix_ru_banners.py                 # баннеры и пути en/…
-python tools/docs-audit/sync_ru_links.py                  # восстановить href после перевода
+python tools/ai-pack/build.py
 ```
-
-## Известные follow-up
-
-- Пересборка context pack: `python tools/ai-pack/build.py`

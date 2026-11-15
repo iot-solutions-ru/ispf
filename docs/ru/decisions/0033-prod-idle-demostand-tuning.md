@@ -17,7 +17,7 @@
 
 Остановка драйверов снижает нагрузку, но **не заменяет** выбор профиля: для demo нужны живые устройства при урезанных pools и корректных publish modes.
 
-Обобщённое руководство: [DEMOSTANDS](../DEMOSTANDS.md).
+Обобщённое руководство: [demostands.md](../demostands.md).
 
 ## Решение
 
@@ -25,9 +25,9 @@
 
 | Профиль | Elastic | Топология | Документация |
 |---------|---------|-----------|--------------|
-| **Production** | ON (defaults) | 1–N реплик, PG + TS/CH | [DEMOSTANDS.md § Production](../DEMOSTANDS.md#профиль-production-промышленная-эксплуатация) |
-| **Demo / idle** | OFF, fixed pools | single unified node | [DEMOSTANDS.md § Demo](../DEMOSTANDS.md#профиль-demo--idle-малая-нагрузка) |
-| **Edge** | OFF, minimal 1 | single node, coalesce↑ | [DEMOSTANDS.md § Edge](../DEMOSTANDS.md#профиль-edge-ограниченный-cpu) |
+| **Production** | ON (defaults) | 1–N реплик, PG + TS/CH | [demostands.md § Production](../demostands.md#2-профиль-production-промышленная-эксплуатация) |
+| **Demo / idle** | OFF, fixed pools | single unified node | [demostands.md § Demo](../demostands.md#4-профиль-demo-idle-демостенд-с-минимальной-нагрузкой-в-простое) |
+| **Edge** | OFF, minimal 1 | single node, coalesce↑ | [demostands.md § Edge](../demostands.md#5-профиль-edge-промышленный-шлюз-с-ограниченными-ресурсами) |
 | **Throughput** | ON (peak tuning) | benchmark | [load-testing](../load-testing.md) |
 
 ### 2. Профиль `prod-idle` (env overlay для demo / idle)
@@ -81,7 +81,7 @@ Risks:
 
 **Документация**
 
-- [DEMOSTANDS](../DEMOSTANDS.md) — основной guide
+- [demostands](../demostands.md) — основной guide
 - [vps-demostand](../vps-demostand.md) — пример ops на одном хосте
 - [deployment](../deployment.md), [cluster](../cluster.md)
 
@@ -91,4 +91,4 @@ Risks:
 - [0027-event-journal-ingress-fast-path](0027-event-journal-ingress-fast-path.md) — journal fast path
 - [0028-horizontal-active-active-cluster](0028-horizontal-active-active-cluster.md) — cluster vs single
 - [load-testing](../load-testing.md) — throughput
-- [OBSERVABILITY](../OBSERVABILITY.md) — Load diagnostics
+- [observability](../observability.md) — Load diagnostics

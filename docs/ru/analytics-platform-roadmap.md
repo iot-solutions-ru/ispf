@@ -1,145 +1,43 @@
 > **Язык:** русская версия. Английский оригинал: [en/analytics-platform-roadmap.md](../en/analytics-platform-roadmap.md).
 
-# Roadmap аналитической платформы — БЛ-200…211 (AF-capable)
+# Проектный план развития аналитической подсистемы
 
-> **Статус:** Charter — Чартер BL-200…210. Метки зрелости: [doc-status.md](doc-status.md).
+> **Статус:** Charter — архитектурный план развития исторических расчётов, предрассчитанных агрегатов и каталога формул ([ADR-0038](decisions/0038-analytics-platform-architecture.md), [ADR-0042](decisions/0042-analytics-function-catalog.md)). Метки зрелости: [doc-status.md](doc-status.md).
 
-**Цель:** эволюция от **AF-lite** (БЛ-160) к **AF-capable** analytics plane — derived tags, материализованные rollups, мультитеговые запросы — на **одном сервере** или в **кластере с разделением ролей**.
-
-| | |
-| --- | --- |
-| **Фаза** | 33 (расширяет Фазу 28 historian) |
-| **ADR** | [0038-analytics-platform-architecture](decisions/0038-analytics-platform-architecture.md) |
-| **Предпосылки** | БЛ-159 (tiers), БЛ-160 (AF-lite), БЛ-161 (SLO), dual-write CH на prod |
-| **Конкурентная цель** | Historian **10/10** — «petabyte + asset framework» — [roadmap.md § Фаза 33](roadmap.md#фаза-33--аналитическая-платформа-af-capable) |
-| **Статус** | BL ID и Done/Partial — только в [roadmap](roadmap.md); этот файл — глубокий чартер |
+Этот документ описывает архитектуру масштабирования аналитической подсистемы ISPF — от расчётов на одном сервере до кластера с выделенными аналитическими узлами (`ISPF_REPLICA_PROFILE=analytics`) и хранилищем ClickHouse. Практические руководства по работе с уже готовыми механизмами приведены в разделах **[Рецепты исторических расчётов](analytics-historian-cookbook.md)**, **[Каталог аналитических формул](analytics-formulas-and-packs.md)** и **[Уровни хранения истории](historian-tiers.md)**.
 
 ---
 
-## Позиционирование
+## 1. Типовые сценарии масштабирования аналитики
 
-| | AF-lite (БЛ-160) | Аналитическая платформа (БЛ-200…210) |
-| --- | --- | --- |
-| Rollups | On-read в Chart / REST aggregate | Предвычисленные + fallback on-read |
-| Derived values | Один `derivedValue` на шаблон | DAG analytics tags, backfill |
-| Масштаб | ~500 тегов | 50k+ тегов, enterprise SLO |
-| Топология | В JVM ISPF | `unified` **или** replicas `analytics` |
-
----
-
-## Сценарии развёртывания
-
-### Сценарий A — один сервер (~500 тегов с history)
-
+### Сценарий А. Одиночный сервер (до ~500 исторических тегов)
 ```text
-ispf-server (unified) + PostgreSQL/Timescale + опционально ClickHouse
+ispf-server (профиль unified) + PostgreSQL / TimescaleDB (+ опционально ClickHouse)
 ```
+- Все реактивные и исторические правила (`kind: historian`) выполняются внутри одной JVM.
+- Подходит для большинства цеховых и локальных внедрений.
 
-| Параметр | Значение |
-|----------|----------|
-| `ISPF_REPLICA_PROFILE` | `unified` |
-| `ISPF_HISTORIAN_DEPLOY_PROFILE` | `hot-only` или `three-tier` |
-| Materializer | выкл. до >1k тегов |
-
-**Приёмка:** БЛ-201 + БЛ-204; alarm на `derivedValue`.
-
-### Сценарий B — кластер площадки (~5k тегов)
-
+### Сценарий Б. Кластер предприятия (до ~5 000 исторических тегов)
 ```text
-nginx → 2–4× unified + ClickHouse
+nginx → 2–4 реплики ispf-server + ClickHouse
 ```
+- Агрегирующие запросы по нескольким тегам (`POST /api/v1/platform/analytics/query`) и предрассчитанные интервалы (`5m`, `1h`).
 
-**Приёмка:** БЛ-202…206; multi-tag API; rollups `5m`/`1h`.
-
-### Сценарий C — enterprise (~50k+ тегов)
-
+### Сценарий В. Крупный холдинг (50 000+ исторических тегов)
 ```text
-hmi-read + io + analytics×N + CH cluster + S3 cold
+Узлы hmi-read + узлы опроса io + выделенные узлы analytics + кластер ClickHouse + архив Parquet (S3)
 ```
-
-**Приёмка:** БЛ-210 — 50k тегов, 1B samples, p95 multi-tag <3s.
-
----
-
-## Backlog БЛ
-
-| ID | Задача | Приоритет | Краткая приёмка |
-|----|--------|-----------|-----------------|
-| **БЛ-200** | Charter + ADR-0038 | P2 | ADR принят, Фаза 33 в roadmap |
-| **БЛ-201** | Завершение AF-lite (БЛ-160 full) | P1 | Inspector, PUT API, `derivedValue` runtime, example |
-| **БЛ-202** | Historian tier enforcement | P1 | hot→warm→cold write/read, cold Parquet job |
-| **БЛ-203** | Calculation engine core | P1 | DAG, scheduler, built-in evaluators |
-| **БЛ-204** | Write-back derived tags + cluster sync | P1 | NATS sync, backfill API |
-| **БЛ-205** | Materialized rollups (OLAP) | P2 | CH rollups, materializer lag SLO |
-| **БЛ-206** | Multi-tag Analytics Query API | P2 | POST query 10 tags × 7d <3s p95 |
-| **БЛ-207** | Replica profile `analytics` | P2 | capability `analytics`, compose/Helm |
-| **БЛ-208** | Event frames & shift context | P2 | OEE по смене, batch frames |
-| **БЛ-209** | Каталог тегов, lineage, UI | P2 | Done — inspector, impact graph |
-| **БЛ-210** | Enterprise scale gates & DoD | P2 | Done — lab scripts, SLO, examples |
-
-Полные критерии приёмки — в [английской версии](../en/analytics-platform-roadmap.md).
+- Выделенные реплики с профилем `analytics` отвечают за материализацию агрегатов и пересчёт исторических окон без влияния на скорость опроса драйверов и отзывчивость экранов операторов.
 
 ---
 
-## Порядок реализации
+## 2. Реализованные механизмы аналитической платформы
 
-```text
-БЛ-200 → БЛ-201 ─┬→ БЛ-203 → БЛ-204
-                 └→ БЛ-209
-БЛ-202 → БЛ-205 → БЛ-206
-БЛ-203 + БЛ-202 → БЛ-207
-БЛ-203 + БЛ-165 → БЛ-208
-Все → БЛ-210
-```
-
-| Волна | БЛ | Срок (оценка) | Результат |
-|-------|-----|---------------|-----------|
-| W1 | 200, 201 | 1–2 нед. | AF-lite Done |
-| W2 | 202, 203, 204 | 3–4 нед. | Tiers + calculation engine |
-| W3 | 205, 206, 207 | 2–3 нед. | OLAP + API + analytics replicas |
-| W4 | 208, 209, 210 | 2–3 нед. | Event frames, каталог, scale proof |
-
-**Итого:** ~2–3 месяца до AF-capable v1 (не полный PI parity).
-
----
-
-## БЛ-212–215: Каталог функций и расширяемость ([0042-analytics-function-catalog](decisions/0042-analytics-function-catalog.md))
-
-| БЛ | Scope | Результат |
-|----|--------|---------|
-| **212a** | `GET /platform/analytics/catalog`; dormant evaluators | Единый API для builtins + `hist.*` + reactive CEL |
-| **212b** | Браузер формул в модальном редакторе выражений | Comparable to PI: discoverability без дерева AF |
-| **213** | SPI `ispf-analytics-api` + optional packs JAR | Отраслевые KPI вне ядра |
-| **214** | `@analyticsFormulas` + import из bundle приложения | Параметризованные формулы пользователя |
-| **215** | `formulaRef` на правилах, blueprint/marketplace | Переиспользуемые стандарты площадки |
-| **216** | Marketplace `analytics-pack` + каталог `packs-dir` | Покупка Tier C KPI packs |
-
-**БЛ-212a** — **Готово** (2026-07-10). Catalog API + dormant evaluators (`totalizer`, `min`, `max`, `last`).
-
-**БЛ-212b** — **Готово** (2026-07-10). Браузер формул в модальном редакторе выражений; дублирующие статические TS-каталоги удалены.
-
-**БЛ-213** — **Готово** (2026-07-10). SPI `ispf-analytics-api`; первый open pack `ispf-analytics-core-ext` (`energyDelta`).
-
-**БЛ-214** — **Готово** (2026-07-10). CRUD `@analyticsFormulas`, Tier B в каталоге, UI сохранения/применения, import из bundle.
-
-**БЛ-215** — **Готово** (2026-07-10). `formulaRef` в binding rules, sharing через `analyticsFormulasJson` в blueprint, re-expand при сохранении.
-
-**БЛ-216** — **Готово** (локальный install + remote contract). `percentChange` demo pack: `examples/marketplace-analytics-pack-demo/`, `DropInAnalyticsPackLoader`, `POST /api/v1/marketplace/analytics-packs/{id}/install`.
-
----
-
-## Вне scope (БЛ-211+)
-
-- Полный PI Analytics DSL
-- Отдельная AF-база / дублирующее дерево активов
-- ML inference на тегах (БЛ-175)
-- PI Vision–class UI (Фаза 26)
-
----
-
-## Changelog
-
-| Дата | Изменение |
-|------|-----------|
-| 10.07.2026 | БЛ-212a/b готово; БЛ-213 готово (pack `energyDelta`); ADR-0042 принят; docs [analytics-formulas-and-packs](analytics-formulas-and-packs.md); БЛ-216 marketplace analytics packs |
-| 09.07.2026 | Первоначальный charter БЛ-200…210 + ADR-0038 |
+| Компонент | Статус | Где описано подробно |
+|-----------|--------|----------------------|
+| Трёхуровневое хранение истории (`hot` PostgreSQL → `warm` ClickHouse → `cold` Parquet) | Реализовано | [Уровни хранения истории](historian-tiers.md) |
+| Исторические правила расчёта (`kind: historian`) и граф зависимостей тегов | Реализовано | [Рецепты исторических расчётов](analytics-historian-cookbook.md) |
+| Выровненные запросы по нескольким тегам (`POST /api/v1/platform/analytics/query`) | Реализовано | [Каталог аналитических тегов](analytics-tag-catalog.md) |
+| Выделенный профиль реплики `analytics` в кластере | Реализовано | [Кластер ISPF](cluster.md) |
+| Единый каталог функций и пользовательские шаблоны формул (уровни A, B, C) | Реализовано | [Каталог аналитических формул](analytics-formulas-and-packs.md) |
+| Привязка расчётов к производственным сменам и событиям (`Event frames`) | Реализовано | [Справочник REST API](api.md) (`/api/v1/platform/analytics/frames/*`) |

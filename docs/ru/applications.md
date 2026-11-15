@@ -1,27 +1,31 @@
 > **Язык:** русская версия. Английский оригинал: [en/applications.md](../en/applications.md).
 
-# API прикладных решений (Applications)
+# Прикладные решения: пакеты `bundle.json`, функции, миграции и BFF
 
-> **Статус:** Stable — деплой пакетов `bundle.json`, миграции SQL, шлюз BFF, расписания и Git. Метки зрелости: [doc-status.md](doc-status.md).
+> **Статус:** Stable — упаковка и установка решений (`bundle.json`), изолированные SQL-схемы, скриптовые функции, шлюз BFF, расписания и интеграция с Git. Метки зрелости: [doc-status.md](doc-status.md).
 
-Серверный уровень платформы для развёртывания отраслевых решений **без добавления прикладного Java-кода в `ispf-server`** ([ADR-0001](decisions/0001-app-platform-boundary.md)). Пошаговое введение см. в [Руководстве разработчика решений](solution-developer-guide.md).
+ISPF позволяет разрабатывать и поставлять готовые отраслевые решения (SCADA, MES, учёт энергоресурсов, диспетчеризация зданий) **в виде декларативных пакетов `bundle.json` без изменения Java-кода сервера `ispf-server`** ([ADR-0001](decisions/0001-app-platform-boundary.md)). Пошаговый учебник по сборке проекта с нуля приведён в **[Руководстве разработчика решений](solution-developer-guide.md)**.
 
-## Обзор возможностей
+---
 
-![Каталог Applications в консоли администратора](../assets/ispf-applications.png)
+## 1. Обзор механизмов прикладного решения
 
-| Код | Возможность | API / компонент |
-|-----|-------------|-----------------|
-| REQ-PF-01 | Выполнение скриптовых функций | `POST /api/v1/applications/{appId}/functions/deploy`, JSON script engine |
-| REQ-PF-02 | Изолированная SQL-схема приложения | `POST /api/v1/applications/{appId}/data/migrate` |
-| REQ-PF-03 | Пакетный деплой решения (`bundle.json`) | `POST /api/v1/applications/{appId}/deploy` (JSON body) |
-| REQ-PF-04 | Вызов функций из процессов BPMN | `WorkflowActionType.INVOKE_FUNCTION` |
-| REQ-PF-05 | Планировщик расписаний | `GET/POST /api/v1/schedules` |
-| REQ-PF-06 | Единый шлюз интерфейса (BFF) | `POST /api/v1/bff/invoke` |
-| REQ-PF-07 | Хранение шаблонов объектов в БД | Таблица `blueprint_definitions` |
-| REQ-PF-10 | Отмена экземпляров BPMN | `POST /api/v1/workflows/instances/{id}/cancel` |
+![Каталог приложений в консоли администратора](../assets/ispf-applications.png)
 
-## Регистрация приложений
+| Возможность | Как вызывается |
+|-------------|----------------|
+| Регистрация приложения и его схемы БД | `POST /api/v1/applications` |
+| Изолированные SQL-миграции таблиц приложения | `POST /api/v1/applications/{appId}/data/migrate` (или секция `migrations[]` в пакете) |
+| Скриптовые функции на узлах логики | `POST /api/v1/applications/{appId}/functions/deploy` (или секция `functions[]` в пакете) |
+| Установка всего решения одним запросом | `POST /api/v1/applications/{appId}/deploy` (манифест `bundle.json`) |
+| Единый шлюз вызова функций из интерфейса (BFF) | `POST /api/v1/bff/invoke` |
+| Вызов функций из процессов BPMN | Шаг `serviceTask` с действием `invoke_function` |
+| Периодический запуск функций по расписанию | `GET / POST /api/v1/schedules` (или секция `schedules[]` в пакете) |
+| Привязка к репозиторию Git (pull / push PR) | Вкладка **Git** на узле приложения (`/api/v1/applications/{appId}/git/**`) |
+
+---
+
+## 2. Регистрация приложения и изолированная SQL-схема
 
 ```http
 POST /api/v1/applications
@@ -29,15 +33,15 @@ Content-Type: application/json
 
 {
   "appId": "myapp",
-  "displayName": "My Application",
+  "displayName": "Моё приложение",
   "tablePrefix": "myapp_",
   "schemaName": "myapp"
 }
 ```
 
-## Миграция данных (REQ-PF-02)
+### Миграции таблиц приложения
 
-SQL-скрипты приложения **не** используются на платформе Flyway. Развертывание через API в **изолированной схеме** (`schemaName`, по умолчанию `app_{appId}`):
+Таблицы прикладного решения хранятся отдельно от системных миграций Flyway — в собственной SQL-схеме приложения (`schemaName`, по умолчанию `app_<appId>`):
 
 ```http
 POST /api/v1/applications/myapp/data/migrate
@@ -46,60 +50,40 @@ Content-Type: application/json
 {
   "version": "1.0.0",
   "scripts": [
-    { "id": "items", "sql": "CREATE TABLE IF NOT EXISTS demo_item (...);" }
+    { "id": "items", "sql": "CREATE TABLE IF NOT EXISTS myapp_item (id VARCHAR(64) PRIMARY KEY, title VARCHAR(255));" }
   ]
 }
 ```
 
-Повторный вызов с тем же `version` + `id` — **идемпотентен** (скрипт пропускается).
+- Повторный вызов с уже применённой парой `(version, id)` безопасен и пропускается.
+- Сервер блокирует попытки изменять системные таблицы платформы (`applications`, `object_nodes`, `workflow_*` и др.). Если задан `tablePrefix`, имена всех создаваемых таблиц должны начинаться с этого префикса.
+- Проверить применённые миграции: `GET /api/v1/applications/myapp/data/status`.
 
-**Защита схемы:** миграции приложения не могут создавать или менять системные таблицы платформы (`applications`, `workflow_*` и др.). При заданном `tablePrefix` имена таблиц должны начинаться с указанного префикса.
+---
 
-```http
-GET /api/v1/applications/myapp/data/status
-```
+## 3. Скриптовые функции приложения (`source.type = "script"`)
 
-### Тестовое наполнение данных (`seed`)
+Прикладные функции размещаются на узлах логики (`SINGLETON` или `INSTANCE`, но не `DEVICE`) и описываются JSON-сценарием из последовательных шагов:
 
-```http
-POST /api/v1/applications/myapp/data/seed
-Content-Type: application/json
+| Шаг сценария | Что делает |
+|--------------|------------|
+| `selectOne` | Выполняет SQL `SELECT` и сохраняет одну строку (`Map`) в переменную сценария |
+| `selectMany` | Выполняет SQL `SELECT` и сохраняет список строк (`List<Map>`) в переменную сценария |
+| `exec` | Выполняет параметризованный SQL `INSERT` / `UPDATE` / `DELETE` |
+| `setVar` | Записывает в переменную сценария константу или выражение `${...}` |
+| `buildRecord` | Собирает объект (`Map`) из набора вычисляемых полей `fields` |
+| `map` | Преобразует каждый элемент массива `source` по шаблону `fields` (текущий элемент доступен как `${item.*}`) |
+| `invoke_function` | Вызывает другую функцию дерева объектов (вложенность до 8 уровней) |
+| `when` / `if` | Условное ветвление (`then` / `else`) |
+| `readVariable` | Читает значение переменной узла дерева (`objectPath: "self"` или полный путь) |
+| `jsonParse` | Разбирает JSON-строку в структуру полей |
+| `setDriverTelemetry` | Записывает значение телеметрии в узел устройства |
+| `instantiateModelIfMissing` | Создаёт экземпляр объекта по шаблону, если он ещё не существует |
+| `cancel_workflows` | Отменяет активные экземпляры процесса BPMN |
+| `failIfNull` / `failIfNotEquals` | Прерывает выполнение и возвращает заданный `error_code` и `error_message` |
+| `return` | Формирует итоговый ответ функции по списку полей `fields` |
 
-{ "profile": "smoke-demo" }
-```
-
-Встроенный профиль `smoke-demo` выполняет идемпотентные `INSERT` в демонстрационные таблицы (`demo_category`, `demo_item`, `demo_metric`). Повторный вызов пропускает уже добавленные блоки тестовых данных.
-
-```http
-GET /api/v1/applications/myapp/data/status
-```
-
-## Функции развертывания (REQ-PF-01)
-
-Функции — JSON **скрипт** с шагами:
-
-| Шаг | Назначение |
-|-----|------------|
-| `selectOne` | Одна строка SQL → var (`Map`) |
-| `selectMany` | Список строк SQL → var (`List<Map>`) |
-| `exec` | DML/DDL с `params` |
-| `setVar` | Присвоение литерала или `${path}` |
-| `buildRecord` | Сборка `Map` в var из `fields` (field mapping) |
-| `map` | Преобразование списка: `source` + `fields` с контекстом `${item.*}` |
-| `invoke_function` | Вызов другой deploy-функции; propagate `error_code` |
-| `when`, `if` | Ветвление (`then` / `else`) |
-| `readVariable` | Чтение поля переменной объекта (`objectPath: self`) |
-| `jsonParse` | Разбор JSON-строки в поля |
-| `setDriverTelemetry` | Запись driver-телеметрии |
-| `instantiateModelIfMissing` | Создание объекта из модели |
-| `cancel_workflows` | Отмена workflow instances |
-| `failIfNull` | Выход с `error_code` / `error_message` |
-| `failIfNotEquals` | Проверка значения var |
-| `return` | Сборка output (`fields`); массивы через `${var}` |
-
-Полные примеры скриптов/java/встроенных функций на объектах дерева: [object-functions](object-functions.md). Те же шаги выполняются в `sourceType=script` на объекте (Inspector) и при развертывании приложения.
-
-Один invoke = одна JDBC-транзакция (откат при необработанном исключении). Вложенные `invoke_function` — до 8 уровней. Недопустимый скрипт → **400** при deploy.
+Каждый вызов функции выполняется в одной транзакции БД (при необработанной ошибке изменения откатываются). Подробные примеры всех типов функций (встроенных, скриптовых и Java в песочнице) приведены в разделе **[Функции на объектах](object-functions.md)**.
 
 ```http
 POST /api/v1/applications/myapp/functions/deploy
@@ -126,30 +110,19 @@ Content-Type: application/json
 }
 ```
 
-При первом вызове функция дескриптора автоматически добавляется на объект.
+---
 
-Параметры в SQL: `"${input.orderId}"` или `"$input.orderId"`.
+## 4. Пакетное развёртывание решения (`bundle.json`)
 
 <a id="bundle-deploy-req-pf-03"></a>
 
-## Деплой пакета решения (`bundle.json`)
+Один запрос `POST /api/v1/applications/{appId}/deploy` регистрирует приложение, накатывает SQL-миграции, создаёт шаблоны (`blueprints`), узлы дерева (`objects`), функции (`functions`), правила тревог (`alertRules`), корреляторы (`correlators`), дашборды (`dashboards`), процессы (`workflows`), отчёты (`reports`) и расписания (`schedules`).
 
-### Версионирование SemVer и формат манифеста (ADR-0064)
+### Требования к версии и структуре манифеста (ADR-0064)
 
-`manifest.version` является **обязательным** и должно быть строгим значением `MAJOR.MINOR.PATCH` (например, `1.0.0`). Недопустимые значения отклоняются при анализе, проверке и развёртывании.
-
-`manifest.formatVersion` — необязательное **целое число** для версии структуры JSON (не версия решения). Если поле не указано, используется `1`; неподдерживаемые номера версий отклоняются. Подробнее: [ADR-0064](decisions/0064-release-compatibility-lts.md) и [Обновление версий](release-upgrade.md).
-
-Необязательные поля истории изменений:
-
-- `changelog` — строка верхнего уровня, отображаемая в каталоге решений;
-- `metadata.changelog` — альтернативное расположение того же текста.
-
-При обновлении установленного приложения `POST …/bundle/validate` предупреждает о **major**-обновлениях версии (`1.x.x` → `2.0.0`), чтобы интеграторы проверили миграции и breaking changes operator UI.
-
-API: `GET /api/v1/solutions/catalog`. Reference demo (MES, Warehouse, Building HVAC) устанавливаются из marketplace (`POST /api/v1/solutions/marketplaces/{marketplaceId}/listings/{slug}/install`).
-
-Один запрос — регистрация, метаданные, миграции, функции, расписания:
+- Поле `version` обязательно и должно соответствовать формату SemVer `MAJOR.MINOR.PATCH` (например, `"1.0.0"`).
+- Необязательное поле `formatVersion` указывает версию формата самого JSON-манифеста (по умолчанию `1`).
+- Описание изменений версии можно указать в поле `changelog` (или `metadata.changelog`) — оно отображается в каталоге решений.
 
 ```http
 POST /api/v1/applications/myapp/deploy
@@ -157,41 +130,35 @@ Content-Type: application/json
 
 {
   "version": "1.0.0",
-  "displayName": "My Application",
-  "tablePrefix": "",
+  "displayName": "Моё приложение",
+  "tablePrefix": "myapp_",
   "schemaName": "myapp",
-  "objects": [
-    {
-      "parentPath": "root.platform",
-      "name": "myapp",
-      "type": "CUSTOM",
-      "displayName": "My Application"
-    }
-  ],
-  "dashboards": [
-    {
-      "path": "root.platform.myapp.ops",
-      "title": "Operator Board",
-      "layoutJson": "{ \"columns\": 84, \"rowHeight\": 8, \"widgets\": [] }"
-    }
-  ],
-  "workflows": [
-    {
-      "path": "root.platform.myapp.workflows.main",
-      "bpmnXml": "<definitions ...>...</definitions>",
-      "status": "ACTIVE"
-    }
-  ],
   "blueprints": [
     {
-      "name": "my-unit-v1",
-      "description": "Типовой шаблон агрегата",
-      "type": "INSTANCE",
+      "name": "myapp-hub-v1",
+      "description": "Центральный узел логики приложения",
+      "type": "SINGLETON",
       "targetObjectType": "CUSTOM",
       "variables": []
     }
   ],
-  "migrations": [ { "id": "...", "sql": "..." } ],
+  "objects": [
+    {
+      "parentPath": "root.platform.singleton-blueprints",
+      "name": "myapp-hub",
+      "type": "CUSTOM",
+      "templateId": "myapp-hub-v1",
+      "displayName": "Логика приложения"
+    }
+  ],
+  "dashboards": [
+    {
+      "path": "root.platform.dashboards.myapp-ops",
+      "title": "Пульт оператора",
+      "layoutJson": "{ \"columns\": 84, \"rowHeight\": 8, \"widgets\": [] }"
+    }
+  ],
+  "migrations": [ { "id": "001_init", "sql": "..." } ],
   "functions": [ ... ],
   "schedules": [
     {
@@ -200,7 +167,7 @@ Content-Type: application/json
       "intervalMs": 60000,
       "actionType": "invoke_function",
       "action": {
-        "objectPath": "root.platform.myapp.integration",
+        "objectPath": "root.platform.singleton-blueprints.myapp-hub",
         "functionName": "myapp_importRecords"
       }
     }
@@ -208,13 +175,28 @@ Content-Type: application/json
 }
 ```
 
-Ответ: `{ "status": "OK", "applied": [...], "skipped": [...], "errors": [] }`.
+### Проверка, откат и выгрузка пакета из дерева
+
+```http
+GET  /api/v1/applications/{appId}/export
+POST /api/v1/applications/{appId}/bundle/validate?dryRun=true|false&strict=true|false
+POST /api/v1/applications/{appId}/deploy?strict=true|false&runTests=true|false
+GET  /api/v1/applications/{appId}/deploy/history
+POST /api/v1/applications/{appId}/deploy/rollback
+```
+
+- **Режим проверки (`strict`):** при обычной отладке (`strict=false`) размещение логики на узле `DEVICE` (`LOGIC_HOST_DEVICE`) выдаёт предупреждение (`WARNING`), не блокируя установку. При строгой проверке перед поставкой (`strict=true` или `ispf validate --strict`) нарушение архитектурных правил возвращает ошибку `400` ([ADR-0060](decisions/0060-solution-authoring-constraints.md)).
+- **Автотесты пакета (`runTests=true`):** если в манифесте задана секция `tests[]`, они автоматически прогоняются сразу после установки.
+- **Атомарность при ошибках:** перед изменением дерева сервер проверяет структуру узлов и выполняет SQL-миграции. Если в SQL-скрипте нового деплоя возникает ошибка, транзакция откатывается, а созданные этой попыткой таблицы удаляются.
+- **Сборка манифеста из живого дерева (`pull-from-tree`):** запрос `POST /api/v1/applications/{appId}/bundle/pull-from-tree` собирает актуальные дашборды, процессы и объекты приложения из дерева обратно в структуру `bundle.json`.
+
+---
+
+## 5. Шлюз вызова функций из интерфейса (`BFF`)
 
 <a id="bff-req-pf-06"></a>
 
-## Шлюз вызова функций из UI (`BFF`)
-
-Универсальный шлюз для Operator UI:
+Экраны оператора и внешние React-приложения (`ui-pack`) вызывают серверные функции через единый шлюз:
 
 ```http
 POST /api/v1/bff/invoke
@@ -225,248 +207,73 @@ Content-Type: application/json
   "functionName": "myapp_processRecord",
   "input": {
     "schema": { "name": "in", "fields": [{"name": "orderId", "type": "STRING"}] },
-    "rows": [{ "orderId": "..." }]
+    "rows": [{ "orderId": "ORD-101" }]
   },
   "wireProfile": "ispf-operator-v1"
 }
 ```
 
-### Wire profile `ispf-operator-v1`
+Формат ответа с профилем `ispf-operator-v1`:
+- при успехе возвращается `"error_code": "OK"`, `"error_message": ""`, поле `"result"` (объект для одной записи или массив строк для табличной выборки) и словарь человекочитаемых заголовков колонок `"result_field_labels"`;
+- при прикладной ошибке возвращается код ошибки в `"error_code"` и текст в `"error_message"`.
 
-| Правило | Поведение |
-|---------|-----------|
-| Успех | `error_code === "OK"`, `error_message === ""` |
-| Ошибка | `result` отсутствует |
-| Таблица | `result` = массив строк (unwrap поля `rows`) |
-| Подписи | `result_field_labels`: `description` поля output schema → profile map `ispf-operator-v1` → имя поля |
+---
 
-Ответ (scalar): `{ "error_code": "OK", "error_message": "", "result": { ... }, "result_field_labels": {...}, "wireProfile": "ispf-operator-v1" }`.
+## 6. SQL-привязки переменных (`sqlBinding`)
 
-Ответ (таблица): `{ "error_code": "OK", "result": [ {...}, ... ], "result_field_labels": {...} }`.
-
-## Расписания (REQ-PF-05)
-
-```http
-GET /api/v1/schedules
-POST /api/v1/schedules
-```
-
-Тик каждые 5 с; действие `invoke_function` с JSON `{ objectPath, functionName, input? }`.
-
-## BPMN invoke_function (REQ-PF-04)
-
-Задача службы BPMN:
-
-```xml
-<ispf:serviceTask action="invoke_function"
-  objectPath="root.platform.singleton-blueprints.myapp-hub"
-  functionName="myapp_acknowledge"
-  inputMap="deviceId=${workflow.deviceId}"
-  outputMap="ackResult=result" />
-```
-
-## Отмена рабочего процесса (REQ-PF-10)
-
-```http
-POST /api/v1/workflows/instances/{instanceId}/cancel
-Content-Type: application/json
-
-{
-  "reason": "incident",
-  "detailJson": "{\"incidentId\":\"...\"}",
-  "cancelledBy": "operator-1"
-}
-```
-
-## Модели (REQ-PF-07)
-
-Пользовательские модели сохраняются в `model_definitions` и восстанавливаются при старте.
-
-## Права доступа
-
-| Конечная точка | Роль |
-|----------|------|
-| `/applications/**`, `/schedules/**` (POST/PUT) | `admin` |
-| `/applications/*/operator-ui`, `/applications/*/hmi-ui`, `/applications/*/operator-manifest` (GET) | `operator`, `admin` |
-| `/bff/invoke`, `/workflows/instances/*/cancel`, `/applications/*/reports/*/run` | `operator`, `admin` |
-
-## Привязки SQL (REQ-PF-08)
-
-Автоматическая синхронизация переменной узла логики по SQL-запросу к схеме приложения:
+Переменную узла логики можно автоматически обновлять результатом SQL-запроса к схеме приложения:
 
 ```http
 POST /api/v1/applications/{appId}/bindings/deploy
+Content-Type: application/json
+
 {
   "objectPath": "root.platform.singleton-blueprints.myapp-hub",
   "variable": "readyCount",
-  "query": "SELECT COUNT(*) AS value FROM demo_item WHERE status = 'ready'",
+  "query": "SELECT COUNT(*) AS value FROM myapp_item WHERE status = 'ready'",
   "refresh": "on_schedule",
   "refreshIntervalMs": 30000,
   "valueField": "value"
 }
 ```
 
-| `refresh` | Поведение |
-|-----------|-----------|
-| `on_schedule` | Периодический poll (`ApplicationSqlBindingScheduler`) |
-| `on_function_success` | После успешного invoke функции (опционально `triggerObjectPath` / `triggerFunctionName`) |
-| `on_event` | После `EVENT_FIRED` на объекте (опционально фильтр по `triggerObjectPath` / событию) |
+Режимы обновления (`refresh`):
+- `on_schedule` — периодический опрос по таймеру (`ApplicationSqlBindingScheduler`);
+- `on_function_success` — пересчёт сразу после успешного вызова указанной функции;
+- `on_event` — пересчёт при публикации события на объекте.
 
-**Variable-level binding:** на переменной объекта можно задать `bindingExpression`:
+---
 
-```text
-sqlBinding('warehouse-app', 'readyCount')
-```
-
-Платформа выполняет привязку SQL из таблицы `application_sql_bindings` для этого приложения и переменной (см. `ServerBindingEvaluator`).
-
-Также deploy через bundle: `bindings[]` в manifest.
-
-```http
-GET  /api/v1/applications/{appId}/bindings
-POST /api/v1/applications/{appId}/bindings/refresh
-```
-
-## Версии функции (REQ-PF-11)
-
-```http
-GET  /api/v1/applications/{appId}/functions?objectPath=&functionName=
-POST /api/v1/applications/{appId}/functions/rollback
-{ "objectPath", "functionName", "version": "2" }
-```
-
-Rollback поднимает `deployed_at` выбранной версии — `findLatest` снова её использует.
-
-## Bundle deploy history and rollback (PF-03b)
-
-Каждый `POST .../deploy` сохраняет snapshot manifest в `application_bundle_deployments`.
-
-```http
-GET  /api/v1/applications/{appId}/deploy/history
-POST /api/v1/applications/{appId}/deploy/rollback
-{ "version": "1.0.0" }
-```
-
-Откат повторно применяет сохранённый манифест (миграции пропускаются, функции применяются повторно).
-
-## Экспорт и проверка пакета (туда и обратно)
-
-```http
-GET  /api/v1/applications/{appId}/export
-GET  /api/v1/applications/{appId}/export?version=1.0.0
-POST /api/v1/applications/{appId}/bundle/validate?dryRun=true|false&strict=true|false
-POST /api/v1/applications/{appId}/deploy?strict=true|false&runTests=true|false
-```
-
-Deploy всегда прогоняет `BundleManifestValidator` до применения. Пустые `displayName` и `schemaName` заполняются теми же значениями, что и `register()` (`appId` и `app_<appId>`), поэтому догрузка уже зарегистрированного приложения по-прежнему применяется. Проверка лицензии остаётся на исходном JSON. Структурный **ERROR** (нет version, пустой манифест, сломанные миграции) отвечает **400** с `deployed: false` и бандл не применяет. По умолчанию `strict=false` — авторский режим (`LOGIC_HOST_DEVICE` = WARNING, deploy не блокируется). С `strict=true` коды ship-canon становятся **ERROR**: deploy отвечает **400** (`shipCanon: true`, `deployed: false`) ([0060](decisions/0060-solution-authoring-constraints.md)). CLI: `ispf validate --strict`, `ispf deploy --strict`.
-
-`runTests` по умолчанию **true**: `tests[]` манифеста выполняются после apply, провал попадает в результат deploy. `runTests=false` пропускает их.
-
-До записи объектов пакета операция `deploy` выполняет пробную проверку дерева (обязательные поля, известный тип узла, наличие родительского пути и отсутствие дубликатов) и запускает `migrations[]` в одном соединении с БД. Ошибка пробной проверки не изменяет дерево объектов (`treeMutated: false`) и не запускает SQL. Ошибка SQL-выражения откатывает текущее соединение и удаляет таблицы, созданные именно этим неуспешным деплоем, чтобы в схеме не оставалось полуприменённых таблиц (сама схема приложения и источник данных при регистрации сохраняются, чтобы запросам было где выполняться). Уже зафиксированные ранее миграции не откатываются, если на следующем шаге возникнет ошибка записи узла дерева.
-
-`export` возвращает активный (или указанный) манифест моментального снимка из `application_bundle_deployments`. Веб-консоль: вкладка **Deploy** на узле `APPLICATION` — редактор JSON, проверка, развертывание, таблица ресурсов (добавление/удаление в манифесте).
-
-```http
-POST /api/v1/applications/{appId}/bundle/pull-from-tree
-{
-  "sections": ["dashboards", "workflows"],
-  "paths": ["root.platform.dashboards.demo"],
-  "mergeActive": true
-}
-```
-
-Собирает манифест из **текущего дерева объектов** (визуальные группы + хранилища приложения). `paths` — опционально, только перечисленные узлы; без `paths` — все участники visual groups. `displayName` / `tablePrefix` / `schemaName` обновляются из регистрации приложения; `operatorUi`, `metadata`, `license`, `requires` берутся из активного снимка. `blueprints[]` обновляются из реестра по именам базового манифеста.
-
-Экспорт отдельной ветки дерева объектов в JSON (`formatVersion: 1`): `GET /api/v1/platform/backup/export?rootPath=root.platform.devices.demo-sensor-01` (или вкладка **Экспорт JSON** в инспекторе узла).
+## 7. Связь приложения с репозиторием Git (ADR-0063)
 
 <a id="application-git-adr-0063"></a>
 
-## Application Git (ADR-0063)
+Вкладка **Git** на узле `APPLICATION` позволяет связать пакет приложения с репозиторием GitHub или GitLab:
 
-Вкладка **Git** на APPLICATION связывает **тот же полный bundle** с git команды. ISPF не хостит `.git`: binding + credential.
+| Операция | API | Что делает |
+|----------|-----|------------|
+| Настройка привязки | `GET / PUT / DELETE /api/v1/applications/{appId}/git` | Сохраняет HTTPS URL репозитория, провайдера (`github` или `gitlab`), ветку, путь к `bundle.json` и токен доступа (в зашифрованном хранилище секретов) |
+| Проверка статуса | `GET /api/v1/applications/{appId}/git/status` | Показывает текущую привязку и хэш последнего применённого коммита |
+| Загрузка релиза из Git (`Pull`) | `POST /api/v1/applications/{appId}/git/pull` | Скачивает `bundle.json` из указанной ветки/тега (`ref`), проверяет и разворачивает его на сервере |
+| Выгрузка правок в Git (`Push PR`) | `POST /api/v1/applications/{appId}/git/push-pr` | Собирает текущее состояние приложения из дерева (`pull-from-tree`), создаёт ветку `ispf/...` и открывает Pull Request / Merge Request |
 
-| Действие | Статус | Поведение |
-|----------|--------|-----------|
-| Connect / Disconnect | **Сейчас** | Remote URL (https, без userinfo / private hosts), provider (`github` \| `gitlab`), ветка, путь к `bundle.json`, PAT в vault |
-| Status | **Сейчас** | Binding + deploy snapshot + наличие credential; drift/reachability — позже |
-| Pull release | **Сейчас** | `POST …/git/pull` с опциональным `{ "ref" }` → fetch `bundle.json` → validate → deploy; history `source=git` + sha |
-| Push tree | **Сейчас** | `POST …/git/push-pr` → full pull-from-tree → ветка `ispf/…` (от `lastSyncedSha`, если есть) → **open PR/MR**. PAT: GitHub Contents R/W + Pull requests; GitLab только scope **`api`** |
+---
 
-Подробнее: [ADR-0063](../en/decisions/0063-application-git-lifecycle.md). API сейчас: `GET/PUT/DELETE /api/v1/applications/{appId}/git`, `GET …/git/status`, `POST …/git/pull`, `POST …/git/push-pr`.
+## 8. Настройка меню и экранов оператора (`operatorUi`)
 
-## Отчёты (REQ-PF-12)
-
-SQL-отчёты в схеме приложения: развертывание через пакет `reports[]` или `POST .../reports/deploy`, выполнение `POST .../reports/{id}/run`, экспорт CSV `GET .../reports/{id}/export`.
-
-Подробнее: [reports](reports.md).
-
-## Operator UI (дашборды из дерева)
-
-Единая оболочка оператора: навигация по объектам `DASHBOARD` из дерева, те же виджеты, что и в Dashboard Builder (только для чтения).
-
-Контракт `operatorUi`:
+Чтобы приложение появилось в списке рабочих мест оператора (`?mode=operator&app=myapp`), добавьте в `bundle.json` секцию `operatorUi` (подробнее см. в разделе **[Приложения оператора](operator-apps.md)**):
 
 ```json
 {
-  "appId": "platform",
-  "title": "Platform HMI",
-  "defaultDashboard": "root.platform.dashboards.snmp-host-monitoring",
+  "appId": "myapp",
+  "title": "Диспетчерская цеха",
+  "defaultDashboard": "root.platform.dashboards.myapp-ops",
   "dashboards": [
-    { "path": "root.platform.dashboards.snmp-host-monitoring", "title": "SNMP Host Monitoring" }
+    { "path": "root.platform.dashboards.myapp-ops", "title": "Обзор цеха" }
   ]
 }
 ```
 
-Источники (по приоритету):
+После установки пакета все его ресурсы отражаются в дереве объектов внутри ветки `root.platform.applications.<appId>` (папки `reports`, `functions`, `schedules`, `bindings`, `migrations`).
 
-1. `GET /api/v1/operator-apps/{appId}/ui` — встроенные и настроенные в админке приложения (таблица `operator_app_ui`, узел дерева `root.platform.operator-apps`)
-2. Поле `operatorUi` в deploy bundle → `GET /api/v1/applications/{appId}/operator-ui`
-3. Автогенерация из `dashboards[]` в bundle (path + title)
-4. Резерв для dev: `public/operator-apps/{appId}.ui.json`
-
-URL: `?mode=operator&app=platform&dashboard=<path>` (JAR `:8080`, Vite dev `:5173`).
-
-### Устаревший operator manifest
-
-Поле `operatorManifest` в deploy bundle → `GET /api/v1/applications/{appId}/operator-manifest` — **устарело** (таблицы/отчёты через BFF). Для новых приложений используйте `operatorUi` и дашборды.
-
-Веб-консоль сначала ходит в API; файл `public/operator-apps/<appId>.manifest.json` — только запасной dev-shell.
-
-### Объекты дерева
-
-После register/deploy сущности приложения синхронизируются в `root.platform.applications.{appId}`:
-
-| Папка | Содержимое |
-|-------|------------|
-| `reports` | SQL-отчёты (`ObjectType.REPORT`) |
-| `functions` | Deployed script functions |
-| `schedules` | `platform_schedules` |
-| `bindings` | SQL bindings |
-| `migrations` | Применённые data migrations |
-| `screens` | Экраны operator manifest (legacy) |
-
-Синхронизация: при развертывании/регистрации/переносе и при запуске сервера.
-
-**Пример:** `appId=platform` настраивается в admin: дерево → `root.platform.operator-apps`. Deploy-приложения — `operatorUi` в bundle.
-
-## Связанная документация
-
-- [Справочник REST API](api.md)
-- [Процессы BPMN](workflows.md) — `invoke_function`, отмена экземпляров
-- [Веб-консоль](web-console.md) — редактор BPMN
-- [Дорожная карта](roadmap.md)
-- [Плагины](plugins.md) — граница ядра и коммерческих модулей
-- [Безопасность](security.md) — матрица RBAC
-
-## Устаревший путь (PF-03, фаза 5.5)
-
-Таблица `applications` и REST `/api/v1/applications/*` — **только metadata и schema isolation** (реестр приложений, SQL migrations, deploy history). Не параллельный runtime.
-
-После `POST /api/v1/applications/{appId}/deploy`:
-
-- Функции адресуются через object tree: `{appId}.functions.{name}` на path узла приложения.
-- Объекты, дашборды, рабочие процессы, модели из бандла — узлы дерева (`objects[]` согласовывать, а не только создавать).
-- Invoke: `POST /api/v1/bff/invoke` или `POST /api/v1/objects/by-path/functions/invoke` по tree path.
-- SQL bindings: `bindingExpression: sqlBinding('appId','var')` на переменной узла.
-
-**Устаревший формат (только предупреждение):** секция `operatorManifest` (`screens[]`) в пакете сохранена для обратной совместимости; для всех новых решений используйте `operatorUi` и дашборды дерева (либо пакет `ui-pack` — см. [Руководство разработчика решений](solution-developer-guide.md)).
+**Связанные разделы:** [Руководство разработчика решений](solution-developer-guide.md) · [Публичный контракт разработчика](solution-developer-public-api.md) · [Функции на объектах](object-functions.md) · [Процессы BPMN](workflows.md) · [Отчёты](reports.md).

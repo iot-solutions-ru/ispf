@@ -1,18 +1,23 @@
 > **Язык:** русская версия. Английский оригинал: [en/tutorial-ot-credentials-vault.md](../en/tutorial-ot-credentials-vault.md).
 
-# Туториал: credentials vault
+# Урок 5: Зашифрованное хранилище учётных данных и ключей (`Credentials Vault`)
 
-> **Статус:** Beta — ADR-0049 Wave 4. См. также: [OT Automation туториалы](ot-automation-excellence-tutorials.md).
+> **Статус:** Beta — безопасное хранение паролей и API-ключей внешних систем в ветке `root.platform.credentials.*` с шифрованием в БД и ротацией ключей ([ADR-0065](decisions/0065-secrets-key-rotation.md)). См. также: [Все уроки серии](ot-automation-excellence-tutorials.md).
 
-## Цель
+## Цель урока
+Сохранить секретный ключ внешнего сервиса в зашифрованном хранилище ISPF и подключить его к шагу процесса BPMN через ссылку `modelRef`, не раскрывая секрет в открытом виде в манифестах и журналах.
 
-Сохранить зашифрованный API key и указать его в BPMN через `modelRef`.
+---
 
-Нужен ключ шифрования секретов: переменная окружения `ISPF_SECURITY_SECRETS_KEY` / `ispf.security.secrets-key`, либо разовая установка через `POST /api/v1/federation/secrets-key`. Без ключа запись учётных данных вернёт **409**. Новые записи сохраняются в конверте `ispf1.<keyId>.…`; для смены YAML-ключа задайте `ISPF_SECURITY_SECRETS_PREVIOUS_KEY`, перезапустите сервер и вызовите `POST /api/v1/federation/secrets-key/reencrypt` ([ADR-0065](decisions/0065-secrets-key-rotation.md)).
+## Предварительное условие: мастер-ключ шифрования
 
-## Шаги
+На сервере должна быть задана переменная окружения `ISPF_SECURITY_SECRETS_KEY` (свойство `ispf.security.secrets-key`). Все секреты шифруются алгоритмом аутентифицированного шифрования в конверте формата `ispf1.<keyId>....` (при плановой смене мастер-ключа поддерживается перешифрование через `ISPF_SECURITY_SECRETS_PREVIOUS_KEY` и метод `POST /api/v1/federation/secrets-key/reencrypt` — см. [ADR-0065](decisions/0065-secrets-key-rotation.md)).
 
-### 1. Upsert
+---
+
+## Пошаговое выполнение
+
+### Шаг 1. Сохраните учётные данные (`PUT /api/v1/credentials/by-path`)
 
 ```bash
 curl -s -X PUT "$BASE/api/v1/credentials/by-path?path=root.platform.credentials.openai-lab" \
@@ -20,7 +25,7 @@ curl -s -X PUT "$BASE/api/v1/credentials/by-path?path=root.platform.credentials.
   -H 'Content-Type: application/json' \
   -d '{
     "kind": "openai",
-    "secret": "sk-REPLACE_ME",
+    "secret": "sk-ЗАМЕНИТЕ-НА-КЛЮЧ",
     "metadata": {
       "baseUrl": "https://api.openai.com/v1",
       "model": "gpt-4o-mini"
@@ -28,29 +33,21 @@ curl -s -X PUT "$BASE/api/v1/credentials/by-path?path=root.platform.credentials.
   }' | jq .
 ```
 
-### 2. Describe (без секрета)
+### Шаг 2. Убедитесь, что секрет не возвращается в открытом виде при чтении
 
 ```bash
 curl -s "$BASE/api/v1/credentials/by-path?path=root.platform.credentials.openai-lab" \
   -H "Authorization: Bearer $TOKEN" | jq .
 ```
 
-Ожидание: `hasSecret=true`, без plaintext key.
+Ответ вернёт метаданные и признак `"hasSecret": true`, но никогда не выдаст само поле `secret` наружу.
 
-### 3. BPMN
+### Шаг 3. Укажите путь к учётным данным в шаге BPMN
 
-```text
+В атрибутах шага `llm_complete` или `invoke_agent` укажите путь к созданному узлу:
+
+```xml
 ispf:modelRef="root.platform.credentials.openai-lab"
 ```
 
-`platform-default` — по-прежнему `ISPF_AI_*` на сервере.
-
-## Проверка
-
-- [ ] Upsert `status=OK`
-- [ ] Describe не отдаёт secret
-- [ ] AI-шаг с vault `modelRef` отрабатывает (или явная ошибка auth)
-
-## Дальше
-
-[AI в BPMN](tutorial-ot-ai-bpmn.md)
+**Следующий урок:** [Урок 6 — Инструменты анализа временных рядов (`Analytics AI`)](tutorial-ot-analytics-ai.md).

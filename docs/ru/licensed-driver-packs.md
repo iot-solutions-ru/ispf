@@ -1,30 +1,34 @@
 > **Язык:** русская версия. Английский оригинал: [en/licensed-driver-packs.md](../en/licensed-driver-packs.md).
 
-# Пакеты лицензионных драйверов (FW-50)
+# Пакеты драйверов устройств (`driver-pack`) и проверка их лицензий
 
-Все драйверы устройств ISPF поставляются в виде **пакетов драйверов** (1 драйвер = 1 пакет = 1 `licenseType`).  
-JAR платформы содержит только загрузчик пакета, а не реализации протокола.
+> **Статус:** Stable — структура внешних пакетов драйверов в каталоге `ISPF_DRIVER_PACKS_DIR`, паспорт `driver-pack.json` и проверка цифровой подписи. Метки зрелости: [doc-status.md](doc-status.md).
 
-## Макет
+Все протокольные драйверы в ISPF оформлены как отдельные модульные пакеты (**1 драйвер = 1 пакет = 1 явно указанная лицензия `licenseType`**). Базовый JAR-файл сервера содержит только универсальный загрузчик `LicensedDriverPackLoader`, что позволяет подключать нужные протоколы из каталога драйверов и соблюдать лицензионную чистоту поставки.
+
+---
+
+## 1. Структура каталога пакетов драйверов
 
 ```text
 ${ISPF_DRIVER_PACKS_DIR}/
   acme-opc-premium/
     driver-pack.json
     acme-opc-premium.jar
+    LICENSE
 ```
 
-## Сборка (монорепо)
+Собрать все пакеты драйверов из исходников репозитория:
 
 ```bash
 ./gradlew syncAllDriverPacks
 ```
 
-Output: `build/driver-packs/<packId>/` with `driver-pack.json`, `LICENSE`, and JAR.
+Готовые папки пакетов формируются в `build/driver-packs/<packId>/` на основе реестра [`gradle/driver-packs.json`](../../gradle/driver-packs.json).
 
-Источник каталога: [gradle/driver-packs.json](../../gradle/driver-packs.json) (восстановить через `python tools/generate-driver-packs-json.py`).
+---
 
-## Настроить
+## 2. Настройка сервера (`application.yml`)
 
 ```yaml
 ispf:
@@ -35,20 +39,21 @@ ispf:
     enforce: ${ISPF_LICENSE_ENFORCE:false}
 ```
 
-## `driver-pack.json`
+---
 
-| Поле | Требуется | Описание |
-|-------|----------|-------------|
-| `packId` | yes | Unique pack identifier |
-| `driverId` | yes | Runtime driver id (e.g. `modbus-tcp`) |
-| `licenseType` | yes | SPDX id: `Apache-2.0`, `GPL-3.0-only`, `LGPL-3.0-or-later`, `MPL-2.0`, `LicenseRef-StepFunc-NonCommercial`, … |
-| `externalDependencies` | when third-party JAR is not bundled | e.g. StepFunc DNP3 — see `NOTICE-EXTERNAL-DEPS.txt` |
-| `minPlatformVersion` | yes | Semver gate (e.g. `0.9.32`) |
-| `jarFile` | yes | JAR filename relative to pack directory |
-| `drivers[]` | yes | `driverId` + `driverClass` |
-| `license` | when `enforce=true` for commercial packs | RSA-signed claims (see below) |
+## 3. Паспорт пакета драйвера (`driver-pack.json`)
 
-Пример:
+| Поле | Обязательно | Описание |
+|------|:-----------:|----------|
+| `packId` | да | Уникальный идентификатор пакета |
+| `driverId` | да | Идентификатор драйвера в системе (например, `modbus-tcp`) |
+| `licenseType` | да | Код лицензии SPDX (`Apache-2.0`, `MPL-2.0`, `LGPL-3.0-or-later` или коммерческая ссылка) |
+| `minPlatformVersion` | да | Минимальная совместимая версия сервера ISPF |
+| `jarFile` | да | Имя JAR-файла внутри папки пакета |
+| `drivers[]` | да | Список классов, реализующих `com.ispf.driver.DeviceDriver` (`driverId` + `driverClass`) |
+| `license` | для коммерческих пакетов | Блок RSA-подписи (обязателен при `ISPF_LICENSE_ENFORCE=true`) |
+
+Пример `driver-pack.json`:
 
 ```json
 {
@@ -64,35 +69,21 @@ ispf:
   "license": {
     "packId": "acme-opc-premium",
     "minPlatformVersion": "0.7.5",
-    "installationId": "<from GET /api/v1/platform/installation-id>",
-    "jarSha256": "<sha256 of JAR bytes>",
+    "installationId": "<значение из GET /api/v1/platform/installation-id>",
+    "jarSha256": "<sha256-хэш файла JAR>",
     "expiresAt": "2027-12-31T23:59:59Z",
-    "signature": "<base64 RSA-SHA256 over canonical license payload>"
+    "signature": "<подпись RSA-SHA256 в base64>"
   }
 }
 ```
 
-License signing payload fields (sorted JSON): `packId`, `minPlatformVersion`, `installationId`, `jarSha256`, `expiresAt`.
+---
 
-## Поведение во время выполнения
+## 4. Как сервер загружает пакеты при старте
 
-1. При запуске `LicensedDriverPackLoader` сканирует каждый подкаталог на наличие `driver-pack.json`.
-2. Когда присутствует `license`, `DriverPackLicenseVerifier` проверяет подпись, установку, срок действия и хеш JAR.
-3. Действительные пакеты регистрируются в `LicensedDriverRegistry`; `DriverFactory` и `DriverCatalog` объединяют лицензированные драйверы.
-4. Недействительная или отсутствующая лицензия: пакет пропущен + **WARN** (`enforce=false`) или пропущен + журнал **ERROR** (`enforce=true`).
+1. При запуске `LicensedDriverPackLoader` обходит все подпапки в `ISPF_DRIVER_PACKS_DIR`, содержащие `driver-pack.json`.
+2. Если в паспорте указан блок `license`, проверяется цифровая подпись, совпадение `installationId`, срок действия и контрольная сумма `jarSha256` самого JAR-файла.
+3. Прошедшие проверку драйверы регистрируются в `LicensedDriverRegistry` и сразу становятся доступны в общем каталоге `GET /api/v1/drivers`.
+4. Для промышленных поставок по умолчанию используется профиль `permissive`, включающий только пакеты со свободными разрешительными лицензиями (`Apache-2.0`, `MIT`, `BSD`, `EPL`, `MPL-2.0` — подробнее в разделе **[Лицензионная чистота](license-compliance.md)**).
 
-## SPI-контракт
-
-- JAR must implement `com.ispf.driver.DeviceDriver`.
-- Prefer explicit `drivers[]` with `driverClass` for predictable `driverId`.
-— Путь продвижения для заглушек в дереве: [driver-promotion](driver-promotion.md).
-
-## Развертывание профилей
-
-Для развертывания производственного VPS по умолчанию используется профиль **`permissive`** (исключая пакеты с авторским левом и пакетами с ограничением StepFunc). См. [license-compliance](license-compliance.md).
-
-## Связанный
-
-- [commercial-licensing](commercial-licensing.md) — RSA keys and `tools/license-builder/`
-- [drivers](drivers.md) — древовидный каталог.
-- [ROADMAP.md § Часть B (FW-50)](roadmap.md)
+**Связанные разделы:** [Справочник драйверов](drivers.md) · [SDK разработки драйверов (DDK)](driver-ddk.md) · [Коммерческое лицензирование](commercial-licensing.md).

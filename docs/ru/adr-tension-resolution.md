@@ -1,25 +1,18 @@
-> **Язык:** русская версия. Канон: [en/adr-tension-resolution.md](../en/adr-tension-resolution.md).
+> **Язык:** русская версия. Английский оригинал: [en/adr-tension-resolution.md](../en/adr-tension-resolution.md).
 
-# Снятие напряжений между ADR
+# Сводка архитектурных компромиссов и границ ответственности (ADR)
 
-> **Статус:** Charter — программа claim boundaries.
+> **Статус:** Charter — как в ISPF разрешены противоречия между удобством быстрой отладки и жёсткими требованиями промышленной эксплуатации. Метки зрелости: [doc-status.md](doc-status.md).
 
-Цель: одна claim-ячейка → один ответ. Таблица волн, режимы LOGIC_HOST и чеклист C1 FIELD — в EN-каноне.
+Эта таблица сводит воедино ключевые архитектурные решения платформы, где требовалось согласовать удобство разработчика и безопасность промышленного контура:
 
-**Статус программы (2026-10-13):** волны **1A–2B** Closed; ship deploy [#513](https://github.com/iot-solutions-ru/ispf/pull/513). Air-gap RSA require-signed default **Done** ([air-gap-signing](../evidence/air-gap-signing/README.md)); Cosign image signing — **Gap**. Открыто: 3A FIELD, Cosign verify evidence, separate ui-pack origin.
+| Архитектурный вопрос | Принятое решение в ISPF | Базовый документ |
+|----------------------|-------------------------|------------------|
+| **Размещение логики на узлах `DEVICE` (`LOGIC_HOST_DEVICE`)** | При интерактивной отладке выдаётся предупреждение (`WARNING`), а при строгой проверке поставки (`ispf validate --strict`, `deploy?strict=true`, каталог решений) — блокирующая ошибка (`ERROR`) | [ADR-0060](decisions/0060-solution-authoring-constraints.md), [ADR-0051](decisions/0051-poka-yoke-constraints-over-guards.md) |
+| **Стендовая зрелость драйверов (`PRODUCTION`) против полевой (`FIELD`)** | Стендовые автотесты дают статус `PRODUCTION`, а статус `FIELD` присваивается только после приёмки на реальном заводе по чеклисту C1 | [Уровни зрелости драйверов](driver-promotion.md), [Чеклист C1](../en/field-c1-evidence-checklist.md) |
+| **Ручная настройка десятков пулов потоков против готовых профилей** | Введены четыре понятных профиля (`production`, `throughput`, `demo-idle`, `edge`) и метод проверки `GET /api/v1/platform/effective-config` | [ADR-0033](decisions/0033-prod-idle-demostand-tuning.md), [Профили развёртывания](demostands.md) |
+| **Поведение кластера при недоступности NATS или Redis** | При включённом кластере (`ISPF_CLUSTER_ENABLED=true`) сервер не стартует в полурабочем состоянии без обязательных шин синхронизации (`ClusterDependencyValidator`) | [ADR-0069](decisions/0069-cluster-consistency.md), [Кластер ISPF](cluster.md) |
+| **Безопасность внешних React-приложений (`ui-pack`) на одном домене** | Для маршрутов `/apps/<appId>/` действуют строгие заголовки CSP и токены с ограниченной областью действия (`uiPackAppId`), не дающие доступа к административным API платформы | [ADR-0073](decisions/0073-hosted-ui-pack-trust.md), [ADR-0054](decisions/0054-hosted-ui-packs.md) |
+| **Хранение и ротация ключей шифрования секретов** | Секреты хранятся в версионированном криптоконверте `ispf1.<keyId>....` с поддержкой планового перешифрования; внешние аппаратные KMS/HSM не требуются в базовой поставке | [ADR-0065](decisions/0065-secrets-key-rotation.md), [ADR-0076](decisions/0076-external-secrets-providers.md) |
 
-| Напряжение | Статус | Волна |
-|------------|--------|-------|
-| Secrets envelope | Closed (0065) | — |
-| FIELD vs marketplace | Closed (0067 §1b) | — |
-| Poka-yoke vs WARNING | Closed (Wave 1A) | 1A |
-| Ручки vs профили | Closed (Wave 1B, #493) | 1B |
-| Тихая деградация кластера | Closed (Wave 1C, #494) | 1C |
-| Ui-pack origin | Closed (Wave 2A, #505 cookie) | 2A |
-| Пять TS stores | Closed Partial (Wave 2B, #503 CH opt-in) | 2B |
-| Широта vs глубина | Planned (C1 customer plant + matrix) | 3A |
-| KMS / ГОСТ | Closed (0076 non-claim, SPI по тендеру) | 3B |
-
-## Связанное
-
-[en/adr-tension-resolution](../en/adr-tension-resolution.md) · [decisions/readme](decisions/readme.md)
+Полный текст на английском языке: **[en/adr-tension-resolution.md](../en/adr-tension-resolution.md)**.

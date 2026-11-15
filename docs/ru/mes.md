@@ -1,14 +1,16 @@
-# MES Platform (оператор)
+> **Язык:** русская версия. Английский оригинал: [en/mes.md](../en/mes.md).
 
-**Статус:** Stable (marketplace product)  
-**Аудитория:** Операторы, инженеры производства  
-**Связано:** [Reference MES platform](reference-mes-platform.md) · [ISA-95 catalog](isa95-catalog.md) · [Производственные паттерны](manufacturing-patterns.md) · Roadmap **БЛ-164…168, БЛ-170, БЛ-193, БЛ-220…225** (БЛ-169 отложен)
+# Работа оператора с прикладным пакетом MES (`mes-platform`)
 
-MES — **marketplace-продукт IoT Solutions** (`mes-platform` v1.3.0). Чистая установка ISPF **не** создаёт `root.platform.mes`, пока не задеплоен bundle.
+> **Статус:** Stable — краткая памятка оператора и технолога по работе с экранами пакета `mes-platform`. Метки зрелости: [doc-status.md](doc-status.md).
 
-Глубина manufacturing за пределами текущего MES bundle описана в [manufacturing-patterns](manufacturing-patterns.md): traceability DAG, BoM, operations graph, CTO, QMS lite, integration и portal access — конфигурация решения, не доменные сущности базовой платформы.
+Прикладной пакет **`mes-platform`** устанавливается поверх базового сервера ISPF из каталога `examples/mes-platform/` или витрины решений. Подробное техническое устройство пакета описано в разделе **[Эталонное решение MES (`reference-mes-platform.md`)](reference-mes-platform.md)**.
 
-## Deploy
+---
+
+## 1. Установка пакета и вход в пульт оператора
+
+Установка манифеста:
 
 ```bash
 curl -s -X POST http://localhost:8080/api/v1/applications/mes-platform/deploy \
@@ -16,34 +18,30 @@ curl -s -X POST http://localhost:8080/api/v1/applications/mes-platform/deploy \
   --data-binary @examples/mes-platform/bundle.json
 ```
 
-Operator UI: `?mode=operator&app=mes-platform`
+Адрес рабочего места оператора: `http://localhost:8080/?mode=operator&app=mes-platform`
 
-## Пути оператора
+---
 
-| Dashboard | Действие |
-|-----------|----------|
-| **Dispatch** | Work-queue из BPMN; confirm ставит seed WO `status=complete` |
-| **OEE** | Смены / линии; Morning KPI (`oeePct` > 80) |
-| **Quality** | SPC chart + samples; seed `QUALITY_RECORD` |
-| **Batch** | Статус seed batch; фаза → `react` |
-| **Genealogy** | Трассировка lot `BATCH-LINE-A01-001` |
+## 2. Основные экраны оператора
 
-## Seed-объекты (БЛ-164)
+| Экран (вкладка) | Что делает оператор на смене |
+|-----------------|------------------------------|
+| **Диспетчеризация (`Dispatch`)** | Принимает сменные задания из рабочей очереди BPMN (`Work Queue`) и подтверждает выполнение заказа |
+| **Эффективность (`OEE`)** | Контролирует показатели смены и линии (`oeePct`, доступность, производительность, качество), регистрирует причины простоев |
+| **Качество (`Quality`)** | Следит за контрольной картой измерений (SPC) и регистрирует записи о дефектах |
+| **Партии (`Batch`)** | Отслеживает и переключает фазы рецептурного процесса по стандарту ISA-88 (`charge` → `react` → `discharge`) |
+| **Генеалогия (`Genealogy`)** | Просматривает паспорт и полную цепочку прохождения партии (например, `BATCH-LINE-A01-001`) от сырья до контроля качества |
 
-Тип платформы — `CUSTOM`. Вид записи задаёт путь каталога.
+---
 
-| Path | ObjectType |
-|------|------------|
-| `root.platform.mes.work-orders.wo-line-a01-001` | `CUSTOM` |
-| `root.platform.mes.operations.op-assemble-a01` | `CUSTOM` |
-| `root.platform.mes.lots.batch-line-a01-001` | `CUSTOM` |
-| `root.platform.mes.shifts.shift-morning-a01` | `CUSTOM` |
-| `root.platform.mes.quality-records.qr-line-a01-001` | `CUSTOM` |
+## 3. Предзаполненные демонстрационные узлы в дереве объектов
 
-## Genealogy lite (БЛ-193)
+| Путь в дереве | Назначение |
+|---------------|------------|
+| `root.platform.mes.work-orders.wo-line-a01-001` | Производственный заказ на линию `LINE-A01` |
+| `root.platform.mes.operations.op-assemble-a01` | Операция сборки |
+| `root.platform.mes.lots.batch-line-a01-001` | Производственная партия (серия) |
+| `root.platform.mes.shifts.shift-morning-a01` | Утренняя смена |
+| `root.platform.mes.quality-records.qr-line-a01-001` | Запись контроля качества |
 
-1. Дашборд **Genealogy**
-2. **Trace seed lot** (`mes_genealogy_queryByLot` для `BATCH-LINE-A01-001`)
-3. Или отчёты **Genealogy** / **Genealogy by lot**
-
-**Вне scope:** живой ERP (**БЛ-169** отложен).
+**Связанные разделы:** [Эталонное решение MES](reference-mes-platform.md) · [Каталог ISA-95](isa95-catalog.md) · [Производственные шаблоны проектирования](manufacturing-patterns.md) · [Подробное руководство оператора ERP-MES](erp-mes-demo.md).

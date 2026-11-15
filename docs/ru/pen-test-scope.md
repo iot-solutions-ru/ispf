@@ -1,47 +1,28 @@
-# Область независимого pen-test (подготовка G-01)
+> **Язык:** русская версия. Английский оригинал: [en/pen-test-scope.md](../en/pen-test-scope.md).
 
-> **Статус:** только подготовка — **не** заявление о пройденном assessment.  
-> Реестр пробелов: [compliance-tender-pack.md](compliance-tender-pack.md) **G-01**.
+# Область проверки для независимого тестирования на проникновение (Pen-Test Scope)
 
-Черновик правил engagement для SOW. Закрывает *prep* G-01; сам G-01 закрывается датированным отчётом третьей стороны.
+> **Статус:** Internal — проект технического задания (границы проверки) для привлечения внешней лаборатории по информационной безопасности. Метки зрелости: [doc-status.md](doc-status.md).
 
-## Цель
+Этот документ определяет границы проверяемых подсистем ISPF при заказе внешнего аудита защищённости (тестирования на проникновение по методу «серого» или «чёрного» ящика).
 
-Показать, что ISPF (server + web console + типичные поверхности) выдерживает ограниченный black/grey-box assessment без неснятых Critical/High **или** что findings имеют владельцев и сроки.
+---
 
-**Не цель:** сертификация IEC 62443, пакет GAMP CSV, red-team чужого OT.
+## 1. Проверяемые компоненты (входят в объём работ)
 
-## In scope (SOW по умолчанию)
+| Поверхность проверки | Что тестируется |
+|----------------------|-----------------|
+| **REST API** (`/api/v1/**`) | Проверка аутентификации, двухфакторной защиты TOTP, обхода ролей (`RBAC`), пообъектных списков доступа (`ACL`) и изоляции арендаторов |
+| **Веб-консоль и внешние пакеты `ui-pack`** | Защита от XSS/CSRF, хранение сессионных токенов, ограничения области действия токенов на маршрутах `/apps/<appId>/` |
+| **Канал WebSocket** (`/ws/objects`, `/ws/federation/tunnel`) | Аутентификация при установке соединения и проверка прав при подписке на пути дерева |
+| **Запросы к истории и отчётам** | Защита от несанкционированного чтения чужих объектов и SQL-инъекций в параметрах отчётов |
+| **Загрузка пакетов и манифестов** | Проверка отказа при подаче неподписанных или повреждённых пакетов решений и драйверов |
 
-| Поверхность | Заметка |
-|-------------|---------|
-| HTTP/JSON API `/api/v1/**` | Authn/Z, TOTP MFA, tenancy, audit |
-| Web Console | XSS/CSRF, токены, обход ролей |
-| WebSocket | Handshake, ACL подписок |
-| Historian / CH paths | IDOR; без деструктивной нагрузки без согласия |
-| OIDC / local login | Escalation, MFA bypass |
-| Upload driver packs | Отказ вредоносных пакетов |
-| Multi-tenant isolation | A ↛ B |
+---
 
-## Out of scope
+## 2. Ограничения при проведении работ
 
-Прод-площадки заказчика, PLC/safety, DoS demostand, social engineering, полный white-box без доп. SOW.
+- Испытания проводятся только на выделенном тестовом стенде (запрещены проверки на действующем промышленном оборудовании и живых ПЛК заказчика).
+- Обязательна предварительная фиксация максимальной частоты запросов и правил немедленного уведомления при обнаружении уязвимостей высокой критичности.
 
-## Правила
-
-Письменный допуск; лимиты RPS; без выноса PII; disclosure Critical ≤24h / High ≤5 раб. дней; stop при safety-риске.  
-Полный RoE (severity, retention, kickoff): [pen-test-roe.md](../en/pen-test-roe.md).
-
-## Deliverables для закрытия G-01
-
-Отчёт + retest; желательно `docs/evidence/security-pentest/` (редакция). Иначе в тендере — **Gap (G-01)**.
-
-## Углублённая подготовка
-
-- Runbook оператора: [pen-test-prep.md](pen-test-prep.md)
-- RoE (EN): [pen-test-roe.md](../en/pen-test-roe.md)
-- Опросник вендора (EN): [pen-test-questionnaire.md](../en/pen-test-questionnaire.md)
-- Каталог кейсов (EN): [pen-test-cases.md](../en/pen-test-cases.md)
-- Preflight: `bash tools/security/pen-test-preflight.sh https://HOST --out preflight.json`
-
-EN: [pen-test-scope.md](../en/pen-test-scope.md) · ADR [0056](../en/decisions/0056-webauthn-idp-mfa.md)
+**Связанные разделы:** [Порядок подготовки стенда к pen-test (`pen-test-prep.md`)](pen-test-prep.md) · [Комплект материалов для подрядчика (`pen-test-vendor-pack.md`)](pen-test-vendor-pack.md) · [Справка по ИБ для тендеров (`compliance-tender-pack.md`)](compliance-tender-pack.md).

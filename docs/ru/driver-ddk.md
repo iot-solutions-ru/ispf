@@ -1,86 +1,61 @@
 > **Язык:** русская версия. Английский оригинал: [en/driver-ddk.md](../en/driver-ddk.md).
 
-# Комплект разработки драйверов (DDK)
+# Комплект разработки собственных драйверов (Driver DDK)
 
-> **Статус:** Stable — SDK для собственных драйверов. Метки зрелости: [doc-status.md](doc-status.md).
+> **Статус:** Stable — шаблон и инструкция по созданию собственных модулей протокольных драйверов для ISPF. Метки зрелости: [doc-status.md](doc-status.md).
 
-**BL-144** — каркас для пользовательских пакетов драйверов вне ядра monorepo или как новый `ispf-driver-*` модуль.
+Модуль `packages/ispf-driver-ddk` содержит готовый шаблон и примеры для быстрой разработки новых протокольных драйверов — как внутри репозитория, так и в виде отдельных подключаемых пакетов (`driver-pack`).
 
-## Когда использовать
+---
 
-- Партнёрский протокол, не входящий в комплект Apache/GPL.
-- Внутренний драйвер заказчика с циклом релизов.
-- Prototype перед promotion в `DriverProductionMatrix`.
+## 1. Когда нужен собственный драйвер
 
-## Артефакты
+- Подключение специализированного или фирменного протокола контроллера/счётчика, которого ещё нет в стандартном каталоге.
+- Выпуск закрытого коммерческого драйвера с собственной лицензией и циклом обновлений.
 
-| Путь | Описание |
-| ---- | -------- |
-| [`packages/ispf-driver-ddk`](../../packages/ispf-driver-ddk/) | Gradle-модуль DDK (исходники шаблонов + дымовой тест) |
-| [`packages/ispf-driver-ddk/template/`](../../packages/ispf-driver-ddk/template/) | Копируемый stub: драйвер, тест, `driver-pack.json`, `build.gradle.kts` |
-| [licensed-driver-packs](licensed-driver-packs.md) | Runtime layout и licensing |
-| [driver-promotion](driver-promotion.md) | Чеклист PRODUCTION |
-| [driver-interop-lab](driver-interop-lab.md) | CI-взаимодействие после продвижения |
+| Каталог в репозитории | Назначение |
+|-----------------------|------------|
+| [`packages/ispf-driver-ddk/`](../../packages/ispf-driver-ddk/) | Модуль DDK с тестами и четырьмя учебными примерами (`template/`, `examples/simple-counter/`, `examples/json-poller/`, `examples/modbus-simulator/`) |
+| [`packages/ispf-driver-ddk/template/`](../../packages/ispf-driver-ddk/template/) | Заготовка нового модуля: класс драйвера, модульный тест, паспорт `driver-pack.json` и `build.gradle.kts` |
+| [Лицензируемые пакеты драйверов](licensed-driver-packs.md) | Упаковка, цифровая подпись и установка внешних драйверов на сервер |
 
-## Рабочий процесс
+---
 
-### 1. Создать модуль
+## 2. Пошаговый порядок создания драйвера
+
+### Шаг 1. Скопируйте шаблон модуля
 
 ```bash
-cp -r packages/ispf-driver-ddk/template packages/ispf-driver-acme-widget
+cp -r packages/ispf-driver-ddk/template packages/ispf-driver-acme-meter
 ```
 
-Отредактируйте `driverId`, package, `DriverMetadata`, point mapping parser.
-
-Добавьте в `settings.gradle.kts`:
+Задайте свой идентификатор `driverId`, имя Java-пакета и описание параметров в `DriverMetadata`, а затем добавьте модуль в `settings.gradle.kts`:
 
 ```kotlin
-"packages:ispf-driver-acme-widget",
+"packages:ispf-driver-acme-meter",
 ```
 
-Модуль автоматически получит plugin `ispf-driver-pack` (см. root `build.gradle.kts`).
+### Шаг 2. Реализуйте интерфейс `DeviceDriver`
 
-### 2. Реализовать SPI
+Интерфейс находится в модуле [`packages/ispf-driver-api`](../../packages/ispf-driver-api/src/main/java/com/ispf/driver/DeviceDriver.java):
+- `metadata()` — идентификатор драйвера `driverId`, схема настроек подключения и уровень зрелости;
+- `initialize(...)`, `connect()`, `disconnect()` — управление соединением с устройством;
+- `readPoints(Map<String, String> pointMappings)` — чтение значений по списку привязанных переменных;
+- `writePoint(String pointMapping, Object value)` — запись уставки или команды в оборудование (если драйвер поддерживает запись).
 
-`DeviceDriver` ([`ispf-driver-api`](../../packages/ispf-driver-api/src/main/java/com/ispf/driver/DeviceDriver.java)):
+> **Главное правило производительности:** код драйвера никогда не должен обращаться к базе данных сервера напрямую — передавайте прочитанные значения только через штатный контракт драйвера (`readPoints` / обратный вызов обновления переменной).
 
-- `metadata()` — `driverId`, config schema, maturity
-- `initialize` / `connect` / `disconnect`
-- `readPoints(Map<variableName, pointMapping>)`
-- `writePoint` — если заявлен capability `write`
+### Шаг 3. Напишите интеграционный тест на локальном сокете
 
-**Правило входа:** горячий путь не пишется в БД; только `updateVariable` ([Входной контракт ADR](../../packages/ispf-driver-api/src/main/java/com/ispf/driver/DeviceDriver.java)).
+Добавьте JUnit-тест, поднимающий в памяти имитатор вашего протокола на `127.0.0.1` и проверяющий чтение и запись точек (по образцу `TemplateDeviceDriverTest`).
 
-### 3. Loopback-тест
-
-Минимум один JUnit-тест со stub-сервером на `127.0.0.1` (см. `TemplateDeviceDriverTest`). Без hardware в CI.
-
-### 4. Сборка pack
+### Шаг 4. Соберите и подключите пакет драйвера
 
 ```bash
-./gradlew :packages:ispf-driver-acme-widget:assembleDriverPack
-ls build/driver-packs/ispf-driver-acme-widget/
+./gradlew :packages:ispf-driver-acme-meter:assembleDriverPack
+ls build/driver-packs/ispf-driver-acme-meter/
 ```
 
-### 5. Развертывание пакета
+Скопируйте собранную папку пакета в каталог внешних драйверов на сервере (`${ISPF_DRIVER_PACKS_DIR}/`) и перезапустите `ispf-server` — загрузчик `LicensedDriverPackLoader` автоматически подключит новый драйвер в каталог `GET /api/v1/drivers`.
 
-Скопируйте каталог в `${ISPF_DRIVER_PACKS_DIR}/` на сервере. Перезапуск ISPF → `LicensedDriverPackLoader` регистрирует драйвер.
-
-### 6. Продвижение
-
-1. Запись в `DriverProductionMatrix` с `loopbackTestSourcePath` и `interopGradleModule`.
-2. Добавить модуль в [`.github/workflows/driver-interop.yml`](../../.github/workflows/driver-interop.yml).
-3. Обновить [drivers](drivers.md).
-
-## Соглашение о сопоставлении точек (шаблон)
-
-Формат: `channel:address` (пример `ai:room-1`). Замените на свой DSL (стиль Modbus, OPC NodeId и т.д.).
-
-## Справочные драйверы (roadmap.md)
-
-Принятие BL-144: три эталонных пользовательских драйвера — `template/` (acme-widget), `examples/simple-counter/`, `examples/json-poller/`, `examples/modbus-simulator/`. Все четыре компилируются в `:packages:ispf-driver-ddk:test`.
-
-## Связанные АДР
-
-- [0022-driver-production-matrix](decisions/0022-driver-production-matrix.md)
-- [0002-dogfooding-gate](decisions/0002-dogfooding-gate.md)
+**Связанные разделы:** [Справочник драйверов](drivers.md) · [Уровни зрелости драйверов](driver-promotion.md) · [Лицензируемые пакеты драйверов](licensed-driver-packs.md).

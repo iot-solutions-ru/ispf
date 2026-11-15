@@ -1,13 +1,21 @@
-# Реле сообщений приложений
+> **Язык:** русская версия. Английский оригинал: [en/application-message-relay.md](../en/application-message-relay.md).
 
-Транспорты HTTP, NATS JetStream и Kafka для `application_outbox`.
+# Транзакционная доставка исходящих сообщений приложений (`application_outbox`)
 
-| Утверждение | Статус |
-|-------------|--------|
-| Доставка outbox по HTTP | **Done** — `HttpOutboxDelivery` / `ApplicationOutboxPump` |
-| Доставка outbox в NATS JetStream | **Done** — `NatsOutboxDelivery` / `NatsOutboxPump` (`ispf.application.outbox.nats-connectors`) |
-| Доставка outbox в Kafka | **Done** — `KafkaOutboxDelivery` / `KafkaOutboxPump` (`ispf.application.outbox.kafka-bootstrap` + `kafka-topics`) |
-| Пересчёт dirty rollup при опоздавшей точке | **Done** — в памяти `HistorianRollupMaterializerService.noteLateSample` (теряется при рестарте; тогда rebuild) |
-| Путь заводского артефакта переживает обновление базы | **Done** — apply бандла аддитивен; пути вне нового манифеста не удаляются |
+> **Статус:** Stable — гарантированная отправка сообщений из таблицы `application_outbox` по протоколам HTTP, NATS JetStream и Apache Kafka, а также автоматический пересчёт агрегатов при приходе опоздавших точек телеметрии. Метки зрелости: [doc-status.md](doc-status.md).
 
-Один connector настраивайте только на одном транспорте. Насосы HTTP, NATS и Kafka забирают непересекающиеся наборы connector.
+Подсистема релея сообщений позволяет прикладным решениям записывать исходящие документы для внешних систем (1С, SAP, MES-коннекторов, брокеров сообщений) в таблицу `application_outbox` внутри той же БД-транзакции, что и бизнес-данные, с последующей гарантированной доставкой фоновым насосом.
+
+---
+
+## Реализованные механизмы доставки и целостности данных
+
+| Механизм | Статус | Реализация в коде |
+|----------|--------|-------------------|
+| Доставка очереди `outbox` по HTTP (Webhook / REST) | **Реализовано (`Done`)** | `HttpOutboxDelivery` и `ApplicationOutboxPump` |
+| Доставка очереди `outbox` в поток NATS JetStream | **Реализовано (`Done`)** | `NatsOutboxDelivery` и `NatsOutboxPump` (настройка `ispf.application.outbox.nats-connectors`) |
+| Доставка очереди `outbox` в топики Apache Kafka | **Реализовано (`Done`)** | `KafkaOutboxDelivery` и `KafkaOutboxPump` (`ispf.application.outbox.kafka-bootstrap` и `kafka-topics`) |
+| Автоматический пересчёт агрегатов истории при приходе опоздавшей точки (`late sample`) | **Реализовано (`Done`)** | `HistorianRollupMaterializerService.noteLateSample` помечает затронутый интервал в оперативной памяти и пересчитывает материализованный агрегат (после перезапуска сервера используйте ручной пересчёт `rollups/rebuild`) |
+| Сохранение данных и путей предприятия при обновлении версии пакета `bundle.json` | **Реализовано (`Done`)** | Обновление пакета работает аддитивно: существующие заводские узлы и записи реестра миграций не затираются |
+
+> Каждый именованный коннектор (`connector`) привязывается ровно к одному виду транспорта (HTTP, NATS или Kafka), чтобы фоновые обработчики не конкурировали за одни и те же строки.
