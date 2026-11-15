@@ -973,7 +973,7 @@ Domain audit vs leading platforms (Kepware, Ignition, PI, Opcenter, Tulip). **Co
 
 | Sev | Domain | Gap | Vs market | Evidence | BL |
 | --- | ------ | --- | --------- | -------- | -- |
-| **Closed (honesty)** | IoT / OT | Matrix honesty (BL-191) | Kepware / Ignition | Shells/poll-only → BETA; DNP3 write still open as capability gap | [BL-191](#bl-191193--domain-audit-follow-ups) **Done**; BL-140 field |
+| **Closed (honesty)** | IoT / OT | Matrix honesty (BL-191) | Kepware / Ignition | Shells/poll-only → BETA; DNP3 latch/analog write shipped — pulse / full control still a capability gap | [BL-191](#bl-191193--domain-audit-follow-ups) **Done**; BL-140 field |
 | **Blocker** | ERP L4 | Outbox marks `simulated` without live ERP | B2MML / 1C / SAP IDoc | Stub connector only | **BL-169** (deferred from 90-day plan) |
 | **High** | AI | Field soak / soft &lt;15 min | Differentiated AI agent path | BL-177…180 **Done** (harness); BL-178 full live 52/52 @100%; residual: field soak + soft duration budget | BL-177…180 |
 | High | IoT / Edge | Edge agent GA, ARM soak 30d | Ignition Edge | BL-187 Done (compose+validate); BL-145 **lab** Done (disk + IT + soak script); field 30d Gap | BL-145, 187 |

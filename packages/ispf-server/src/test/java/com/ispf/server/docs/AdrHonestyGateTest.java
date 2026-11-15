@@ -126,6 +126,57 @@ class AdrHonestyGateTest {
         }
     }
 
+    @Test
+    void dnp3WriteHonestyMatchesMatrixAndScorecard() throws IOException {
+        Path root = repoRoot();
+        Path matrix = root.resolve(
+                "packages/ispf-server-driver/src/main/java/com/ispf/server/driver/DriverProductionMatrix.java");
+        if (!Files.exists(matrix)) {
+            matrix = root.resolve(
+                    "packages/ispf-server/src/main/java/com/ispf/server/driver/DriverProductionMatrix.java");
+        }
+        String matrixSource = Files.readString(matrix);
+        assertTrue(matrixEntryIsProduction(matrixSource, "dnp3"), "dnp3 must stay PRODUCTION in the matrix");
+        Matcher dnp3Capabilities = Pattern.compile(
+                "entry\\(\\s*\"dnp3\"\\s*,\\s*DriverMaturity\\.\\w+\\s*,\\s*(EnumSet\\.of\\([^)]*\\)|[A-Z_]+)"
+        ).matcher(matrixSource);
+        assertTrue(dnp3Capabilities.find(), "dnp3 matrix entry must be present");
+        String capabilities = dnp3Capabilities.group(1);
+        assertTrue(
+                capabilities.contains("WRITE"),
+                "dnp3 matrix capabilities must advertise WRITE / POLL_WRITE, got: " + capabilities
+        );
+        String writePoint = Files.readString(root.resolve(
+                "packages/ispf-driver-dnp3/src/main/java/com/ispf/driver/dnp3/Dnp3DeviceDriver.java"));
+        assertFalse(
+                writePoint.contains("DNP3 write not implemented"),
+                "Dnp3DeviceDriver.writePoint must not throw the old not-implemented stub"
+        );
+        for (String relative : List.of(
+                "docs/en/competitive-scorecard.md",
+                "docs/ru/competitive-scorecard.md"
+        )) {
+            String scorecard = Files.readString(root.resolve(relative));
+            assertFalse(
+                    scorecard.contains("writePoint` still throws")
+                            || scorecard.contains("writePoint still throws")
+                            || scorecard.contains("writePoint не реализован"),
+                    relative + " must not claim DNP3 writePoint is unimplemented"
+            );
+            assertFalse(
+                    Pattern.compile("(?i)DNP3 PRODUCTION poll-only\\s*—\\s*`?writePoint`?")
+                            .matcher(scorecard)
+                            .find()
+                            || scorecard.contains("DNP3 write open"),
+                    relative + " must not keep poll-only / write-open DNP3 integrity wording"
+            );
+        }
+        String limitations = Files.readString(root.resolve("docs/en/known-limitations.md"));
+        String dnp3Row = rowContaining(limitations, "DNP3");
+        assertTrue(dnp3Row.contains("POLL") && dnp3Row.contains("WRITE"),
+                "known-limitations DNP3 row must state POLL + WRITE");
+    }
+
     private static boolean matrixEntryIsProduction(String matrixSource, String driverId) {
         Matcher matcher = Pattern.compile(
                 "entry\\(\\s*\"" + Pattern.quote(driverId) + "\"\\s*,\\s*DriverMaturity\\.(\\w+)"
