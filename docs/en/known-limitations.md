@@ -87,7 +87,7 @@ Board: [parked-backlog](parked-backlog.md).
 | Topic | Reality |
 |-------|---------|
 | Backup / DR tiers | Documented in [ADR-0068](decisions/0068-backup-and-dr.md). Lab T2 dump/restore drill exists (`deploy/tools/dr-restore-drill.sh`, [evidence](../evidence/dr-restore/README.md)); site/customer DR + dated field transcripts are still what remain missing — do not oversell |
-| Cluster dual-owner / federation load | JDBC lease exclusivity CI is the near-term assert ([ADR-0069](decisions/0069-cluster-consistency.md)); multi-node dual-I/O and federation 10+ peer load remain open — lab ≠ field |
+| Cluster dual-owner / federation load | JDBC lease exclusivity CI shipped (`DriverOwnershipServiceTest`); multi-node dual-I/O and federation 10+ peer load remain open — [ADR-0069](decisions/0069-cluster-consistency.md) · lab ≠ field |
 
 ---
 
