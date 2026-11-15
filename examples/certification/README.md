@@ -33,8 +33,13 @@ Stub multiple-choice banks for ISPF certification tracks. Full LMS integration a
 
 ## Usage
 
-- Study alignment: [docs/en/certification.md](../../docs/en/certification.md)
-- Partner tiers: [docs/en/partner-program.md](../../docs/en/partner-program.md)
-- Count questions: `jq '.questions | length' solution-developer-l1.json`
+From the repository root, after `npm install` in `tools/ispf-cli`:
 
-Practical lab exams remain separate (instructor-verified); these JSON banks cover knowledge checks only.
+```bash
+node tools/ispf-cli/bin/ispf.mjs cert check examples/certification/solution-developer-l1.json
+node tools/ispf-cli/bin/ispf.mjs cert run examples/certification/solution-developer-l1.json
+```
+
+`cert check` checks the file. `cert run` asks each question on a terminal (option numbers starting at 1). `--answers <file>` grades a JSON object of question id to the 0-based `correctIndex`. The command does not call a server. Practical labs stay outside this score.
+
+Study notes: [docs/en/certification.md](../../docs/en/certification.md).

@@ -80,3 +80,12 @@
 | [`examples/certification/solution-developer-l1.json`](../../examples/certification/solution-developer-l1.json) | Разработчик решений — Уровень 1 | 8 |
 | [`examples/certification/solution-developer-l2.json`](../../examples/certification/solution-developer-l2.json) | Разработчик решений — Уровень 2 | 6 |
 | [`examples/certification/platform-admin-core.json`](../../examples/certification/platform-admin-core.json) | Администратор платформы — Базовый курс | 8 |
+
+Проверка и прогон с этой машины, после `npm install` в `tools/ispf-cli`:
+
+```bash
+node tools/ispf-cli/bin/ispf.mjs cert check examples/certification/solution-developer-l1.json
+node tools/ispf-cli/bin/ispf.mjs cert run examples/certification/solution-developer-l1.json
+```
+
+`cert check` проверяет файл и печатает `ok <число>`. `cert run` печатает вопрос и читает номер варианта (1, 2, 3, …). Неверный ответ — строка `miss <id> <reference>`, последняя строка — `<верно>/<всего>`. Код выхода 1, если есть неверный ответ. Без терминала передайте `--answers <file>`: объект JSON, значение — тот же индекс с нуля, что `correctIndex`. Команда не обращается к серверу. Практические работы в этот счёт не входят.

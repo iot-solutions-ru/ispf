@@ -43,6 +43,8 @@ node bin/ispf.mjs doctor
 | `ispf --version` | Prints the CLI version. |
 | `ispf login --username <user> --password <pass> [--totp <code>]` | Local-profile login. Saves the token. |
 | `ispf doctor` | Server, health, token, virtual driver. |
+| `ispf cert check <bank.json>` | Check a certification question bank. |
+| `ispf cert run <bank.json> [--answers <file>]` | Grade the bank. Terminal reads option numbers starting at 1. `--answers` uses the 0-based `correctIndex`. |
 | `ispf pack <dir> [-o bundle.json]` | Pack a solution directory into one bundle. |
 | `ispf unpack <bundle.json> <dir>` | Unpack a bundle back into a directory. |
 | `ispf validate <dir\|bundle.json> [--local] [--app <id>] [--strict]` | Check the bundle. |
@@ -53,7 +55,7 @@ node bin/ispf.mjs doctor
 
 `--local` checks the JSON against the schema in this repository and does not call the server. `--app` also asks the server (`POST /api/v1/applications/{id}/bundle/validate`). `--strict` turns the ship-canon warning about logic hosted on a `DEVICE` object into an error, locally and on the server.
 
-`diff` and `deploy` need a running server and a token.
+`diff` and `deploy` need a running server and a token. `cert check` and `cert run` read a local JSON file and do not call the server.
 
 ## Environment
 
@@ -111,6 +113,8 @@ node bin/ispf.mjs doctor
 | `ispf --version` | Печатает версию CLI. |
 | `ispf login --username <user> --password <pass> [--totp <code>]` | Вход в локальный профиль. Сохраняет токен. |
 | `ispf doctor` | Сервер, здоровье, токен, драйвер virtual. |
+| `ispf cert check <bank.json>` | Проверить банк вопросов сертификации. |
+| `ispf cert run <bank.json> [--answers <file>]` | Прогнать банк. В терминале номер варианта с 1. `--answers` — индекс с нуля, как `correctIndex`. |
 | `ispf pack <dir> [-o bundle.json]` | Собрать каталог решения в один бандл. |
 | `ispf unpack <bundle.json> <dir>` | Разобрать бандл обратно в каталог. |
 | `ispf validate <dir\|bundle.json> [--local] [--app <id>] [--strict]` | Проверить бандл. |
@@ -121,7 +125,7 @@ node bin/ispf.mjs doctor
 
 `--local` сверяет JSON со схемой из этого репозитория и не обращается к серверу. `--app` дополнительно спрашивает сервер (`POST /api/v1/applications/{id}/bundle/validate`). `--strict` превращает предупреждение о логике на объекте `DEVICE` в ошибку, и локально, и на сервере.
 
-`diff` и `deploy` требуют запущенный сервер и токен.
+`diff` и `deploy` требуют запущенный сервер и токен. `cert check` и `cert run` читают локальный JSON и к серверу не обращаются.
 
 ## Переменные
 

@@ -59,7 +59,7 @@ Maps to Partner **Associate → Professional** in [partner-program](partner-prog
 
 ---
 
-## Exam question bank (stub)
+## Exam question bank
 
 Machine-readable banks live under [`examples/certification/`](../../examples/certification/). Format: JSON with `track`, `level`, `version`, and `questions[]` (`id`, `type`, `topic`, `prompt`, `options`, `correctIndex`, `reference`).
 
@@ -69,13 +69,14 @@ Machine-readable banks live under [`examples/certification/`](../../examples/cer
 | [`solution-developer-l2.json`](../../examples/certification/solution-developer-l2.json) | Solution developer | L2 Automation | 6 |
 | [`platform-admin-core.json`](../../examples/certification/platform-admin-core.json) | Platform admin | Core | 8 |
 
-**Grading (stub):** Partner Portal / LMS integration scores multiple-choice locally; practical labs remain instructor-verified until Phase 32 GA proctoring.
-
-**Import example:**
+Grade a bank on this machine. From the repository root, after `npm install` in `tools/ispf-cli`:
 
 ```bash
-curl -s examples/certification/solution-developer-l1.json | jq '.questions | length'
+node tools/ispf-cli/bin/ispf.mjs cert check examples/certification/solution-developer-l1.json
+node tools/ispf-cli/bin/ispf.mjs cert run examples/certification/solution-developer-l1.json
 ```
+
+`cert check` checks the file and prints `ok <count>`. `cert run` prints each question and reads the option number (1, 2, 3, …). A wrong answer prints `miss <id> <reference>`. The last line is `<correct>/<total>`. The process exits 1 when any answer is wrong. Without a terminal, pass `--answers <file>`: a JSON object whose values are the same 0-based indexes as `correctIndex`. The command does not call a server. Practical labs stay outside this score.
 
 ---
 

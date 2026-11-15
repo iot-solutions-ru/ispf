@@ -11,6 +11,7 @@ import { initSolution } from "./init-solution.mjs";
 import { login } from "./login.mjs";
 import { doctor, formatDoctor } from "./doctor.mjs";
 import { credentialsPath } from "./session.mjs";
+import { formatGrade, gradeBank, loadAnswers, loadBank, promptAnswers } from "./cert.mjs";
 
 const pkg = JSON.parse(
   readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), "../package.json"), "utf8")
@@ -25,6 +26,8 @@ export function usageText() {
   ispf --version
   ispf login --username <user> --password <pass> [--totp <code>]
   ispf doctor
+  ispf cert check <bank.json>
+  ispf cert run <bank.json> [--answers <file>]
   ispf pack <dir> [-o bundle.json]
   ispf unpack <bundle.json> <dir>
   ispf validate <dir|bundle.json> [--app id] [--local] [--strict]
@@ -69,6 +72,10 @@ function parseArgs(argv) {
       flags.output = args[++i];
     } else if (a === "--local") {
       flags.local = true;
+    } else if (a === "--answers") {
+      const value = args[++i];
+      if (!value || value.startsWith("-")) throw new Error("--answers requires <file>");
+      flags.answers = value;
     } else if (a === "--strict") {
       flags.strict = true;
     } else if (a === "--help" || a === "-h") {
@@ -111,6 +118,30 @@ export async function runCli(argv) {
       const report = await doctor();
       console.log(formatDoctor(report));
       process.exit(report.ok ? 0 : 1);
+      break;
+    }
+    case "cert": {
+      const sub = positional[1];
+      const bankPath = positional[2];
+      if ((sub !== "check" && sub !== "run") || !bankPath) {
+        throw new Error("cert requires check|run <bank.json>");
+      }
+      const bank = loadBank(path.resolve(bankPath));
+      if (sub === "check") {
+        console.log(`ok ${bank.questions.length}`);
+        break;
+      }
+      let answers;
+      if (flags.answers) {
+        answers = loadAnswers(path.resolve(flags.answers));
+      } else if (process.stdin.isTTY) {
+        answers = await promptAnswers(bank, process.stdin, process.stdout);
+      } else {
+        throw new Error("cert run needs --answers <file> when stdin is not a terminal");
+      }
+      const result = gradeBank(bank, answers);
+      console.log(formatGrade(result));
+      process.exit(result.correct === result.total ? 0 : 1);
       break;
     }
     case "pack": {
