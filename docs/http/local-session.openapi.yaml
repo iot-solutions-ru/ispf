@@ -271,12 +271,12 @@ components:
           type: boolean
         pollIntervalMs:
           type: integer
-          lastError:
-            type: string
-            nullable: true
-          telemetryPublishMode:
-            type: string
-          telemetryCoalesceMs:
-            type: integer
+        lastError:
+          type: string
+          nullable: true
+        telemetryPublishMode:
+          type: string
+        telemetryCoalesceMs:
+          type: integer
 security:
   - bearer: []
