@@ -118,7 +118,7 @@ Work through these 12 modules in order when onboarding new engineers to a projec
 | 11 | Production operations | Docker/Linux deployment, backups, Prometheus metrics, health checks | Inspect `/actuator/health` and the System metrics tab | [Deployment](deployment.md) · [Observability](observability.md) |
 | 12 | Engineering hygiene | Naming conventions, short expressions, avoiding event-journal floods | Audit your project against the 7 common mistakes | [Common design mistakes](anti-patterns.md) |
 
-Ready-to-explore reference examples in `examples/`: [Lab training](lab-training.md) · [Mini-CHP station](reference-mini-tec-walkthrough.md) · [Building HVAC](reference-building-hvac-walkthrough.md) · [MES walkthrough](reference-mes-walkthrough.md).
+Ready-to-explore reference examples in `examples/`: [Lab without a PLC](lab-without-plc.md) · [Lab training](lab-training.md) · [Mini-CHP station](reference-mini-tec-walkthrough.md) · [Building HVAC](reference-building-hvac-walkthrough.md) · [MES walkthrough](reference-mes-walkthrough.md).
 
 ---
 

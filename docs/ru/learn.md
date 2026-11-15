@@ -118,7 +118,7 @@ root.platform
 | 11 | Эксплуатация и диагностика | Запуск в Docker/Linux, переменные окружения, метрики Prometheus, проверка здоровья | Проверить `/actuator/health` и вкладку системных метрик | [Развёртывание](deployment.md) · [Мониторинг](observability.md) |
 | 12 | Инженерная гигиена проекта | Понятные имена переменных и функций, короткие формулы, защита от перегрузки БД | Проверить свой проект по списку частых ошибок | [Частые ошибки при проектировании](anti-patterns.md) |
 
-Готовые примеры решений в репозитории (`examples/`): [Учебный стенд](lab-training.md) · [Мини-ТЭЦ](reference-mini-tec-walkthrough.md) · [Инженерные системы здания (ОВиК)](reference-building-hvac-walkthrough.md) · [Производственный контур MES](reference-mes-walkthrough.md).
+Готовые примеры решений в репозитории (`examples/`): [Стенд без ПЛК](lab-without-plc.md) · [Учебный стенд](lab-training.md) · [Мини-ТЭЦ](reference-mini-tec-walkthrough.md) · [Инженерные системы здания (ОВиК)](reference-building-hvac-walkthrough.md) · [Производственный контур MES](reference-mes-walkthrough.md).
 
 ---
 

@@ -4,7 +4,7 @@
 
 > **Status:** Lab — Training sample packs. Hub: [doc-status.md](doc-status.md).
 
-The **Lab Training** package demonstrates Ignition-style Virtual Device, automation, reports, and ISPF dashboards. All objects import from `examples/lab-training/bundle.json`.
+The **Lab Training** package demonstrates Ignition-style Virtual Device, automation, reports, and ISPF dashboards. All objects import from `examples/lab-training/bundle.json`. Broker and Modbus slave, with no PLC: [Lab without a PLC](lab-without-plc.md).
 
 ## Quick start
 

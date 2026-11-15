@@ -29,7 +29,7 @@ export function usageText() {
   ispf unpack <bundle.json> <dir>
   ispf validate <dir|bundle.json> [--app id] [--local] [--strict]
   ispf diff <dir> --app <id>
-  ispf deploy <dir> --app <id> [--strict] [--with-seeds]
+  ispf deploy <dir|bundle.json> --app <id> [--strict] [--with-seeds]
   ispf fork <bundle.json|dir> <dest> --app-id <plant-id>
   ispf init-solution <dest> --app-id <id> [--name <display>]
 
@@ -187,7 +187,7 @@ export async function runCli(argv) {
     }
     case "deploy": {
       const dir = positional[1];
-      if (!dir || !flags.app) throw new Error("deploy requires <dir> --app <id>");
+      if (!dir || !flags.app) throw new Error("deploy requires <dir|bundle.json> --app <id>");
       const result = await deployDirectory(path.resolve(dir), flags.app, {
         strict: !!flags.strict,
         withSeeds: !!flags.withSeeds,

@@ -1,15 +1,22 @@
 import { packDirectory } from "./pack.mjs";
 import { applyStrictShipCanon } from "./shipCanon.mjs";
 import { authHeaders, resolveBaseUrl } from "./session.mjs";
-import { compactStringify } from "./util.mjs";
+import { compactStringify, readJsonFile, resolveInput } from "./util.mjs";
 import { validateLocal, validateRemote } from "./validate.mjs";
 import { defaultSchemaPath } from "./util.mjs";
 import { assertHonestDeployStatus } from "./honestDeploy.mjs";
 
 export { assertHonestDeployStatus };
 
+/** A bundle file is sent as-is. A directory is packed from solution.json. */
+export function readDeployInput(inputPath) {
+  const input = resolveInput(inputPath);
+  if (input.mode === "bundle") return readJsonFile(input.path);
+  return packDirectory(input.path);
+}
+
 export async function deployDirectory(dir, appId, { schemaPath, strict = false, withSeeds = false } = {}) {
-  const manifest = packDirectory(dir);
+  const manifest = readDeployInput(dir);
   let local = validateLocal(manifest, schemaPath ?? defaultSchemaPath());
   if (strict && local.status === "OK") {
     local = applyStrictShipCanon(local, manifest);
