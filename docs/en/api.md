@@ -8,6 +8,8 @@ Default base URL: `http://localhost:8080`
 
 **Authentication:** pass `Authorization: Bearer <token>` obtained from `POST /api/v1/auth/login` (in the `local` profile, demo accounts `admin`/`admin`, `developer`/`developer`, and `operator`/`operator` are seeded on an empty database; in production profiles, OIDC JWT tokens from Keycloak are also supported). For the complete role authorization matrix, see **[Security and RBAC (`security.md`)](security.md)**.
 
+**Runnable local-profile calls:** [local-session.http](../http/local-session.http), [local-session.ps1](../http/local-session.ps1), [Postman](../http/local-session.postman_collection.json). [OpenAPI](../http/local-session.openapi.yaml) covers only those calls. `/v3/api-docs` and `/swagger-ui.html` return 404.
+
 ---
 
 ## 1. Platform Info, Runtime Settings, and Semantic Search
@@ -15,8 +17,9 @@ Default base URL: `http://localhost:8080`
 | Method | Path | Roles | Description |
 |--------|------|-------|-------------|
 | `GET` | `/api/v1/info` | public | Server name, version, `javaVersion`, `springBootVersion`, and enabled `capabilities[]` |
+| `GET` | `/api/v1/auth/config` | public | `mode` `local` or `oidc`, `localLoginEnabled` |
 | `GET` | `/api/v1/auth/me` | public | Current authenticated principal and roles |
-| `POST` | `/api/v1/auth/login` | public | Authenticate with username/password (and optional `totpCode`) |
+| `POST` | `/api/v1/auth/login` | public | Authenticate with username/password (and optional `totpCode`). `401` bad password; `429` after 5 failures / 15 minutes |
 | `GET` | `/api/v1/platform/effective-config` | `operator+` | Active deploy profile and resolved worker pool sizes ([ADR-0033](decisions/0033-prod-idle-demostand-tuning.md)) |
 | `GET` | `/api/v1/platform/metrics` | `admin` | Summary metrics (JVM, DB pool, object tree, drivers, queues, historian, load diagnostics) |
 | `GET` | `/api/v1/platform/runtime-settings` | `admin` | Read effective runtime settings |
@@ -114,8 +117,8 @@ Full specification: **[Application Solutions (`applications.md`)](applications.m
 | `GET / POST / PUT / DELETE` | `/api/v1/correlators` (`/by-path?path=`) | `developer+` | Manage `CORRELATOR` rules |
 | `GET` | `/api/v1/drivers` | `operator+` | List registered protocol drivers and maturity levels |
 | `GET` | `/api/v1/drivers/runtime/status` | `operator+` | Inspect driver polling status (`?devicePath=...`) |
-| `PUT` | `/api/v1/drivers/runtime/configure` | `admin` | Configure device connection properties and `pointMappings` |
-| `POST` | `/api/v1/drivers/runtime/start` (`/stop`) | `admin` | Start or stop a device driver |
+| `PUT` | `/api/v1/drivers/runtime/configure` | `developer+` | Configure device connection properties and `pointMappings` (`operator` is 403) |
+| `POST` | `/api/v1/drivers/runtime/start` (`/stop`) | `developer+` | Start or stop a device driver (`operator` is 403; object write ACL still applies) |
 | `GET / POST / PUT / DELETE` | `/api/v1/blueprints/**` | `developer+` | Manage `SINGLETON`, `INSTANCE`, and `MIXIN` blueprints |
 
 ---

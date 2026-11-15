@@ -1,0 +1,282 @@
+openapi: 3.0.3
+info:
+  title: ISPF local session
+  version: "0.1.0"
+  description: >
+    Calls used on the local profile. Not the full API.
+    The server does not serve this file. /v3/api-docs and /swagger-ui.html return 404.
+servers:
+  - url: http://localhost:8080
+paths:
+  /api/v1/auth/config:
+    get:
+      operationId: authConfig
+      security: []
+      responses:
+        "200":
+          description: mode is local or oidc
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [mode, localLoginEnabled]
+                properties:
+                  mode:
+                    type: string
+                    enum: [local, oidc]
+                  localLoginEnabled:
+                    type: boolean
+  /api/v1/auth/login:
+    post:
+      operationId: login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: token is the bearer value
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "401":
+          description: Invalid username or password
+        "429":
+          description: Too many failed login attempts (5 failures, 15 minutes)
+  /api/v1/info:
+    get:
+      operationId: info
+      security: []
+      responses:
+        "200":
+          description: shortName, version, environment
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [shortName, version, environment]
+                properties:
+                  shortName:
+                    type: string
+                  version:
+                    type: string
+                  environment:
+                    type: string
+  /actuator/health:
+    get:
+      operationId: health
+      security: []
+      responses:
+        "200":
+          description: status UP when the process is serving
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status:
+                    type: string
+  /api/v1/drivers:
+    get:
+      operationId: listDrivers
+      responses:
+        "200":
+          description: operator or above
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required: [id]
+                  properties:
+                    id:
+                      type: string
+        "401":
+          description: missing or rejected bearer token
+  /api/v1/drivers/runtime/start:
+    post:
+      operationId: startDriver
+      parameters:
+        - $ref: "#/components/parameters/devicePath"
+      responses:
+        "200":
+          description: poll started. developer or admin. operator is 403
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DriverRuntimeStatus"
+        "403":
+          description: operator, or no write on the device
+  /api/v1/drivers/runtime/status:
+    get:
+      operationId: driverStatus
+      parameters:
+        - $ref: "#/components/parameters/devicePath"
+      responses:
+        "200":
+          description: current poll status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DriverRuntimeStatus"
+  /api/v1/objects/by-path/variables/detail:
+    get:
+      operationId: variableDetail
+      parameters:
+        - name: path
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: name
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: one variable
+          content:
+            application/json:
+              schema:
+                type: object
+  /api/v1/applications/{appId}/bundle/validate:
+    post:
+      operationId: validateBundle
+      parameters:
+        - $ref: "#/components/parameters/appId"
+        - name: strict
+          in: query
+          schema:
+            type: boolean
+            default: false
+        - name: dryRun
+          in: query
+          schema:
+            type: boolean
+            default: false
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: bundle.json
+      responses:
+        "200":
+          description: status OK or ERROR
+          content:
+            application/json:
+              schema:
+                type: object
+  /api/v1/applications/{appId}/deploy:
+    post:
+      operationId: deployBundle
+      parameters:
+        - $ref: "#/components/parameters/appId"
+        - name: strict
+          in: query
+          schema:
+            type: boolean
+            default: false
+        - name: runTests
+          in: query
+          schema:
+            type: boolean
+            default: true
+        - name: withSeeds
+          in: query
+          schema:
+            type: boolean
+            default: false
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: bundle.json
+      responses:
+        "200":
+          description: status is OK, PARTIAL, or FAILED. snapshotActive is present
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: manifest validation ERROR. Body has deployed false
+components:
+  securitySchemes:
+    bearer:
+      type: http
+      scheme: bearer
+  parameters:
+    devicePath:
+      name: devicePath
+      in: query
+      required: true
+      schema:
+        type: string
+        example: root.platform.devices.demo-sensor-01
+    appId:
+      name: appId
+      in: path
+      required: true
+      schema:
+        type: string
+  schemas:
+    LoginRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+        totpCode:
+          type: string
+    LoginResponse:
+      type: object
+      required: [token, username]
+      properties:
+        token:
+          type: string
+        expiresAt:
+          type: string
+        username:
+          type: string
+        displayName:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+    DriverRuntimeStatus:
+      type: object
+      required: [devicePath, driverId, status, connected]
+      properties:
+        devicePath:
+          type: string
+        driverId:
+          type: string
+        status:
+          type: string
+        connected:
+          type: boolean
+        pollIntervalMs:
+          type: integer
+          lastError:
+            type: string
+            nullable: true
+          telemetryPublishMode:
+            type: string
+          telemetryCoalesceMs:
+            type: integer
+security:
+  - bearer: []

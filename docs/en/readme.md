@@ -70,6 +70,7 @@ Document maturity labels (`Stable`, `Beta`, `Lab`, `Charter`, `Internal`) are ex
 | [Common design mistakes](anti-patterns.md) | Stable | Typical pitfalls in SCADA/IoT projects and how ISPF prevents them |
 | [Custom React UI (external IDE)](external-ide.md) | Stable | Developing standalone React SPAs (`ui-pack`) against ISPF `POST /api/v1/bff/invoke` |
 | [Applications API](applications.md) | Stable | Reference for bundle deploy, SQL migrations, BFF gateway, schedules, Git sync |
+| [REST API](api.md) | Stable | Endpoint table. Local calls: `docs/http/local-session.http`, `.ps1`, Postman. No Swagger on the server |
 | [Object functions](object-functions.md) | Stable | Built-in, JSON script, and Java functions on tree objects |
 | [Public bundle contract](solution-developer-public-api.md) | Stable | Supported fields and compatibility boundaries for `bundle.json` |
 | [Reports](reports.md) | Stable | SQL reports and CSV/document export |

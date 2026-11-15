@@ -1,0 +1,58 @@
+# Local profile, http://localhost:8080. REST Client (Cursor / VS Code).
+# Login response field is token. Later requests read {{login.response.body.token}}.
+# GET /api/v1/drivers is operator or above. POST start, validate, and deploy need developer or admin. operator is 403 on those.
+# /v3/api-docs and /swagger-ui.html are 404. This file is not served by the process.
+
+@baseUrl = http://localhost:8080
+@devicePath = root.platform.devices.demo-sensor-01
+
+### auth config
+GET {{baseUrl}}/api/v1/auth/config
+
+### login
+# @name login
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin"
+}
+
+### info
+GET {{baseUrl}}/api/v1/info
+
+### health
+GET {{baseUrl}}/actuator/health
+
+### drivers
+GET {{baseUrl}}/api/v1/drivers
+Authorization: Bearer {{login.response.body.token}}
+
+### start demo-sensor-01
+POST {{baseUrl}}/api/v1/drivers/runtime/start?devicePath={{devicePath}}
+Authorization: Bearer {{login.response.body.token}}
+
+### demo-sensor-01 status
+GET {{baseUrl}}/api/v1/drivers/runtime/status?devicePath={{devicePath}}
+Authorization: Bearer {{login.response.body.token}}
+
+### temperature
+GET {{baseUrl}}/api/v1/objects/by-path/variables/detail?path={{devicePath}}&name=temperature
+Authorization: Bearer {{login.response.body.token}}
+
+### validate a bundle
+# Body is the bundle JSON. strict=true makes LOGIC_HOST_DEVICE an error.
+POST {{baseUrl}}/api/v1/applications/demo/bundle/validate?strict=true
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+< ../../examples/demo-app/bundle.json
+
+### deploy a bundle
+# runTests defaults to true on the server. withSeeds defaults to false.
+POST {{baseUrl}}/api/v1/applications/demo/deploy?strict=true&withSeeds=false
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+< ../../examples/demo-app/bundle.json

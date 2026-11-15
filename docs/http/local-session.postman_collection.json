@@ -1,0 +1,85 @@
+{
+  "info": {
+    "name": "ISPF local session",
+    "description": "Local profile on http://localhost:8080. The login request stores token. The server does not publish /v3/api-docs or /swagger-ui.html.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "token", "value": "" },
+    { "key": "devicePath", "value": "root.platform.devices.demo-sensor-01" }
+  ],
+  "item": [
+    {
+      "name": "auth config",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/auth/config"
+      }
+    },
+    {
+      "name": "login",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const body = pm.response.json();",
+              "if (body.token) pm.collectionVariables.set('token', body.token);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin\"\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/auth/login"
+      }
+    },
+    {
+      "name": "info",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/info" }
+    },
+    {
+      "name": "health",
+      "request": { "method": "GET", "url": "{{baseUrl}}/actuator/health" }
+    },
+    {
+      "name": "drivers",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": "{{baseUrl}}/api/v1/drivers"
+      }
+    },
+    {
+      "name": "start demo sensor",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": "{{baseUrl}}/api/v1/drivers/runtime/start?devicePath={{devicePath}}"
+      }
+    },
+    {
+      "name": "demo sensor status",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": "{{baseUrl}}/api/v1/drivers/runtime/status?devicePath={{devicePath}}"
+      }
+    },
+    {
+      "name": "temperature",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": "{{baseUrl}}/api/v1/objects/by-path/variables/detail?path={{devicePath}}&name=temperature"
+      }
+    }
+  ]
+}

@@ -8,6 +8,8 @@
 
 **Аутентификация:** в заголовке `Authorization: Bearer <токен>` передаётся токен, полученный после вызова `POST /api/v1/auth/login` (в локальном профиле создаются тестовые учётные записи `admin`/`admin`, `developer`/`developer`, `operator`/`operator`; в промышленном профиле также поддерживаются JWT-токены от Keycloak). Подробная таблица прав по ролям приведена в разделе **[Безопасность и RBAC](security.md)**.
 
+**Готовые вызовы для локального профиля:** [local-session.http](../http/local-session.http), [local-session.ps1](../http/local-session.ps1), [Postman](../http/local-session.postman_collection.json). [OpenAPI](../http/local-session.openapi.yaml) описывает только эти вызовы. `/v3/api-docs` и `/swagger-ui.html` отвечают 404.
+
 ---
 
 ## 1. Общие сведения о платформе и настройки сервера
@@ -15,8 +17,9 @@
 | Метод | Путь | Роль | Назначение |
 |-------|------|------|------------|
 | `GET` | `/api/v1/info` | публичный | Имя, версия сервера, версии Java и Spring Boot, список включённых возможностей (`capabilities[]`) |
+| `GET` | `/api/v1/auth/config` | публичный | Режим `local` или `oidc`, флаг `localLoginEnabled` |
 | `GET` | `/api/v1/auth/me` | публичный | Текущий аутентифицированный пользователь и его роли |
-| `POST` | `/api/v1/auth/login` | публичный | Вход по логину и паролю (и коду TOTP, если у пользователя включена двухфакторная защита) |
+| `POST` | `/api/v1/auth/login` | публичный | Вход по логину и паролю (и коду TOTP). `401` при неверном пароле; `429` после 5 неудач за 15 минут |
 | `GET` | `/api/v1/platform/metrics` | `admin` | Сводные метрики сервера (JVM, БД, дерево объектов, драйверы, очереди автоматизации, архив историй) |
 | `GET` | `/api/v1/platform/effective-config` | `operator+` | Активный профиль развёртывания и фактические размеры пулов потоков |
 | `GET` | `/api/v1/platform/runtime-settings` | `admin` | Чтение изменяемых настроек времени выполнения |
@@ -147,8 +150,8 @@ Content-Type: application/json
 |-------|------|------|------------|
 | `GET` | `/api/v1/drivers` | `operator+` | Каталог установленных драйверов протоколов |
 | `GET` | `/api/v1/drivers/runtime/status` | `operator+` | Состояние цикла опроса устройства (`?devicePath=...`) |
-| `PUT` | `/api/v1/drivers/runtime/configure` | `admin` | Сохранить параметры подключения и привязку регистров драйвера |
-| `POST` | `/api/v1/drivers/runtime/start` (`/stop`) | `admin` | Запустить или остановить опрос устройства |
+| `PUT` | `/api/v1/drivers/runtime/configure` | `developer+` | Сохранить параметры подключения и привязку регистров (`operator` — 403) |
+| `POST` | `/api/v1/drivers/runtime/start` (`/stop`) | `developer+` | Запустить или остановить опрос устройства (`operator` — 403; ACL записи на объект по-прежнему действует) |
 | `GET / POST / PUT / DELETE` | `/api/v1/blueprints/**` | `developer+` | Управление шаблонами объектов (`SINGLETON`, `INSTANCE`, `MIXIN`) |
 
 ---
