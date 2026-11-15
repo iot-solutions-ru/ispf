@@ -148,17 +148,25 @@ class AdrHonestyGateTest {
                 writePoint.contains("DNP3 write not implemented"),
                 "Dnp3DeviceDriver.writePoint must not throw the old not-implemented stub"
         );
-        String scorecard = Files.readString(root.resolve("docs/en/competitive-scorecard.md"));
-        assertFalse(
-                scorecard.contains("writePoint` still throws") || scorecard.contains("writePoint still throws"),
-                "competitive-scorecard must not claim DNP3 writePoint still throws"
-        );
-        assertFalse(
-                Pattern.compile("(?i)DNP3 PRODUCTION poll-only\\s*—\\s*`?writePoint`? not implemented")
-                        .matcher(scorecard)
-                        .find(),
-                "competitive-scorecard must not keep the poll-only / writePoint-not-implemented integrity row"
-        );
+        for (String relative : List.of(
+                "docs/en/competitive-scorecard.md",
+                "docs/ru/competitive-scorecard.md"
+        )) {
+            String scorecard = Files.readString(root.resolve(relative));
+            assertFalse(
+                    scorecard.contains("writePoint` still throws")
+                            || scorecard.contains("writePoint still throws")
+                            || scorecard.contains("writePoint не реализован"),
+                    relative + " must not claim DNP3 writePoint is unimplemented"
+            );
+            assertFalse(
+                    Pattern.compile("(?i)DNP3 PRODUCTION poll-only\\s*—\\s*`?writePoint`?")
+                            .matcher(scorecard)
+                            .find()
+                            || scorecard.contains("DNP3 write open"),
+                    relative + " must not keep poll-only / write-open DNP3 integrity wording"
+            );
+        }
         String limitations = Files.readString(root.resolve("docs/en/known-limitations.md"));
         String dnp3Row = rowContaining(limitations, "DNP3");
         assertTrue(dnp3Row.contains("POLL") && dnp3Row.contains("WRITE"),
