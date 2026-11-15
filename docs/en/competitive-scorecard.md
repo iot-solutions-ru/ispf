@@ -12,6 +12,8 @@ Public readiness matrix for Phases 25–33 (see unified [roadmap](roadmap.md)).
 | **0.9.102** | Prior full code audit (July 2026). Historical baseline; superseded by this audit. |
 | **0.9.206** | Prior demostand pin (migration scope). **Not** a scored matrix. |
 
+**Current `main`:** **0.9.208** — post-dates the 0.9.207 audit (honesty/ops waves after 2026-09-09). **Not** a re-scored matrix; do not treat newer commits as a new pin.
+
 **Current column:** **Code verified** — evidence from `main` source, tests, and dated lab archives at audit pin **0.9.207** (2026-09-09).
 
 Scale **1–10** vs leading platforms: Ignition, Kepware/KEPServerEX, OSIsoft PI, Siemens Opcenter, Tulip, mature context-tree IIoT platforms.

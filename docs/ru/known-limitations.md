@@ -15,7 +15,7 @@
 | Тема | Реальность |
 |------|------------|
 | Учётные данные по умолчанию | Demo / getting-started могут использовать `admin` / `admin`. **Смените до любой сетевой экспозиции** — [security](security.md), [deployment](deployment.md). |
-| Unsigned bundles / RBAC off / WS origins `*` | Вне `prod` — обычно только **warn**. В `application-prod.yml` — `strict-startup=true` (отказ старта при RBAC off / role header / WS `*`). Unsigned bundles warn, пока не `require-signed-bundles=true`. Helm/`dev` могут не грузить `prod` — [security](security.md). |
+| Unsigned bundles / RBAC off / WS origins `*` | `dev`/default — обычно **warn**; в `application-prod.yml` — `strict-startup=true` (отказ старта при RBAC off / role header / WS `*`). `local`/`test` полностью пропускают `StartupSecurityGuard` (без warn; env-флаг игнорируется) — Docker/Helm/`local` VPS должны уйти с `local` (например `prod`, или non-`local` + `ISPF_SECURITY_STRICT_STARTUP=true`). Unsigned bundles warn, пока не `require-signed-bundles=true`. Таблица: [deployment](deployment.md#отгруженные-entrypoint-и-профили) · [EN](../en/deployment.md#shipped-entrypoints-and-profiles). |
 | Java-функции | Держите `ISPF_FUNCTION_JAVA_ENABLED=false`, пока не принимаете sandbox gaps ([ADR-0045](../en/decisions/0045-java-function-sandbox.md)). |
 
 ---
