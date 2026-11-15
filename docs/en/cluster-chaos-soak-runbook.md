@@ -24,7 +24,7 @@ Do **not** treat a green weekly JDBC unit gate as multi-hour soak evidence.
 
 | Claim | CI (`.github/workflows/cluster-load-test.yml`) | Lab / soak (this runbook) |
 | ----- | ---------------------------------------------- | ------------------------- |
-| JDBC ownership acquire / expire / reclaim (in-process) | **REAL** — `DriverOwnershipServiceTest`, `ClusterFailoverIntegrationTest` (weekly + dispatch) | Same classes; optional re-run under load |
+| JDBC ownership acquire / expire / reclaim / no dual owner (in-process) | **REAL** — `DriverOwnershipServiceTest` (incl. `noDualOwnerAcrossLifecycle`, `concurrentAcquireYieldsSingleOwner`), `ClusterFailoverIntegrationTest` (weekly + dispatch) | Lease exclusivity only; not multi-node dual-I/O |
 | Round-robin REST ≥2 replicas, REST stays 200 when one replica stopped | **REAL** — `deploy/cluster-smoke-test.sh` + `deploy/nginx-cluster.conf` API upstream (round-robin; WS stays `ip_hash`) | Repeat on lab compose / VPS |
 | Kill driver-lock owner → reclaim within SLO | **REAL** on compose defaults (TTL 15s + scan 5s; smoke SLO default **45s**) when fixtures hold locks | **PARTIAL→REAL** under sustained ingress when journal below is filled |
 | Config/structure create+delete visible on all LB replicas (ADR-0030) | **REAL** — smoke `--config-sync` | Same |

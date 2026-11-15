@@ -1,0 +1,23 @@
+{
+  "version": "1.0.0",
+  "displayName": "Ship canon OK singleton hub",
+  "tablePrefix": "sc_ok_",
+  "schemaName": "app_ship_canon_ok",
+  "objects": [
+    {
+      "parentPath": "root.platform.singleton-blueprints",
+      "name": "hub-v1",
+      "type": "CUSTOM"
+    }
+  ],
+  "functions": [
+    {
+      "objectPath": "root.platform.singleton-blueprints.hub-v1",
+      "functionName": "tick",
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\"}}]}"
+      }
+    }
+  ]
+}

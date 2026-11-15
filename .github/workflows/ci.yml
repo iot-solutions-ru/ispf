@@ -53,6 +53,7 @@ jobs:
               - 'tools/ai-pack/**'
               - 'tools/license-audit/**'
               - 'tools/agent-regression/**'
+              - 'tools/ship-canon-fixtures/**'
               - 'examples/**'
             drivers:
               - 'packages/ispf-driver-*/**'
@@ -240,8 +241,8 @@ jobs:
           npm ci
           node --test test/*.test.mjs
 
-      - name: Marketplace ship-canon gate test
-        run: node --test tools/marketplace-catalog/ship-canon-gate.test.mjs
+      - name: Marketplace ship-canon gate + shared fixtures
+        run: node --test tools/marketplace-catalog/*.test.mjs
 
       - name: Tracked binaries / oversized files gate
         run: node tools/repo-hygiene/check-tracked-binaries.mjs
