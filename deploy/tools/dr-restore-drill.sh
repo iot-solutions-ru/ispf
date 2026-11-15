@@ -42,8 +42,11 @@ wait_for_db() {
   local label="$2"
   echo "==> Wait for $label ready ($name)"
   for _ in $(seq 1 90); do
-    if docker exec "$name" pg_isready -U "$USER" -d "$DB" >/dev/null 2>&1 \
-      && docker exec "$name" psql -U "$USER" -d "$DB" -Atc 'SELECT 1' >/dev/null 2>&1; then
+    # TCP loopback avoids the initdb temp-server Unix-socket window.
+    if docker exec -e PGPASSWORD="$PASS" "$name" \
+          pg_isready -h 127.0.0.1 -U "$USER" -d "$DB" >/dev/null 2>&1 \
+      && docker exec -e PGPASSWORD="$PASS" "$name" \
+          psql -h 127.0.0.1 -U "$USER" -d "$DB" -Atc 'SELECT 1' >/dev/null 2>&1; then
       return 0
     fi
     sleep 1
