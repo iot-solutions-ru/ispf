@@ -99,7 +99,7 @@ Rules inherit down the subtree. If no ACL entries exist on an object or its ance
 ### Per-Variable and Per-Function Role Restrictions (`MEMBER` Mode)
 Individual variables can define `readRoles` and `writeRoles` (JSON arrays of role names), and functions/events can define `invokeRoles`. Interactive requests (REST, WebSocket, BFF, Object Query, Haystack/Brick export, analytics queries, and AI agent tools) execute in `VariableAclRequestContext.MEMBER` mode and enforce these role lists through `VariableMemberAccessService`.
 
-When a hub proxies an interactive request to a remote federated peer, it forwards the caller's identity in `X-ISPF-On-Behalf-Of-*` headers, and the remote peer enforces the **intersection** of the channel's roles and the user's roles ([Federation](federation.md)).
+When a hub proxies an interactive request to a remote federated peer, it forwards the caller's identity in `X-ISPF-On-Behalf-Of-*` headers, and the remote peer's `FederationOnBehalfOfFilter` enforces the **intersection** of the channel's roles and the claimed on-behalf-of roles before `MEMBER` ACL checks ([Federation](federation.md)). Federated hub reads omit remote-only variables that have no local mirror ACL metadata; non-admin proxy writes require a local variable definition. Background schedulers and binding evaluations stay in `SYSTEM` mode and do not apply an end-user member ACL.
 
 ---
 

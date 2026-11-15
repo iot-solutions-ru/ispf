@@ -40,7 +40,7 @@ Demo seed **LINE-A01 / Morning**: planned 480 min, downtime 45, ideal 12 s, tota
 | Mechanism | Usage in OEE reference |
 |----------|-------------------------------|
 | **PF-01** bundle deploy | `migrations`, `functions`, `operatorUi` |
-| **PF-05** objects[] | `mes-oee-hub-01` device |
+| **PF-05** objects[] | empty — hub is SINGLETON `mes-oee-reference-hub-v1` |
 | **PF-02** BFF invoke | `mes_oee_listShifts`, `mes_oee_getKpi`, `mes_oee_addDowntime` |
 | **Operator UI** | `appId` = `mes-oee-reference`, event journal @ `demo-sensor-01` |
 

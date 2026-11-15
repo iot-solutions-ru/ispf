@@ -42,10 +42,10 @@ GET /api/v1/platform/haystack/query?filter=point+and+temp&rootPath=root.platform
 | `GET` | `/api/v1/objects` | `operator+` | List child objects (`?parent=<path>`) |
 | `GET` | `/api/v1/objects/by-path` | `operator+` | Read object metadata by path (`?path=...`) |
 | `GET` | `/api/v1/objects/by-path/editor` | `operator+` | Read object together with its variables, events, and functions |
-| `POST` | `/api/v1/objects` | `admin` | Create a new tree node |
-| `PATCH` | `/api/v1/objects/by-path` | `admin` | Update `displayName` and `description` |
-| `DELETE` | `/api/v1/objects/by-path` | `admin` | Delete an object and its subtree |
-| `PUT` | `/api/v1/objects/reorder` | `admin` | Reorder sibling nodes (`parentPath`, `orderedPaths`) |
+| `POST` | `/api/v1/objects` | `developer+` | Create a new tree node |
+| `PATCH` | `/api/v1/objects/by-path` | `developer+` | Update `displayName` and `description` |
+| `DELETE` | `/api/v1/objects/by-path` | `developer+` | Delete an object and its subtree |
+| `PUT` | `/api/v1/objects/reorder` | `developer+` | Reorder sibling nodes (`parentPath`, `orderedPaths`) |
 | `GET` | `/api/v1/objects/by-path/variables` | `operator+` | List all variables and current values on an object |
 | `GET` | `/api/v1/objects/by-path/variables/detail` | `operator+` | Read one variable (`?path=...&name=...`) |
 | `PUT` | `/api/v1/objects/by-path/variables` | `operator+` / `admin` | Write variable value (`writable` variables for operators) |
@@ -91,15 +91,15 @@ Full specification: **[Application Solutions (`applications.md`)](applications.m
 
 | Method | Path | Roles | Description |
 |--------|------|-------|-------------|
-| `POST` | `/api/v1/applications` | `admin` | Register an application (`appId`, `schemaName`, `tablePrefix`) |
-| `POST` | `/api/v1/applications/{appId}/deploy` | `admin` | Deploy a full `bundle.json` manifest (`?strict=true\|false&runTests=true\|false`) |
-| `POST` | `/api/v1/applications/{appId}/bundle/validate` | `admin` | Validate a `bundle.json` manifest (`?dryRun=true\|false&strict=true\|false`) |
-| `GET` | `/api/v1/applications/{appId}/export` | `admin` | Export the active deployed bundle manifest |
-| `POST` | `/api/v1/applications/{appId}/data/migrate` | `admin` | Run SQL migrations in the application's isolated schema |
-| `GET` | `/api/v1/applications/{appId}/data/status` | `admin` | Check applied SQL migration versions |
-| `POST` | `/api/v1/applications/{appId}/functions/deploy` | `admin` | Deploy a JSON step-script function |
+| `POST` | `/api/v1/applications` | `developer+` | Register an application (`appId`, `schemaName`, `tablePrefix`) |
+| `POST` | `/api/v1/applications/{appId}/deploy` | `developer+` | Deploy a full `bundle.json` manifest (`?strict=true\|false&runTests=true\|false`) |
+| `POST` | `/api/v1/applications/{appId}/bundle/validate` | `developer+` | Validate a `bundle.json` manifest (`?dryRun=true\|false&strict=true\|false`) |
+| `GET` | `/api/v1/applications/{appId}/export` | `developer+` | Export the active deployed bundle manifest |
+| `POST` | `/api/v1/applications/{appId}/data/migrate` | `developer+` | Run SQL migrations in the application's isolated schema |
+| `GET` | `/api/v1/applications/{appId}/data/status` | `developer+` | Check applied SQL migration versions |
+| `POST` | `/api/v1/applications/{appId}/functions/deploy` | `developer+` | Deploy a JSON step-script function |
 | `GET / POST` | `/api/v1/reports/by-path` (`/run`, `/export`) | `operator+` | Read, execute, and export reports (`csv`, `xlsx`, `pdf`, `html`) |
-| `GET / POST` | `/api/v1/schedules` | `admin` | List and create periodic schedules |
+| `GET / POST` | `/api/v1/schedules` | `developer+` | List and create periodic schedules |
 
 ---
 
@@ -110,13 +110,13 @@ Full specification: **[Application Solutions (`applications.md`)](applications.m
 | `GET` | `/api/v1/events` | `operator+` | Query the event journal (`objectPath`, `limit` ≤ 200, optional CEL `expr`) |
 | `POST` | `/api/v1/events/fire` | `operator+` | Publish an event on an object |
 | `POST` | `/api/v1/events/journal/purge` | `admin` | Purge persisted event rows older than `olderThan` (ISO-8601) |
-| `GET / POST / PUT / DELETE` | `/api/v1/alert-rules` (`/by-path?path=`) | `admin` | Manage `ALERT` rules |
-| `GET / POST / PUT / DELETE` | `/api/v1/correlators` (`/by-path?path=`) | `admin` | Manage `CORRELATOR` rules |
+| `GET / POST / PUT / DELETE` | `/api/v1/alert-rules` (`/by-path?path=`) | `developer+` | Manage `ALERT` rules |
+| `GET / POST / PUT / DELETE` | `/api/v1/correlators` (`/by-path?path=`) | `developer+` | Manage `CORRELATOR` rules |
 | `GET` | `/api/v1/drivers` | `operator+` | List registered protocol drivers and maturity levels |
 | `GET` | `/api/v1/drivers/runtime/status` | `operator+` | Inspect driver polling status (`?devicePath=...`) |
 | `PUT` | `/api/v1/drivers/runtime/configure` | `admin` | Configure device connection properties and `pointMappings` |
 | `POST` | `/api/v1/drivers/runtime/start` (`/stop`) | `admin` | Start or stop a device driver |
-| `GET / POST / PUT / DELETE` | `/api/v1/blueprints/**` | `admin` | Manage `SINGLETON`, `INSTANCE`, and `MIXIN` blueprints |
+| `GET / POST / PUT / DELETE` | `/api/v1/blueprints/**` | `developer+` | Manage `SINGLETON`, `INSTANCE`, and `MIXIN` blueprints |
 
 ---
 

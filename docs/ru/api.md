@@ -18,7 +18,7 @@
 | `GET` | `/api/v1/auth/me` | публичный | Текущий аутентифицированный пользователь и его роли |
 | `POST` | `/api/v1/auth/login` | публичный | Вход по логину и паролю (и коду TOTP, если у пользователя включена двухфакторная защита) |
 | `GET` | `/api/v1/platform/metrics` | `admin` | Сводные метрики сервера (JVM, БД, дерево объектов, драйверы, очереди автоматизации, архив историй) |
-| `GET` | `/api/v1/platform/effective-config` | `admin` | Активный профиль развёртывания и фактические размеры пулов потоков |
+| `GET` | `/api/v1/platform/effective-config` | `operator+` | Активный профиль развёртывания и фактические размеры пулов потоков |
 | `GET` | `/api/v1/platform/runtime-settings` | `admin` | Чтение изменяемых настроек времени выполнения |
 | `PATCH` | `/api/v1/platform/runtime-settings` | `admin` | Сохранение настроек времени выполнения |
 | `POST` | `/api/v1/platform/runtime-settings/restart` | `admin` | Запланировать перезапуск процесса сервера |
@@ -44,10 +44,10 @@ GET /api/v1/platform/haystack/query?filter=point+and+temp&rootPath=root.platform
 | `GET` | `/api/v1/objects` | `operator+` | Список объектов (`?parent=<путь>` возвращает прямых потомков узла) |
 | `GET` | `/api/v1/objects/by-path` | `operator+` | Свойства узла по его полному пути (`?path=...`) |
 | `GET` | `/api/v1/objects/by-path/editor` | `operator+` | Полное описание узла вместе с переменными, событиями и функциями |
-| `POST` | `/api/v1/objects` | `admin` | Создать новый узел в дереве |
-| `PATCH` | `/api/v1/objects/by-path` | `admin` | Изменить отображаемое имя (`displayName`) и описание узла |
-| `DELETE` | `/api/v1/objects/by-path` | `admin` | Удалить узел вместе с его поддеревом |
-| `PUT` | `/api/v1/objects/reorder` | `admin` | Изменить порядок дочерних узлов внутри папки (`parentPath`, `orderedPaths`) |
+| `POST` | `/api/v1/objects` | `developer+` | Создать новый узел в дереве |
+| `PATCH` | `/api/v1/objects/by-path` | `developer+` | Изменить отображаемое имя (`displayName`) и описание узла |
+| `DELETE` | `/api/v1/objects/by-path` | `developer+` | Удалить узел вместе с его поддеревом |
+| `PUT` | `/api/v1/objects/reorder` | `developer+` | Изменить порядок дочерних узлов внутри папки (`parentPath`, `orderedPaths`) |
 | `GET` | `/api/v1/objects/by-path/variables` | `operator+` | Список всех переменных узла и их текущих значений |
 | `GET` | `/api/v1/objects/by-path/variables/detail` | `operator+` | Метаданные и значение одной переменной (`?path=...&name=...`) |
 | `PUT` | `/api/v1/objects/by-path/variables` | `operator+` / `admin` | Записать новое значение переменной (для оператора — если переменная помечена как `writable`) |
@@ -111,17 +111,17 @@ Content-Type: application/json
 
 | Метод | Путь | Роль | Назначение |
 |-------|------|------|------------|
-| `POST` | `/api/v1/applications` | `admin` | Зарегистрировать новое приложение и его SQL-схему |
-| `POST` | `/api/v1/applications/{appId}/deploy` | `admin` | Развернуть полный пакет решения `bundle.json` |
-| `POST` | `/api/v1/applications/{appId}/bundle/validate` | `admin` | Проверить манифест `bundle.json` (`?strict=true\|false`) |
-| `GET` | `/api/v1/applications/{appId}/export` | `admin` | Выгрузить установленный манифест приложения |
-| `POST` | `/api/v1/applications/{appId}/data/migrate` | `admin` | Выполнить SQL-миграции в изолированной схеме приложения |
-| `GET` | `/api/v1/applications/{appId}/data/status` | `admin` | Статус применённых SQL-миграций приложения |
-| `POST` | `/api/v1/applications/{appId}/functions/deploy` | `admin` | Зарегистрировать или обновить скриптовую функцию |
-| `GET` | `/api/v1/applications/{appId}/reports` | `admin` | Список отчётов приложения |
+| `POST` | `/api/v1/applications` | `developer+` | Зарегистрировать новое приложение и его SQL-схему |
+| `POST` | `/api/v1/applications/{appId}/deploy` | `developer+` | Развернуть полный пакет решения `bundle.json` |
+| `POST` | `/api/v1/applications/{appId}/bundle/validate` | `developer+` | Проверить манифест `bundle.json` (`?strict=true\|false`) |
+| `GET` | `/api/v1/applications/{appId}/export` | `developer+` | Выгрузить установленный манифест приложения |
+| `POST` | `/api/v1/applications/{appId}/data/migrate` | `developer+` | Выполнить SQL-миграции в изолированной схеме приложения |
+| `GET` | `/api/v1/applications/{appId}/data/status` | `developer+` | Статус применённых SQL-миграций приложения |
+| `POST` | `/api/v1/applications/{appId}/functions/deploy` | `developer+` | Зарегистрировать или обновить скриптовую функцию |
+| `GET` | `/api/v1/applications/{appId}/reports` | `developer+` | Список отчётов приложения |
 | `POST` | `/api/v1/applications/{appId}/reports/{reportId}/run` | `operator+` | Выполнить отчёт и получить строки выборки |
 | `GET` | `/api/v1/applications/{appId}/reports/{reportId}/export` | `operator+` | Скачать отчёт в формате CSV, XLSX, PDF или HTML |
-| `GET / POST` | `/api/v1/schedules` | `admin` | Список и создание фоновых расписаний |
+| `GET / POST` | `/api/v1/schedules` | `developer+` | Список и создание фоновых расписаний |
 
 ---
 
@@ -137,10 +137,10 @@ Content-Type: application/json
 ### Правила тревог (`ALERT`) и корреляторы (`CORRELATOR`)
 | Метод | Путь | Роль | Назначение |
 |-------|------|------|------------|
-| `GET / POST` | `/api/v1/alert-rules` | `admin` | Список и создание правил тревог |
-| `GET / PUT / DELETE` | `/api/v1/alert-rules/by-path?path=` | `admin` | Чтение, изменение и удаление правила тревоги по пути |
-| `GET / POST` | `/api/v1/correlators` | `admin` | Список и создание корреляторов событий |
-| `GET / PUT / DELETE` | `/api/v1/correlators/by-path?path=` | `admin` | Чтение, изменение и удаление коррелятора по пути |
+| `GET / POST` | `/api/v1/alert-rules` | `developer+` | Список и создание правил тревог |
+| `GET / PUT / DELETE` | `/api/v1/alert-rules/by-path?path=` | `developer+` | Чтение, изменение и удаление правила тревоги по пути |
+| `GET / POST` | `/api/v1/correlators` | `developer+` | Список и создание корреляторов событий |
+| `GET / PUT / DELETE` | `/api/v1/correlators/by-path?path=` | `developer+` | Чтение, изменение и удаление коррелятора по пути |
 
 ### Драйверы устройств и шаблоны (`Blueprints`)
 | Метод | Путь | Роль | Назначение |
@@ -149,7 +149,7 @@ Content-Type: application/json
 | `GET` | `/api/v1/drivers/runtime/status` | `operator+` | Состояние цикла опроса устройства (`?devicePath=...`) |
 | `PUT` | `/api/v1/drivers/runtime/configure` | `admin` | Сохранить параметры подключения и привязку регистров драйвера |
 | `POST` | `/api/v1/drivers/runtime/start` (`/stop`) | `admin` | Запустить или остановить опрос устройства |
-| `GET / POST / PUT / DELETE` | `/api/v1/blueprints/**` | `admin` | Управление шаблонами объектов (`SINGLETON`, `INSTANCE`, `MIXIN`) |
+| `GET / POST / PUT / DELETE` | `/api/v1/blueprints/**` | `developer+` | Управление шаблонами объектов (`SINGLETON`, `INSTANCE`, `MIXIN`) |
 
 ---
 

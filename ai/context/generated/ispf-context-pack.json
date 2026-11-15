@@ -1,6 +1,6 @@
 {
   "contextPackVersion": "ispf-0.9.208",
-  "generatedAt": "2026-11-15T06:11:31.857137+00:00",
+  "generatedAt": "2026-11-15T07:31:11.414756+00:00",
   "platformVersion": "0.9.208",
   "bundleManifest": {
     "fields": [
@@ -17085,6 +17085,12 @@
       "path": "docs/en/isa95-catalog.md",
       "title": "ISA-95 catalog — mapping ISPF object tree (BL-124)",
       "keywords": "isa95-catalog ISA-95 catalog — mapping ISPF object tree (BL-124)"
+    },
+    {
+      "id": "known-limitations",
+      "path": "docs/en/known-limitations.md",
+      "title": "Known limitations and non-claims",
+      "keywords": "known-limitations Known limitations and non-claims"
     },
     {
       "id": "lab-event-journal-stress",
@@ -69982,5 +69988,5 @@
   "embeddingModel": "ispf-hash-v1",
   "embeddingDims": 384,
   "embeddingCoverage": 37,
-  "contentSha256": "dcb152f925ba4edbe195e2dc9dd791d47a74a3ec92450809baffb4621f520fd8"
+  "contentSha256": "634d5e02d1f2857dc5067a67699327d9d3c5d6c1cbcd718a6406616de59a7593"
 }
