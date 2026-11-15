@@ -30,6 +30,11 @@ ISPF предоставляет встроенную панель диагнос
 | `ispf.event_journal.queue.size` / `flushed.total` | gauge / counter | Очередь и общее число записей, сброшенных в журнал событий |
 | `ispf.workflow.starts.total` / `workflow_instances.running` | counter / gauge | Запуски процессов BPMN и число активных экземпляров |
 | `ispf.websocket.clients` | gauge | Активные клиентские сессии WebSocket (`/ws/objects`) |
+| `ispf.historian.spool.*` | gauge | Backlog sole-store spool (bytes / lag / oldest_age_ms / quota / errors / replayed) |
+| `ispf.historian.dual_write.catchup.*` | gauge | Open ranges / age / WAL dual-write catch-up |
+| `ispf.binding.truncations` | counter | Stop-loss каскада привязок (`MAX_PASSES` / `MAX_DEPTH`) |
+
+Опциональные alert rules (dual-write, spool, binding stop-loss): [`deploy/prometheus-ispf-alerts.yml`](../../deploy/prometheus-ispf-alerts.yml). Полная EN-таблица: [en/observability.md](../en/observability.md).
 
 Готовый дашборд для внешней Grafana лежит в [`deploy/grafana/ispf-automation-pipeline.json`](../../deploy/grafana/ispf-automation-pipeline.json) (описание — [`deploy/grafana/README.md`](../../deploy/grafana/README.md)).
 

@@ -58,7 +58,8 @@ public class PlatformSelfDiagnosticsBootstrap {
             new ProbeVar("threadsAwaitingConnection", false, false),
             new ProbeVar("activeDrivers", false, false),
             new ProbeVar("workflowInstancesRunning", false, false),
-            new ProbeVar("variableHistorySamples", false, false)
+            new ProbeVar("variableHistorySamples", false, false),
+            new ProbeVar("bindingTruncationsTotal", false, true)
     );
 
     private final PlatformMetricsProbeProperties properties;

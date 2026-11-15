@@ -199,6 +199,7 @@ public class PlatformMetricsProbeService {
             writeInteger("activeDrivers", longValue(drivers.get("activeDrivers")));
             writeInteger("workflowInstancesRunning", longValue(automation.get("workflowInstancesRunning")));
             writeInteger("variableHistorySamples", longValue(history.get("sampleCount")));
+            writeInteger("bindingTruncationsTotal", longValue(automation.get("bindingTruncationsTotal")));
             lastEventHistoryRecords = events;
             lastAlertFiresTotal = alertFires;
             lastPollTime = now;

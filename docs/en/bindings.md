@@ -111,7 +111,7 @@ How ISPF avoids the “bindings queue, conditions already flipped” pain:
 | **Multi-pass** | After a pass that changed variables, the engine re-evaluates (manual trigger) until stable or **`MAX_PASSES=8`** |
 | **Depth** | Cross-object / nested activation depth capped at **`MAX_DEPTH=16`** |
 | **Async** | `activators.async=true` schedules that rule off the sync chain (independent side effects) |
-| **Stop-loss** | Truncation throws + error log + counter (see `BindingRuleEngine`) |
+| **Stop-loss** | Truncation throws + error log + Micrometer `ispf.binding.truncations` / System → Metrics `bindingTruncationsTotal` (see `BindingRuleEngine`) |
 | **Static warn** | `BindingCascadeAnalyzer` logs write↔activate cycles and heavy expressions on save |
 
 **Authoring:** one owner per variable; put multi-step branching in hub functions (`call(@/fn/…)`), not in competing rules. Anti-patterns: [anti-patterns.md](anti-patterns.md).

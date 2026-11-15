@@ -51,6 +51,10 @@ Key ISPF metrics (Micrometer):
 | `ispf.historian.dual_write.catchup.ranges` | gauge | Open catch-up ranges owed to ClickHouse |
 | `ispf.historian.dual_write.catchup.oldest_age_ms` | gauge | Age of oldest open catch-up range |
 | `ispf.historian.dual_write.catchup.wal_bytes` | gauge | Catch-up WAL size on disk |
+| `ispf.historian.spool.bytes` / `.lag` / `.oldest_age_ms` | gauge | Sole-store ClickHouse disk spool backlog |
+| `ispf.historian.spool.quota` | gauge | `1` when spool `max-bytes` rejects new accepts |
+| `ispf.historian.spool.errors` / `.replayed` | gauge | Cumulative spool errors / replayed batches |
+| `ispf.binding.truncations` | counter | Binding cascade stop-loss hits (`MAX_PASSES` / `MAX_DEPTH`) |
 | `ispf.workflow.starts.total{trigger=...}` | counter | Workflow starts by trigger |
 | `ispf.event_history.records` | gauge | Event journal record count |
 | `ispf.workflow_instances.running` | gauge | Active workflow instances |
@@ -59,7 +63,7 @@ Key ISPF metrics (Micrometer):
 | `ispf.object_tree.ready` | gauge | `1` when `ObjectManager` tree is initialized for API/scheduler work |
 | `ispf.database.connections.*` | gauge | HikariCP pool |
 
-Optional alert rules for dual-write catch-up: [`deploy/prometheus-ispf-alerts.yml`](../../deploy/prometheus-ispf-alerts.yml) (wire via Prometheus `rule_files`; see comment in [`prometheus-ispf-scrape.yml`](../../deploy/prometheus-ispf-scrape.yml)).
+Optional alert rules for dual-write catch-up, sole-store spool, and binding stop-loss: [`deploy/prometheus-ispf-alerts.yml`](../../deploy/prometheus-ispf-alerts.yml) (wire via Prometheus `rule_files`; see comment in [`prometheus-ispf-scrape.yml`](../../deploy/prometheus-ispf-scrape.yml)). First-party System → Metrics also exposes `bindingTruncationsTotal` and catch-up/spool fields when those paths are enabled.
 
 ### Metrics probe (object tree sync)
 
