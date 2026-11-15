@@ -29,10 +29,26 @@ fi
 export ISPF_DATA_DIR="${ISPF_DATA_DIR:-./data}"
 mkdir -p "$ISPF_DATA_DIR"
 
+# Portable zip ships the evaluation set in ./drivers (not under data/, so a DB reset keeps it).
+# If the launcher sits in scripts/ and the JAR is next to drivers/, use that folder instead.
+if [[ -z "${ISPF_DRIVER_PACKS_DIR:-}" ]]; then
+  if [[ -d "$SCRIPT_DIR/drivers" ]]; then
+    export ISPF_DRIVER_PACKS_DIR="$SCRIPT_DIR/drivers"
+  else
+    JAR_DIR="$(cd "$(dirname "$JAR")" && pwd)"
+    if [[ -d "$JAR_DIR/drivers" ]]; then
+      export ISPF_DRIVER_PACKS_DIR="$JAR_DIR/drivers"
+    fi
+  fi
+fi
+
 echo "Starting ISPF (local profile)"
 echo "  UI:       http://localhost:8080"
 echo "  Login:    admin / admin"
 echo "  Database: embedded H2 — ${SCRIPT_DIR}/data/ispf-local.mv.db"
 echo "            (no separate PostgreSQL required)"
+if [[ -n "${ISPF_DRIVER_PACKS_DIR:-}" ]]; then
+  echo "  Drivers:  ${ISPF_DRIVER_PACKS_DIR}"
+fi
 echo
 exec java -jar "$JAR" --spring.profiles.active=local

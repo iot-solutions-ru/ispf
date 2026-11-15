@@ -116,6 +116,8 @@ A code-verified read against Ignition, PI, Opcenter, and the rest is the [compet
 
 Uses an **embedded H2** file DB (no PostgreSQL to install). After first start: `data/ispf-local.mv.db` next to the JAR.
 
+The zip includes an **evaluation driver set** in `drivers/` (`virtual`, `modbus`, `mqtt`, `http`, `jdbc`, and the same small set a source `bootRun` uses). `start.bat` / `start.sh` point `ISPF_DRIVER_PACKS_DIR` at that folder when you have not set it. That is enough to start `demo-sensor-01`. Delete `data/` to reset the database; leave `drivers/` in place. OPC UA, SNMP, and the rest of the 160+ packs are not in the zip — build them with `./gradlew syncAllDriverPacks` or ship an air-gap bundle.
+
 **Container** ([GitHub Packages](https://github.com/iot-solutions-ru/ispf/pkgs/container/ispf-server)):
 
 ```bash
@@ -124,6 +126,8 @@ docker run --rm -p 8080:8080 -v ispf-data:/opt/ispf/data ghcr.io/iot-solutions-r
 ```
 
 Open http://localhost:8080 — login `admin` / `admin`. Operator HMI: http://localhost:8080?mode=operator
+
+The image ships the same evaluation drivers at `/opt/ispf/drivers`. The volume above is H2 data only and does not replace them.
 
 ### From source (dev)
 

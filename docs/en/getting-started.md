@@ -30,6 +30,10 @@ start.bat
 
 PostgreSQL is not required for local evaluation: the portable build uses an **embedded H2 file database** (`data/ispf-local.mv.db` created next to the JAR on first start).
 
+The zip includes the **evaluation driver set** in `drivers/` (`virtual`, `modbus`, `mqtt`, `http`, `jdbc`, and the same small set `bootRun` uses). `start.bat` / `start.sh` set `ISPF_DRIVER_PACKS_DIR` to that folder when you have not set it yourself. That is enough to start `demo-sensor-01`. OPC UA, SNMP, and the rest of the 160+ protocol packs are not in the zip — build them with `./gradlew syncAllDriverPacks` or ship them in an air-gap bundle.
+
+To reset the database, stop ISPF and delete `data/` only. Leave `drivers/` in place.
+
 3. Open **http://localhost:8080** in your browser and sign in with **`admin` / `admin`**. Continue from [Step 2 — Sign in](#2-sign-in-local-profile) below (using port `8080`).
 
 ### Option B — Container (Docker)
@@ -40,6 +44,8 @@ docker run --rm -p 8080:8080 -v ispf-data:/opt/ispf/data ghcr.io/iot-solutions-r
 ```
 
 Open **http://localhost:8080** and sign in with **`admin` / `admin`**.
+
+The image contains the same evaluation driver set at `/opt/ispf/drivers`. The volume above is only the H2 data directory. Mounting `-v ispf-data:/opt/ispf/data` does not replace the drivers. A full protocol catalog is not in the image.
 
 ### Option C — Run from source
 
@@ -155,7 +161,9 @@ Full server configuration reference: [Deployment](deployment.md) and [Security](
 
 ### How driver packs are loaded
 
-Protocol drivers are packaged as separate plugins outside `ispf-server.jar` and loaded at startup from `./data/drivers` (override via `ISPF_DRIVER_PACKS_DIR`).
+Protocol drivers are packaged as separate plugins outside `ispf-server.jar` and loaded at startup from `ISPF_DRIVER_PACKS_DIR` (default `./data/drivers`).
+
+The portable zip and the GHCR image set that variable to a `drivers/` directory shipped beside the server (`./drivers` or `/opt/ispf/drivers`) and fill it with the evaluation set (`syncDevDriverPacks`). A source checkout does not: `bootRun` builds the same set into `build/driver-packs` and points the process there.
 
 ```bash
 ./gradlew syncDevDriverPacks          # fast default subset for everyday development

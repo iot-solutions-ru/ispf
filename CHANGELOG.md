@@ -19,6 +19,7 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Added
 
+- **Evaluation drivers in the release** — the portable zip and the GHCR image include the `syncDevDriverPacks` set under `drivers/` (`virtual`, `modbus`, `mqtt`, `http`, `jdbc`, and the rest of that small set). Launchers set `ISPF_DRIVER_PACKS_DIR` when it is unset. Deleting `data/` does not remove the packs. OPC UA, SNMP, and the rest of the 160+ catalog stay out (`syncAllDriverPacks` or an air-gap bundle). Release asset: `driver-packs-dev.tar.gz`.
 - **WebSocket TLS** — the `websocket` driver setting `useTls` wraps the RFC6455 socket in TLS. Empty or `false` keeps the plain socket. `caCertPath` is an optional PEM file trusted together with the JVM trust store. The configured port stays as written; public wss servers usually use 443.
 - **Bubble chart axis limits** — the chart editor accepts an optional minimum and maximum for the horizontal and vertical axes. Empty limits follow the points. Both ends of an axis keep that axis fixed.
 - **Copy a function on the same object** — the Functions tab saves a second function under a new name. The copy keeps the schemas, body, data source, version, and invoke roles. Callers that name the source stay on the source. The dialog requires a free name.

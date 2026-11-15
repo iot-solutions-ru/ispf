@@ -83,6 +83,18 @@ jobs:
             -PembedWebConsole=true
           cp "$(ls packages/ispf-server/build/libs/ispf-server-*.jar | grep -v plain | head -1)" ispf-server.jar
 
+      - name: Assemble evaluation driver packs
+        run: |
+          set -euo pipefail
+          ./gradlew syncDevDriverPacks -x test --no-daemon
+          rm -rf drivers
+          mkdir -p drivers
+          cp -a build/driver-packs/. drivers/
+          test -f drivers/ispf-driver-virtual/driver-pack.json
+          tar -C drivers -czf driver-packs-dev.tar.gz .
+          echo "Evaluation driver packs:"
+          ls -1 drivers
+
       - name: Package web console (nginx / VPS split deploy)
         run: |
           cd apps/web-console/dist
@@ -96,6 +108,9 @@ jobs:
           cp ispf-server.jar "$PORTABLE_DIR/ispf-server.jar"
           cp scripts/start.bat scripts/start.sh "$PORTABLE_DIR/"
           chmod +x "$PORTABLE_DIR/start.sh"
+          rm -rf "$PORTABLE_DIR/drivers"
+          cp -a drivers "$PORTABLE_DIR/drivers"
+          test -f "$PORTABLE_DIR/drivers/ispf-driver-virtual/driver-pack.json"
           {
             echo "ISPF portable (Windows / Linux / macOS)"
             echo ""
@@ -110,8 +125,16 @@ jobs:
             echo "Database: embedded H2 (no PostgreSQL)."
             echo "  Created on first start: data/ispf-local.mv.db"
             echo "  To reset: stop ISPF and delete the data/ folder."
+            echo "  Do not delete drivers/ — that folder is the evaluation driver set."
+            echo ""
+            echo "Drivers: drivers/ next to the JAR (virtual, modbus, mqtt, http, jdbc,"
+            echo "  and the rest of the evaluation set used by bootRun)."
+            echo "  start.bat / start.sh set ISPF_DRIVER_PACKS_DIR to that folder when it is unset."
+            echo "  OPC UA, SNMP, and the rest of the 160+ protocol packs are not in this zip."
+            echo "  Build them with ./gradlew syncAllDriverPacks, or use an air-gap bundle."
           } > "$PORTABLE_DIR/README.txt"
           zip -r "ispf-${VERSION}-portable.zip" "$PORTABLE_DIR"
+          unzip -l "ispf-${VERSION}-portable.zip" | grep -q 'drivers/ispf-driver-virtual/driver-pack.json'
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4
@@ -141,6 +164,16 @@ jobs:
             org.opencontainers.image.version=${{ steps.ver.outputs.version }}
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.licenses=AGPL-3.0-or-later
+
+      - name: Assert image contains evaluation drivers
+        env:
+          IMAGE: ${{ steps.ver.outputs.image }}
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          set -euo pipefail
+          docker pull "${IMAGE}:${VERSION}"
+          docker run --rm --entrypoint sh "${IMAGE}:${VERSION}" \
+            -c 'test -f /opt/ispf/drivers/ispf-driver-virtual/driver-pack.json'
 
       - name: Install Cosign
         uses: sigstore/cosign-installer@756fe2d284c7292c4e9b62c8a28f1e5629c59532 # v4.1.3
@@ -197,12 +230,16 @@ jobs:
             echo ""
             echo "Open http://localhost:8080 — login \`admin\` / \`admin\`. Requires JDK 25+."
             echo ""
+            echo "The zip includes the **evaluation driver set** in \`drivers/\` (\`virtual\`, \`modbus\`, \`mqtt\`, \`http\`, \`jdbc\`, and the same small set \`bootRun\` uses). \`start.bat\` / \`start.sh\` point \`ISPF_DRIVER_PACKS_DIR\` at that folder. Delete \`data/\` to reset the database; leave \`drivers/\` in place. OPC UA, SNMP, and the rest of the 160+ packs are not in this zip (\`./gradlew syncAllDriverPacks\` or an air-gap bundle)."
+            echo ""
             echo "## Container (GitHub Packages)"
             echo ""
             echo '```bash'
             echo "docker pull ${IMAGE}:${VERSION}"
-            echo "docker run --rm -p 8080:8080 ${IMAGE}:${VERSION}"
+            echo "docker run --rm -p 8080:8080 -v ispf-data:/opt/ispf/data ${IMAGE}:${VERSION}"
             echo '```'
+            echo ""
+            echo "The image ships the same evaluation drivers at \`/opt/ispf/drivers\`. The volume is H2 data only and does not replace them."
             echo ""
             echo "Image digests are **Cosign-signed** (keyless OIDC) on this workflow. Verify:"
             echo ""
@@ -220,6 +257,7 @@ jobs:
             echo "- \`ispf-server.jar\` — all-in-one server + UI"
             echo "- \`start.bat\` / \`start.sh\` — launchers (same as inside the portable zip)"
             echo "- \`web-console.zip\` — UI only for nginx / VPS split deploy"
+            echo "- \`driver-packs-dev.tar.gz\` — evaluation driver packs (same set as inside the zip and the image). Extract into the server \`drivers/\` directory, or into \`ISPF_DRIVER_PACKS_DIR\`."
           } > /tmp/release-notes.md
 
           if gh release view "$TAG" >/dev/null 2>&1; then
@@ -229,6 +267,7 @@ jobs:
               scripts/start.bat \
               scripts/start.sh \
               apps/web-console/web-console.zip \
+              driver-packs-dev.tar.gz \
               --clobber
             gh release edit "$TAG" --notes-file /tmp/release-notes.md
           else
@@ -240,5 +279,6 @@ jobs:
               ispf-server.jar \
               scripts/start.bat \
               scripts/start.sh \
-              apps/web-console/web-console.zip
+              apps/web-console/web-console.zip \
+              driver-packs-dev.tar.gz
           fi
