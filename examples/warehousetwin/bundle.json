@@ -2156,7 +2156,7 @@
   "alertRules": [],
   "correlators": [],
   "schedules": [],
-  "analyticsFormulas": null,
+  "analyticsFormulas": [],
   "events": [],
   "tests": [],
   "requires": [],

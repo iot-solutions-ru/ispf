@@ -59,7 +59,7 @@
       "refreshIntervalMs": 60000
     }
   ],
-  "workflows": null,
+  "workflows": [],
   "blueprints": [
     {
       "name": "coffegate-hub",
@@ -609,7 +609,7 @@
       }
     }
   ],
-  "bindings": null,
+  "bindings": [],
   "reports": [
     {
       "reportId": "cg-summary",
@@ -867,12 +867,12 @@
       "maxRows": 200
     }
   ],
-  "alertRules": null,
-  "correlators": null,
-  "schedules": null,
-  "analyticsFormulas": null,
-  "events": null,
-  "requires": null,
+  "alertRules": [],
+  "correlators": [],
+  "schedules": [],
+  "analyticsFormulas": [],
+  "events": [],
+  "requires": [],
   "license": {
     "bundleId": "coffegate",
     "minPlatformVersion": "0.7.0",
