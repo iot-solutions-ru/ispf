@@ -1,3 +1,15 @@
+plugins {
+    `maven-publish`
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            from(components["java"])
+        }
+    }
+}
+
 dependencies {
     implementation("com.fasterxml.jackson.core:jackson-annotations:2.22")
 

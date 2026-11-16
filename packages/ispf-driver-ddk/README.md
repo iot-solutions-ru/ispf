@@ -4,11 +4,11 @@ Driver Development Kit — шаблоны и документация для в�
 
 ## Быстрый старт
 
-1. Скопируйте `template/` в новый Gradle-модуль, например `packages/ispf-driver-acme-widget/`.
-2. Замените `acme-widget`, пакет `com.ispf.driver.acmewidget`, конфиг и point mapping.
-3. Реализуйте `readPoints` / `writePoint` и loopback-тест со stub-сервером.
-4. Соберите pack: `./gradlew :packages:ispf-driver-acme-widget:assembleDriverPack`.
-5. Пройдите promotion gate — [docs/en/driver-promotion.md](../../docs/en/driver-promotion.md).
+1. Из корня репозитория: `./gradlew publishDdkApi` (кладёт `com.ispf:ispf-core` и `com.ispf:ispf-driver-api` в `~/.m2`).
+2. Скопируйте `template/` в свой каталог. `ispfVersion` в его `gradle.properties` равен `version` опубликованной сборки.
+3. В копии: `gradle test`, затем `gradle assembleDriverPack`. Каталог пакета — `build/driver-pack/ispf-driver-acme-widget/`.
+4. Замените `acme-widget`, пакет и point mapping. `jarFile` в `driver-pack.json` совпадает с именем jar.
+5. Promotion, если драйвер возвращается в этот репозиторий — [docs/en/driver-promotion.md](../../docs/en/driver-promotion.md). Модуль внутри дерева — отдельный `packages/ispf-driver-*` и строка в `gradle/driver-packs.json`, не регистрация `template/` в корневом `settings.gradle.kts`.
 
 Полная документация: [docs/en/driver-ddk.md](../../docs/en/driver-ddk.md).
 

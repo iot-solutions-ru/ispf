@@ -57,6 +57,8 @@ jobs:
               - 'examples/**'
             drivers:
               - 'packages/ispf-driver-*/**'
+              - 'gradle.properties'
+              - 'packages/ispf-core/**'
               - 'packages/ispf-driver-api/**'
               - 'gradle/driver-packs.json'
               - 'buildSrc/src/main/kotlin/com/ispf/build/**'
@@ -106,6 +108,17 @@ jobs:
           --no-daemon
           -Dorg.gradle.workers.max=1
           -Dispf.driver.packs=dev
+
+      - name: Smoke out-of-tree DDK template
+        run: |
+          set -euo pipefail
+          ./gradlew publishDdkApi --no-daemon
+          TEMPLATE_DIR="${RUNNER_TEMP}/ddk-template"
+          rm -rf "$TEMPLATE_DIR"
+          cp -a packages/ispf-driver-ddk/template "$TEMPLATE_DIR"
+          ./gradlew -p "$TEMPLATE_DIR" test assembleDriverPack --no-daemon
+          test -f "$TEMPLATE_DIR/build/driver-pack/ispf-driver-acme-widget/driver-pack.json"
+          test -f "$TEMPLATE_DIR/build/driver-pack/ispf-driver-acme-widget/ispf-driver-acme-widget.jar"
 
       - name: Save dev driver packs
         if: steps.driver-packs-cache.outputs.cache-hit != 'true'
