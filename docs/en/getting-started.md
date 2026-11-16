@@ -15,15 +15,15 @@ New to ISPF concepts? Read **[How ISPF works](learn.md)** alongside this guide.
 
 ## Try ISPF (≈15 minutes)
 
-**First success is a login screen**, not only a healthy API. Pick the path that matches your machine:
+The quick start is done when the sign-in page opens in the browser. Pick a row:
 
-| Goal | Path | Open after start |
-|------|------|------------------|
-| Fastest first look (no sources) | [Option A](#option-a--portable-release-archive-fastest-no-database-install) or [Option B](#option-b--container-docker) | **http://localhost:8080** — sign in `admin` / `admin` |
-| This repository is already checked out | [Option C](#option-c--run-from-source) — **API and Web Console** | **http://localhost:5173** — sign in `admin` / `admin` |
-| REST / scripts only, no browser UI | Option C, [Advanced: API only](#advanced-api-only) | Health checks on port `8080` — no login page |
+| You have | Use | Then open |
+|----------|-----|-----------|
+| No sources, and want the console quickly | [Option A](#option-a--portable-release-archive-fastest-no-database-install) or [Option B](#option-b--container-docker) | `http://localhost:8080`, sign in as `admin` / `admin` |
+| This repository on disk | [Option C](#option-c--run-from-source), both terminals | `http://localhost:5173`, sign in as `admin` / `admin` |
+| This repository on disk, REST or scripts only | Option C, [API only](#api-only) | No sign-in page. `http://localhost:8080/actuator/health` shows the server is up |
 
-Agents that follow `AGENTS.md` use Option C with both terminals so the console is available.
+Agents that follow `AGENTS.md` use Option C with both terminals.
 
 ### Option A — Portable release archive (fastest, no database install)
 
@@ -75,20 +75,18 @@ From another container on this network the slave is `modbus:502`. An `mqtt` devi
 
 ### Option C — Run from source
 
-Use this when the repository is already on disk (contributors, agents, local checkout). You need **two processes**: the API and the Web Console. Stopping after `bootRun` alone leaves `http://localhost:8080/` as a 404 — that is not a complete first install.
+Use this option when the repository is already on disk. It starts two processes: the API on port 8080 and the Web Console on port 5173. `bootRun` alone does not serve the console, and `http://localhost:8080/` returns 404.
 
 #### Why two processes (and two ports)?
 
-This is intentional, not a half-install.
+| How ISPF is started | Processes | Sign-in page |
+|---------------------|-----------|--------------|
+| From source (this option) | Java API on 8080, Vite dev server with the console on 5173 | `http://localhost:5173` |
+| Portable zip, container, release JAR | One process serves the API and the built console | `http://localhost:8080` |
 
-| Mode | What you run | Login URL |
-|------|----------------|-----------|
-| **From source (this option)** | Java API on **8080** + Vite Web Console on **5173** | **http://localhost:5173** |
-| **Portable zip / Docker / release JAR** | One process serves API **and** the built UI | **http://localhost:8080** |
+A source run keeps the two apart so that work on one does not rebuild the other. Vite applies console edits in the browser without `npm run build` and without repacking the JAR. A server change needs only a `bootRun` restart. The Vite dev server proxies `/api` and `/ws` to port 8080; scripts and REST clients call port 8080 directly.
 
-From source, the stack stays split so each side can reload on its own: `bootRun` rebuilds the server without waiting for `npm run build`, and Vite hot-reloads the React console without repacking a JAR. The console proxies `/api` and `/ws` to port 8080 — the API is never on 5173.
-
-All-in-one on 8080 is the **packaged** path (Options A/B, or a release `bootJar` with `-PembedWebConsole=true` after `npm run build`). Details: [Deployment — Web Console](deployment.md#3-building-the-web-console-appsweb-console).
+The portable zip, the container, and a release JAR carry the built console inside the JAR. That JAR is built with `-PembedWebConsole=true` after `npm run build`. Details: [Deployment — Web Console](deployment.md#3-building-the-web-console-appsweb-console).
 
 #### Prerequisites
 
@@ -97,7 +95,7 @@ All-in-one on 8080 is the **packaged** path (Options A/B, or a release `bootJar`
 | JDK | **17–27 to launch, 25 to run** | The wrapper uses `JAVA_HOME` when set, otherwise `PATH`. Compilation and the server use 25; the Foojay plugin in `settings.gradle.kts` downloads 25 when it is not already installed. The portable zip still needs 25 on the machine that runs `start.bat` / `start.sh`. |
 | Gradle | Included (`./gradlew` / `gradlew.bat`) | No separate installation needed |
 | Python | **3** | On `PATH`. `bootRun` regenerates the AI context pack before the server starts. |
-| Node.js | **20+** | **Required** for the Web Console (`apps/web-console`) |
+| Node.js | **20+** | For the Web Console (`apps/web-console`), Terminal 2 |
 | Docker | Optional | Needed only if you want PostgreSQL, Keycloak, Mosquitto, and NATS locally |
 
 #### 1. Start the API and the Web Console
@@ -118,7 +116,7 @@ Linux and macOS:
 
 The API is up when `http://localhost:8080/api/v1/info` includes `version` and `http://localhost:8080/actuator/health` is `{"status":"UP"}`. No token. The first start takes several minutes. A log that asks for PostgreSQL on port 5432 means the `local` profile argument was missing.
 
-**Terminal 2 — Web Console** (required for the login page). Node.js 20+. The Vite app proxies `/api` and `/ws` to port 8080.
+**Terminal 2 — Web Console.** Needs Node.js 20+. The Vite dev server proxies `/api` and `/ws` to port 8080.
 
 ```
 cd apps/web-console
@@ -126,24 +124,24 @@ npm install
 npm run dev
 ```
 
-**Open http://localhost:5173** and continue at [Step 2 — Sign in](#2-sign-in-local-profile) with **`admin` / `admin`**.
+Open `http://localhost:5173` and sign in as `admin` / `admin` ([step 2](#2-sign-in-local-profile)).
 
-Do not expect a login form at `http://localhost:8080/` in this mode — that port is API-only until you use the portable zip or the container. Those serve the same console on port 8080.
+`http://localhost:8080/` has no sign-in page in this mode: `bootRun` serves the API only. The portable zip and the container serve the same console on port 8080.
 
 | URL | What opens |
 |-----|------------|
-| `http://localhost:5173` | Admin Console (Vite — Option C) |
-| `http://localhost:5173?mode=operator` | Operator HMI (Vite — Option C) |
-| `http://localhost:8080` | Admin Console (portable / Docker / embedded release JAR) |
-| `http://localhost:8080?mode=operator` | Operator HMI (portable / Docker / embedded release JAR) |
+| `http://localhost:5173` | Admin Console (run from source) |
+| `http://localhost:5173?mode=operator` | Operator HMI (run from source) |
+| `http://localhost:8080` | Admin Console (portable zip, container, release JAR) |
+| `http://localhost:8080?mode=operator` | Operator HMI (portable zip, container, release JAR) |
 | `http://localhost:8080/api/v1/info` | Server version and enabled capabilities |
 | `http://localhost:8080/actuator/health` | Health status |
 
 By default, `bootRun` synchronizes a small set of core development drivers (`syncDevDriverPacks`, including `virtual`, `mqtt`, `modbus`, `http`, `jdbc`). To build all 160+ protocol driver packs, pass `-Dispf.driver.packs=all`.
 
-#### Advanced: API only
+#### API only
 
-Skip Terminal 2 when you only need REST or scripts against the running server. Health checks on `/api/v1/info` and `/actuator/health` are enough. There is no browser login page in that setup — use Option A/B or both terminals above when you want the console.
+Terminal 1 alone is enough for REST calls and scripts. The server is ready when `/api/v1/info` and `/actuator/health` answer. This mode has no sign-in page; a script gets its token from `POST /api/v1/auth/login`, as in step 2. For the console, start Terminal 2 or use Option A or B.
 
 ### 2. Sign in (`local` profile)
 

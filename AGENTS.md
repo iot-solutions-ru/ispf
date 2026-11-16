@@ -2,11 +2,11 @@
 
 ## Run this checkout
 
-A usable local install ends with a **login screen**. Start **both** processes below (`local` profile). Stopping after `bootRun` alone leaves `http://localhost:8080/` as a 404 — that is API-only, not a first-run success. First start compiles the server and the small driver set (including `virtual`, `modbus`, `mqtt`, `http`, `jdbc`) and takes several minutes. `./gradlew test` builds the full driver matrix; it is not the way to see the console.
+Start both processes below with the `local` profile. The run is finished when `http://localhost:5173` shows the sign-in page. `bootRun` alone serves the API only, and `http://localhost:8080/` returns 404. The first start compiles the server and the small driver set (including `virtual`, `modbus`, `mqtt`, `http`, `jdbc`) and takes several minutes. `./gradlew test` builds the full driver matrix; it is not the way to see the console.
 
-**Why two processes:** from-source keeps the Java API on **8080** and the Vite console on **5173** so each can hot-reload without repacking. The API is not on 5173. All-in-one UI+API on **8080** is the portable zip, the container, or a release JAR with embedded console — not default `bootRun`. Explain that to humans; do not present the split as a missing install step gone wrong. Details: `docs/en/getting-started.md` § Why two processes.
+A source run has two processes. The Java API listens on 8080. The Vite dev server serves the console on 5173, applies console edits without a rebuild, and proxies `/api` and `/ws` to 8080. The portable zip, the container, and a release JAR built with `-PembedWebConsole=true` serve the console and the API from one process on 8080; `bootRun` does not. Describe the two ports to the user as the normal layout of a source run. Details: `docs/en/getting-started.md` § Why two processes (and two ports)?.
 
-The wrapper uses `JAVA_HOME` when that variable is set, otherwise a JDK on `PATH`. That JDK must be 17 through 27. The server compiles and runs on JDK 25. The Foojay plugin in `settings.gradle.kts` downloads 25 when JDK 25 is not already installed. Python 3 must be on `PATH`: `bootRun` regenerates the AI context pack before the server starts. Node.js 20+ is required for the Web Console. The portable zip is a different path: that JAR needs JDK 25 on the machine that runs `start.bat` / `start.sh` and serves UI on port 8080.
+The wrapper uses `JAVA_HOME` when that variable is set, otherwise a JDK on `PATH`. That JDK must be 17 through 27. The server compiles and runs on JDK 25. The Foojay plugin in `settings.gradle.kts` downloads 25 when JDK 25 is not already installed. Python 3 must be on `PATH`: `bootRun` regenerates the AI context pack before the server starts. Node.js 20+ is required for the Web Console. The portable zip is a different path: that JAR needs JDK 25 on the machine that runs `start.bat` / `start.sh`, and it serves the console on port 8080.
 
 ### Terminal 1 — API
 
@@ -29,7 +29,7 @@ The API is up when these respond with no token:
 
 A log that asks for PostgreSQL on port 5432 means the `local` profile argument was missing.
 
-### Terminal 2 — Web Console (required for login)
+### Terminal 2 — Web Console
 
 ```
 cd apps/web-console
@@ -39,9 +39,9 @@ npm run dev
 
 Open **http://localhost:5173** and sign in as `admin` / `admin`. Do not tell the user to open `http://localhost:8080/` for the console in this mode.
 
-### Advanced: API only
+### API only
 
-Use Terminal 1 alone when the task is REST/scripts and no browser UI is needed. Health checks above are enough. Document that there is no login page at port 8080 until the portable zip, the container, or Terminal 2 is used. Human install paths: `docs/en/getting-started.md`.
+Terminal 1 alone is enough when the task is REST calls or scripts. The health checks above confirm the server is ready. Tell the user that this mode has no sign-in page: the console needs Terminal 2 (port 5173), the portable zip, or the container (port 8080). Human install paths: `docs/en/getting-started.md`.
 
 When the API answers, `docs/http/local-session.ps1` checks auth mode `local`, checks that driver `virtual` is registered, and starts `root.platform.devices.demo-sensor-01`. It does not print the token. Failures: `docs/en/troubleshooting.md`. Humans learning the product continue at `docs/en/learn.md`.
 

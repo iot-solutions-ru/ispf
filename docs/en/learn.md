@@ -68,7 +68,7 @@ Goal: run ISPF locally and trace how a sensor value reaches an alarm and an oper
 | 4 | 15 min | Inspect how nodes, variables (`DataRecord`), events, and functions are structured | [Object model](object-model.md) |
 | 5 | 10 min | Review the 7 common design mistakes before building your own project | [Common design mistakes](anti-patterns.md) |
 
-A checkout of this repository: start **both** the API (`local` profile, port 8080) and the Web Console (port **5173**) — that is where the login screen is. The two ports are intentional (hot-reload), not a missing package — [Why two processes](getting-started.md#why-two-processes-and-two-ports). API-only without the console is an advanced path. The portable zip and the container serve the console on port 8080. Commands: [Getting started — from source](getting-started.md#option-c--run-from-source).
+From a checkout of this repository, start two processes: the API (`local` profile, port 8080) and the Web Console (port 5173). The sign-in page is on port 5173. The portable zip and the container serve the console on port 8080. Commands and the reason for two ports: [Getting started — from source](getting-started.md#option-c--run-from-source).
 
 Demo solutions are on **System**, tab **Solutions** (page title "Solution catalog", block **Marketplace**). The default catalog is `https://marketplace.ispf.ai`. The ISPF process must reach that host. `admin` installs a listing; `operator` receives 403.
 
