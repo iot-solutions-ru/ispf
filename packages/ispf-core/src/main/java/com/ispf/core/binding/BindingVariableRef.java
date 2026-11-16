@@ -21,7 +21,8 @@ public record BindingVariableRef(String objectPath, String variableName, String 
             ref = null;
         }
         // Eagerly materialize path/name from ref so matches() never re-parses on the hot path.
-        if (ref != null) {
+        // Blueprint templates may keep ${param} until BlueprintBindingRulesMerger resolves them.
+        if (ref != null && !ref.contains("${")) {
             PlatformRef parsed = PlatformRefParser.parse(ref);
             if (parsed.kind() == PlatformRefKind.VARIABLE) {
                 objectPath = parsed.isCurrentObject() ? SELF : parsed.object();

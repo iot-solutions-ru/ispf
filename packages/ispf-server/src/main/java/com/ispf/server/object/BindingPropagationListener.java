@@ -1,6 +1,7 @@
 package com.ispf.server.object;
 
 import com.ispf.core.dashboard.DashboardContextConstants;
+import com.ispf.core.object.ObjectNotFoundException;
 import com.ispf.server.config.ObjectChangeProperties;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.Ordered;
@@ -41,10 +42,18 @@ public class BindingPropagationListener {
             if (objectChangeProperties.isDemandDrivenPublication()) {
                 return;
             }
-            bindingRuleEngine.onEvent(event.path(), event.variableName());
+            try {
+                bindingRuleEngine.onEvent(event.path(), event.variableName());
+            } catch (ObjectNotFoundException ex) {
+                BindingPropagationAsyncHandler.forgetMissingObject(dependencyIndex, ex, event.path());
+            }
             for (String consumerPath : dependencyIndex.eventConsumers(event.path(), event.variableName())) {
                 if (!consumerPath.equals(event.path())) {
-                    bindingRuleEngine.onRemoteEvent(consumerPath, event.path(), event.variableName());
+                    try {
+                        bindingRuleEngine.onRemoteEvent(consumerPath, event.path(), event.variableName());
+                    } catch (ObjectNotFoundException ex) {
+                        BindingPropagationAsyncHandler.forgetMissingObject(dependencyIndex, ex, consumerPath);
+                    }
                 }
             }
             return;

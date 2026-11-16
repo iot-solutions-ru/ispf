@@ -46,6 +46,60 @@ public class JavaFunctionRuntimeService {
         bootstrapFailures.remove(key(objectPath, functionName));
     }
 
+    /** Removes compiled Java functions and bootstrap failures for {@code objectPath} and {@code objectPath.*}. */
+    public void unregisterSubtree(String objectPath) {
+        if (objectPath == null || objectPath.isBlank()) {
+            return;
+        }
+        String selfPrefix = objectPath + "#";
+        String descendantPrefix = objectPath + ".";
+        compiled.keySet().removeIf(k -> k.startsWith(selfPrefix) || k.startsWith(descendantPrefix));
+        bootstrapFailures.keySet().removeIf(k -> k.startsWith(selfPrefix) || k.startsWith(descendantPrefix));
+    }
+
+    /** Aligns compiled Java functions for one object after a database reload. */
+    public void syncObjectFunctions(String objectPath, Map<String, FunctionDescriptor> functions) {
+        if (objectPath == null || objectPath.isBlank()) {
+            return;
+        }
+        String selfPrefix = objectPath + "#";
+        Map<String, FunctionDescriptor> current = functions != null ? functions : Map.of();
+        for (String existingKey : java.util.List.copyOf(compiled.keySet())) {
+            if (!existingKey.startsWith(selfPrefix)) {
+                continue;
+            }
+            String fnName = existingKey.substring(selfPrefix.length());
+            FunctionDescriptor descriptor = current.get(fnName);
+            if (descriptor == null || !descriptor.hasJavaBody()) {
+                compiled.remove(existingKey);
+                bootstrapFailures.remove(existingKey);
+            }
+        }
+        for (String existingKey : java.util.List.copyOf(bootstrapFailures.keySet())) {
+            if (!existingKey.startsWith(selfPrefix)) {
+                continue;
+            }
+            String fnName = existingKey.substring(selfPrefix.length());
+            FunctionDescriptor descriptor = current.get(fnName);
+            if (descriptor == null || !descriptor.hasJavaBody()) {
+                bootstrapFailures.remove(existingKey);
+            }
+        }
+        if (!isEnabled()) {
+            return;
+        }
+        for (FunctionDescriptor descriptor : current.values()) {
+            if (!descriptor.hasJavaBody()) {
+                continue;
+            }
+            try {
+                compileAndRegister(objectPath, descriptor);
+            } catch (RuntimeException ex) {
+                markBootstrapFailure(objectPath, descriptor.name(), ex);
+            }
+        }
+    }
+
     public void markBootstrapFailure(String objectPath, String functionName, RuntimeException failure) {
         String id = key(objectPath, functionName);
         compiled.remove(id);

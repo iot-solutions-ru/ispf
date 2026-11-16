@@ -82,6 +82,8 @@ class BlueprintParametrizedShapeTest {
                 .containsEntry("self.path", "root.platform.devices.tanks.rvs-1")
                 .containsEntry("self.name", "rvs-1")
                 .containsEntry("self.displayName", "РВС-1")
+                .containsEntry("parentPath", "root.platform.devices.tanks")
+                .containsEntry("self.parentPath", "root.platform.devices.tanks")
                 .containsEntry("code", "RVS-1");
         assertThat(parameterResolver.resolve(
                 "SELECT level_cm FROM oc_measurement WHERE tank_code='${code}' /* ${self.path} */",

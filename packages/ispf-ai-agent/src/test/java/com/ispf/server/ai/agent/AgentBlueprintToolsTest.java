@@ -235,6 +235,43 @@ class AgentBlueprintToolsTest {
         assertEquals("OK", result.get("status"));
     }
 
+    @Test
+    void applyMixinBlueprintRejectsAutoManagedMixinWithSuitabilityExpression() throws Exception {
+        String path = "root.platform.devices.pump-01";
+        BlueprintDefinition autoMixin = new BlueprintDefinition(
+                "id-auto",
+                "auto-mixin-v1",
+                "auto",
+                BlueprintType.MIXIN,
+                ObjectType.DEVICE,
+                "true",
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                Map.of(),
+                Instant.now(),
+                Instant.now()
+        );
+        when(blueprintRegistry.findByName("auto-mixin-v1")).thenReturn(Optional.of(autoMixin));
+
+        PlatformAgentTool tool = tools.stream()
+                .filter(t -> "apply_mixin_blueprint".equals(t.name()))
+                .findFirst()
+                .orElseThrow();
+        @SuppressWarnings("unchecked")
+        Map<String, Object> result = tool.execute(
+                Map.of("objectPath", path, "blueprintName", "auto-mixin-v1"),
+                context
+        );
+
+        assertEquals("ERROR", result.get("status"));
+        verify(blueprintApplicationService, org.mockito.Mockito.never()).applyBlueprintWithRules(
+                org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.anyString()
+        );
+    }
+
     private static BlueprintDefinition sampleModel(String name, BlueprintType type) {
         return new BlueprintDefinition(
                 "id-" + name,

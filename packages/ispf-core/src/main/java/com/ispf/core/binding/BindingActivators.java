@@ -24,7 +24,8 @@ public record BindingActivators(
             onEventRef = null;
         }
         // Fail fast at construction so matchesEvent never hides bad refs as "no match".
-        if (onEventRef != null) {
+        // Blueprint templates may keep ${param} until BlueprintBindingRulesMerger resolves them.
+        if (onEventRef != null && !onEventRef.contains("${")) {
             PlatformRefParser.parse(onEventRef);
         }
     }
@@ -114,6 +115,9 @@ public record BindingActivators(
 
     public PlatformRef eventRef(String ruleObjectPath) {
         if (onEventRef != null && !onEventRef.isBlank()) {
+            if (onEventRef.contains("${")) {
+                return null;
+            }
             return PlatformRefParser.parse(onEventRef).resolveObject(ruleObjectPath);
         }
         if (onEvent != null && !onEvent.isBlank()) {

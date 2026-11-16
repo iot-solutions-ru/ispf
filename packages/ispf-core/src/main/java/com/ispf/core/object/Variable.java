@@ -326,6 +326,42 @@ public class Variable {
         return copy;
     }
 
+    /**
+     * Merges updated blueprint metadata onto an existing runtime variable while preserving
+     * per-instance ACL roles, historian/storage policies, and (when {@code nextSchema} is
+     * compatible and a live value exists) the current value and {@link #updatedAt()}.
+     */
+    public Variable withMergedBlueprintDefinition(
+            DataSchema nextSchema,
+            boolean nextReadable,
+            boolean nextWritable,
+            DataRecord fallbackDefaultValue,
+            boolean nextHistoryEnabled,
+            Integer nextHistoryRetentionDays
+    ) {
+        DataRecord current = value.get();
+        boolean keepCurrent = current != null && schema != null && schema.isCompatibleWith(nextSchema);
+        Variable copy = new Variable(
+                name,
+                nextSchema,
+                nextReadable,
+                nextWritable,
+                keepCurrent ? current : fallbackDefaultValue,
+                nextHistoryEnabled,
+                nextHistoryRetentionDays,
+                historySampleMode,
+                includePreviousValueInEvent,
+                storageMode,
+                telemetryPublishMode,
+                readRoles,
+                writeRoles
+        );
+        if (keepCurrent) {
+            copy.updatedAt = this.updatedAt;
+        }
+        return copy;
+    }
+
     private static String normalizeTelemetryPublishMode(String raw) {
         if (raw == null || raw.isBlank() || "INHERIT".equalsIgnoreCase(raw.trim())) {
             return null;

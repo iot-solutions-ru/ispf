@@ -130,7 +130,10 @@ public class TypedBlueprintFacade {
             rebuildWatchIndex();
             return BlueprintDto.from(created);
         } catch (BlueprintException e) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
+            HttpStatus status = e.getMessage() != null && e.getMessage().contains("already exists")
+                    ? HttpStatus.CONFLICT
+                    : HttpStatus.BAD_REQUEST;
+            throw new ResponseStatusException(status, e.getMessage());
         }
     }
 
@@ -159,11 +162,21 @@ public class TypedBlueprintFacade {
                 existing.createdAt(),
                 Instant.now()
         );
-        BlueprintDefinition saved = blueprintEngine.updateBlueprint(updated);
-        blueprintPersistence.persist(saved, false);
-        objectManager.persistNodeTree(saved.catalogObjectPath());
-        rebuildWatchIndex();
-        return BlueprintDto.from(saved);
+        try {
+            BlueprintDefinition saved = blueprintEngine.updateBlueprint(updated);
+            blueprintPersistence.persist(saved, false);
+            String persistPath = saved.type() == BlueprintType.SINGLETON
+                    ? BlueprintEngine.singletonInstancePath(saved)
+                    : saved.catalogObjectPath();
+            objectManager.persistNodeTree(persistPath);
+            if (saved.type() == BlueprintType.SINGLETON) {
+                blueprintApplicationService.syncJavaFunctions(persistPath);
+            }
+            rebuildWatchIndex();
+            return BlueprintDto.from(saved);
+        } catch (BlueprintException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
     }
 
     public void delete(String id) {
@@ -174,7 +187,8 @@ public class TypedBlueprintFacade {
     }
 
     public BlueprintAttachmentDto apply(String id, String objectPath) {
-        requireTyped(id);
+        BlueprintDefinition model = requireTyped(id);
+        assertManualMixinAllowed(model);
         try {
             return BlueprintAttachmentDto.from(blueprintApplicationService.applyBlueprintWithRules(id, objectPath));
         } catch (IllegalArgumentException e) {
@@ -183,11 +197,23 @@ public class TypedBlueprintFacade {
     }
 
     public BlueprintDetachResultDto detach(String id, String objectPath) {
-        requireTyped(id);
+        BlueprintDefinition model = requireTyped(id);
+        assertManualMixinAllowed(model);
         try {
             return BlueprintDetachResultDto.from(blueprintApplicationService.detachBlueprintWithRules(id, objectPath));
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    private static void assertManualMixinAllowed(BlueprintDefinition model) {
+        if (model.type() == BlueprintType.MIXIN && !model.suitabilityExpression().isBlank()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "MIXIN blueprint '" + model.name()
+                            + "' defines suitabilityExpression and is managed automatically; "
+                            + "manual apply/detach is only allowed when suitabilityExpression is blank"
+            );
         }
     }
 

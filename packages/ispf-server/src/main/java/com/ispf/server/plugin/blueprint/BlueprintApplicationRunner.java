@@ -383,9 +383,10 @@ public class BlueprintApplicationRunner {
     }
 
     private boolean syncModelVariableMetadata(BlueprintDefinition model, String objectPath) {
+        BlueprintDefinition effective = BlueprintEngine.flattenInheritance(model, blueprintRegistry);
         PlatformObject target = objectManager.require(objectPath);
         boolean changed = false;
-        for (BlueprintVariableDefinition varDef : model.variables()) {
+        for (BlueprintVariableDefinition varDef : effective.variables()) {
             Optional<Variable> existingOpt = target.getVariable(varDef.name());
             if (existingOpt.isPresent()) {
                 Variable existing = existingOpt.get();
@@ -413,8 +414,8 @@ public class BlueprintApplicationRunner {
                 changed = true;
             }
         }
-        if (!model.bindingRules().isEmpty()) {
-            if (containsRawPlaceholder(model)) {
+        if (!effective.bindingRules().isEmpty()) {
+            if (containsRawPlaceholder(effective)) {
                 // Instance parameters are not stored on the object. Substituting the
                 // blueprint's own defaults would overwrite the deployed rule, and a
                 // leftover ${...} is evaluated inside ObjectManager.initialize.
@@ -423,7 +424,7 @@ public class BlueprintApplicationRunner {
                         objectPath
                 );
             } else {
-                bindingRulesMerger.mergeBlueprintRules(objectPath, model, model.parameters(), false);
+                bindingRulesMerger.mergeBlueprintRules(objectPath, effective, effective.parameters(), false);
                 changed = true;
             }
         }

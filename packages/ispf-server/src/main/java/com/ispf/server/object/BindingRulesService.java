@@ -112,6 +112,15 @@ public class BindingRulesService {
         rulesCache.remove(objectPath);
     }
 
+    /** Drops cached rules for {@code objectPath} and any descendant paths ({@code objectPath.*}). */
+    public void forgetSubtree(String objectPath) {
+        if (objectPath == null || objectPath.isBlank()) {
+            return;
+        }
+        String descendantPrefix = objectPath + ".";
+        rulesCache.keySet().removeIf(key -> key.equals(objectPath) || key.startsWith(descendantPrefix));
+    }
+
     public List<BindingRule> saveRules(String objectPath, List<BindingRule> rules) {
         synchronized (rulesLocks.computeIfAbsent(objectPath, ignored -> new Object())) {
             assertOwnedRulesRetained(objectPath, rules);
@@ -192,6 +201,7 @@ public class BindingRulesService {
             validateHistorianRule(objectPath, rule);
             return;
         }
+        validateActivators(objectPath, rule.activators());
         PlatformObject object = objectManager.require(objectPath);
         BindingTarget target = rule.target();
         if (target.isVariable()) {
@@ -231,6 +241,36 @@ public class BindingRulesService {
         }
         if (target.isAction()) {
             return;
+        }
+    }
+
+    /**
+     * Live-saved rules must not keep blueprint placeholders. An unresolved
+     * {@code ${...}} variable activator collapses to {@code self/*} and fires on every local update.
+     */
+    private void validateActivators(String objectPath, BindingActivators activators) {
+        if (activators == null) {
+            return;
+        }
+        String onEventRef = activators.onEventRef();
+        if (onEventRef != null && !onEventRef.isBlank()) {
+            if (onEventRef.contains("${")) {
+                throw new IllegalArgumentException("Unresolved placeholder in onEventRef: " + onEventRef);
+            }
+            PlatformRef ref = PlatformRefResolver.resolve(PlatformRefParser.parse(onEventRef), objectPath);
+            if (ref.kind() != PlatformRefKind.EVENT) {
+                throw new IllegalArgumentException("onEventRef must use /evt/ grammar: " + onEventRef);
+            }
+        }
+        for (BindingVariableRef variableRef : activators.onVariableChange()) {
+            String raw = variableRef.ref();
+            if (raw == null || raw.isBlank()) {
+                continue;
+            }
+            if (raw.contains("${")) {
+                throw new IllegalArgumentException("Unresolved placeholder in onVariableChange ref: " + raw);
+            }
+            PlatformRefParser.parseVariableSource(raw);
         }
     }
 
@@ -389,22 +429,33 @@ public class BindingRulesService {
                 onEvent = null;
             }
         }
+        String onEventRef = activators.onEventRef();
+        if (onEventRef != null) {
+            onEventRef = onEventRef.trim();
+            if (onEventRef.isBlank()) {
+                onEventRef = null;
+            }
+        }
         long periodicMs = Math.max(0L, activators.periodicMs());
-        if (!Objects.equals(onEvent, activators.onEvent()) || periodicMs != activators.periodicMs()) {
+        if (!Objects.equals(onEvent, activators.onEvent())
+                || !Objects.equals(onEventRef, activators.onEventRef())
+                || periodicMs != activators.periodicMs()) {
             activators = new BindingActivators(
                     activators.onStartup(),
                     activators.onVariableChange(),
                     onEvent,
                     periodicMs,
-                    activators.async(),
-                    activators.onContextChange()
+                    activators.asyncFlag(),
+                    activators.onContextChangeFlag(),
+                    onEventRef
             );
         }
         if (activators.onVariableChange().isEmpty()
                 && !activators.onStartup()
                 && !activators.onContextChange()
                 && !activators.hasPeriodicSchedule()
-                && (activators.onEvent() == null || activators.onEvent().isBlank())) {
+                && (activators.onEvent() == null || activators.onEvent().isBlank())
+                && (activators.onEventRef() == null || activators.onEventRef().isBlank())) {
             activators = defaultActivators("", expression);
         }
         return activators;
@@ -492,7 +543,8 @@ public class BindingRulesService {
             String onEvent,
             long periodicMs,
             Boolean async,
-            Boolean onContextChange
+            Boolean onContextChange,
+            String onEventRef
     ) {
         static BindingActivatorsDto from(BindingActivators activators) {
             return new BindingActivatorsDto(
@@ -501,7 +553,8 @@ public class BindingRulesService {
                     activators.onEvent(),
                     activators.periodicMs(),
                     activators.async(),
-                    activators.onContextChange()
+                    activators.onContextChange(),
+                    activators.onEventRef()
             );
         }
 
@@ -515,18 +568,19 @@ public class BindingRulesService {
                     onEvent,
                     periodicMs,
                     async != null && async,
-                    onContextChange != null && onContextChange
+                    onContextChange != null && onContextChange,
+                    onEventRef
             );
         }
     }
 
-    private record BindingVariableRefDto(String objectPath, String variableName) {
+    private record BindingVariableRefDto(String objectPath, String variableName, String ref) {
         static BindingVariableRefDto from(BindingVariableRef ref) {
-            return new BindingVariableRefDto(ref.objectPath(), ref.variableName());
+            return new BindingVariableRefDto(ref.objectPath(), ref.variableName(), ref.ref());
         }
 
         BindingVariableRef toRef() {
-            return new BindingVariableRef(objectPath, variableName);
+            return new BindingVariableRef(objectPath, variableName, ref);
         }
     }
 

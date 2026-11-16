@@ -181,6 +181,7 @@ public class TreeCrudService {
                 entity.getCreatedAt()
         );
         node.setappliedBlueprintIds(mapper.readappliedBlueprintIds(entity.getappliedBlueprintIdsJson()));
+        node.setBlueprintContributions(mapper.readBlueprintContributions(entity.getBlueprintContributionsJson()));
         node.setBindingAuditEnabled(entity.isBindingAuditEnabled());
         node.setFunctionAuditEnabled(entity.isFunctionAuditEnabled());
         node.setEventJournalEnabled(entity.isEventJournalEnabled());

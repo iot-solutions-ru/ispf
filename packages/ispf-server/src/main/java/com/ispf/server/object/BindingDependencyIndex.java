@@ -26,21 +26,35 @@ public class BindingDependencyIndex {
         this.bindingRulesService = bindingRulesService;
     }
 
-    public synchronized void rebuild(String objectPath) {
-        removeObject(objectPath);
-        for (BindingRule rule : bindingRulesService.listRules(objectPath)) {
-            if (!rule.enabled()) {
-                continue;
+    public void rebuild(String objectPath) {
+        var rules = bindingRulesService.listRules(objectPath);
+        synchronized (this) {
+            removeObject(objectPath);
+            for (BindingRule rule : rules) {
+                if (!rule.enabled()) {
+                    continue;
+                }
+                registerRule(objectPath, rule);
             }
-            registerRule(objectPath, rule);
         }
     }
 
-    public synchronized void rebuildAll(Iterable<String> objectPaths) {
-        consumersByKey.clear();
-        eventConsumersByKey.clear();
+    public void rebuildAll(Iterable<String> objectPaths) {
+        Map<String, java.util.List<BindingRule>> rulesByPath = new java.util.LinkedHashMap<>();
         for (String objectPath : objectPaths) {
-            rebuild(objectPath);
+            rulesByPath.put(objectPath, bindingRulesService.listRules(objectPath));
+        }
+        synchronized (this) {
+            consumersByKey.clear();
+            eventConsumersByKey.clear();
+            for (Map.Entry<String, java.util.List<BindingRule>> entry : rulesByPath.entrySet()) {
+                for (BindingRule rule : entry.getValue()) {
+                    if (!rule.enabled()) {
+                        continue;
+                    }
+                    registerRule(entry.getKey(), rule);
+                }
+            }
         }
     }
 
@@ -51,10 +65,28 @@ public class BindingDependencyIndex {
         removeConsumerFromIndex(eventConsumersByKey, objectPath);
     }
 
+    /** Drops {@code objectPath} and all descendant paths ({@code objectPath.*}) as consumers. */
+    public synchronized void removeSubtree(String objectPath) {
+        if (objectPath == null || objectPath.isBlank()) {
+            return;
+        }
+        removeSubtreeFromIndex(consumersByKey, objectPath);
+        removeSubtreeFromIndex(eventConsumersByKey, objectPath);
+    }
+
     private static void removeConsumerFromIndex(Map<String, Set<String>> index, String objectPath) {
         index.entrySet().removeIf(entry -> {
             Set<String> consumers = entry.getValue();
             consumers.remove(objectPath);
+            return consumers.isEmpty();
+        });
+    }
+
+    private static void removeSubtreeFromIndex(Map<String, Set<String>> index, String objectPath) {
+        String descendantPrefix = objectPath + ".";
+        index.entrySet().removeIf(entry -> {
+            Set<String> consumers = entry.getValue();
+            consumers.removeIf(path -> path.equals(objectPath) || path.startsWith(descendantPrefix));
             return consumers.isEmpty();
         });
     }

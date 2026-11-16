@@ -12,9 +12,13 @@ import com.ispf.expression.ExpressionEngine;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -90,6 +94,15 @@ public class BlueprintEngine {
         attachments.removeIf(a -> a.blueprintId().equals(blueprintId));
     }
 
+    /** Removes in-memory attachment records for a deleted object path and its descendants ({@code objectPath.*}). */
+    public void removeAttachmentsForDeletedSubtree(String objectPath) {
+        if (objectPath == null || objectPath.isBlank()) {
+            return;
+        }
+        String descendantPrefix = objectPath + ".";
+        attachments.removeIf(a -> objectPath.equals(a.objectPath()) || a.objectPath().startsWith(descendantPrefix));
+    }
+
     /**
      * Merges blueprint variables, events, functions into an existing object (MIXIN / manual apply).
      * Binding rules are merged separately via {@code BlueprintBindingRulesMerger} in ispf-server.
@@ -101,10 +114,11 @@ public class BlueprintEngine {
         }
         PlatformObject target = objectTree.require(targetPath);
         assertSuitable(model, target);
+        BlueprintDefinition effective = flattenInheritance(model);
         List<BlueprintMergeWarning> warnings = new ArrayList<>();
-        mergeBlueprintChain(model, target, model.parameters(), warnings);
+        mergeModelIntoObject(effective, target, model.parameters(), warnings);
         target.addAppliedBlueprintId(model.id());
-        target.putBlueprintContribution(model.id(), contributionFromModel(model));
+        target.putBlueprintContribution(model.id(), contributionFromModel(effective));
         BlueprintAttachment attachment = recordAttachment(model, targetPath);
         return new BlueprintApplyResult(attachment, warnings);
     }
@@ -176,7 +190,7 @@ public class BlueprintEngine {
         } else {
             // Legacy apply (no ownership manifest): never hard-delete by model name —
             // only drop attachment / appliedBlueprintIds. Callers can re-apply then detach.
-            BlueprintContribution fromModel = contributionFromModel(model);
+            BlueprintContribution fromModel = contributionFromModel(flattenInheritance(model));
             for (String name : fromModel.variables()) {
                 skipped.add("variable:" + name + ":no-ownership");
             }
@@ -229,7 +243,7 @@ public class BlueprintEngine {
     public BlueprintApplyResult applyIntrinsicStructure(BlueprintDefinition model, String targetPath) {
         PlatformObject target = objectTree.require(targetPath);
         List<BlueprintMergeWarning> warnings = new ArrayList<>();
-        mergeBlueprintChain(model, target, model.parameters(), warnings);
+        mergeModelIntoObject(flattenInheritance(model), target, model.parameters(), warnings);
         return new BlueprintApplyResult(null, warnings);
     }
 
@@ -286,10 +300,11 @@ public class BlueprintEngine {
                 model.id()
         );
         objectTree.register(instance);
+        BlueprintDefinition effective = flattenInheritance(model);
         List<BlueprintMergeWarning> warnings = new ArrayList<>();
-        mergeBlueprintChain(model, instance, parameters, warnings);
+        mergeModelIntoObject(effective, instance, parameters, warnings);
         instance.addAppliedBlueprintId(model.id());
-        instance.putBlueprintContribution(model.id(), contributionFromModel(model));
+        instance.putBlueprintContribution(model.id(), contributionFromModel(effective));
 
         BlueprintAttachment attachment = recordAttachment(model, fullPath);
         return new BlueprintApplyResult(attachment, warnings);
@@ -316,10 +331,11 @@ public class BlueprintEngine {
             objectTree.register(created);
             return created;
         });
+        BlueprintDefinition effective = flattenInheritance(model);
         List<BlueprintMergeWarning> warnings = new ArrayList<>();
-        mergeBlueprintChain(model, instance, model.parameters(), warnings);
+        mergeModelIntoObject(effective, instance, model.parameters(), warnings);
         instance.addAppliedBlueprintId(model.id());
-        instance.putBlueprintContribution(model.id(), contributionFromModel(model));
+        instance.putBlueprintContribution(model.id(), contributionFromModel(effective));
         recordAttachment(model, instancePath);
         return instance;
     }
@@ -576,20 +592,96 @@ public class BlueprintEngine {
         ));
     }
 
-    private void mergeBlueprintChain(
+    /**
+     * Resolves {@code extendsBlueprintId} from root ancestor down to {@code model}, rejecting cycles.
+     */
+    public List<BlueprintDefinition> resolveInheritanceChain(BlueprintDefinition model) {
+        return resolveInheritanceChain(model, registry);
+    }
+
+    public static List<BlueprintDefinition> resolveInheritanceChain(
             BlueprintDefinition model,
-            PlatformObject target,
-            Map<String, String> parameters,
-            List<BlueprintMergeWarning> warnings
+            BlueprintRegistry registry
     ) {
-        String parentRef = model.parameters().get("extendsBlueprintId");
-        if (parentRef != null && !parentRef.isBlank()) {
-            BlueprintDefinition parent = registry.findById(parentRef)
-                    .or(() -> registry.findByName(parentRef))
-                    .orElseThrow(() -> new BlueprintException("Parent model not found: " + parentRef));
-            mergeBlueprintChain(parent, target, parameters, warnings);
+        if (model == null) {
+            return List.of();
         }
-        mergeModelIntoObject(model, target, parameters, warnings);
+        if (registry == null) {
+            return List.of(model);
+        }
+        Set<String> visitedIds = new LinkedHashSet<>();
+        List<BlueprintDefinition> leafToRoot = new ArrayList<>();
+        BlueprintDefinition current = model;
+        while (current != null) {
+            if (!visitedIds.add(current.id())) {
+                throw new BlueprintException("Blueprint inheritance cycle detected involving: " + current.name());
+            }
+            leafToRoot.add(current);
+            String parentRef = current.parameters().get("extendsBlueprintId");
+            if (parentRef == null || parentRef.isBlank()) {
+                break;
+            }
+            if (parentRef.equals(current.id()) || parentRef.equals(current.name())) {
+                throw new BlueprintException("Blueprint inheritance cycle detected involving: " + current.name());
+            }
+            String ref = parentRef;
+            current = registry.findById(ref)
+                    .or(() -> registry.findByName(ref))
+                    .orElseThrow(() -> new BlueprintException("Parent model not found: " + ref));
+        }
+        Collections.reverse(leafToRoot);
+        return List.copyOf(leafToRoot);
+    }
+
+    /**
+     * Flattens inherited {@code variables}, {@code events}, {@code functions}, and {@code bindingRules}
+     * from {@code extendsBlueprintId} ancestors so child definitions override parent definitions cleanly
+     * before merging into a live object.
+     */
+    public BlueprintDefinition flattenInheritance(BlueprintDefinition model) {
+        return flattenInheritance(model, registry);
+    }
+
+    public static BlueprintDefinition flattenInheritance(BlueprintDefinition model, BlueprintRegistry registry) {
+        List<BlueprintDefinition> chain = resolveInheritanceChain(model, registry);
+        if (chain.size() <= 1) {
+            return model;
+        }
+        Map<String, BlueprintVariableDefinition> varsByName = new LinkedHashMap<>();
+        Map<String, EventDescriptor> eventsByName = new LinkedHashMap<>();
+        Map<String, FunctionDescriptor> functionsByName = new LinkedHashMap<>();
+        Map<String, BlueprintBindingRule> rulesById = new LinkedHashMap<>();
+        for (BlueprintDefinition step : chain) {
+            for (BlueprintVariableDefinition v : step.variables()) {
+                varsByName.put(v.name(), v);
+            }
+            for (EventDescriptor e : step.events()) {
+                eventsByName.put(e.name(), e);
+            }
+            for (FunctionDescriptor f : step.functions()) {
+                functionsByName.put(f.name(), f);
+            }
+            for (BlueprintBindingRule r : step.bindingRules()) {
+                rulesById.put(r.id(), r);
+            }
+        }
+        return new BlueprintDefinition(
+                model.id(),
+                model.name(),
+                model.description(),
+                model.type(),
+                model.targetObjectType(),
+                model.suitabilityExpression(),
+                new ArrayList<>(varsByName.values()),
+                new ArrayList<>(eventsByName.values()),
+                new ArrayList<>(functionsByName.values()),
+                new ArrayList<>(rulesById.values()),
+                model.sqlBindings(),
+                model.alertRules(),
+                model.parameters(),
+                model.createdAt(),
+                model.updatedAt()
+        );
     }
 
     private void mergeModelIntoObject(
@@ -600,27 +692,41 @@ public class BlueprintEngine {
     ) {
         String previousBlueprintId = target.lastAppliedBlueprintId();
         for (BlueprintVariableDefinition varDef : model.variables()) {
-            if (target.getVariable(varDef.name()).isPresent()) {
-                warnings.add(new BlueprintMergeWarning(
-                        BlueprintMergeWarning.KIND_VARIABLE,
+            Optional<Variable> existingOpt = target.getVariable(varDef.name());
+            if (existingOpt.isPresent()) {
+                if (!Optional.of(model.id()).equals(target.ownerOfVariable(varDef.name()))) {
+                    warnings.add(new BlueprintMergeWarning(
+                            BlueprintMergeWarning.KIND_VARIABLE,
+                            varDef.name(),
+                            previousBlueprintId,
+                            model.id()
+                    ));
+                }
+                Variable merged = existingOpt.get().withMergedBlueprintDefinition(
+                        varDef.schema(),
+                        varDef.readable(),
+                        varDef.writable(),
+                        varDef.defaultValue(),
+                        varDef.historyEnabled(),
+                        varDef.historyRetentionDays()
+                );
+                target.addVariable(merged);
+            } else {
+                Variable variable = new Variable(
                         varDef.name(),
-                        previousBlueprintId,
-                        model.id()
-                ));
+                        varDef.schema(),
+                        varDef.readable(),
+                        varDef.writable(),
+                        varDef.defaultValue(),
+                        varDef.historyEnabled(),
+                        varDef.historyRetentionDays()
+                );
+                target.addVariable(variable);
             }
-            Variable variable = new Variable(
-                    varDef.name(),
-                    varDef.schema(),
-                    varDef.readable(),
-                    varDef.writable(),
-                    varDef.defaultValue(),
-                    varDef.historyEnabled(),
-                    varDef.historyRetentionDays()
-            );
-            target.addVariable(variable);
         }
         for (EventDescriptor event : model.events()) {
-            if (target.events().containsKey(event.name())) {
+            EventDescriptor existing = target.events().get(event.name());
+            if (existing != null && !Optional.of(model.id()).equals(target.ownerOfEvent(event.name()))) {
                 warnings.add(new BlueprintMergeWarning(
                         BlueprintMergeWarning.KIND_EVENT,
                         event.name(),
@@ -628,11 +734,22 @@ public class BlueprintEngine {
                         model.id()
                 ));
             }
-            target.addEvent(event);
+            EventDescriptor toAdd = (existing != null
+                    && event.invokeRoles().isEmpty()
+                    && !existing.invokeRoles().isEmpty())
+                    ? new EventDescriptor(
+                            event.name(),
+                            event.description(),
+                            event.payloadSchema(),
+                            event.level(),
+                            existing.invokeRoles()
+                    )
+                    : event;
+            target.addEvent(toAdd);
         }
         for (FunctionDescriptor function : model.functions()) {
             FunctionDescriptor existing = target.functions().get(function.name());
-            if (existing != null) {
+            if (existing != null && !Optional.of(model.id()).equals(target.ownerOfFunction(function.name()))) {
                 warnings.add(new BlueprintMergeWarning(
                         BlueprintMergeWarning.KIND_FUNCTION,
                         function.name(),
@@ -663,8 +780,42 @@ public class BlueprintEngine {
         if (model.type() == BlueprintType.MIXIN && model.targetObjectType() == null) {
             throw new BlueprintException("Mixin Blueprints require targetObjectType");
         }
+        if (model.type() == BlueprintType.MIXIN
+                && (!model.sqlBindings().isEmpty() || !model.alertRules().isEmpty())) {
+            throw new BlueprintException("Mixin Blueprints cannot declare sqlBindings or alertRules");
+        }
         if (model.type() == BlueprintType.INSTANCE && model.targetObjectType() == null) {
             throw new BlueprintException("INSTANCE blueprints require targetObjectType");
+        }
+        validateNoInheritanceCycle(model);
+    }
+
+    private void validateNoInheritanceCycle(BlueprintDefinition model) {
+        String parentRef = model.parameters().get("extendsBlueprintId");
+        if (parentRef == null || parentRef.isBlank()) {
+            return;
+        }
+        if (parentRef.equals(model.id()) || parentRef.equals(model.name())) {
+            throw new BlueprintException("Blueprint inheritance cycle detected involving: " + model.name());
+        }
+        Set<String> visitedIds = new LinkedHashSet<>();
+        visitedIds.add(model.id());
+        String currentRef = parentRef;
+        while (currentRef != null && !currentRef.isBlank()) {
+            if (currentRef.equals(model.id()) || currentRef.equals(model.name())) {
+                throw new BlueprintException("Blueprint inheritance cycle detected involving: " + model.name());
+            }
+            String ref = currentRef;
+            Optional<BlueprintDefinition> nextOpt = registry.findById(ref).or(() -> registry.findByName(ref));
+            if (nextOpt.isEmpty()) {
+                // Allow forward parent references during multi-blueprint import; apply/instantiate still requires parent.
+                return;
+            }
+            BlueprintDefinition next = nextOpt.get();
+            if (!visitedIds.add(next.id()) || next.name().equals(model.name())) {
+                throw new BlueprintException("Blueprint inheritance cycle detected involving: " + model.name());
+            }
+            currentRef = next.parameters().get("extendsBlueprintId");
         }
     }
 

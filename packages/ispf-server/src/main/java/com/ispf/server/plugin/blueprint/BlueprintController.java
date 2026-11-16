@@ -134,7 +134,10 @@ public class BlueprintController {
             blueprintPersistence.persist(created, false);
             return BlueprintDto.from(created);
         } catch (BlueprintException e) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
+            HttpStatus status = e.getMessage() != null && e.getMessage().contains("already exists")
+                    ? HttpStatus.CONFLICT
+                    : HttpStatus.BAD_REQUEST;
+            throw new ResponseStatusException(status, e.getMessage());
         }
     }
 
@@ -161,9 +164,18 @@ public class BlueprintController {
                 existing.createdAt(),
                 Instant.now()
         );
-        BlueprintDefinition saved = blueprintEngine.updateBlueprint(updated);
-        blueprintPersistence.persist(saved, false);
-        return BlueprintDto.from(saved);
+        try {
+            BlueprintDefinition saved = blueprintEngine.updateBlueprint(updated);
+            blueprintPersistence.persist(saved, false);
+            if (saved.type() == BlueprintType.SINGLETON) {
+                String instancePath = BlueprintEngine.singletonInstancePath(saved);
+                objectManager.persistNodeTree(instancePath);
+                blueprintApplicationService.syncJavaFunctions(instancePath);
+            }
+            return BlueprintDto.from(saved);
+        } catch (BlueprintException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
     }
 
     @DeleteMapping("/{id}")
@@ -178,11 +190,13 @@ public class BlueprintController {
             @RequestParam @NotBlank String objectPath
     ) {
         try {
+            BlueprintDefinition model = blueprintRegistry.requireById(id);
+            assertManualMixinAllowed(model);
             BlueprintAttachmentDto attachment = BlueprintAttachmentDto.from(
                     blueprintApplicationService.applyBlueprintWithRules(id, objectPath)
             );
             return attachment;
-        } catch (IllegalArgumentException e) {
+        } catch (BlueprintException | IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
     }
@@ -248,6 +262,7 @@ public class BlueprintController {
     ) {
         try {
             BlueprintDefinition model = blueprintRegistry.requireById(id);
+            assertManualMixinAllowed(model, targetPath);
             if (targetVersion != null && !targetVersion.isBlank()
                     && !targetVersion.equals(model.blueprintVersion())) {
                 throw new BlueprintException(
@@ -264,7 +279,7 @@ public class BlueprintController {
                     "attachmentId", attachment.id(),
                     "warnings", attachment.warnings()
             );
-        } catch (IllegalArgumentException e) {
+        } catch (BlueprintException | IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
     }
@@ -317,6 +332,12 @@ public class BlueprintController {
             }
             List<String> upgraded = new ArrayList<>();
             for (String targetPath : targets) {
+                com.ispf.core.object.PlatformObject target = objectManager.require(targetPath);
+                if (model.type() == com.ispf.plugin.blueprint.BlueprintType.MIXIN
+                        && !model.suitabilityExpression().isBlank()
+                        && !blueprintEngine.isSuitable(model, target)) {
+                    continue;
+                }
                 if (dryRun) {
                     upgraded.add(targetPath);
                     continue;
@@ -336,12 +357,37 @@ public class BlueprintController {
         }
     }
 
+    private void assertManualMixinAllowed(BlueprintDefinition model) {
+        assertManualMixinAllowed(model, null);
+    }
+
+    /**
+     * Auto-managed MIXINs (non-blank suitability) reject first-time manual apply/detach.
+     * Re-apply / upgrade on an already-attached target is allowed.
+     */
+    private void assertManualMixinAllowed(BlueprintDefinition model, String targetPath) {
+        if (model.type() != com.ispf.plugin.blueprint.BlueprintType.MIXIN
+                || model.suitabilityExpression().isBlank()) {
+            return;
+        }
+        if (targetPath != null
+                && objectManager.require(targetPath).appliedBlueprintIds().contains(model.id())) {
+            return;
+        }
+        throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "MIXIN blueprint '" + model.name()
+                        + "' defines suitabilityExpression and is managed automatically; "
+                        + "manual apply/detach is only allowed when suitabilityExpression is blank"
+        );
+    }
+
     @GetMapping("/{id}/diff")
     public Map<String, Object> diff(
             @PathVariable String id,
             @RequestParam @NotBlank String objectPath
     ) {
-        BlueprintDefinition model = blueprintRegistry.requireById(id);
+        BlueprintDefinition model = blueprintEngine.flattenInheritance(blueprintRegistry.requireById(id));
         PlatformObject object = objectManager.require(objectPath);
         LinkedHashSet<String> modelVariables = model.variables().stream()
                 .map(BlueprintVariableDefinition::name)

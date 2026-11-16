@@ -3,6 +3,7 @@ package com.ispf.server.object;
 import com.ispf.core.binding.BindingActivators;
 import com.ispf.core.binding.BindingRule;
 import com.ispf.core.binding.BindingTarget;
+import com.ispf.core.binding.BindingVariableRef;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
@@ -16,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -79,5 +81,46 @@ class BindingRulesCacheTest {
         List<BindingRule> third = bindingRulesService.listRules(path);
         assertThat(third).isNotSameAs(first);
         assertThat(third.getFirst().name()).isEqualTo("rule-2");
+    }
+
+    @Test
+    void saveRulesRejectsUnresolvedActivatorPlaceholders() {
+        String name = "ph-bind-" + System.nanoTime();
+        String path = "root.platform.devices." + name;
+        objectManager.create("root.platform.devices", name, ObjectType.DEVICE, "Placeholder bind", null, null);
+        objectManager.createVariable(
+                path,
+                "out",
+                DOUBLE,
+                true,
+                false,
+                DataRecord.single(DOUBLE, Map.of("value", 0.0)),
+                false,
+                null
+        );
+
+        BindingActivators unresolved = new BindingActivators(
+                false,
+                List.of(new BindingVariableRef(null, null, "${hub}/temperature")),
+                null,
+                0L,
+                false,
+                false,
+                null
+        );
+        assertThatThrownBy(() -> bindingRulesService.saveRules(path, List.of(
+                new BindingRule(
+                        "r-ph",
+                        "placeholder",
+                        true,
+                        0,
+                        unresolved,
+                        "",
+                        "1.0",
+                        new BindingTarget("out", "value")
+                )
+        )))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Unresolved placeholder");
     }
 }

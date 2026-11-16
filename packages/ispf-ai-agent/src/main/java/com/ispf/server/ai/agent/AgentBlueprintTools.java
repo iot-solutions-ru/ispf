@@ -271,6 +271,16 @@ final class AgentBlueprintTools {
                 if (SystemIntrinsicBlueprints.isIntrinsic(model)) {
                     return Map.of("status", "ERROR", "error", "System-intrinsic model cannot be applied via agent");
                 }
+                if (!model.suitabilityExpression().isBlank()) {
+                    return AgentToolErrors.error(
+                            "TOOL_ERROR",
+                            "MIXIN '" + model.name()
+                                    + "' defines suitabilityExpression and is managed automatically; "
+                                    + "manual apply is only allowed when suitabilityExpression is blank.",
+                            "",
+                            ""
+                    );
+                }
                 var auth = context.authentication();
                 if (!tenantScopeService.isPathVisible(objectPath, auth)) {
                     return Map.of("status", "ERROR", "error", "Tenant scope denied for " + objectPath);

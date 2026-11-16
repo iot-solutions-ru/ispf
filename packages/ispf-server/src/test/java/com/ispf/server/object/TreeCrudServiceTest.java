@@ -186,4 +186,29 @@ class TreeCrudServiceTest {
         assertThatThrownBy(() -> treeCrudService.delete("root.missing"))
                 .isInstanceOf(ObjectNotFoundException.class);
     }
+
+    @Test
+    void ensureSystemCatalogFolderRestoresBlueprintContributionsFromPersistedNode() {
+        objectTree.register(new PlatformObject("p", "root.platform", ObjectType.PLATFORM, "Platform", "", null));
+        com.ispf.server.persistence.entity.ObjectNodeEntity entity = new com.ispf.server.persistence.entity.ObjectNodeEntity();
+        entity.setId("cat-id");
+        entity.setPath("root.platform.mixin-blueprints");
+        entity.setType(ObjectType.BLUEPRINT);
+        entity.setDisplayName("Mixin Blueprints");
+        entity.setBlueprintContributionsJson("{\"m1\":{\"variables\":[\"v1\"]}}");
+
+        when(nodeRepository.findByPath("root.platform.mixin-blueprints")).thenReturn( java.util.Optional.of(entity));
+        when(mapper.readappliedBlueprintIds(any())).thenReturn(List.of("m1"));
+        when(mapper.readBlueprintContributions(entity.getBlueprintContributionsJson())).thenReturn(
+                java.util.Map.of("m1", new com.ispf.core.object.BlueprintContribution(List.of("v1"), List.of(), List.of(), List.of()))
+        );
+        when(mapper.readEvents(any())).thenReturn(new com.ispf.core.object.EventDescriptor[0]);
+        when(mapper.readFunctions(any())).thenReturn(new com.ispf.core.object.FunctionDescriptor[0]);
+        when(variableRepository.findByObjectPathIn(List.of("root.platform.mixin-blueprints"))).thenReturn(List.of());
+
+        treeCrudService.ensureSystemCatalogFolder("root.platform.mixin-blueprints", ObjectType.BLUEPRINT, null);
+
+        PlatformObject restored = objectTree.require("root.platform.mixin-blueprints");
+        assertThat(restored.ownerOfVariable("v1")).contains("m1");
+    }
 }

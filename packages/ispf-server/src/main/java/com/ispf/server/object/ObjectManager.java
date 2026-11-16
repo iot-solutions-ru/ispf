@@ -560,10 +560,12 @@ public class ObjectManager {
         } finally {
             treeSyncLock.writeLock().unlock();
         }
+        loadSyncService.afterFullReload();
     }
 
     public void syncPathFromDatabase(String path) {
         withPathSyncLock(path, () -> loadSyncService.syncPathFromDatabase(path));
+        loadSyncService.afterPathReloaded(path);
     }
 
     /**
@@ -572,11 +574,18 @@ public class ObjectManager {
      */
     public void reloadPathFromDatabase(String path) {
         withPathSyncLock(path, () -> loadSyncService.reloadPathFromDatabase(path));
+        loadSyncService.afterPathReloaded(path);
     }
 
     /** Reloads a persisted config variable from PostgreSQL (cluster follower sync). */
     public void syncVariableFromDatabase(String path, String name) {
-        withPathSyncLock(path, () -> loadSyncService.syncVariableFromDatabase(path, name));
+        boolean[] loadedWholePath = {false};
+        withPathSyncLock(path, () -> loadedWholePath[0] = loadSyncService.syncVariableFromDatabase(path, name));
+        if (loadedWholePath[0]) {
+            loadSyncService.afterPathReloaded(path);
+        } else {
+            loadSyncService.afterVariableSynced(path, name);
+        }
     }
 
     public void removePathFromMemoryIfPresent(String path) {
@@ -584,7 +593,8 @@ public class ObjectManager {
             return;
         }
         withPathSyncLock(path, () -> {
-            if (objectTree.findByPath(path).isPresent()) {
+            if (objectTree.findByPath(path).isPresent()
+                    || !objectTree.findByPathPrefix(path + ".").isEmpty()) {
                 objectTree.delete(path);
             }
             VariableHistoryService history = variableHistoryService.getIfAvailable();
@@ -592,6 +602,9 @@ public class ObjectManager {
                 history.forgetPath(path);
             }
         });
+        if (loadSyncService != null) {
+            loadSyncService.evictSubtreeCaches(path);
+        }
     }
 
     /**

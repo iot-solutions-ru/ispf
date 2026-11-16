@@ -15,6 +15,11 @@ public class BlueprintParameterResolver {
             parameters.put("self.path", self.path());
             parameters.put("self.name", leafName(self.path()));
             parameters.put("self.displayName", self.displayName());
+            String parent = parentOf(self.path());
+            if (!parent.isEmpty()) {
+                parameters.put("parentPath", parent);
+                parameters.put("self.parentPath", parent);
+            }
         }
         if (explicit != null) {
             explicit.forEach((key, value) -> {
@@ -52,5 +57,13 @@ public class BlueprintParameterResolver {
         }
         int lastDot = path.lastIndexOf('.');
         return lastDot >= 0 ? path.substring(lastDot + 1) : path;
+    }
+
+    private static String parentOf(String path) {
+        if (path == null || path.isBlank()) {
+            return "";
+        }
+        int lastDot = path.lastIndexOf('.');
+        return lastDot > 0 ? path.substring(0, lastDot) : "";
     }
 }
