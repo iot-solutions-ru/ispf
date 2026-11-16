@@ -2,11 +2,11 @@
 
 ## Status
 
-**Accepted** (2026-10-12) — Wave 1 lands `formatVersion` on application bundles; platform LTS and public API freeze remain pre-1.0 policy until the first LTS tag.
+**Accepted** (2026-10-12) — Wave 1 lands `formatVersion` on application bundles. First stable platform tag: **1.0.0** (2026-11-16). From that tag, section 3 applies: minor and patch stay backward compatible on documented surfaces. The N−1 security window starts when the next major ships.
 
 ## Context
 
-ISPF is still on `0.9.x`. Operators and solution authors need a written contract for:
+The first stable tag is **1.0.0** (2026-11-16). The `0.9.x` line was pre-1.0. Operators and solution authors need a written contract for:
 
 1. What breaks across platform upgrades (API, driver SPI, bundle manifest shape, Flyway).
 2. How long a release line is supported.
@@ -20,7 +20,7 @@ Related gaps: [0037](0037-relational-core-portability.md) described a “baselin
 
 | Axis | Field / artifact | Meaning |
 |------|------------------|---------|
-| Platform release | `gradle.properties` / image tag | Product build (`0.9.x` until 1.0) |
+| Platform release | `gradle.properties` / image tag | Product build (stable line `1.0.x`; `0.9.x` was pre-1.0) |
 | Bundle product version | manifest `version` (semver) | Solution revision; deploy history per `appId` ([0007](0007-bundle-tree-packaging.md)) |
 | Bundle **format** | manifest `formatVersion` (integer) | Wire schema of the JSON; independent of solution semver |
 

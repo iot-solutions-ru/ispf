@@ -12,7 +12,7 @@ Public readiness matrix for Phases 25–33 (see unified [roadmap](roadmap.md)).
 | **0.9.102** | Prior full code audit (July 2026). Historical baseline; superseded by this audit. |
 | **0.9.206** | Prior demostand pin (migration scope). **Not** a scored matrix. |
 
-**Current `main`:** **0.9.208** — post-dates the 0.9.207 audit (honesty/ops waves after 2026-09-09). **Not** a re-scored matrix; do not treat newer commits as a new pin.
+**Current `main`:** **1.0.0** (2026-11-16, first stable tag). The scored matrix stays the 0.9.207 audit. **Not** a re-scored matrix; do not treat 1.0.0 as a new pin.
 
 **Current column:** **Code verified** — evidence from `main` source, tests, and dated lab archives at audit pin **0.9.207** (2026-09-09).
 

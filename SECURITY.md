@@ -2,12 +2,13 @@
 
 ## Supported Versions
 
-ISPF publishes pre-1.0 releases on the `0.9.x` line. Security fixes land on **`main`** and ship in the next GitHub release.
+ISPF **1.0.0** (2026-11-16) is the first stable release. Security fixes land on **`main`** and ship in the next release. Supported line: latest `1.0.x` ([ADR-0064](docs/en/decisions/0064-release-compatibility-lts.md)).
 
 | Version | Supported |
 | ------- | --------- |
-| Latest `0.9.x` release ([Releases](https://github.com/iot-solutions-ru/ispf/releases)) | Yes |
-| Older `0.9.x` tags | Best effort — upgrade to the latest release |
+| Latest `1.0.x` release ([Releases](https://github.com/iot-solutions-ru/ispf/releases)) | Yes |
+| Older `1.0.x` tags | Upgrade to the latest `1.0.x` release |
+| `0.9.x` tags | Upgrade to 1.0.0 |
 | Unreleased `main` | Development only |
 
 ## Reporting a Vulnerability
