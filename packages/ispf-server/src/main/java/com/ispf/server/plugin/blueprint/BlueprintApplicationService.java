@@ -93,11 +93,13 @@ public class BlueprintApplicationService {
                 BlueprintApplyResult result = blueprintEngine.applyIntrinsicStructure(model, objectPath);
                 applyParameterizedContributions(model, objectPath, parameters);
                 objectManager.persistNodeTree(objectPath);
+                syncJavaFunctions(objectPath);
                 return result;
             }
             BlueprintApplyResult result = blueprintEngine.applyBlueprint(model.id(), objectPath);
             applyParameterizedContributions(model, objectPath, parameters);
             objectManager.persistNodeTree(objectPath);
+            syncJavaFunctions(objectPath);
             return result;
         } catch (BlueprintException e) {
             throw new IllegalArgumentException(e.getMessage(), e);
@@ -126,6 +128,7 @@ public class BlueprintApplicationService {
                 );
             }
             objectManager.persistNodeTree(instance.path());
+            syncJavaFunctions(instance.path());
             return aggregateResults(result, mixinResults);
         } catch (BlueprintException e) {
             throw new IllegalArgumentException(e.getMessage(), e);
@@ -142,6 +145,7 @@ public class BlueprintApplicationService {
         }
         if (!results.isEmpty()) {
             objectManager.persistNodeTree(objectPath);
+            syncJavaFunctions(objectPath);
         }
         return results;
     }
@@ -179,10 +183,20 @@ public class BlueprintApplicationService {
             PlatformObject instance = blueprintEngine.ensureSingletonInstance(model);
             applyParameterizedContributions(instance, model, model.parameters());
             objectManager.persistNodeTree(instance.path());
+            syncJavaFunctions(instance.path());
             return objectManager.require(instance.path());
         } catch (BlueprintException e) {
             throw new IllegalArgumentException(e.getMessage(), e);
         }
+    }
+
+    /** Compiles/evicts Java functions after blueprint merge (leader path; followers sync via DB reload). */
+    public void syncJavaFunctions(String objectPath) {
+        if (javaFunctionRuntimeService == null || objectPath == null || objectPath.isBlank()) {
+            return;
+        }
+        PlatformObject node = objectManager.require(objectPath);
+        javaFunctionRuntimeService.syncObjectFunctions(objectPath, node.functions());
     }
 
     private void applyParameterizedContributions(BlueprintDefinition model, String objectPath, Map<String, String> parameters) {

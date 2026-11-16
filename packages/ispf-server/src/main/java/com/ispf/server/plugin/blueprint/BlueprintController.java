@@ -167,6 +167,11 @@ public class BlueprintController {
         try {
             BlueprintDefinition saved = blueprintEngine.updateBlueprint(updated);
             blueprintPersistence.persist(saved, false);
+            if (saved.type() == BlueprintType.SINGLETON) {
+                String instancePath = BlueprintEngine.singletonInstancePath(saved);
+                objectManager.persistNodeTree(instancePath);
+                blueprintApplicationService.syncJavaFunctions(instancePath);
+            }
             return BlueprintDto.from(saved);
         } catch (BlueprintException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
@@ -257,7 +262,7 @@ public class BlueprintController {
     ) {
         try {
             BlueprintDefinition model = blueprintRegistry.requireById(id);
-            assertManualMixinAllowed(model);
+            assertManualMixinAllowed(model, targetPath);
             if (targetVersion != null && !targetVersion.isBlank()
                     && !targetVersion.equals(model.blueprintVersion())) {
                 throw new BlueprintException(
@@ -305,7 +310,6 @@ public class BlueprintController {
     ) {
         try {
             BlueprintDefinition model = blueprintRegistry.requireById(id);
-            assertManualMixinAllowed(model);
             LinkedHashSet<String> targets = new LinkedHashSet<>();
             for (BlueprintAttachment attachment : blueprintEngine.attachments()) {
                 if (id.equals(attachment.blueprintId())) {
@@ -328,6 +332,12 @@ public class BlueprintController {
             }
             List<String> upgraded = new ArrayList<>();
             for (String targetPath : targets) {
+                com.ispf.core.object.PlatformObject target = objectManager.require(targetPath);
+                if (model.type() == com.ispf.plugin.blueprint.BlueprintType.MIXIN
+                        && !model.suitabilityExpression().isBlank()
+                        && !blueprintEngine.isSuitable(model, target)) {
+                    continue;
+                }
                 if (dryRun) {
                     upgraded.add(targetPath);
                     continue;
@@ -347,16 +357,29 @@ public class BlueprintController {
         }
     }
 
-    private static void assertManualMixinAllowed(BlueprintDefinition model) {
-        if (model.type() == com.ispf.plugin.blueprint.BlueprintType.MIXIN
-                && !model.suitabilityExpression().isBlank()) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "MIXIN blueprint '" + model.name()
-                            + "' defines suitabilityExpression and is managed automatically; "
-                            + "manual apply/detach is only allowed when suitabilityExpression is blank"
-            );
+    private void assertManualMixinAllowed(BlueprintDefinition model) {
+        assertManualMixinAllowed(model, null);
+    }
+
+    /**
+     * Auto-managed MIXINs (non-blank suitability) reject first-time manual apply/detach.
+     * Re-apply / upgrade on an already-attached target is allowed.
+     */
+    private void assertManualMixinAllowed(BlueprintDefinition model, String targetPath) {
+        if (model.type() != com.ispf.plugin.blueprint.BlueprintType.MIXIN
+                || model.suitabilityExpression().isBlank()) {
+            return;
         }
+        if (targetPath != null
+                && objectManager.require(targetPath).appliedBlueprintIds().contains(model.id())) {
+            return;
+        }
+        throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "MIXIN blueprint '" + model.name()
+                        + "' defines suitabilityExpression and is managed automatically; "
+                        + "manual apply/detach is only allowed when suitabilityExpression is blank"
+        );
     }
 
     @GetMapping("/{id}/diff")

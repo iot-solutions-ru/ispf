@@ -165,7 +165,13 @@ public class TypedBlueprintFacade {
         try {
             BlueprintDefinition saved = blueprintEngine.updateBlueprint(updated);
             blueprintPersistence.persist(saved, false);
-            objectManager.persistNodeTree(saved.catalogObjectPath());
+            String persistPath = saved.type() == BlueprintType.SINGLETON
+                    ? BlueprintEngine.singletonInstancePath(saved)
+                    : saved.catalogObjectPath();
+            objectManager.persistNodeTree(persistPath);
+            if (saved.type() == BlueprintType.SINGLETON) {
+                blueprintApplicationService.syncJavaFunctions(persistPath);
+            }
             rebuildWatchIndex();
             return BlueprintDto.from(saved);
         } catch (BlueprintException e) {

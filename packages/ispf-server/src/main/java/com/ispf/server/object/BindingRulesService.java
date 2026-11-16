@@ -201,6 +201,7 @@ public class BindingRulesService {
             validateHistorianRule(objectPath, rule);
             return;
         }
+        validateActivators(objectPath, rule.activators());
         PlatformObject object = objectManager.require(objectPath);
         BindingTarget target = rule.target();
         if (target.isVariable()) {
@@ -240,6 +241,36 @@ public class BindingRulesService {
         }
         if (target.isAction()) {
             return;
+        }
+    }
+
+    /**
+     * Live-saved rules must not keep blueprint placeholders. An unresolved
+     * {@code ${...}} variable activator collapses to {@code self/*} and fires on every local update.
+     */
+    private void validateActivators(String objectPath, BindingActivators activators) {
+        if (activators == null) {
+            return;
+        }
+        String onEventRef = activators.onEventRef();
+        if (onEventRef != null && !onEventRef.isBlank()) {
+            if (onEventRef.contains("${")) {
+                throw new IllegalArgumentException("Unresolved placeholder in onEventRef: " + onEventRef);
+            }
+            PlatformRef ref = PlatformRefResolver.resolve(PlatformRefParser.parse(onEventRef), objectPath);
+            if (ref.kind() != PlatformRefKind.EVENT) {
+                throw new IllegalArgumentException("onEventRef must use /evt/ grammar: " + onEventRef);
+            }
+        }
+        for (BindingVariableRef variableRef : activators.onVariableChange()) {
+            String raw = variableRef.ref();
+            if (raw == null || raw.isBlank()) {
+                continue;
+            }
+            if (raw.contains("${")) {
+                throw new IllegalArgumentException("Unresolved placeholder in onVariableChange ref: " + raw);
+            }
+            PlatformRefParser.parseVariableSource(raw);
         }
     }
 
