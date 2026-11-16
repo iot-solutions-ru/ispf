@@ -191,7 +191,8 @@ public class FunctionProperties {
         this.java = java != null ? java : new Java();
     }
 
-    public boolean isJavaEnabled() {
+    /** Not a JavaBean getter: {@code isJavaEnabled} made Spring bind {@code ISPF_FUNCTION_JAVA_ENABLED} as a missing setter. */
+    public boolean javaFunctionsEnabled() {
         return java != null && java.isEnabled();
     }
 

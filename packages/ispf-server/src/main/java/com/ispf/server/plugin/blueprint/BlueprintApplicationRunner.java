@@ -1,7 +1,11 @@
 package com.ispf.server.plugin.blueprint;
 
+import com.ispf.core.binding.BindingActivators;
+import com.ispf.core.binding.BindingTarget;
+import com.ispf.core.binding.BindingVariableRef;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
+import com.ispf.plugin.blueprint.BlueprintBindingRule;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
@@ -11,7 +15,8 @@ import com.ispf.server.object.ObjectManager;
 import com.ispf.core.object.ObjectType;
 import com.ispf.server.bootstrap.DemoFixtureBootstrap;
 import com.ispf.server.bootstrap.PlatformReferenceBlueprintBootstrap;
-import com.ispf.server.bootstrap.PlatformReferenceBlueprintBootstrap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.ispf.server.dashboard.DashboardLayouts;
 import com.ispf.server.dashboard.DashboardDemoRulesBootstrap;
 import com.ispf.server.driver.DeviceProvisioningService;
@@ -33,6 +38,8 @@ import java.util.Set;
  */
 @Component
 public class BlueprintApplicationRunner {
+
+    private static final Logger log = LoggerFactory.getLogger(BlueprintApplicationRunner.class);
 
     private final BlueprintEngine blueprintEngine;
     private final BlueprintRegistry blueprintRegistry;
@@ -336,20 +343,32 @@ public class BlueprintApplicationRunner {
      */
     public void syncAllBlueprintBackedVariableMetadata() {
         for (PlatformObject node : objectManager.tree().all()) {
-            Optional<String> templateId = node.templateId();
-            if (templateId.isEmpty() || templateId.get().isBlank()) {
-                continue;
+            try {
+                syncBlueprintBackedVariableMetadata(node);
+            } catch (RuntimeException ex) {
+                log.error(
+                        "Blueprint metadata sync failed for {} and was skipped so the server can finish starting",
+                        node.path(),
+                        ex
+                );
             }
-            Optional<BlueprintDefinition> model = blueprintRegistry.findById(templateId.get());
-            if (model.isEmpty()) {
-                model = blueprintRegistry.findByName(templateId.get());
-            }
-            if (model.isEmpty()) {
-                continue;
-            }
-            if (syncModelVariableMetadata(model.get(), node.path())) {
-                objectManager.persistNodeTree(node.path());
-            }
+        }
+    }
+
+    private void syncBlueprintBackedVariableMetadata(PlatformObject node) {
+        Optional<String> templateId = node.templateId();
+        if (templateId.isEmpty() || templateId.get().isBlank()) {
+            return;
+        }
+        Optional<BlueprintDefinition> model = blueprintRegistry.findById(templateId.get());
+        if (model.isEmpty()) {
+            model = blueprintRegistry.findByName(templateId.get());
+        }
+        if (model.isEmpty()) {
+            return;
+        }
+        if (syncModelVariableMetadata(model.get(), node.path())) {
+            objectManager.persistNodeTree(node.path());
         }
     }
 
@@ -395,10 +414,81 @@ public class BlueprintApplicationRunner {
             }
         }
         if (!model.bindingRules().isEmpty()) {
-            bindingRulesMerger.mergeBlueprintRules(objectPath, model, model.parameters());
-            changed = true;
+            if (containsRawPlaceholder(model)) {
+                // Instance parameters are not stored on the object. Substituting the
+                // blueprint's own defaults would overwrite the deployed rule, and a
+                // leftover ${...} is evaluated inside ObjectManager.initialize.
+                log.warn(
+                        "Skip blueprint rule merge on startup for {}: a rule still contains ${...}. Saved rules stay as deployed.",
+                        objectPath
+                );
+            } else {
+                bindingRulesMerger.mergeBlueprintRules(objectPath, model, model.parameters(), false);
+                changed = true;
+            }
         }
         return changed;
+    }
+
+    /** True when any rule field still contains a raw {@code ${}}. Blueprint defaults are not applied first. */
+    static boolean containsRawPlaceholder(BlueprintDefinition model) {
+        for (BlueprintBindingRule rule : model.bindingRules()) {
+            if (hasPlaceholder(rule.id())
+                    || hasPlaceholder(rule.name())
+                    || hasPlaceholder(rule.condition())
+                    || hasPlaceholder(rule.expression())
+                    || hasPlaceholder(rule.targetVariable())
+                    || hasPlaceholder(rule.targetField())
+                    || hasPlaceholder(rule.kind())
+                    || hasPlaceholder(rule.windowBucket())
+                    || hasPlaceholder(rule.formulaRef())
+                    || hasPlaceholder(rule.formulaScope())
+                    || hasPlaceholder(rule.formulaAppId())) {
+                return true;
+            }
+            if (rule.rollupBuckets() != null) {
+                for (String bucket : rule.rollupBuckets()) {
+                    if (hasPlaceholder(bucket)) {
+                        return true;
+                    }
+                }
+            }
+            if (rule.formulaParams() != null) {
+                for (String value : rule.formulaParams().values()) {
+                    if (hasPlaceholder(value)) {
+                        return true;
+                    }
+                }
+            }
+            BindingTarget target = rule.target();
+            if (target != null && (hasPlaceholder(target.kind())
+                    || hasPlaceholder(target.variableName())
+                    || hasPlaceholder(target.field())
+                    || hasPlaceholder(target.path())
+                    || hasPlaceholder(target.eventName())
+                    || hasPlaceholder(target.ref()))) {
+                return true;
+            }
+            BindingActivators activators = rule.activators();
+            if (activators != null && (hasPlaceholder(activators.onEvent())
+                    || hasPlaceholder(activators.onEventRef()))) {
+                return true;
+            }
+            if (activators != null) {
+                for (BindingVariableRef ref : activators.onVariableChange()) {
+                    if (hasPlaceholder(ref.objectPath())
+                            || hasPlaceholder(ref.variableName())
+                            || hasPlaceholder(ref.ref())) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    private static boolean hasPlaceholder(String text) {
+        return text != null && text.contains("${");
     }
 
     private void ensureSnmpDriverMappings(PlatformObject device) {
