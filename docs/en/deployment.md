@@ -93,7 +93,7 @@ Build static assets for nginx or ingress:
 cd apps/web-console && npm run build
 ```
 
-Serve `dist/` behind nginx/ingress with `/api/`, `/ws/`, and `/apps/` proxied to `ispf-server`. For local hot-reload development, run `npm run dev` (port `5173`).
+Serve `dist/` behind nginx/ingress with `/api/`, `/ws/`, and `/apps/` proxied to `ispf-server`. For local hot-reload development, run `npm run dev` (port `5173`) beside `bootRun` (API on `8080`) — two processes on purpose; why: [Getting started — Why two processes](getting-started.md#why-two-processes-and-two-ports). Release / portable builds embed the console so login is on `8080` alone (`-PembedWebConsole=true`).
 
 ---
 

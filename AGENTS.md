@@ -4,6 +4,8 @@
 
 A usable local install ends with a **login screen**. Start **both** processes below (`local` profile). Stopping after `bootRun` alone leaves `http://localhost:8080/` as a 404 — that is API-only, not a first-run success. First start compiles the server and the small driver set (including `virtual`, `modbus`, `mqtt`, `http`, `jdbc`) and takes several minutes. `./gradlew test` builds the full driver matrix; it is not the way to see the console.
 
+**Why two processes:** from-source keeps the Java API on **8080** and the Vite console on **5173** so each can hot-reload without repacking. The API is not on 5173. All-in-one UI+API on **8080** is the portable zip, the container, or a release JAR with embedded console — not default `bootRun`. Explain that to humans; do not present the split as a missing install step gone wrong. Details: `docs/en/getting-started.md` § Why two processes.
+
 The wrapper uses `JAVA_HOME` when that variable is set, otherwise a JDK on `PATH`. That JDK must be 17 through 27. The server compiles and runs on JDK 25. The Foojay plugin in `settings.gradle.kts` downloads 25 when JDK 25 is not already installed. Python 3 must be on `PATH`: `bootRun` regenerates the AI context pack before the server starts. Node.js 20+ is required for the Web Console. The portable zip is a different path: that JAR needs JDK 25 on the machine that runs `start.bat` / `start.sh` and serves UI on port 8080.
 
 ### Terminal 1 — API

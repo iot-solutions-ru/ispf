@@ -77,6 +77,19 @@ From another container on this network the slave is `modbus:502`. An `mqtt` devi
 
 Use this when the repository is already on disk (contributors, agents, local checkout). You need **two processes**: the API and the Web Console. Stopping after `bootRun` alone leaves `http://localhost:8080/` as a 404 — that is not a complete first install.
 
+#### Why two processes (and two ports)?
+
+This is intentional, not a half-install.
+
+| Mode | What you run | Login URL |
+|------|----------------|-----------|
+| **From source (this option)** | Java API on **8080** + Vite Web Console on **5173** | **http://localhost:5173** |
+| **Portable zip / Docker / release JAR** | One process serves API **and** the built UI | **http://localhost:8080** |
+
+From source, the stack stays split so each side can reload on its own: `bootRun` rebuilds the server without waiting for `npm run build`, and Vite hot-reloads the React console without repacking a JAR. The console proxies `/api` and `/ws` to port 8080 — the API is never on 5173.
+
+All-in-one on 8080 is the **packaged** path (Options A/B, or a release `bootJar` with `-PembedWebConsole=true` after `npm run build`). Details: [Deployment — Web Console](deployment.md#3-building-the-web-console-appsweb-console).
+
 #### Prerequisites
 
 | Tool | Required version | Notes |
@@ -121,8 +134,8 @@ Do not expect a login form at `http://localhost:8080/` in this mode — that por
 |-----|------------|
 | `http://localhost:5173` | Admin Console (Vite — Option C) |
 | `http://localhost:5173?mode=operator` | Operator HMI (Vite — Option C) |
-| `http://localhost:8080` | Admin Console (portable JAR or Docker only) |
-| `http://localhost:8080?mode=operator` | Operator HMI (portable JAR / Docker only) |
+| `http://localhost:8080` | Admin Console (portable / Docker / embedded release JAR) |
+| `http://localhost:8080?mode=operator` | Operator HMI (portable / Docker / embedded release JAR) |
 | `http://localhost:8080/api/v1/info` | Server version and enabled capabilities |
 | `http://localhost:8080/actuator/health` | Health status |
 

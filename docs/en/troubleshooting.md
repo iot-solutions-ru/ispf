@@ -12,7 +12,7 @@ The checks below assume the server is on port `8080`. If you set `ISPF_SERVER_PO
 
 ## The browser cannot open the console
 
-**Which URL.** Portable zip / Docker → **http://localhost:8080**. From source (Option C) → **http://localhost:5173** after both the API and `npm run dev` in `apps/web-console`. A healthy API alone is not a complete first install — [Getting started](getting-started.md#try-ispf-15-minutes).
+**Which URL.** Portable zip / Docker → **http://localhost:8080**. From source (Option C) → **http://localhost:5173** after both the API and `npm run dev` in `apps/web-console`. A healthy API alone is not a complete first install — [Getting started](getting-started.md#try-ispf-15-minutes). The split (API `8080` + Vite `5173`) is intentional for hot-reload — [Why two processes](getting-started.md#why-two-processes-and-two-ports).
 
 **Check.** From the same machine:
 
