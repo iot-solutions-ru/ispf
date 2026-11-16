@@ -152,4 +152,60 @@ class ObjectTreeLoadSyncServiceTest {
         assertThat(objectTree.require("root.devices.pump-1").getVariable("temperature")).isEmpty();
         verify(historyService).forgetVariable("root.devices.pump-1", "temperature");
     }
+
+    @Test
+    void afterPathReloadedRefreshesRulesStateDependencyIndexAndJavaFunctions() {
+        BindingRulesService rulesService = org.mockito.Mockito.mock(BindingRulesService.class);
+        BindingDependencyIndex depIndex = org.mockito.Mockito.mock(BindingDependencyIndex.class);
+        ObjectBindingStatePort statePort = org.mockito.Mockito.mock(ObjectBindingStatePort.class);
+        com.ispf.plugin.blueprint.BlueprintEngine bpEngine =
+                org.mockito.Mockito.mock(com.ispf.plugin.blueprint.BlueprintEngine.class);
+        com.ispf.server.function.java.JavaFunctionRuntimeService javaRuntime =
+                org.mockito.Mockito.mock(com.ispf.server.function.java.JavaFunctionRuntimeService.class);
+        com.ispf.server.platform.analytics.engine.AnalyticsTagCatalogService tagCatalog =
+                org.mockito.Mockito.mock(com.ispf.server.platform.analytics.engine.AnalyticsTagCatalogService.class);
+
+        ObjectTreeLoadSyncService fullService = new ObjectTreeLoadSyncService(
+                objectManager,
+                nodeRepository,
+                variableRepository,
+                mapper,
+                historyService,
+                rulesService,
+                depIndex,
+                statePort,
+                bpEngine,
+                javaRuntime,
+                tagCatalog
+        );
+
+        PlatformObject hub = new PlatformObject("h1", "root.devices.hub-1", ObjectType.CUSTOM, "Hub", "", null);
+        hub.addVariable(new com.ispf.core.object.Variable(
+                com.ispf.core.binding.BindingRulesConstants.RULES_VARIABLE,
+                com.ispf.core.model.DataSchema.builder("rules").build(),
+                true,
+                true,
+                null
+        ));
+        objectTree.register(hub);
+
+        fullService.afterPathReloaded("root.devices.hub-1");
+
+        verify(rulesService).invalidateRulesCache("root.devices.hub-1");
+        verify(statePort).invalidateCache("root.devices.hub-1");
+        verify(depIndex).rebuild("root.devices.hub-1");
+        verify(javaRuntime).syncObjectFunctions(
+                org.mockito.ArgumentMatchers.eq("root.devices.hub-1"),
+                any()
+        );
+        verify(tagCatalog).invalidateCatalog();
+
+        fullService.evictSubtreeCaches("root.devices.hub-1");
+
+        verify(rulesService).forgetSubtree("root.devices.hub-1");
+        verify(statePort).forgetSubtree("root.devices.hub-1");
+        verify(depIndex).removeSubtree("root.devices.hub-1");
+        verify(bpEngine).removeAttachmentsForDeletedSubtree("root.devices.hub-1");
+        verify(javaRuntime).unregisterSubtree("root.devices.hub-1");
+    }
 }

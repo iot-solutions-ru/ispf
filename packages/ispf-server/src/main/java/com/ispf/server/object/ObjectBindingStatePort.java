@@ -149,8 +149,25 @@ public class ObjectBindingStatePort implements BindingStatePort {
     }
 
     public void invalidateCache(String objectPath) {
+        if (objectPath == null || objectPath.isBlank()) {
+            cacheByObjectPath.clear();
+            return;
+        }
         synchronized (lockFor(objectPath)) {
             cacheByObjectPath.remove(objectPath);
+        }
+    }
+
+    /** Drops cached binding state for {@code objectPath} and its descendants ({@code objectPath.*}). */
+    public void forgetSubtree(String objectPath) {
+        if (objectPath == null || objectPath.isBlank()) {
+            return;
+        }
+        String descendantPrefix = objectPath + ".";
+        for (String key : java.util.List.copyOf(cacheByObjectPath.keySet())) {
+            if (key.equals(objectPath) || key.startsWith(descendantPrefix)) {
+                invalidateCache(key);
+            }
         }
     }
 

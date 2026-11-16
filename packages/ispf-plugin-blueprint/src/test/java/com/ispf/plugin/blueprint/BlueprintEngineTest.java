@@ -782,6 +782,257 @@ class BlueprintEngineTest {
         assertThat(merged.invokeRoles()).containsExactly("admin");
     }
 
+    @Test
+    void inheritanceChildOverridesParentDefaultValueAndRecordsFullOwnership() {
+        DataSchema doubleSchema = DataSchema.builder("doubleValue").field("value", FieldType.DOUBLE).build();
+        BlueprintDefinition base = new BlueprintDefinition(
+                UUID.randomUUID().toString(),
+                "base-sensor-test",
+                "",
+                BlueprintType.MIXIN,
+                ObjectType.DEVICE,
+                "",
+                List.of(
+                        BlueprintVariableDefinition.of(
+                                "temperature", "", "telemetry", doubleSchema, true, true,
+                                DataRecord.single(doubleSchema, Map.of("value", 20.0))
+                        ),
+                        BlueprintVariableDefinition.of(
+                                "threshold", "", "config", doubleSchema, true, true,
+                                DataRecord.single(doubleSchema, Map.of("value", 35.0))
+                        )
+                ),
+                List.of(),
+                List.of(),
+                List.of(),
+                Map.of(),
+                Instant.now(),
+                Instant.now()
+        );
+        BlueprintDefinition child = new BlueprintDefinition(
+                UUID.randomUUID().toString(),
+                "vendor-sensor-test",
+                "",
+                BlueprintType.MIXIN,
+                ObjectType.DEVICE,
+                "",
+                List.of(
+                        BlueprintVariableDefinition.of(
+                                "threshold", "", "config", doubleSchema, true, true,
+                                DataRecord.single(doubleSchema, Map.of("value", 40.0))
+                        )
+                ),
+                List.of(),
+                List.of(),
+                List.of(),
+                Map.of("extendsBlueprintId", base.id()),
+                Instant.now(),
+                Instant.now()
+        );
+        engine.createBlueprint(base);
+        engine.createBlueprint(child);
+
+        PlatformObject device = new PlatformObject(
+                UUID.randomUUID().toString(),
+                "root.platform.devices.inherited-dev",
+                ObjectType.DEVICE,
+                "inherited-dev",
+                null,
+                null
+        );
+        objectTree.register(device);
+
+        engine.applyBlueprint(child.id(), device.path());
+
+        assertThat(device.getVariable("threshold").orElseThrow().value().orElseThrow().firstRow().get("value"))
+                .isEqualTo(40.0);
+        assertThat(device.blueprintContribution(child.id()).orElseThrow().variables())
+                .containsExactlyInAnyOrder("temperature", "threshold");
+
+        BlueprintDetachResult detach = engine.detachBlueprint(child.id(), device.path());
+        assertThat(detach.removedVariables()).containsExactlyInAnyOrder("temperature", "threshold");
+        assertThat(device.getVariable("temperature")).isEmpty();
+        assertThat(device.getVariable("threshold")).isEmpty();
+    }
+
+    @Test
+    void inheritanceCycleIsRejected() {
+        BlueprintDefinition a = new BlueprintDefinition(
+                "cycle-a-id",
+                "cycle-a",
+                "",
+                BlueprintType.MIXIN,
+                ObjectType.DEVICE,
+                "",
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                Map.of("extendsBlueprintId", "cycle-b"),
+                Instant.now(),
+                Instant.now()
+        );
+        BlueprintDefinition b = new BlueprintDefinition(
+                "cycle-b-id",
+                "cycle-b",
+                "",
+                BlueprintType.MIXIN,
+                ObjectType.DEVICE,
+                "",
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                Map.of("extendsBlueprintId", "cycle-a-id"),
+                Instant.now(),
+                Instant.now()
+        );
+        engine.createBlueprint(a);
+
+        assertThatThrownBy(() -> engine.createBlueprint(b))
+                .isInstanceOf(BlueprintException.class)
+                .hasMessageContaining("cycle");
+    }
+
+    @Test
+    void updateSingletonPreservesLiveVariableValueRolesPolicyAndEventInvokeRoles() {
+        DataSchema doubleSchema = DataSchema.builder("doubleValue").field("value", FieldType.DOUBLE).build();
+        BlueprintDefinition v1 = new BlueprintDefinition(
+                UUID.randomUUID().toString(),
+                "stateful-hub-v1",
+                "hub",
+                BlueprintType.SINGLETON,
+                ObjectType.CUSTOM,
+                "",
+                List.of(BlueprintVariableDefinition.of(
+                        "setpoint", "v1", "config", doubleSchema, true, true,
+                        DataRecord.single(doubleSchema, Map.of("value", 10.0))
+                )),
+                List.of(new EventDescriptor("alarm", "v1", doubleSchema, EventLevel.WARNING, List.of())),
+                List.of(),
+                List.of(),
+                Map.of(),
+                Instant.now(),
+                Instant.now()
+        );
+        engine.createBlueprint(v1);
+
+        String hubPath = BlueprintEngine.singletonInstancePath(v1);
+        PlatformObject hub = objectTree.require(hubPath);
+        Variable liveVar = hub.getVariable("setpoint").orElseThrow()
+                .withDefinition(
+                        true,
+                        true,
+                        false,
+                        null,
+                        com.ispf.core.object.HistorySampleMode.ALL_VALUES,
+                        true,
+                        com.ispf.core.object.VariableStorageMode.TRANSIENT,
+                        "ON_CHANGE",
+                        List.of("operator"),
+                        List.of("admin")
+                );
+        liveVar.setValue(DataRecord.single(doubleSchema, Map.of("value", 77.5)));
+        Instant stampedAt = liveVar.updatedAt().orElseThrow();
+        hub.addVariable(liveVar);
+        hub.addEvent(new EventDescriptor("alarm", "v1", doubleSchema, EventLevel.WARNING, List.of("operator")));
+
+        BlueprintDefinition v2 = new BlueprintDefinition(
+                v1.id(),
+                v1.name(),
+                "hub",
+                BlueprintType.SINGLETON,
+                ObjectType.CUSTOM,
+                "",
+                List.of(BlueprintVariableDefinition.withHistory(
+                        "setpoint", "v2", "config", doubleSchema, true, true,
+                        DataRecord.single(doubleSchema, Map.of("value", 10.0)), 30
+                )),
+                List.of(new EventDescriptor("alarm", "v2", doubleSchema, EventLevel.CRITICAL, List.of())),
+                List.of(),
+                List.of(),
+                Map.of(),
+                v1.createdAt(),
+                Instant.now()
+        );
+        engine.updateBlueprint(v2);
+
+        Variable afterVar = objectTree.require(hubPath).getVariable("setpoint").orElseThrow();
+        assertThat(afterVar.value().orElseThrow().firstRow().get("value")).isEqualTo(77.5);
+        assertThat(afterVar.updatedAt()).contains(stampedAt);
+        assertThat(afterVar.readRoles()).containsExactly("operator");
+        assertThat(afterVar.writeRoles()).containsExactly("admin");
+        assertThat(afterVar.storageMode()).isEqualTo(com.ispf.core.object.VariableStorageMode.TRANSIENT);
+        assertThat(afterVar.historySampleMode()).isEqualTo(com.ispf.core.object.HistorySampleMode.ALL_VALUES);
+        assertThat(afterVar.includePreviousValueInEvent()).isTrue();
+        assertThat(afterVar.telemetryPublishModeOverride()).contains("ON_CHANGE");
+        assertThat(afterVar.historyEnabled()).isTrue();
+        assertThat(afterVar.historyRetentionDays()).contains(30);
+
+        EventDescriptor afterEvt = objectTree.require(hubPath).events().get("alarm");
+        assertThat(afterEvt.level()).isEqualTo(EventLevel.CRITICAL);
+        assertThat(afterEvt.invokeRoles()).containsExactly("operator");
+    }
+
+    @Test
+    void mixinRejectsSqlBindingsAndAlertRules() {
+        BlueprintDefinition withSql = new BlueprintDefinition(
+                UUID.randomUUID().toString(),
+                "bad-sql-mixin",
+                "",
+                BlueprintType.MIXIN,
+                ObjectType.DEVICE,
+                "",
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(new BlueprintSqlBindingTemplate("v", "SELECT 1 AS value", "root.platform.data-sources.x", 1000L, "value")),
+                List.of(),
+                Map.of(),
+                Instant.now(),
+                Instant.now()
+        );
+        assertThatThrownBy(() -> engine.createBlueprint(withSql))
+                .isInstanceOf(BlueprintException.class)
+                .hasMessageContaining("sqlBindings");
+    }
+
+    @Test
+    void removeAttachmentsForDeletedSubtreeDropsDescendantsOnly() {
+        BlueprintDefinition mixin = new BlueprintDefinition(
+                UUID.randomUUID().toString(),
+                "subtree-mixin",
+                "",
+                BlueprintType.MIXIN,
+                ObjectType.DEVICE,
+                "",
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                Map.of(),
+                Instant.now(),
+                Instant.now()
+        );
+        engine.createBlueprint(mixin);
+        PlatformObject line1 = new PlatformObject("l1", "root.platform.devices.line-1", ObjectType.DEVICE, "l1", "", null);
+        PlatformObject child = new PlatformObject("c1", "root.platform.devices.line-1.dev-1", ObjectType.DEVICE, "c1", "", null);
+        PlatformObject line10 = new PlatformObject("l10", "root.platform.devices.line-10", ObjectType.DEVICE, "l10", "", null);
+        objectTree.register(line1);
+        objectTree.register(child);
+        objectTree.register(line10);
+        engine.applyBlueprint(mixin.id(), line1.path());
+        engine.applyBlueprint(mixin.id(), child.path());
+        engine.applyBlueprint(mixin.id(), line10.path());
+
+        engine.removeAttachmentsForDeletedSubtree("root.platform.devices.line-1");
+
+        assertThat(engine.attachments())
+                .extracting(BlueprintAttachment::objectPath)
+                .containsExactly("root.platform.devices.line-10");
+    }
+
     private static BlueprintDefinition instanceBlueprint(String name) {
         return new BlueprintDefinition(
                 UUID.randomUUID().toString(),

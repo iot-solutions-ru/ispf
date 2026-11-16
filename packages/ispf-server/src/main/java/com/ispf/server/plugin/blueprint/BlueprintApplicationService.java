@@ -13,7 +13,9 @@ import com.ispf.plugin.blueprint.BlueprintSqlBindingTemplate;
 import com.ispf.server.alert.AlertRuleService;
 import com.ispf.server.automation.AutomationTreeService;
 import com.ispf.server.binding.SqlBindingObjectService;
+import com.ispf.server.function.java.JavaFunctionRuntimeService;
 import com.ispf.server.object.ObjectManager;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,6 +37,7 @@ public class BlueprintApplicationService {
     private final BlueprintParameterResolver parameterResolver;
     private final SqlBindingObjectService sqlBindingObjectService;
     private final AlertRuleService alertRuleService;
+    private final JavaFunctionRuntimeService javaFunctionRuntimeService;
 
     public BlueprintApplicationService(
             BlueprintEngine blueprintEngine,
@@ -45,6 +48,29 @@ public class BlueprintApplicationService {
             SqlBindingObjectService sqlBindingObjectService,
             AlertRuleService alertRuleService
     ) {
+        this(
+                blueprintEngine,
+                blueprintRegistry,
+                bindingRulesMerger,
+                objectManager,
+                parameterResolver,
+                sqlBindingObjectService,
+                alertRuleService,
+                null
+        );
+    }
+
+    @Autowired
+    public BlueprintApplicationService(
+            BlueprintEngine blueprintEngine,
+            BlueprintRegistry blueprintRegistry,
+            BlueprintBindingRulesMerger bindingRulesMerger,
+            ObjectManager objectManager,
+            BlueprintParameterResolver parameterResolver,
+            SqlBindingObjectService sqlBindingObjectService,
+            AlertRuleService alertRuleService,
+            JavaFunctionRuntimeService javaFunctionRuntimeService
+    ) {
         this.blueprintEngine = blueprintEngine;
         this.blueprintRegistry = blueprintRegistry;
         this.bindingRulesMerger = bindingRulesMerger;
@@ -52,6 +78,7 @@ public class BlueprintApplicationService {
         this.parameterResolver = parameterResolver;
         this.sqlBindingObjectService = sqlBindingObjectService;
         this.alertRuleService = alertRuleService;
+        this.javaFunctionRuntimeService = javaFunctionRuntimeService;
     }
 
     @Transactional
@@ -125,6 +152,11 @@ public class BlueprintApplicationService {
             BlueprintDetachResult result = blueprintEngine.detachBlueprint(blueprintId, objectPath);
             if (result.detached()) {
                 bindingRulesMerger.removeBlueprintRules(objectPath, result.removedBindingRuleIds());
+                if (javaFunctionRuntimeService != null) {
+                    for (String fnName : result.removedFunctions()) {
+                        javaFunctionRuntimeService.unregister(objectPath, fnName);
+                    }
+                }
                 for (String variableName : result.removedVariables()) {
                     objectManager.purgeVariablePersistence(objectPath, variableName);
                 }

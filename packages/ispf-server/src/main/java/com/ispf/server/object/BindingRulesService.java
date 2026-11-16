@@ -112,6 +112,15 @@ public class BindingRulesService {
         rulesCache.remove(objectPath);
     }
 
+    /** Drops cached rules for {@code objectPath} and any descendant paths ({@code objectPath.*}). */
+    public void forgetSubtree(String objectPath) {
+        if (objectPath == null || objectPath.isBlank()) {
+            return;
+        }
+        String descendantPrefix = objectPath + ".";
+        rulesCache.keySet().removeIf(key -> key.equals(objectPath) || key.startsWith(descendantPrefix));
+    }
+
     public List<BindingRule> saveRules(String objectPath, List<BindingRule> rules) {
         synchronized (rulesLocks.computeIfAbsent(objectPath, ignored -> new Object())) {
             assertOwnedRulesRetained(objectPath, rules);

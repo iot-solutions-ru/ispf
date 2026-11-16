@@ -38,11 +38,11 @@ Automatic application runs only when **all** of the following hold ([ADR-0018](d
 1. The blueprint has `type = "MIXIN"` and `targetObjectType` matches the new object's type.
 2. Its **Applicability condition (`suitabilityExpression`)** is **non-empty** and evaluates to `true` in Google CEL against the target object (`self.*`).
 
-| `suitabilityExpression` | Auto-applies on `POST /objects`? | Explicit apply allowed? |
-|-------------------------|:--------------------------------:|:-----------------------:|
+| `suitabilityExpression` | Auto-applies on `POST /objects`? | Manual `apply` / `detach` allowed? |
+|-------------------------|:--------------------------------:|:----------------------------------:|
 | *(empty string)* | No | Yes |
-| `true` | Yes (to all matching `targetObjectType` nodes) | Yes |
-| `self.flag.value == true` | Only when the CEL expression is `true` | Yes (when `true`) |
+| `true` | Yes (to all matching `targetObjectType` nodes) | No (automatic / `reevaluate`) |
+| `self.flag.value == true` | Only when the CEL expression is `true` | No (automatic / `reevaluate`) |
 
 ### Opt-in Mixin Re-evaluation and Detach ([ADR-0058](decisions/0058-mixin-reevaluation-and-detach.md))
 

@@ -134,7 +134,10 @@ public class BlueprintController {
             blueprintPersistence.persist(created, false);
             return BlueprintDto.from(created);
         } catch (BlueprintException e) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
+            HttpStatus status = e.getMessage() != null && e.getMessage().contains("already exists")
+                    ? HttpStatus.CONFLICT
+                    : HttpStatus.BAD_REQUEST;
+            throw new ResponseStatusException(status, e.getMessage());
         }
     }
 
@@ -161,9 +164,13 @@ public class BlueprintController {
                 existing.createdAt(),
                 Instant.now()
         );
-        BlueprintDefinition saved = blueprintEngine.updateBlueprint(updated);
-        blueprintPersistence.persist(saved, false);
-        return BlueprintDto.from(saved);
+        try {
+            BlueprintDefinition saved = blueprintEngine.updateBlueprint(updated);
+            blueprintPersistence.persist(saved, false);
+            return BlueprintDto.from(saved);
+        } catch (BlueprintException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
     }
 
     @DeleteMapping("/{id}")
@@ -178,11 +185,13 @@ public class BlueprintController {
             @RequestParam @NotBlank String objectPath
     ) {
         try {
+            BlueprintDefinition model = blueprintRegistry.requireById(id);
+            assertManualMixinAllowed(model);
             BlueprintAttachmentDto attachment = BlueprintAttachmentDto.from(
                     blueprintApplicationService.applyBlueprintWithRules(id, objectPath)
             );
             return attachment;
-        } catch (IllegalArgumentException e) {
+        } catch (BlueprintException | IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
     }
@@ -248,6 +257,7 @@ public class BlueprintController {
     ) {
         try {
             BlueprintDefinition model = blueprintRegistry.requireById(id);
+            assertManualMixinAllowed(model);
             if (targetVersion != null && !targetVersion.isBlank()
                     && !targetVersion.equals(model.blueprintVersion())) {
                 throw new BlueprintException(
@@ -264,7 +274,7 @@ public class BlueprintController {
                     "attachmentId", attachment.id(),
                     "warnings", attachment.warnings()
             );
-        } catch (IllegalArgumentException e) {
+        } catch (BlueprintException | IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
     }
@@ -295,6 +305,7 @@ public class BlueprintController {
     ) {
         try {
             BlueprintDefinition model = blueprintRegistry.requireById(id);
+            assertManualMixinAllowed(model);
             LinkedHashSet<String> targets = new LinkedHashSet<>();
             for (BlueprintAttachment attachment : blueprintEngine.attachments()) {
                 if (id.equals(attachment.blueprintId())) {
@@ -336,12 +347,24 @@ public class BlueprintController {
         }
     }
 
+    private static void assertManualMixinAllowed(BlueprintDefinition model) {
+        if (model.type() == com.ispf.plugin.blueprint.BlueprintType.MIXIN
+                && !model.suitabilityExpression().isBlank()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "MIXIN blueprint '" + model.name()
+                            + "' defines suitabilityExpression and is managed automatically; "
+                            + "manual apply/detach is only allowed when suitabilityExpression is blank"
+            );
+        }
+    }
+
     @GetMapping("/{id}/diff")
     public Map<String, Object> diff(
             @PathVariable String id,
             @RequestParam @NotBlank String objectPath
     ) {
-        BlueprintDefinition model = blueprintRegistry.requireById(id);
+        BlueprintDefinition model = blueprintEngine.flattenInheritance(blueprintRegistry.requireById(id));
         PlatformObject object = objectManager.require(objectPath);
         LinkedHashSet<String> modelVariables = model.variables().stream()
                 .map(BlueprintVariableDefinition::name)

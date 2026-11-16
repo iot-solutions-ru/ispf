@@ -1,8 +1,9 @@
 package com.ispf.server.object;
 
 import com.ispf.plugin.blueprint.BlueprintDefinition;
-import com.ispf.plugin.blueprint.BlueprintException;
 import com.ispf.plugin.blueprint.BlueprintRegistry;
+import com.ispf.plugin.blueprint.BlueprintType;
+import com.ispf.plugin.blueprint.SystemIntrinsicBlueprints;
 import com.ispf.server.bootstrap.LabBlueprintBootstrap;
 import com.ispf.server.plugin.blueprint.BlueprintApplicationService;
 import org.springframework.http.HttpStatus;
@@ -53,6 +54,16 @@ public class ObjectTemplateService {
                         HttpStatus.BAD_REQUEST,
                         "Unknown templateId: " + templateId
                 ));
+        if (model.type() == BlueprintType.MIXIN
+                && !SystemIntrinsicBlueprints.isIntrinsic(model)
+                && !model.suitabilityExpression().isBlank()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "MIXIN blueprint '" + model.name()
+                            + "' defines suitabilityExpression and is managed automatically; "
+                            + "manual apply via templateId is only allowed when suitabilityExpression is blank"
+            );
+        }
         applyResolvedModel(objectPath, model, parameters);
         for (String companionName : COMPANION_MODELS_BY_NAME.getOrDefault(model.name(), List.of())) {
             blueprintRegistry.findByName(companionName).ifPresent(companion ->

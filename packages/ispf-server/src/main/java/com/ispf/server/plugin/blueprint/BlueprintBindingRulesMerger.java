@@ -1,12 +1,18 @@
 package com.ispf.server.plugin.blueprint;
 
+import com.ispf.core.binding.BindingActivators;
 import com.ispf.core.binding.BindingRule;
+import com.ispf.core.binding.BindingTarget;
+import com.ispf.core.binding.BindingVariableRef;
 import com.ispf.plugin.blueprint.BlueprintBindingRule;
 import com.ispf.plugin.blueprint.BlueprintDefinition;
+import com.ispf.plugin.blueprint.BlueprintEngine;
+import com.ispf.plugin.blueprint.BlueprintRegistry;
 import com.ispf.server.object.BindingDependencyIndex;
 import com.ispf.server.object.BindingRuleEngine;
 import com.ispf.server.object.BindingRulesService;
 import com.ispf.server.platform.analytics.formula.BindingFormulaResolver;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -28,6 +34,7 @@ public class BlueprintBindingRulesMerger {
     private final BindingFormulaResolver bindingFormulaResolver;
     private final BlueprintAnalyticsFormulaSupport blueprintAnalyticsFormulaSupport;
     private final BlueprintParameterResolver parameterResolver;
+    private final BlueprintRegistry blueprintRegistry;
 
     public BlueprintBindingRulesMerger(
             BindingRulesService bindingRulesService,
@@ -37,12 +44,34 @@ public class BlueprintBindingRulesMerger {
             BlueprintAnalyticsFormulaSupport blueprintAnalyticsFormulaSupport,
             BlueprintParameterResolver parameterResolver
     ) {
+        this(
+                bindingRulesService,
+                dependencyIndex,
+                bindingRuleEngine,
+                bindingFormulaResolver,
+                blueprintAnalyticsFormulaSupport,
+                parameterResolver,
+                null
+        );
+    }
+
+    @Autowired
+    public BlueprintBindingRulesMerger(
+            BindingRulesService bindingRulesService,
+            BindingDependencyIndex dependencyIndex,
+            BindingRuleEngine bindingRuleEngine,
+            BindingFormulaResolver bindingFormulaResolver,
+            BlueprintAnalyticsFormulaSupport blueprintAnalyticsFormulaSupport,
+            BlueprintParameterResolver parameterResolver,
+            BlueprintRegistry blueprintRegistry
+    ) {
         this.bindingRulesService = bindingRulesService;
         this.dependencyIndex = dependencyIndex;
         this.bindingRuleEngine = bindingRuleEngine;
         this.bindingFormulaResolver = bindingFormulaResolver;
         this.blueprintAnalyticsFormulaSupport = blueprintAnalyticsFormulaSupport;
         this.parameterResolver = parameterResolver;
+        this.blueprintRegistry = blueprintRegistry;
     }
 
     public void mergeBlueprintRules(String objectPath, BlueprintDefinition model, Map<String, String> parameters) {
@@ -55,17 +84,18 @@ public class BlueprintBindingRulesMerger {
             Map<String, String> parameters,
             boolean evaluateRules
     ) {
-        if (model.bindingRules().isEmpty()) {
+        BlueprintDefinition effective = BlueprintEngine.flattenInheritance(model, blueprintRegistry);
+        if (effective.bindingRules().isEmpty()) {
             return;
         }
-        blueprintAnalyticsFormulaSupport.mergeBlueprintFormulas(model);
+        blueprintAnalyticsFormulaSupport.mergeBlueprintFormulas(effective);
         Map<String, String> resolvedParams = parameters != null ? parameters : Map.of();
         List<BindingRule> merged = new ArrayList<>(bindingRulesService.listRules(objectPath));
         Map<String, BindingRule> byId = new LinkedHashMap<>();
         for (BindingRule existing : merged) {
             byId.put(existing.id(), existing);
         }
-        for (BlueprintBindingRule modelRule : model.bindingRules()) {
+        for (BlueprintBindingRule modelRule : effective.bindingRules()) {
             BindingRule resolved = bindingFormulaResolver.resolve(resolve(modelRule, resolvedParams, parameterResolver));
             byId.put(resolved.id(), resolved);
         }
@@ -126,29 +156,80 @@ public class BlueprintBindingRulesMerger {
             Map<String, String> parameters,
             BlueprintParameterResolver parameterResolver
     ) {
-        String expression = parameterResolver.resolve(modelRule.expression(), parameters);
-        String condition = parameterResolver.resolve(modelRule.condition(), parameters);
         Map<String, String> formulaParams = modelRule.formulaParams();
         Map<String, String> mergedFormulaParams = formulaParams == null || formulaParams.isEmpty()
-                ? Map.of()
+                ? modelRule.formulaParams()
                 : parameterResolver.resolveValues(formulaParams, parameters);
-        BindingRule base = modelRule.toBindingRule();
-        return new BindingRule(
-                base.id(),
-                base.name(),
-                base.enabled(),
-                base.order(),
-                base.kind(),
-                base.activators(),
-                condition,
-                expression,
-                base.target(),
-                base.windowBucket(),
-                base.rollupBuckets(),
-                base.formulaRef(),
-                mergedFormulaParams.isEmpty() ? base.formulaParams() : mergedFormulaParams,
-                base.formulaScope(),
-                base.formulaAppId()
+        List<String> resolvedRollupBuckets = modelRule.rollupBuckets() == null
+                ? null
+                : modelRule.rollupBuckets().stream()
+                        .map(bucket -> parameterResolver.resolve(bucket, parameters))
+                        .toList();
+        // Keep id literal: ownership manifests and detach match the template id, not a
+        // per-instance substituted value.
+        BlueprintBindingRule resolvedRule = new BlueprintBindingRule(
+                modelRule.id(),
+                parameterResolver.resolve(modelRule.name(), parameters),
+                modelRule.enabled(),
+                modelRule.order(),
+                resolveActivators(modelRule.activators(), parameters, parameterResolver),
+                parameterResolver.resolve(modelRule.condition(), parameters),
+                parameterResolver.resolve(modelRule.expression(), parameters),
+                parameterResolver.resolve(modelRule.targetVariable(), parameters),
+                parameterResolver.resolve(modelRule.targetField(), parameters),
+                modelRule.kind(),
+                parameterResolver.resolve(modelRule.windowBucket(), parameters),
+                resolvedRollupBuckets,
+                parameterResolver.resolve(modelRule.formulaRef(), parameters),
+                mergedFormulaParams,
+                parameterResolver.resolve(modelRule.formulaScope(), parameters),
+                parameterResolver.resolve(modelRule.formulaAppId(), parameters),
+                resolveTarget(modelRule.target(), parameters, parameterResolver)
+        );
+        return resolvedRule.toBindingRule();
+    }
+
+    private static BindingTarget resolveTarget(
+            BindingTarget target,
+            Map<String, String> parameters,
+            BlueprintParameterResolver parameterResolver
+    ) {
+        if (target == null) {
+            return null;
+        }
+        return new BindingTarget(
+                parameterResolver.resolve(target.kind(), parameters),
+                parameterResolver.resolve(target.variableName(), parameters),
+                parameterResolver.resolve(target.field(), parameters),
+                parameterResolver.resolve(target.path(), parameters),
+                parameterResolver.resolve(target.eventName(), parameters),
+                parameterResolver.resolve(target.ref(), parameters)
+        );
+    }
+
+    private static BindingActivators resolveActivators(
+            BindingActivators activators,
+            Map<String, String> parameters,
+            BlueprintParameterResolver parameterResolver
+    ) {
+        if (activators == null) {
+            return null;
+        }
+        List<BindingVariableRef> resolvedVars = activators.onVariableChange().stream()
+                .map(ref -> new BindingVariableRef(
+                        parameterResolver.resolve(ref.objectPath(), parameters),
+                        parameterResolver.resolve(ref.variableName(), parameters),
+                        parameterResolver.resolve(ref.ref(), parameters)
+                ))
+                .toList();
+        return new BindingActivators(
+                activators.onStartup(),
+                resolvedVars,
+                parameterResolver.resolve(activators.onEvent(), parameters),
+                activators.periodicMs(),
+                activators.asyncFlag(),
+                activators.onContextChangeFlag(),
+                parameterResolver.resolve(activators.onEventRef(), parameters)
         );
     }
 }

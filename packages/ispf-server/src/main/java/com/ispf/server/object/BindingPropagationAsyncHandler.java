@@ -2,9 +2,12 @@ package com.ispf.server.object;
 
 import com.ispf.core.binding.BindingRulesConstants;
 import com.ispf.core.dashboard.DashboardContextConstants;
+import com.ispf.core.object.ObjectNotFoundException;
 import com.ispf.server.config.ObjectChangeProperties;
 import com.ispf.server.object.bus.ObjectChangeAsyncHandler;
 import com.ispf.server.object.bus.ObjectChangeLane;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 /**
@@ -12,6 +15,8 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class BindingPropagationAsyncHandler implements ObjectChangeAsyncHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(BindingPropagationAsyncHandler.class);
 
     private final BindingRuleEngine bindingRuleEngine;
     private final BindingDependencyIndex dependencyIndex;
@@ -52,10 +57,29 @@ public class BindingPropagationAsyncHandler implements ObjectChangeAsyncHandler 
             return;
         }
         if (event.type() == ObjectChangeType.EVENT_FIRED && event.variableName() != null) {
-            bindingRuleEngine.onEvent(event.path(), event.variableName());
+            try {
+                bindingRuleEngine.onEvent(event.path(), event.variableName());
+            } catch (ObjectNotFoundException ex) {
+                dependencyIndex.removeSubtree(event.path());
+            } catch (RuntimeException ex) {
+                log.warn("Async event binding failed on {} ({}): {}", event.path(), event.variableName(), ex.getMessage(), ex);
+            }
             for (String consumerPath : dependencyIndex.eventConsumers(event.path(), event.variableName())) {
                 if (!consumerPath.equals(event.path())) {
-                    bindingRuleEngine.onRemoteEvent(consumerPath, event.path(), event.variableName());
+                    try {
+                        bindingRuleEngine.onRemoteEvent(consumerPath, event.path(), event.variableName());
+                    } catch (ObjectNotFoundException ex) {
+                        dependencyIndex.removeSubtree(consumerPath);
+                    } catch (RuntimeException ex) {
+                        log.warn(
+                                "Async remote event binding failed on {} for {}/{}: {}",
+                                consumerPath,
+                                event.path(),
+                                event.variableName(),
+                                ex.getMessage(),
+                                ex
+                        );
+                    }
                 }
             }
             return;
@@ -66,7 +90,7 @@ public class BindingPropagationAsyncHandler implements ObjectChangeAsyncHandler 
         if (event.type() != ObjectChangeType.VARIABLE_UPDATED || event.variableName() == null) {
             return;
         }
-        propagateVariableChange(event.path(), event.variableName());
+        propagateVariableChangeAsync(event.path(), event.variableName());
     }
 
     static void propagateVariableChange(
@@ -80,15 +104,52 @@ public class BindingPropagationAsyncHandler implements ObjectChangeAsyncHandler 
                 || BindingStateVariables.BINDING_STATE.equals(changedVariable)) {
             return;
         }
-        bindingRuleEngine.onVariableChanged(changedPath, changedPath, changedVariable);
+        try {
+            bindingRuleEngine.onVariableChanged(changedPath, changedPath, changedVariable);
+        } catch (ObjectNotFoundException ex) {
+            dependencyIndex.removeSubtree(changedPath);
+        }
         for (String consumerPath : dependencyIndex.consumers(changedPath, changedVariable)) {
             if (!consumerPath.equals(changedPath)) {
-                bindingRuleEngine.onVariableChanged(consumerPath, changedPath, changedVariable);
+                try {
+                    bindingRuleEngine.onVariableChanged(consumerPath, changedPath, changedVariable);
+                } catch (ObjectNotFoundException ex) {
+                    dependencyIndex.removeSubtree(consumerPath);
+                }
             }
         }
     }
 
-    private void propagateVariableChange(String changedPath, String changedVariable) {
-        propagateVariableChange(changedPath, changedVariable, bindingRuleEngine, dependencyIndex);
+    private void propagateVariableChangeAsync(String changedPath, String changedVariable) {
+        if (BindingRulesConstants.isReservedVariable(changedVariable)
+                || DashboardContextConstants.isReservedVariable(changedVariable)
+                || BindingStateVariables.BINDING_STATE.equals(changedVariable)) {
+            return;
+        }
+        try {
+            bindingRuleEngine.onVariableChanged(changedPath, changedPath, changedVariable);
+        } catch (ObjectNotFoundException ex) {
+            dependencyIndex.removeSubtree(changedPath);
+        } catch (RuntimeException ex) {
+            log.warn("Async binding propagation failed on {} ({}): {}", changedPath, changedVariable, ex.getMessage(), ex);
+        }
+        for (String consumerPath : dependencyIndex.consumers(changedPath, changedVariable)) {
+            if (!consumerPath.equals(changedPath)) {
+                try {
+                    bindingRuleEngine.onVariableChanged(consumerPath, changedPath, changedVariable);
+                } catch (ObjectNotFoundException ex) {
+                    dependencyIndex.removeSubtree(consumerPath);
+                } catch (RuntimeException ex) {
+                    log.warn(
+                            "Async cross-object binding propagation failed on {} for {}/{}: {}",
+                            consumerPath,
+                            changedPath,
+                            changedVariable,
+                            ex.getMessage(),
+                            ex
+                    );
+                }
+            }
+        }
     }
 }

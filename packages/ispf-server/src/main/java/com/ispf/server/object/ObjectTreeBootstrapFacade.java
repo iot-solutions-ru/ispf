@@ -126,7 +126,7 @@ public class ObjectTreeBootstrapFacade {
             if (objectManager.tree().findByPath(path).isEmpty()) {
                 continue;
             }
-            objectManager.tree().delete(path);
+            objectManager.removePathFromMemoryIfPresent(path);
             nodeRepository.findByPath(path).ifPresent(entity -> {
                 variableRepository.deleteByObjectPath(path);
                 nodeRepository.deleteById(entity.getId());

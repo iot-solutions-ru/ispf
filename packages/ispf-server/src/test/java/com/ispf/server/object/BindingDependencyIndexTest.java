@@ -62,6 +62,24 @@ class BindingDependencyIndexTest {
         assertThat(index.hasConsumers(SOURCE, VAR)).isTrue();
     }
 
+    @Test
+    void removeSubtreeDropsDescendantsWithoutTouchingPrefixNeighbors() {
+        String cluster = "root.platform.devices.cluster";
+        String childHub = "root.platform.devices.cluster.hub-1";
+        String neighbor = "root.platform.devices.cluster-2.hub-1";
+        when(bindingRulesService.listRules(cluster)).thenReturn(List.of(remoteRule("r1")));
+        when(bindingRulesService.listRules(childHub)).thenReturn(List.of(remoteRule("r2")));
+        when(bindingRulesService.listRules(neighbor)).thenReturn(List.of(remoteRule("r3")));
+
+        index.rebuild(cluster);
+        index.rebuild(childHub);
+        index.rebuild(neighbor);
+
+        index.removeSubtree(cluster);
+
+        assertThat(index.consumers(SOURCE, VAR)).containsExactly(neighbor);
+    }
+
     private static BindingRule remoteRule(String id) {
         return new BindingRule(
                 id,

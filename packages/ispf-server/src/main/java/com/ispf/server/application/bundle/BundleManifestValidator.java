@@ -471,6 +471,26 @@ public class BundleManifestValidator {
         if (manifest.blueprints() != null) {
             int index = 0;
             for (ApplicationBundleDeployService.BundleBlueprint blueprint : manifest.blueprints()) {
+                if (blueprint.type() == BlueprintType.MIXIN) {
+                    if (blueprint.sqlBindings() != null && !blueprint.sqlBindings().isEmpty()) {
+                        builder.addIssue(BundleValidationIssue.error(
+                                "MIXIN_SQL_BINDINGS_FORBIDDEN",
+                                "blueprints[" + index + "].sqlBindings",
+                                "MIXIN blueprint '" + blueprint.name() + "' cannot declare sqlBindings",
+                                "Move sqlBindings to an INSTANCE or SINGLETON blueprint, or declare bundle-level bindings.",
+                                ""
+                        ));
+                    }
+                    if (blueprint.alertRules() != null && !blueprint.alertRules().isEmpty()) {
+                        builder.addIssue(BundleValidationIssue.error(
+                                "MIXIN_ALERT_RULES_FORBIDDEN",
+                                "blueprints[" + index + "].alertRules",
+                                "MIXIN blueprint '" + blueprint.name() + "' cannot declare alertRules",
+                                "Move alertRules to an INSTANCE or SINGLETON blueprint, or declare bundle-level alertRules.",
+                                ""
+                        ));
+                    }
+                }
                 if (blueprint.targetObjectType() == ObjectType.DEVICE
                         && blueprintViolatesLogicHostCanon(blueprint)) {
                     builder.addIssue(BundleValidationIssue.warning(

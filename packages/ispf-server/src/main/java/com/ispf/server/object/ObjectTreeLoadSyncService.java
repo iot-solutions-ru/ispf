@@ -1,17 +1,22 @@
 package com.ispf.server.object;
 
+import com.ispf.core.binding.BindingRulesConstants;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.object.EventDescriptor;
 import com.ispf.core.object.FunctionDescriptor;
 import com.ispf.core.object.ObjectTree;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
+import com.ispf.plugin.blueprint.BlueprintEngine;
+import com.ispf.server.function.java.JavaFunctionRuntimeService;
 import com.ispf.server.history.VariableHistoryService;
 import com.ispf.server.persistence.ObjectEntityMapper;
 import com.ispf.server.persistence.ObjectNodeRepository;
 import com.ispf.server.persistence.ObjectVariableRepository;
 import com.ispf.server.persistence.entity.ObjectNodeEntity;
 import com.ispf.server.persistence.entity.ObjectVariableEntity;
+import com.ispf.server.platform.analytics.engine.AnalyticsTagCatalogService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
@@ -36,6 +41,12 @@ public class ObjectTreeLoadSyncService {
     private final ObjectVariableRepository variableRepository;
     private final ObjectEntityMapper mapper;
     private final VariableHistoryService historyService;
+    private final BindingRulesService bindingRulesService;
+    private final BindingDependencyIndex dependencyIndex;
+    private final ObjectBindingStatePort bindingStatePort;
+    private final BlueprintEngine blueprintEngine;
+    private final JavaFunctionRuntimeService javaFunctionRuntimeService;
+    private final AnalyticsTagCatalogService tagCatalogService;
 
     public ObjectTreeLoadSyncService(
             @Lazy ObjectManager objectManager,
@@ -44,11 +55,46 @@ public class ObjectTreeLoadSyncService {
             ObjectEntityMapper mapper,
             @Lazy VariableHistoryService historyService
     ) {
+        this(
+                objectManager,
+                nodeRepository,
+                variableRepository,
+                mapper,
+                historyService,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+        );
+    }
+
+    @Autowired
+    public ObjectTreeLoadSyncService(
+            @Lazy ObjectManager objectManager,
+            ObjectNodeRepository nodeRepository,
+            ObjectVariableRepository variableRepository,
+            ObjectEntityMapper mapper,
+            @Lazy VariableHistoryService historyService,
+            @Lazy BindingRulesService bindingRulesService,
+            @Lazy BindingDependencyIndex dependencyIndex,
+            @Lazy ObjectBindingStatePort bindingStatePort,
+            @Lazy BlueprintEngine blueprintEngine,
+            @Lazy JavaFunctionRuntimeService javaFunctionRuntimeService,
+            @Lazy AnalyticsTagCatalogService tagCatalogService
+    ) {
         this.objectManager = objectManager;
         this.nodeRepository = nodeRepository;
         this.variableRepository = variableRepository;
         this.mapper = mapper;
         this.historyService = historyService;
+        this.bindingRulesService = bindingRulesService;
+        this.dependencyIndex = dependencyIndex;
+        this.bindingStatePort = bindingStatePort;
+        this.blueprintEngine = blueprintEngine;
+        this.javaFunctionRuntimeService = javaFunctionRuntimeService;
+        this.tagCatalogService = tagCatalogService;
     }
 
     /** Callers hold {@code ObjectManager.treeSyncLock} (write); no additional monitor here. */
@@ -83,9 +129,11 @@ public class ObjectTreeLoadSyncService {
         Optional<PlatformObject> existing = objectTree.findByPath(path);
         if (existing.isEmpty()) {
             registerNodeFromEntity(entityOpt.get(), variableEntities);
+            invalidateRulesCache(path);
             return;
         }
         applyEntityToExistingNode(existing.get(), entityOpt.get(), variableEntities);
+        invalidateRulesCache(path);
     }
 
     /** Reloads a persisted config variable from PostgreSQL (cluster follower sync). */
@@ -98,6 +146,9 @@ public class ObjectTreeLoadSyncService {
         if (entityOpt.isEmpty()) {
             objectTree.findByPath(path).ifPresent(node -> node.removeVariable(name));
             forgetVariable(path, name);
+            if (BindingRulesConstants.RULES_VARIABLE.equals(name)) {
+                invalidateRulesCache(path);
+            }
             return;
         }
         if (objectTree.findByPath(path).isEmpty()) {
@@ -105,6 +156,124 @@ public class ObjectTreeLoadSyncService {
             return;
         }
         upsertVariableFromEntity(objectTree.require(path), entityOpt.get());
+        if (BindingRulesConstants.RULES_VARIABLE.equals(name)) {
+            invalidateRulesCache(path);
+        }
+    }
+
+    /** Refreshes derived rule/function/state indexes outside {@code ObjectManager}'s per-path lock. */
+    public void afterPathReloaded(String path) {
+        if (path == null || path.isBlank() || "root".equals(path)) {
+            return;
+        }
+        Optional<PlatformObject> loaded = objectManager.tree().findByPath(path);
+        if (loaded.isEmpty()) {
+            evictSubtreeCaches(path);
+            return;
+        }
+        invalidateRulesCache(path);
+        if (bindingStatePort != null) {
+            bindingStatePort.invalidateCache(path);
+        }
+        if (dependencyIndex != null) {
+            try {
+                dependencyIndex.rebuild(path);
+            } catch (com.ispf.core.object.ObjectNotFoundException ignored) {
+                dependencyIndex.removeSubtree(path);
+            }
+        }
+        if (javaFunctionRuntimeService != null) {
+            javaFunctionRuntimeService.syncObjectFunctions(path, loaded.get().functions());
+        }
+        if (tagCatalogService != null && loaded.get().getVariable(BindingRulesConstants.RULES_VARIABLE).isPresent()) {
+            tagCatalogService.invalidateCatalog();
+        }
+    }
+
+    /** Refreshes derived rule/state indexes after a single config variable sync outside the per-path lock. */
+    public void afterVariableSynced(String path, String name) {
+        if (path == null || path.isBlank() || "root".equals(path) || name == null || name.isBlank()) {
+            return;
+        }
+        if (BindingRulesConstants.RULES_VARIABLE.equals(name)) {
+            invalidateRulesCache(path);
+            if (dependencyIndex != null) {
+                if (objectManager.tree().findByPath(path).isPresent()) {
+                    try {
+                        dependencyIndex.rebuild(path);
+                    } catch (com.ispf.core.object.ObjectNotFoundException ignored) {
+                        dependencyIndex.removeSubtree(path);
+                    }
+                } else {
+                    dependencyIndex.removeSubtree(path);
+                }
+            }
+            if (tagCatalogService != null) {
+                tagCatalogService.invalidateCatalog();
+            }
+            return;
+        }
+        if (BindingStateVariables.BINDING_STATE.equals(name) && bindingStatePort != null) {
+            bindingStatePort.invalidateCache(path);
+        }
+    }
+
+    /** Rebuilds derived caches after a full {@link #reloadFromDatabase} outside the write lock. */
+    public void afterFullReload() {
+        invalidateRulesCache(null);
+        if (bindingStatePort != null) {
+            bindingStatePort.invalidateCache(null);
+        }
+        List<PlatformObject> nodes = objectManager.tree().all();
+        if (dependencyIndex != null) {
+            List<String> rulePaths = nodes.stream()
+                    .filter(node -> node.getVariable(BindingRulesConstants.RULES_VARIABLE).isPresent())
+                    .map(PlatformObject::path)
+                    .toList();
+            dependencyIndex.rebuildAll(rulePaths);
+        }
+        if (javaFunctionRuntimeService != null) {
+            javaFunctionRuntimeService.unregisterSubtree("root");
+            for (PlatformObject node : nodes) {
+                if (!node.functions().isEmpty()) {
+                    javaFunctionRuntimeService.syncObjectFunctions(node.path(), node.functions());
+                }
+            }
+        }
+        if (tagCatalogService != null) {
+            tagCatalogService.invalidateCatalog();
+        }
+    }
+
+    /** Evicts in-memory derived state for a deleted object path and its descendants ({@code path.*}). */
+    public void evictSubtreeCaches(String path) {
+        if (path == null || path.isBlank() || "root".equals(path)) {
+            return;
+        }
+        if (bindingRulesService != null) {
+            bindingRulesService.forgetSubtree(path);
+        }
+        if (bindingStatePort != null) {
+            bindingStatePort.forgetSubtree(path);
+        }
+        if (dependencyIndex != null) {
+            dependencyIndex.removeSubtree(path);
+        }
+        if (blueprintEngine != null) {
+            blueprintEngine.removeAttachmentsForDeletedSubtree(path);
+        }
+        if (javaFunctionRuntimeService != null) {
+            javaFunctionRuntimeService.unregisterSubtree(path);
+        }
+        if (tagCatalogService != null) {
+            tagCatalogService.invalidateCatalog();
+        }
+    }
+
+    private void invalidateRulesCache(String path) {
+        if (bindingRulesService != null) {
+            bindingRulesService.invalidateRulesCache(path);
+        }
     }
 
     void loadFromDatabase() {
@@ -270,8 +439,17 @@ public class ObjectTreeLoadSyncService {
                 .sorted(Comparator.comparingInt(String::length).reversed())
                 .toList();
         for (String path : paths) {
-            objectTree.delete(path);
+            if (objectTree.findByPath(path).isPresent()) {
+                objectTree.delete(path);
+            }
             forgetPath(path);
+        }
+        invalidateRulesCache(null);
+        if (bindingStatePort != null) {
+            bindingStatePort.invalidateCache(null);
+        }
+        if (blueprintEngine != null) {
+            blueprintEngine.removeAttachmentsForDeletedSubtree("root");
         }
     }
 }
