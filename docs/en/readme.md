@@ -66,6 +66,7 @@ Document maturity labels (`Stable`, `Beta`, `Lab`, `Charter`, `Internal`) are ex
 | Document | Status | Contents |
 |----------|--------|----------|
 | [Solution developer guide](solution-developer-guide.md) | Stable | Registering an app, SQL tables, script functions, deploying `bundle.json` |
+| [Virtual cluster](virt-cluster.md) | Stable | One call installs the built-in virtual cluster: three devices, a hub, dashboards, an alert, an operator app |
 | [Application architecture rules](application-principles.md) | Stable | How to structure devices, logic objects, screens, SQL, and deployments |
 | [Common design mistakes](anti-patterns.md) | Stable | Typical pitfalls in SCADA/IoT projects and how ISPF prevents them |
 | [Custom React UI (external IDE)](external-ide.md) | Stable | Developing standalone React SPAs (`ui-pack`) against ISPF `POST /api/v1/bff/invoke` |
