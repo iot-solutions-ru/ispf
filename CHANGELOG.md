@@ -17,6 +17,10 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ## [Unreleased]
 
+### Added
+
+- **Start a checkout** — `AGENTS.md` and Getting started Option C give the `local` profile command for PowerShell and for bash. The API is up when `/api/v1/info` includes `version` and `/actuator/health` is `UP`. A source `bootRun` serves only the API on port 8080; `npm run dev` in `apps/web-console` serves the console on port 5173. The wrapper starts on JDK 17–27; the server runs on JDK 25, downloaded by the Foojay plugin when JDK 25 is not installed. Python 3 is required on `PATH`. `docs/http/local-session.ps1` checks driver `virtual` and starts `demo-sensor-01`. After that, demo solutions are free cards on System, tab Solutions (`https://marketplace.ispf.ai`): `POST /api/v1/solutions/marketplaces/default-publisher/listings/{slug}/install`. `operator` is 403.
+
 ## [1.0.0] - 2026-11-16
 
 First stable platform tag. This release contains `main` after `v0.9.208`. From 1.0.0, minor and patch releases stay backward compatible for the documented HTTP `/api/v1` surface and the driver SPI ([ADR-0064](docs/en/decisions/0064-release-compatibility-lts.md)).

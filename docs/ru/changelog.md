@@ -9,6 +9,10 @@ Changelog отдельных application bundles — в манифестах п�
 
 ## [Unreleased]
 
+### Добавлено
+
+- Запуск из клона: `AGENTS.md` и вариант В быстрого старта дают команду профиля `local` для PowerShell и bash. API готово, когда `/api/v1/info` содержит `version`, а `/actuator/health` — `UP`. `bootRun` из исходников отдаёт только API на порту 8080; консоль на порту 5173 запускает `npm run dev` в `apps/web-console`. Обёртка Gradle стартует на JDK 17–27, сервер работает на JDK 25 (плагин Foojay скачивает его, если JDK 25 ещё не установлен). Нужен Python 3 в `PATH`. `docs/http/local-session.ps1` проверяет драйвер `virtual` и запускает `demo-sensor-01`. Дальше демо-решения — бесплатные карточки в Система, вкладка Решения (`https://marketplace.ispf.ai`): `POST /api/v1/solutions/marketplaces/default-publisher/listings/{slug}/install`. `operator` получает 403.
+
 ## [1.0.0] - 2026-11-16
 
 Первый стабильный тег платформы. В релиз входит `main` после `v0.9.208`. С 1.0.0 minor и patch сохраняют обратную совместимость документированного HTTP `/api/v1` и driver SPI ([ADR-0064](decisions/0064-release-compatibility-lts.md)).

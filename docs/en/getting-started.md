@@ -15,6 +15,8 @@ New to ISPF concepts? Read **[How ISPF works](learn.md)** alongside this guide.
 
 ## Try ISPF (≈15 minutes)
 
+This repository is already on disk: use [Option C](#option-c--run-from-source). The archive and the container are for a machine that does not have the sources. Agents that follow `AGENTS.md` use the same Option C commands.
+
 ### Option A — Portable release archive (fastest, no database install)
 
 1. Install **JDK 25** and download **`ispf-*-portable.zip`** from [GitHub Releases](https://github.com/iot-solutions-ru/ispf/releases).
@@ -69,20 +71,37 @@ From another container on this network the slave is `modbus:502`. An `mqtt` devi
 
 | Tool | Required version | Notes |
 |------|------------------|-------|
-| JDK | **25** | Gradle toolchain (`JavaLanguageVersion.of(25)`) |
+| JDK | **17–27 to launch, 25 to run** | The wrapper uses `JAVA_HOME` when set, otherwise `PATH`. Compilation and the server use 25; the Foojay plugin in `settings.gradle.kts` downloads 25 when it is not already installed. The portable zip still needs 25 on the machine that runs `start.bat` / `start.sh`. |
 | Gradle | Included (`./gradlew` / `gradlew.bat`) | No separate installation needed |
+| Python | **3** | On `PATH`. `bootRun` regenerates the AI context pack before the server starts. |
 | Node.js | **20+** | For running `apps/web-console` in dev mode |
 | Docker | Optional | Needed only if you want PostgreSQL, Keycloak, Mosquitto, and NATS locally |
 
 #### 1. Start the backend and web console
 
-```bash
-# Terminal 1 — API server in 'local' profile (H2 file DB + dev driver packs)
-./gradlew :packages:ispf-server:bootRun --args="--spring.profiles.active=local"
+Windows PowerShell, from the repository root:
 
-# Terminal 2 — React Web Console (proxies /api and /ws to localhost:8080)
-cd apps/web-console && npm install && npm run dev
 ```
+.\gradlew.bat :packages:ispf-server:bootRun --args="--spring.profiles.active=local"
+```
+
+Linux and macOS:
+
+```bash
+./gradlew :packages:ispf-server:bootRun --args="--spring.profiles.active=local"
+```
+
+The API is up when `http://localhost:8080/api/v1/info` includes `version` and `http://localhost:8080/actuator/health` is `{"status":"UP"}`. No token. The first start takes several minutes. A log that asks for PostgreSQL on port 5432 means the `local` profile argument was missing.
+
+This `bootRun` serves the API on port 8080 and does not serve the console. Start the console in a second terminal (Node.js 20+). It proxies `/api` and `/ws` to port 8080.
+
+```
+cd apps/web-console
+npm install
+npm run dev
+```
+
+Open `http://localhost:5173`. The portable zip and the container serve that UI on port 8080.
 
 | URL | What opens |
 |-----|------------|
@@ -114,7 +133,25 @@ curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/v1/objects
 
 > Note: the legacy `X-ISPF-Role` debug header is disabled by default (`ispf.security.local-role-header-enabled=false`). Always authenticate via `/api/v1/auth/login`. Details: [Security](security.md).
 
-### 3. Walk through the built-in demo in the browser
+### 3. Install a demo from the marketplace
+
+The `local` profile has the catalog turned on. In the console open **System**, then the **Solutions** tab. The page title is "Solution catalog". The **Marketplace** block on that page lists "IoT Solutions Marketplace" (`https://marketplace.ispf.ai`, `ISPF_MARKETPLACE_DEFAULT_URL`). A free card installs with one button: the server downloads the bundle and deploys it. An already installed card says so and offers reinstall. The process that is running ISPF must be able to reach that host.
+
+`admin` and `developer` can install. `operator` receives 403.
+
+The same call from the shell, with the token from the step above:
+
+```bash
+curl -sS -H "Authorization: Bearer $TOKEN" \
+  "http://localhost:8080/api/v1/solutions/marketplaces/default-publisher/catalog?pricing=free"
+
+curl -sS -X POST -H "Authorization: Bearer $TOKEN" \
+  "http://localhost:8080/api/v1/solutions/marketplaces/default-publisher/listings/<slug>/install"
+```
+
+A listing that names a companion screen also installs that screen at `/apps/<appId>/`. If only the screen fails, the application is still installed and the install result says so. Direct `POST /api/v1/applications/.../deploy` is a different path and still requires a signed license when that check is on. Details: [Marketplace](marketplace.md).
+
+### 4. Walk through the built-in demo in the browser
 
 ![Admin Explorer — object tree after first login](../assets/ispf-object-tree.png)
 
@@ -127,9 +164,17 @@ curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/v1/objects
 
 You can switch the interface language between **Russian** and **English** in the top header bar.
 
-### 4. Start the simulated sensor driver
+### 5. Start the simulated sensor driver
 
-Start polling on `demo-sensor-01` (either from the device Inspector in the UI or via `curl`):
+Start polling on `demo-sensor-01` from the device Inspector, or from the shell.
+
+Windows PowerShell. The script checks mode `local` and driver `virtual`, starts the demo device, and does not print the token:
+
+```
+.\docs\http\local-session.ps1
+```
+
+Linux and macOS (`$TOKEN` is the login from the step above; `jq` reads the `token` field):
 
 ```bash
 curl -X POST "http://localhost:8080/api/v1/drivers/runtime/start?devicePath=root.platform.devices.demo-sensor-01" \
