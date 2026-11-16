@@ -52,7 +52,7 @@ If a `MIXIN` enables `reevaluation.enabled: true` (triggers `OBJECT_CREATED`, `S
 
 ## 3. Parameterized Blueprints (`sqlBindings` and `alertRules`)
 
-Blueprints can include parameterized SQL bindings and alert rule templates using `${param}` placeholders. When the blueprint is applied or instantiated, `BlueprintParameterResolver` substitutes both built-in object keys (`${self.path}`, `${self.name}`, `${self.displayName}`) and custom parameters passed in `objects[].parameters`:
+Blueprints can include parameterized SQL bindings and alert rule templates using `${param}` placeholders. When the blueprint is applied or instantiated, `BlueprintParameterResolver` substitutes both built-in object keys (`${self.path}`, `${self.name}`, `${self.displayName}`, `${parentPath}` / `${self.parentPath}`) and custom parameters passed in `objects[].parameters`:
 
 ```json
 {

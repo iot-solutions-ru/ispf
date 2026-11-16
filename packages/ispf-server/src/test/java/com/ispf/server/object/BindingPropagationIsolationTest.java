@@ -65,6 +65,24 @@ class BindingPropagationIsolationTest {
     }
 
     @Test
+    void syncPropagationKeepsLiveConsumerWhenRemoteWriteTargetIsMissing() {
+        when(bindingRulesService.listRules(LIVE_HUB)).thenReturn(List.of(remoteRule("live")));
+        dependencyIndex.rebuild(LIVE_HUB);
+
+        doThrow(new ObjectNotFoundException("root.platform.devices.deleted-target"))
+                .when(bindingRuleEngine).onVariableChanged(LIVE_HUB, SENSOR, "temperature");
+
+        BindingPropagationAsyncHandler.propagateVariableChange(
+                SENSOR,
+                "temperature",
+                bindingRuleEngine,
+                dependencyIndex
+        );
+
+        assertThat(dependencyIndex.consumers(SENSOR, "temperature")).containsExactly(LIVE_HUB);
+    }
+
+    @Test
     void syncPropagationPreservesStopLossException() {
         when(bindingRulesService.listRules(LIVE_HUB)).thenReturn(List.of(remoteRule("live")));
         dependencyIndex.rebuild(LIVE_HUB);

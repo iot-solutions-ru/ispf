@@ -1,7 +1,9 @@
 package com.ispf.server.plugin.blueprint;
 
+import com.ispf.core.binding.BindingActivators;
 import com.ispf.core.binding.BindingRule;
 import com.ispf.core.binding.BindingTarget;
+import com.ispf.core.binding.BindingVariableRef;
 import com.ispf.core.object.ObjectTree;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
@@ -126,6 +128,90 @@ class BlueprintContractAndRuleResolutionTest {
         assertThat(saved.name()).isEqualTo("Limit c1");
         assertThat(saved.expression()).isEqualTo("read(\"root.platform.instances.hub/sharedLimit\")");
         assertThat(saved.target().ref()).isEqualTo("root.platform.instances.hub/out_c1");
+    }
+
+    @Test
+    void mergerResolvesTemplatedActivatorRefsWithoutEagerParseFailure() {
+        BlueprintRegistry registry = new BlueprintRegistry();
+        BlueprintDefinition model = new BlueprintDefinition(
+                "templated-activators",
+                "templated-activators",
+                "",
+                BlueprintType.INSTANCE,
+                ObjectType.CUSTOM,
+                "",
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(new BlueprintBindingRule(
+                        "mirror",
+                        "Mirror ${code}",
+                        true,
+                        1,
+                        new BindingActivators(
+                                false,
+                                List.of(new BindingVariableRef(
+                                        null,
+                                        null,
+                                        "${parentPath}/sharedLimit"
+                                )),
+                                null,
+                                0L,
+                                false,
+                                false,
+                                "${parentPath}/evt/alarm"
+                        ),
+                        "",
+                        "read(\"${parentPath}/sharedLimit\")",
+                        "out",
+                        "value",
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        new BindingTarget("variable", "out", "value", null, null, null)
+                )),
+                Map.of(),
+                Instant.EPOCH,
+                Instant.EPOCH
+        );
+        registry.register(model);
+
+        BindingRulesService rulesService = mock(BindingRulesService.class);
+        when(rulesService.listRules("root.platform.instances.hub.chamber-1")).thenReturn(List.of());
+        BindingFormulaResolver formulaResolver = mock(BindingFormulaResolver.class);
+        when(formulaResolver.resolve(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        BlueprintBindingRulesMerger merger = new BlueprintBindingRulesMerger(
+                rulesService,
+                mock(BindingDependencyIndex.class),
+                mock(BindingRuleEngine.class),
+                formulaResolver,
+                mock(BlueprintAnalyticsFormulaSupport.class),
+                new BlueprintParameterResolver(),
+                registry
+        );
+
+        merger.mergeBlueprintRules(
+                "root.platform.instances.hub.chamber-1",
+                model,
+                Map.of("parentPath", "root.platform.instances.hub", "code", "c1"),
+                false
+        );
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<BindingRule>> savedCaptor = ArgumentCaptor.forClass(List.class);
+        verify(rulesService).saveRules(eq("root.platform.instances.hub.chamber-1"), savedCaptor.capture());
+        BindingRule saved = savedCaptor.getValue().getFirst();
+        assertThat(saved.activators().onVariableChange()).hasSize(1);
+        assertThat(saved.activators().onVariableChange().getFirst().ref())
+                .isEqualTo("root.platform.instances.hub/sharedLimit");
+        assertThat(saved.activators().onVariableChange().getFirst().objectPath())
+                .isEqualTo("root.platform.instances.hub");
+        assertThat(saved.activators().onEventRef()).isEqualTo("root.platform.instances.hub/evt/alarm");
     }
 
     @Test

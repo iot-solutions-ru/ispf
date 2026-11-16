@@ -579,8 +579,13 @@ public class ObjectManager {
 
     /** Reloads a persisted config variable from PostgreSQL (cluster follower sync). */
     public void syncVariableFromDatabase(String path, String name) {
-        withPathSyncLock(path, () -> loadSyncService.syncVariableFromDatabase(path, name));
-        loadSyncService.afterVariableSynced(path, name);
+        boolean[] loadedWholePath = {false};
+        withPathSyncLock(path, () -> loadedWholePath[0] = loadSyncService.syncVariableFromDatabase(path, name));
+        if (loadedWholePath[0]) {
+            loadSyncService.afterPathReloaded(path);
+        } else {
+            loadSyncService.afterVariableSynced(path, name);
+        }
     }
 
     public void removePathFromMemoryIfPresent(String path) {

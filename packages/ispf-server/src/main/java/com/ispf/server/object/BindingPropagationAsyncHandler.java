@@ -60,7 +60,7 @@ public class BindingPropagationAsyncHandler implements ObjectChangeAsyncHandler 
             try {
                 bindingRuleEngine.onEvent(event.path(), event.variableName());
             } catch (ObjectNotFoundException ex) {
-                dependencyIndex.removeSubtree(event.path());
+                forgetMissingObject(dependencyIndex, ex, event.path());
             } catch (RuntimeException ex) {
                 log.warn("Async event binding failed on {} ({}): {}", event.path(), event.variableName(), ex.getMessage(), ex);
             }
@@ -69,7 +69,7 @@ public class BindingPropagationAsyncHandler implements ObjectChangeAsyncHandler 
                     try {
                         bindingRuleEngine.onRemoteEvent(consumerPath, event.path(), event.variableName());
                     } catch (ObjectNotFoundException ex) {
-                        dependencyIndex.removeSubtree(consumerPath);
+                        forgetMissingObject(dependencyIndex, ex, consumerPath);
                     } catch (RuntimeException ex) {
                         log.warn(
                                 "Async remote event binding failed on {} for {}/{}: {}",
@@ -107,14 +107,14 @@ public class BindingPropagationAsyncHandler implements ObjectChangeAsyncHandler 
         try {
             bindingRuleEngine.onVariableChanged(changedPath, changedPath, changedVariable);
         } catch (ObjectNotFoundException ex) {
-            dependencyIndex.removeSubtree(changedPath);
+            forgetMissingObject(dependencyIndex, ex, changedPath);
         }
         for (String consumerPath : dependencyIndex.consumers(changedPath, changedVariable)) {
             if (!consumerPath.equals(changedPath)) {
                 try {
                     bindingRuleEngine.onVariableChanged(consumerPath, changedPath, changedVariable);
                 } catch (ObjectNotFoundException ex) {
-                    dependencyIndex.removeSubtree(consumerPath);
+                    forgetMissingObject(dependencyIndex, ex, consumerPath);
                 }
             }
         }
@@ -129,7 +129,7 @@ public class BindingPropagationAsyncHandler implements ObjectChangeAsyncHandler 
         try {
             bindingRuleEngine.onVariableChanged(changedPath, changedPath, changedVariable);
         } catch (ObjectNotFoundException ex) {
-            dependencyIndex.removeSubtree(changedPath);
+            forgetMissingObject(dependencyIndex, ex, changedPath);
         } catch (RuntimeException ex) {
             log.warn("Async binding propagation failed on {} ({}): {}", changedPath, changedVariable, ex.getMessage(), ex);
         }
@@ -138,7 +138,7 @@ public class BindingPropagationAsyncHandler implements ObjectChangeAsyncHandler 
                 try {
                     bindingRuleEngine.onVariableChanged(consumerPath, changedPath, changedVariable);
                 } catch (ObjectNotFoundException ex) {
-                    dependencyIndex.removeSubtree(consumerPath);
+                    forgetMissingObject(dependencyIndex, ex, consumerPath);
                 } catch (RuntimeException ex) {
                     log.warn(
                             "Async cross-object binding propagation failed on {} for {}/{}: {}",
@@ -150,6 +150,24 @@ public class BindingPropagationAsyncHandler implements ObjectChangeAsyncHandler 
                     );
                 }
             }
+        }
+    }
+
+    /**
+     * Evicts the missing path from the dependency index. Prefer {@link ObjectNotFoundException#path()} —
+     * a live consumer may throw because a remote write target is gone, and that must not remove the consumer.
+     */
+    static void forgetMissingObject(
+            BindingDependencyIndex dependencyIndex,
+            ObjectNotFoundException ex,
+            String fallbackPath
+    ) {
+        String missing = ex.path();
+        if (missing == null || missing.isBlank()) {
+            missing = fallbackPath;
+        }
+        if (missing != null && !missing.isBlank()) {
+            dependencyIndex.removeSubtree(missing);
         }
     }
 }

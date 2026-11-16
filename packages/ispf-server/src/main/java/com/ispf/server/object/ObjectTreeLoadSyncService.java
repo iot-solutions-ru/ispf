@@ -136,11 +136,15 @@ public class ObjectTreeLoadSyncService {
         invalidateRulesCache(path);
     }
 
-    /** Reloads a persisted config variable from PostgreSQL (cluster follower sync). */
-    public void syncVariableFromDatabase(String path, String name) {
+    /**
+     * Reloads a persisted config variable from PostgreSQL (cluster follower sync).
+     *
+     * @return {@code true} when the whole path was loaded (caller should run {@link #afterPathReloaded})
+     */
+    public boolean syncVariableFromDatabase(String path, String name) {
         ObjectTree objectTree = objectManager.tree();
         if (path == null || path.isBlank() || "root".equals(path) || name == null || name.isBlank()) {
-            return;
+            return false;
         }
         Optional<ObjectVariableEntity> entityOpt = variableRepository.findByObjectPathAndName(path, name);
         if (entityOpt.isEmpty()) {
@@ -149,16 +153,17 @@ public class ObjectTreeLoadSyncService {
             if (BindingRulesConstants.RULES_VARIABLE.equals(name)) {
                 invalidateRulesCache(path);
             }
-            return;
+            return false;
         }
         if (objectTree.findByPath(path).isEmpty()) {
             syncPathFromDatabase(path);
-            return;
+            return true;
         }
         upsertVariableFromEntity(objectTree.require(path), entityOpt.get());
         if (BindingRulesConstants.RULES_VARIABLE.equals(name)) {
             invalidateRulesCache(path);
         }
+        return false;
     }
 
     /** Refreshes derived rule/function/state indexes outside {@code ObjectManager}'s per-path lock. */

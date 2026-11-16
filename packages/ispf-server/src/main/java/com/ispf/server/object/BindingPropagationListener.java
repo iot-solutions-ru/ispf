@@ -45,14 +45,14 @@ public class BindingPropagationListener {
             try {
                 bindingRuleEngine.onEvent(event.path(), event.variableName());
             } catch (ObjectNotFoundException ex) {
-                dependencyIndex.removeSubtree(event.path());
+                BindingPropagationAsyncHandler.forgetMissingObject(dependencyIndex, ex, event.path());
             }
             for (String consumerPath : dependencyIndex.eventConsumers(event.path(), event.variableName())) {
                 if (!consumerPath.equals(event.path())) {
                     try {
                         bindingRuleEngine.onRemoteEvent(consumerPath, event.path(), event.variableName());
                     } catch (ObjectNotFoundException ex) {
-                        dependencyIndex.removeSubtree(consumerPath);
+                        BindingPropagationAsyncHandler.forgetMissingObject(dependencyIndex, ex, consumerPath);
                     }
                 }
             }

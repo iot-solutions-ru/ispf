@@ -398,22 +398,33 @@ public class BindingRulesService {
                 onEvent = null;
             }
         }
+        String onEventRef = activators.onEventRef();
+        if (onEventRef != null) {
+            onEventRef = onEventRef.trim();
+            if (onEventRef.isBlank()) {
+                onEventRef = null;
+            }
+        }
         long periodicMs = Math.max(0L, activators.periodicMs());
-        if (!Objects.equals(onEvent, activators.onEvent()) || periodicMs != activators.periodicMs()) {
+        if (!Objects.equals(onEvent, activators.onEvent())
+                || !Objects.equals(onEventRef, activators.onEventRef())
+                || periodicMs != activators.periodicMs()) {
             activators = new BindingActivators(
                     activators.onStartup(),
                     activators.onVariableChange(),
                     onEvent,
                     periodicMs,
-                    activators.async(),
-                    activators.onContextChange()
+                    activators.asyncFlag(),
+                    activators.onContextChangeFlag(),
+                    onEventRef
             );
         }
         if (activators.onVariableChange().isEmpty()
                 && !activators.onStartup()
                 && !activators.onContextChange()
                 && !activators.hasPeriodicSchedule()
-                && (activators.onEvent() == null || activators.onEvent().isBlank())) {
+                && (activators.onEvent() == null || activators.onEvent().isBlank())
+                && (activators.onEventRef() == null || activators.onEventRef().isBlank())) {
             activators = defaultActivators("", expression);
         }
         return activators;
@@ -501,7 +512,8 @@ public class BindingRulesService {
             String onEvent,
             long periodicMs,
             Boolean async,
-            Boolean onContextChange
+            Boolean onContextChange,
+            String onEventRef
     ) {
         static BindingActivatorsDto from(BindingActivators activators) {
             return new BindingActivatorsDto(
@@ -510,7 +522,8 @@ public class BindingRulesService {
                     activators.onEvent(),
                     activators.periodicMs(),
                     activators.async(),
-                    activators.onContextChange()
+                    activators.onContextChange(),
+                    activators.onEventRef()
             );
         }
 
@@ -524,18 +537,19 @@ public class BindingRulesService {
                     onEvent,
                     periodicMs,
                     async != null && async,
-                    onContextChange != null && onContextChange
+                    onContextChange != null && onContextChange,
+                    onEventRef
             );
         }
     }
 
-    private record BindingVariableRefDto(String objectPath, String variableName) {
+    private record BindingVariableRefDto(String objectPath, String variableName, String ref) {
         static BindingVariableRefDto from(BindingVariableRef ref) {
-            return new BindingVariableRefDto(ref.objectPath(), ref.variableName());
+            return new BindingVariableRefDto(ref.objectPath(), ref.variableName(), ref.ref());
         }
 
         BindingVariableRef toRef() {
-            return new BindingVariableRef(objectPath, variableName);
+            return new BindingVariableRef(objectPath, variableName, ref);
         }
     }
 
