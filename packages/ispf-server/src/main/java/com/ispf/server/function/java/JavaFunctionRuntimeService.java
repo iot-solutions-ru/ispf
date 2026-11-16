@@ -22,7 +22,7 @@ public class JavaFunctionRuntimeService {
     }
 
     public boolean isEnabled() {
-        return functionProperties.isJavaEnabled();
+        return functionProperties.javaFunctionsEnabled();
     }
 
     public void syncOnSave(String objectPath, FunctionDescriptor function, FunctionDescriptor before) {
