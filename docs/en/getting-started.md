@@ -15,7 +15,15 @@ New to ISPF concepts? Read **[How ISPF works](learn.md)** alongside this guide.
 
 ## Try ISPF (≈15 minutes)
 
-This repository is already on disk: use [Option C](#option-c--run-from-source). The archive and the container are for a machine that does not have the sources. Agents that follow `AGENTS.md` use the same Option C commands.
+**First success is a login screen**, not only a healthy API. Pick the path that matches your machine:
+
+| Goal | Path | Open after start |
+|------|------|------------------|
+| Fastest first look (no sources) | [Option A](#option-a--portable-release-archive-fastest-no-database-install) or [Option B](#option-b--container-docker) | **http://localhost:8080** — sign in `admin` / `admin` |
+| This repository is already checked out | [Option C](#option-c--run-from-source) — **API and Web Console** | **http://localhost:5173** — sign in `admin` / `admin` |
+| REST / scripts only, no browser UI | Option C, [Advanced: API only](#advanced-api-only) | Health checks on port `8080` — no login page |
+
+Agents that follow `AGENTS.md` use Option C with both terminals so the console is available.
 
 ### Option A — Portable release archive (fastest, no database install)
 
@@ -67,6 +75,8 @@ From another container on this network the slave is `modbus:502`. An `mqtt` devi
 
 ### Option C — Run from source
 
+Use this when the repository is already on disk (contributors, agents, local checkout). You need **two processes**: the API and the Web Console. Stopping after `bootRun` alone leaves `http://localhost:8080/` as a 404 — that is not a complete first install.
+
 #### Prerequisites
 
 | Tool | Required version | Notes |
@@ -74,12 +84,14 @@ From another container on this network the slave is `modbus:502`. An `mqtt` devi
 | JDK | **17–27 to launch, 25 to run** | The wrapper uses `JAVA_HOME` when set, otherwise `PATH`. Compilation and the server use 25; the Foojay plugin in `settings.gradle.kts` downloads 25 when it is not already installed. The portable zip still needs 25 on the machine that runs `start.bat` / `start.sh`. |
 | Gradle | Included (`./gradlew` / `gradlew.bat`) | No separate installation needed |
 | Python | **3** | On `PATH`. `bootRun` regenerates the AI context pack before the server starts. |
-| Node.js | **20+** | For running `apps/web-console` in dev mode |
+| Node.js | **20+** | **Required** for the Web Console (`apps/web-console`) |
 | Docker | Optional | Needed only if you want PostgreSQL, Keycloak, Mosquitto, and NATS locally |
 
-#### 1. Start the backend and web console
+#### 1. Start the API and the Web Console
 
-Windows PowerShell, from the repository root:
+**Terminal 1 — API** (`local` profile), from the repository root.
+
+Windows PowerShell:
 
 ```
 .\gradlew.bat :packages:ispf-server:bootRun --args="--spring.profiles.active=local"
@@ -93,7 +105,7 @@ Linux and macOS:
 
 The API is up when `http://localhost:8080/api/v1/info` includes `version` and `http://localhost:8080/actuator/health` is `{"status":"UP"}`. No token. The first start takes several minutes. A log that asks for PostgreSQL on port 5432 means the `local` profile argument was missing.
 
-This `bootRun` serves the API on port 8080 and does not serve the console. Start the console in a second terminal (Node.js 20+). It proxies `/api` and `/ws` to port 8080.
+**Terminal 2 — Web Console** (required for the login page). Node.js 20+. The Vite app proxies `/api` and `/ws` to port 8080.
 
 ```
 cd apps/web-console
@@ -101,18 +113,24 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:5173`. The portable zip and the container serve that UI on port 8080.
+**Open http://localhost:5173** and continue at [Step 2 — Sign in](#2-sign-in-local-profile) with **`admin` / `admin`**.
+
+Do not expect a login form at `http://localhost:8080/` in this mode — that port is API-only until you use the portable zip or the container. Those serve the same console on port 8080.
 
 | URL | What opens |
 |-----|------------|
-| `http://localhost:8080` | Admin Console (when running portable JAR or Docker) |
-| `http://localhost:5173` | Admin Console (when running Vite dev server) |
-| `http://localhost:8080?mode=operator` | Operator HMI (portable JAR / Docker) |
-| `http://localhost:5173?mode=operator` | Operator HMI (Vite dev server) |
+| `http://localhost:5173` | Admin Console (Vite — Option C) |
+| `http://localhost:5173?mode=operator` | Operator HMI (Vite — Option C) |
+| `http://localhost:8080` | Admin Console (portable JAR or Docker only) |
+| `http://localhost:8080?mode=operator` | Operator HMI (portable JAR / Docker only) |
 | `http://localhost:8080/api/v1/info` | Server version and enabled capabilities |
 | `http://localhost:8080/actuator/health` | Health status |
 
 By default, `bootRun` synchronizes a small set of core development drivers (`syncDevDriverPacks`, including `virtual`, `mqtt`, `modbus`, `http`, `jdbc`). To build all 160+ protocol driver packs, pass `-Dispf.driver.packs=all`.
+
+#### Advanced: API only
+
+Skip Terminal 2 when you only need REST or scripts against the running server. Health checks on `/api/v1/info` and `/actuator/health` are enough. There is no browser login page in that setup — use Option A/B or both terminals above when you want the console.
 
 ### 2. Sign in (`local` profile)
 

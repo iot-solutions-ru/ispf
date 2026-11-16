@@ -12,6 +12,8 @@
 
 ## Браузер не открывает консоль
 
+**Какой URL.** Архив / Docker → **http://localhost:8080**. Из исходников (вариант В) → **http://localhost:5173** после API **и** `npm run dev` в `apps/web-console`. Один «живой» API — ещё не полная первая установка — [Быстрый старт](getting-started.md#попробовать-ispf-15-минут).
+
 **Проверка.** С той же машины:
 
 ```bash
@@ -27,7 +29,7 @@ curl -sS http://localhost:8080/actuator/health
 ./gradlew :packages:ispf-server:bootRun --args="--spring.profiles.active=local"
 ```
 
-**`/api/v1/info` отвечает, а `http://localhost:8080` отдаёт 404.** `bootRun` из исходников отдаёт на порту 8080 только API. Архив и контейнер отдают там же и консоль. Из исходников запустите консоль во втором терминале (`cd apps/web-console && npm install && npm run dev`) и откройте `http://localhost:5173`.
+**`/api/v1/info` отвечает, а `http://localhost:8080` отдаёт 404.** Для `bootRun` из исходников это ожидаемо: на 8080 только API. Запустите веб-консоль (`cd apps/web-console && npm install && npm run dev`) и откройте **http://localhost:5173**. Архив и контейнер отдают консоль на 8080. Только API без консоли — [продвинутый путь](getting-started.md#продвинутый-путь-только-api).
 
 **Порт отвечает, но это не ISPF.** Порт 8080 занят другой программой, либо ещё работает прошлый процесс ISPF. Остановите его или задайте этому экземпляру другой `ISPF_SERVER_PORT`.
 
