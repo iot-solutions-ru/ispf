@@ -17,7 +17,7 @@
 | Path | Description |
 | ---- | -------- |
 | [`packages/ispf-driver-ddk`](../../packages/ispf-driver-ddk/) | DDK Gradle module (template sources + smoke test) |
-| [`packages/ispf-driver-ddk/template/`](../../packages/ispf-driver-ddk/template/) | Copyable stub: driver, test, `driver-pack.json`, `build.gradle.kts` |
+| [`packages/ispf-driver-ddk/template/`](../../packages/ispf-driver-ddk/template/) | Copyable stub: driver, test, `driver-pack.json`, `build.gradle.kts`, `settings.gradle.kts`, `gradle.properties` |
 | [licensed-driver-packs](licensed-driver-packs.md) | Runtime layout and licensing |
 | [driver-promotion](driver-promotion.md) | PRODUCTION checklist |
 | [driver-interop-lab](driver-interop-lab.md) | CI interop after promotion |
@@ -41,7 +41,7 @@ gradle test
 gradle assembleDriverPack
 ```
 
-The pack is `build/driver-pack/ispf-driver-acme-widget/` (`driver-pack.json` and `ispf-driver-acme-widget.jar`). When you rename the driver, change `packId` in `build.gradle.kts`, `rootProject.name` in `settings.gradle.kts`, and `packId`, `drivers[].driverId`, and `drivers[].driverClass` in `driver-pack.json`. `assembleDriverPack` names the jar `$packId.jar`. Set `jarFile` to that name. `driverClass` is the class the server loads.
+The pack is `build/driver-pack/ispf-driver-acme-widget/` (`driver-pack.json` and `ispf-driver-acme-widget.jar`). `assembleDriverPack` builds a fat jar: third-party `implementation` libraries are embedded; `com.ispf:*` stays `compileOnly` because the server already loads the SPI. When you rename the driver, change `packId` in `build.gradle.kts`, `rootProject.name` in `settings.gradle.kts`, and `packId`, `drivers[].driverId`, and `drivers[].driverClass` in `driver-pack.json`. `assembleDriverPack` names the jar `$packId.jar`. Set `jarFile` to that name. `driverClass` is the class the server loads.
 
 A module that lives in this repository is a new `packages/ispf-driver-<id>` project, a `project(":packages:ispf-driver-api")` dependency, and a row in `gradle/driver-packs.json`. The root build applies `ispf-driver-pack` only to those modules. Do not register `template/` in the root `settings.gradle.kts`.
 

@@ -17,7 +17,7 @@ gradle test
 gradle assembleDriverPack
 ```
 
-The pack directory is `build/driver-pack/ispf-driver-acme-widget/` (`driver-pack.json` and `ispf-driver-acme-widget.jar`). Copy it into `ISPF_DRIVER_PACKS_DIR` and restart the server.
+The pack directory is `build/driver-pack/ispf-driver-acme-widget/` (`driver-pack.json` and `ispf-driver-acme-widget.jar`). The jar is a fat jar: put third-party libraries on `implementation` so they are embedded; keep `com.ispf:*` as `compileOnly`. Copy the pack into `ISPF_DRIVER_PACKS_DIR` and restart the server.
 
 Replace `acme-widget` and `com.ispf.driver.template` with your driver. Change `packId` in this `build.gradle.kts`, `rootProject.name` in `settings.gradle.kts`, and in `driver-pack.json` the fields `packId`, `drivers[].driverId`, and `drivers[].driverClass`. `assembleDriverPack` writes `$packId.jar`. Set `jarFile` to that name. `driverClass` is the class the server loads.
 

@@ -27,9 +27,14 @@ class DriverDdkTemplateTest {
     @Test
     void templateBuildDeclaresPublishedCoordinatesAndMatchesPlatformVersion() throws Exception {
         String build = Files.readString(Path.of("template/build.gradle.kts"));
-        assertTrue(build.contains("mavenLocal()"));
-        assertTrue(build.contains("com.ispf:ispf-driver-api:"));
-        assertTrue(build.contains("com.ispf:ispf-core:"));
+        assertTrue(build.contains("mavenLocal"));
+        assertTrue(build.contains("includeGroup(\"com.ispf\")"));
+        assertTrue(build.contains("compileOnly(\"com.ispf:ispf-driver-api:"));
+        assertTrue(build.contains("compileOnly(\"com.ispf:ispf-core:"));
+        assertTrue(build.contains("testImplementation(\"com.ispf:ispf-driver-api:"));
+        assertTrue(build.contains("driverPackJar"));
+        assertTrue(build.contains("runtimeClasspath"));
+        assertTrue(build.contains("META-INF/*.SF"));
         assertTrue(build.contains("junit-platform-launcher"));
         assertEquals(false, build.contains("project(\":"));
         String apiBuild = Files.readString(Path.of("../ispf-driver-api/build.gradle.kts"));

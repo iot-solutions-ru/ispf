@@ -16,7 +16,7 @@
 | Каталог в репозитории | Назначение |
 |-----------------------|------------|
 | [`packages/ispf-driver-ddk/`](../../packages/ispf-driver-ddk/) | Модуль DDK с тестами и четырьмя учебными примерами (`template/`, `examples/simple-counter/`, `examples/json-poller/`, `examples/modbus-simulator/`) |
-| [`packages/ispf-driver-ddk/template/`](../../packages/ispf-driver-ddk/template/) | Заготовка нового модуля: класс драйвера, модульный тест, паспорт `driver-pack.json` и `build.gradle.kts` |
+| [`packages/ispf-driver-ddk/template/`](../../packages/ispf-driver-ddk/template/) | Заготовка нового модуля: класс драйвера, модульный тест, паспорт `driver-pack.json`, `build.gradle.kts`, `settings.gradle.kts`, `gradle.properties` |
 | [Лицензируемые пакеты драйверов](licensed-driver-packs.md) | Упаковка, цифровая подпись и установка внешних драйверов на сервер |
 
 ---
@@ -38,7 +38,7 @@ gradle test
 gradle assembleDriverPack
 ```
 
-Каталог пакета: `build/driver-pack/ispf-driver-acme-widget/` — в нём `driver-pack.json` и `ispf-driver-acme-widget.jar`. При переименовании меняют `packId` в `build.gradle.kts`, `rootProject.name` в `settings.gradle.kts`, а в `driver-pack.json` — `packId`, `drivers[].driverId` и `drivers[].driverClass`. `assembleDriverPack` кладёт jar с именем `$packId.jar`; `jarFile` равен этому имени. `driverClass` — класс, который загружает сервер.
+Каталог пакета: `build/driver-pack/ispf-driver-acme-widget/` — в нём `driver-pack.json` и `ispf-driver-acme-widget.jar`. `assembleDriverPack` собирает fat jar: сторонние `implementation`-библиотеки входят в jar; `com.ispf:*` остаётся `compileOnly`, потому что SPI уже на сервере. При переименовании меняют `packId` в `build.gradle.kts`, `rootProject.name` в `settings.gradle.kts`, а в `driver-pack.json` — `packId`, `drivers[].driverId` и `drivers[].driverClass`. `assembleDriverPack` кладёт jar с именем `$packId.jar`; `jarFile` равен этому имени. `driverClass` — класс, который загружает сервер.
 
 Модуль, который живёт в дереве ISPF, — отдельный каталог `packages/ispf-driver-<id>`, зависимость `project(":packages:ispf-driver-api")` и строка в `gradle/driver-packs.json`. Плагин `ispf-driver-pack` корневая сборка вешает только на такие модули. `template/` в корневой `settings.gradle.kts` не регистрируют.
 
