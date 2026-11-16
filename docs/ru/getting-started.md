@@ -15,6 +15,8 @@
 
 ## Попробовать ISPF (≈15 минут)
 
+Репозиторий уже на диске: дальше [вариант В](#вариант-в--запуск-из-исходного-кода). Архив и контейнер — для машины без исходников. Агент, который читает `AGENTS.md`, запускает те же команды варианта В.
+
 ### Вариант А — Готовый архив (быстрее всего, без установки СУБД)
 
 1. Установите **JDK 25** и скачайте архив **`ispf-*-portable.zip`** со страницы [GitHub Releases](https://github.com/iot-solutions-ru/ispf/releases).
@@ -69,20 +71,37 @@ docker compose -f deploy/docker-compose.evaluate.yml up -d
 
 | Компонент | Версия | Примечание |
 |-----------|--------|------------|
-| JDK | **25** | Подтягивается и проверяется через Gradle Toolchain |
+| JDK | **17–27 для запуска обёртки, 25 для сервера** | Обёртка берёт `JAVA_HOME`, если переменная задана, иначе `PATH`. Сборка и сервер идут на 25; плагин Foojay в `settings.gradle.kts` скачивает 25, если его ещё нет. Готовому архиву по-прежнему нужен JDK 25 на машине, где запускают `start.bat` / `start.sh`. |
 | Gradle | В репозитории (`./gradlew` / `gradlew.bat`) | Ставить отдельно не нужно |
+| Python | **3** | В `PATH`. `bootRun` перед стартом сервера заново собирает пакет контекста для AI. |
 | Node.js | **20+** | Для запуска фронтенда `apps/web-console` в режиме разработки |
 | Docker | Необязательно | Нужен только для полного окружения с PostgreSQL, Keycloak, MQTT и NATS |
 
 #### 1. Запустите сервер и веб-консоль
 
-```bash
-# Терминал 1 — сервер API в профиле local (файловая БД H2 + базовый набор драйверов)
-./gradlew :packages:ispf-server:bootRun --args="--spring.profiles.active=local"
+Windows PowerShell, из корня репозитория:
 
-# Терминал 2 — веб-консоль React (проксирует /api и /ws на localhost:8080)
-cd apps/web-console && npm install && npm run dev
 ```
+.\gradlew.bat :packages:ispf-server:bootRun --args="--spring.profiles.active=local"
+```
+
+Linux и macOS:
+
+```bash
+./gradlew :packages:ispf-server:bootRun --args="--spring.profiles.active=local"
+```
+
+API готово, когда `http://localhost:8080/api/v1/info` содержит `version`, а `http://localhost:8080/actuator/health` отвечает `{"status":"UP"}`. Токен не нужен. Первый запуск занимает несколько минут. Если журнал просит PostgreSQL на порту 5432, в команде не было профиля `local`.
+
+Этот `bootRun` отдаёт API на порту 8080 и не отдаёт консоль. Консоль запускается во втором терминале (Node.js 20+). Она проксирует `/api` и `/ws` на порт 8080.
+
+```
+cd apps/web-console
+npm install
+npm run dev
+```
+
+Откройте `http://localhost:5173`. Готовый архив и контейнер отдают эту же консоль на порту 8080.
 
 | Адрес | Что открывается |
 |-------|-----------------|
@@ -114,7 +133,25 @@ curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/v1/objects
 
 > Примечание: отладочный заголовок `X-ISPF-Role` по умолчанию выключен (`ispf.security.local-role-header-enabled=false`). Для всех запросов используйте токен из `/api/v1/auth/login`. Подробнее: [Безопасность](security.md).
 
-### 3. Первые шаги в веб-консоли
+### 3. Поставьте демо из магазина
+
+На профиле `local` каталог включён. В консоли откройте **Система**, вкладка **Решения**. Страница называется «Каталог решений». На ней блок **Маркетплейс** со списком «IoT Solutions Marketplace» (`https://marketplace.ispf.ai`, `ISPF_MARKETPLACE_DEFAULT_URL`). Бесплатная карточка ставится одной кнопкой: сервер скачивает пакет и разворачивает его. Уже поставленная карточка это показывает и предлагает переустановку. Процесс ISPF должен достучаться до этого адреса.
+
+`admin` и `developer` ставят пакет. `operator` получает 403.
+
+Тот же вызов из оболочки, токен из шага выше:
+
+```bash
+curl -sS -H "Authorization: Bearer $TOKEN" \
+  "http://localhost:8080/api/v1/solutions/marketplaces/default-publisher/catalog?pricing=free"
+
+curl -sS -X POST -H "Authorization: Bearer $TOKEN" \
+  "http://localhost:8080/api/v1/solutions/marketplaces/default-publisher/listings/<slug>/install"
+```
+
+Если у карточки есть экран-спутник, он ставится на `/apps/<appId>/`. Если не встал только экран, приложение уже установлено, и ответ об установке это говорит. Прямой `POST /api/v1/applications/.../deploy` — другой путь: при включённой проверке ему по-прежнему нужна подпись лицензии. Подробнее: [Витрина](marketplace.md).
+
+### 4. Первые шаги в веб-консоли
 
 ![Консоль администратора — дерево объектов после первого входа](../assets/ispf-object-tree.png)
 
@@ -127,9 +164,17 @@ curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/v1/objects
 
 Переключатель языка интерфейса (**Русский / English**) находится в верхней панели консоли.
 
-### 4. Запустите опрос демо-датчика
+### 5. Запустите опрос демо-датчика
 
-Запустите драйвер симулятора на `demo-sensor-01` (кнопкой запуска драйвера в карточке устройства или командой `curl`):
+Запустите опрос `demo-sensor-01` из карточки устройства или из оболочки.
+
+Windows PowerShell. Скрипт проверяет режим `local` и драйвер `virtual`, запускает демо-датчик и не печатает токен:
+
+```
+.\docs\http\local-session.ps1
+```
+
+Linux и macOS (`$TOKEN` — вход из шага выше; поле `token` читает `jq`):
 
 ```bash
 curl -X POST "http://localhost:8080/api/v1/drivers/runtime/start?devicePath=root.platform.devices.demo-sensor-01" \

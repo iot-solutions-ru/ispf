@@ -139,15 +139,20 @@ Console http://127.0.0.1:8080, `admin` / `admin` on the `local` profile. From a 
 
 ### From source (dev)
 
-**Requirements:** JDK **25**, Node.js 20+, Docker optional (Postgres/NATS/Keycloak for fuller stacks).
+**Requirements:** `JAVA_HOME` or `PATH` must point at JDK 17 through 27 so the wrapper can start. The server compiles and runs on JDK **25**; the Foojay plugin downloads 25 when it is not already installed. Python 3 on `PATH` (the server build regenerates the AI context pack). Node.js 20+ for the console. Docker is optional (Postgres/NATS/Keycloak for fuller stacks). The portable zip is different: that JAR needs JDK 25.
+
+Windows PowerShell, from the repository root:
+
+```
+.\gradlew.bat :packages:ispf-server:bootRun --args="--spring.profiles.active=local"
+```
 
 ```bash
-# API — local profile (H2, no OAuth; syncs a small set of dev driver packs)
+# Linux / macOS — local profile (H2, no OAuth; syncs a small set of dev driver packs)
 ./gradlew :packages:ispf-server:bootRun --args="--spring.profiles.active=local"
-
-# Web console (separate terminal)
-cd apps/web-console && npm install && npm run dev
 ```
+
+The API is up when http://localhost:8080/api/v1/info includes `version`. This `bootRun` does not serve the console on port 8080. In a second terminal: `cd apps/web-console`, then `npm install`, then `npm run dev`, and open http://localhost:5173 (`admin` / `admin`). Agents follow the same steps in [AGENTS.md](AGENTS.md).
 
 | URL | Purpose |
 | --- | ------- |
