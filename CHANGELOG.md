@@ -4,7 +4,7 @@ All notable changes to the **ISPF platform** are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
-for the platform version in `gradle.properties` (`0.9.x` pre-1.0).
+for the platform version in `gradle.properties` (first stable tag: 1.0.0).
 
 **Scope:** platform core, server, web-console, drivers, AI agent — not per-application
 bundle changelogs (those live in each package manifest).
@@ -16,6 +16,10 @@ bundle changelogs (those live in each package manifest).
 Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ## [Unreleased]
+
+## [1.0.0] - 2026-11-16
+
+First stable platform tag. This release contains `main` after `v0.9.208`. From 1.0.0, minor and patch releases stay backward compatible for the documented HTTP `/api/v1` surface and the driver SPI ([ADR-0064](docs/en/decisions/0064-release-compatibility-lts.md)).
 
 ### Added
 
@@ -621,7 +625,8 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 - Platform version bump to **0.9.188**; AI context pack refresh for the release.
 
-[Unreleased]: https://github.com/iot-solutions-ru/ispf/compare/v0.9.193...HEAD
+[Unreleased]: https://github.com/iot-solutions-ru/ispf/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/iot-solutions-ru/ispf/compare/v0.9.208...v1.0.0
 [0.9.193]: https://github.com/iot-solutions-ru/ispf/compare/v0.9.192...v0.9.193
 [0.9.192]: https://github.com/iot-solutions-ru/ispf/compare/v0.9.191...v0.9.192
 [0.9.191]: https://github.com/iot-solutions-ru/ispf/compare/v0.9.190...v0.9.191

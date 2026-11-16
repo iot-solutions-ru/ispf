@@ -9,6 +9,10 @@ Changelog отдельных application bundles — в манифестах п�
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-11-16
+
+Первый стабильный тег платформы. В релиз входит `main` после `v0.9.208`. С 1.0.0 minor и patch сохраняют обратную совместимость документированного HTTP `/api/v1` и driver SPI ([ADR-0064](decisions/0064-release-compatibility-lts.md)).
+
 ### Добавлено
 
 - Шаблон драйвера вне этого репозитория: `./gradlew publishDdkApi` публикует `com.ispf:ispf-core` и `com.ispf:ispf-driver-api` в локальный Maven с `version` из `gradle.properties`. `packages/ispf-driver-ddk/template/` — сборка Gradle на этих координатах (`ispfVersion` совпадает с опубликованной). `gradle assembleDriverPack` пишет `build/driver-pack/ispf-driver-acme-widget/`. Драйвер, который остаётся в дереве, по-прежнему модуль `packages/ispf-driver-*` и строка в `gradle/driver-packs.json`. Документация: [driver-ddk.md](driver-ddk.md).
