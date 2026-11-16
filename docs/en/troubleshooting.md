@@ -12,6 +12,8 @@ The checks below assume the server is on port `8080`. If you set `ISPF_SERVER_PO
 
 ## The browser cannot open the console
 
+**Which URL.** The portable zip and the container serve the console at `http://localhost:8080`. A source run (Option C) serves it at `http://localhost:5173`, and only while both the API and `npm run dev` in `apps/web-console` are running. Why a source run has two ports: [Getting started](getting-started.md#why-two-processes-and-two-ports).
+
 **Check.** From the same machine:
 
 ```bash
@@ -27,7 +29,7 @@ curl -sS http://localhost:8080/actuator/health
 ./gradlew :packages:ispf-server:bootRun --args="--spring.profiles.active=local"
 ```
 
-**`/api/v1/info` answers, but `http://localhost:8080` returns 404.** A source `bootRun` serves the API on port 8080. The portable zip and the container also serve the console there. From source, start the console in a second terminal (`cd apps/web-console && npm install && npm run dev`) and open `http://localhost:5173`.
+**`/api/v1/info` answers, but `http://localhost:8080` returns 404.** This is a source `bootRun`, which serves only the API on port 8080. Start the console in a second terminal (`cd apps/web-console && npm install && npm run dev`) and open `http://localhost:5173`. The portable zip and the container serve the console on port 8080 themselves.
 
 **Something else answers, and it is not ISPF.** Another program owns port 8080, or an older ISPF is still running. Stop that process, or start this one with a different `ISPF_SERVER_PORT`.
 

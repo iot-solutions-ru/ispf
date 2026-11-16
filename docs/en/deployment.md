@@ -93,7 +93,7 @@ Build static assets for nginx or ingress:
 cd apps/web-console && npm run build
 ```
 
-Serve `dist/` behind nginx/ingress with `/api/`, `/ws/`, and `/apps/` proxied to `ispf-server`. For local hot-reload development, run `npm run dev` (port `5173`).
+Serve `dist/` behind nginx/ingress with `/api/`, `/ws/`, and `/apps/` proxied to `ispf-server`. For UI development, run `npm run dev` (port `5173`) next to `bootRun` (API on port `8080`); the reason for two processes is in [Getting started](getting-started.md#why-two-processes-and-two-ports). The release JAR is built with `-PembedWebConsole=true` and contains the console, so the portable zip and the container serve the console and the API on port `8080`.
 
 ---
 
