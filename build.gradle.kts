@@ -6,7 +6,7 @@ plugins {
     id("io.spring.dependency-management") version "1.1.7" apply false
     id("net.ltgt.errorprone") version "5.2.0" apply false
     // SBOM for the nightly dependency vulnerability scan (Trivy): ./gradlew cyclonedxBom
-    id("org.cyclonedx.bom") version "3.5.1"
+    id("org.cyclonedx.bom") version "3.6.1"
 }
 
 // Aggregate CycloneDX SBOM over every module's runtimeClasspath (server + all driver packs + AI
@@ -224,12 +224,12 @@ subprojects {
                 "com.google.protobuf:protobuf-java:4.36.2",
                 "com.google.protobuf:protobuf-java-util:4.36.2",
                 "com.google.protobuf:protobuf-javalite:4.36.2",
-                "org.bouncycastle:bcprov-jdk18on:1.86",
-                "org.bouncycastle:bcpkix-jdk18on:1.86",
-                "org.bouncycastle:bcutil-jdk18on:1.86",
+                "org.bouncycastle:bcprov-jdk18on:1.87",
+                "org.bouncycastle:bcpkix-jdk18on:1.87",
+                "org.bouncycastle:bcutil-jdk18on:1.87",
                 // kafka-clients 4.3.1 -> lz4-java 1.10.2 (CVE-2026-59949); hadoop-common 3.5.0 ->
                 // commons-configuration2 2.10.1 (CVE-2026-45205). Drop when the parents move.
-                "at.yawk.lz4:lz4-java:1.13.0",
+                "at.yawk.lz4:lz4-java:1.14.0",
                 "org.apache.commons:commons-configuration2:2.15.1",
                 // Dependabot GHSA-j288-q9x7-2f5v (CVE-2025-48924): lang3 < 3.18.0.
                 // Boot 4.1.1 manages 3.20.0; force+eachDependency pin 3.21.0 so the graph
@@ -251,14 +251,14 @@ subprojects {
                 // manages jackson-2-bom 2.21.5 / jackson-bom (tools.jackson) 3.1.5 and Tomcat
                 // 11.0.24; Boot modules override those extras, and force+rules here keep non-Boot
                 // classpaths aligned. Drop pins when Boot catches up.
-                "com.fasterxml.jackson:jackson-bom:2.22.4",
-                "com.fasterxml.jackson.core:jackson-core:2.22.4",
-                "com.fasterxml.jackson.core:jackson-databind:2.22.4",
+                "com.fasterxml.jackson:jackson-bom:2.23.0",
+                "com.fasterxml.jackson.core:jackson-core:2.23.0",
+                "com.fasterxml.jackson.core:jackson-databind:2.23.0",
                 // annotations tracks major.minor only (no 2.22.3 artifact on Central).
-                "com.fasterxml.jackson.core:jackson-annotations:2.22",
-                "tools.jackson:jackson-bom:3.2.4",
-                "tools.jackson.core:jackson-core:3.2.4",
-                "tools.jackson.core:jackson-databind:3.2.4",
+                "com.fasterxml.jackson.core:jackson-annotations:2.23",
+                "tools.jackson:jackson-bom:3.3.0",
+                "tools.jackson.core:jackson-core:3.3.0",
+                "tools.jackson.core:jackson-databind:3.3.0",
                 "org.apache.tomcat.embed:tomcat-embed-core:11.0.27",
                 "org.apache.tomcat.embed:tomcat-embed-el:11.0.27",
                 "org.apache.tomcat.embed:tomcat-embed-websocket:11.0.27",
