@@ -17,6 +17,8 @@ This page is the **full language reference** for writing expressions in ISPF: bi
 | Formal verify | `POST /api/v1/expressions/verify` · `…/verify-equivalence` |
 | Design decision | [ADR-0055](decisions/0055-cel-formal-verification-ai-gate.md) |
 
+**Demo:** [`examples/analytics-rolling-avg`](../../examples/analytics-rolling-avg/) — historian expression `avg(...)`; training drills: [`examples/lab-training`](../../examples/lab-training/).
+
 **Source of truth in code:** `PlatformBindingRegistry` / `PlatformBindingCatalog` (`ispf-expression`), `AnalyticsEvaluatorRegistry` + `HistorianCelPreprocessor` (`ispf-analytics-*`), Google CEL via `ExpressionEngine`, formal gate via `ExpressionFormalVerifier` / `ExpressionFormalVerificationService` (CEL verifier + Z3).
 
 ---

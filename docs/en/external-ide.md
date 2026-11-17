@@ -8,6 +8,8 @@ ISPF's built-in Dashboard Builder and SCADA Mimic Editor cover standard operator
 
 This is the standard architecture behind ISPF's reference applications (`Oil Control`, `FarmTwin`, `StoreTwin`, `WarehouseTwin`, and `IT Infrastructure Monitoring`).
 
+**Demo:** [`examples/oil-control-ui`](../../examples/oil-control-ui/) with [`examples/oil-control`](../../examples/oil-control/); minimal pack shape: [`examples/marketplace-ui-pack-demo`](../../examples/marketplace-ui-pack-demo/).
+
 Related guides: [Solution developer guide](solution-developer-guide.md) · [Application architecture rules](application-principles.md) · [Applications API](applications.md) · [Marketplace](marketplace.md).
 
 ---

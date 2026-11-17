@@ -8,6 +8,8 @@ A **workflow** in ISPF is an object tree node of type `WORKFLOW` (model `workflo
 
 **Related guides:** [Automation: events, alerts, correlators](automation.md) · [Escalation workflow templates](reference-escalation-templates.md) · [Hands-on OT Automation tutorials](ot-automation-excellence-tutorials.md) · [ADR-0047](decisions/0047-custom-bpmn-subset-engine.md) · [ADR-0049](decisions/0049-ot-automation-excellence.md) · [ADR-0052](decisions/0052-ispf-workflow-diagram-editor.md).
 
+**Demo:** [`examples/demo-plant`](../../examples/demo-plant/) — `mes-work-order-dispatch.bpmn`; built-in `demo-alarm-handler` with the local profile.
+
 ---
 
 ## 1. Workflow Object Variables and Lifecycle

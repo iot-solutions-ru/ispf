@@ -12,6 +12,8 @@ See [0041-multi-tag-historian-computations](decisions/0041-multi-tag-historian-c
 
 **Full guide (Tier A/B/C, APIs, marketplace packs):** [analytics-formulas-and-packs](analytics-formulas-and-packs.md).
 
+**Demo:** [`examples/analytics-rolling-avg`](../../examples/analytics-rolling-avg/) — rolling `avg` historian rule on `demo-sensor-01`.
+
 ---
 
 ## Mental model

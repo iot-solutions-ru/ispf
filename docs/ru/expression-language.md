@@ -14,6 +14,8 @@
 | Шаблоны формул и каталог функций | [Каталог аналитических формул (`analytics-formulas-and-packs.md`)](analytics-formulas-and-packs.md) |
 | Проверка выражений по API | `POST /api/v1/expressions/validate` и `POST /api/v1/expressions/verify` ([ADR-0055](decisions/0055-cel-formal-verification-ai-gate.md)) |
 
+**Пример:** [`examples/analytics-rolling-avg`](../../examples/analytics-rolling-avg/) — выражение `avg(...)` в правиле historian; учебные задачи — [`examples/lab-training`](../../examples/lab-training/).
+
 ---
 
 ## 1. Автоматическая логическая проверка условий (ADR-0055)
