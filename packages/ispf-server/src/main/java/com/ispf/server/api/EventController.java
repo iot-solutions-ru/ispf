@@ -60,6 +60,7 @@ public class EventController {
         String canonicalFilter = canonicalizeOptional(filterPath, authentication);
         if (canonicalObject != null) {
             tenantScopeService.requirePathInScope(canonicalObject, authentication);
+            objectAccessService.requireRead(canonicalObject, authentication);
         }
         if (canonicalFilter != null) {
             tenantScopeService.requirePathInScope(canonicalFilter, authentication);
@@ -67,6 +68,7 @@ public class EventController {
         try {
             return eventService.list(canonicalObject, limit, canonicalFilter, expr).stream()
                     .filter(event -> tenantScopeService.isPathVisible(event.objectPath(), authentication))
+                    .filter(event -> objectAccessService.canRead(event.objectPath(), authentication))
                     .map(event -> virtualizeEvent(event, authentication))
                     .toList();
         } catch (IllegalArgumentException e) {

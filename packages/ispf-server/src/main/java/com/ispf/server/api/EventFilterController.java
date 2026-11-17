@@ -54,12 +54,13 @@ public class EventFilterController {
         String canonical = requirePathRead(path, authentication);
         eventFilterObjectService.getByPath(canonical);
         if (objectPath != null && !objectPath.isBlank()) {
-            tenantScopeService.requirePathInScope(
-                    tenantVirtualRootService.toCanonical(objectPath, authentication),
-                    authentication
-            );
+            String canonicalObject = tenantVirtualRootService.toCanonical(objectPath, authentication);
+            tenantScopeService.requirePathInScope(canonicalObject, authentication);
+            objectAccessService.requireRead(canonicalObject, authentication);
         }
-        return eventService.list(objectPath, limit, canonical);
+        return eventService.list(objectPath, limit, canonical).stream()
+                .filter(event -> objectAccessService.canRead(event.objectPath(), authentication))
+                .toList();
     }
 
     @GetMapping
