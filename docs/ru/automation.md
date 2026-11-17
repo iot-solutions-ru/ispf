@@ -8,6 +8,8 @@
 
 Связанные разделы: [Модель объектов](object-model.md) · [Процессы BPMN](workflows.md) · [Справочник языка выражений (CEL)](expression-language.md).
 
+**Пример:** [`examples/alert-rule-evolution`](../../examples/alert-rule-evolution/) — как наращивают правило тревоги; [`examples/ot-alarm-classify`](../../examples/ot-alarm-classify/) — разбор OT-тревоги.
+
 ---
 
 ## 1. События и журнал событий

@@ -133,6 +133,8 @@ flowchart TB
 
 > **Группировка в дереве `devices`:** размещать дочерние узлы `DEVICE` внутри родительского узла `SINGLETON` / `INSTANCE` или в папке `CUSTOM` по пути `root.platform.devices.<цех>` — совершенно нормально. Важен именно **тип узла логики**: он должен быть `SINGLETON` или `INSTANCE`, а не `DEVICE`.
 
+**Пример:** [`examples/demo-plant`](../../examples/demo-plant/) — хаб и объекты завода; [`examples/platform-primitive`](../../examples/platform-primitive/) — только минимальный хаб `SINGLETON`.
+
 **Как это проверяется при сборке ([ADR-0060](decisions/0060-solution-authoring-constraints.md)):**
 - При обычной отладке валидатор помечает `LOGIC_HOST_DEVICE` как **предупреждение (`WARNING`)**, не мешая быстрой проверке гипотез.
 - При строгой проверке перед поставкой (`ispf validate --strict`, `POST .../deploy?strict=true`, автотесты `examples/` и публикация в каталог решений) `LOGIC_HOST_DEVICE` считается **ошибкой (`ERROR`)**.

@@ -12,6 +12,8 @@
 
 **Связанные разделы:** [Модель объектов](object-model.md) · [Шаблоны (blueprints)](blueprints.md) · [ADR-0010](decisions/0010-binding-rules-only.md) · [ADR-0043](decisions/0043-unified-platform-ref.md).
 
+**Пример:** [`examples/analytics-rolling-avg`](../../examples/analytics-rolling-avg/) — правило `historian` с `avg(...)` на `demo-sensor-01`.
+
 ---
 
 ## PlatformRef (адреса)

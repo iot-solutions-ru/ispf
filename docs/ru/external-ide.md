@@ -8,6 +8,8 @@
 
 По этой схеме построены готовые отраслевые решения на платформе (`Oil Control`, `FarmTwin`, `StoreTwin`, `WarehouseTwin`, мониторинг ИТ-инфраструктуры).
 
+**Пример:** [`examples/oil-control-ui`](../../examples/oil-control-ui/) вместе с [`examples/oil-control`](../../examples/oil-control/); минимальный `ui-pack` — [`examples/marketplace-ui-pack-demo`](../../examples/marketplace-ui-pack-demo/).
+
 Связанные разделы: [Руководство разработчика решений](solution-developer-guide.md) · [Правила архитектуры приложений](application-principles.md) · [API приложений](applications.md) · [Каталог решений (Marketplace)](marketplace.md).
 
 ---

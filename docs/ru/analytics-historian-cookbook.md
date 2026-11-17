@@ -8,6 +8,8 @@
 
 **Связанные разделы:** [Правила расчёта (`Binding rules`)](bindings.md) · [Справочник языка выражений](expression-language.md) · [Пользовательские формулы и пакеты расширений](analytics-formulas-and-packs.md) · [Каталог аналитических тегов](analytics-tag-catalog.md) · [ADR-0041](decisions/0041-multi-tag-historian-computations.md).
 
+**Пример:** [`examples/analytics-rolling-avg`](../../examples/analytics-rolling-avg/) — скользящее среднее `avg` по `demo-sensor-01`.
+
 ---
 
 ## 1. Как устроено историческое правило расчёта

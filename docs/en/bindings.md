@@ -11,6 +11,8 @@ Rules are stored in the object's system variable `@bindingRules` (JSON array) an
 **Full syntax and function catalog:** **[Expression language reference (`expression-language.md`)](expression-language.md)**.  
 **Related guides:** [Object model](object-model.md) · [Blueprints](blueprints.md) · [Common design mistakes (`anti-patterns.md`)](anti-patterns.md) · [ADR-0010](decisions/0010-binding-rules-only.md) · [ADR-0043](decisions/0043-unified-platform-ref.md).
 
+**Demo:** [`examples/analytics-rolling-avg`](../../examples/analytics-rolling-avg/) — historian binding with `avg(...)` on `demo-sensor-01`.
+
 ---
 
 <a id="platformref-addresses"></a>

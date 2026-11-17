@@ -20,6 +20,8 @@ A **blueprint** (`BlueprintDefinition`) is a reusable template that defines the 
 | **`INSTANCE`** | `root.platform.instance-types` | **Repeatable object type** (for example, a production line, pump unit, or tank twin). Instantiated N times into the tree via `POST /api/v1/blueprints/{id}/instantiate` |
 | **`MIXIN`** | `root.platform.mixin-blueprints` | **Composable trait / aspect** (for example, Haystack tags, Brick class, or extra KPI formulas) that merges variables, functions, and rules into an existing object |
 
+**Demo:** [`examples/demo-plant`](../../examples/demo-plant/) — `SINGLETON` hub plus `INSTANCE` plant objects in one deployable bundle.
+
 ### Where Application Logic Must Live (`Logic != DEVICE`)
 
 | Architectural Role | Blueprint Kind | Rule |
@@ -91,6 +93,8 @@ Instantiating the template in `bundle.json`:
   "parameters": { "code": "RVS-1" }
 }
 ```
+
+**Demo:** [`examples/oil-control`](../../examples/oil-control/) — tank `INSTANCE` blueprints with `${code}` in SQL bindings.
 
 ---
 

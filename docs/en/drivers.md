@@ -6,6 +6,8 @@
 
 Candidate catalog for new drivers (roadmap.md): [roadmap](roadmap.md), full list below (REQ-PF-14).
 
+**Demo:** built-in `demo-sensor-01` (`virtual`); MQTT temperatures: [`examples/lab-mqtt-temperature`](../../examples/lab-mqtt-temperature/) (needs a broker).
+
 ## Driver maturity
 
 ![Device inspector — Flow Meter variables](../assets/ispf-device-inspector.png)

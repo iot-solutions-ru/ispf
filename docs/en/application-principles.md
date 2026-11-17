@@ -131,6 +131,8 @@ Choose the object kind according to its role:
 
 > **Grouping under `devices`:** Placing `DEVICE` children underneath a `SINGLETON` or `INSTANCE` parent (or inside a `CUSTOM` folder under `root.platform.devices.<site>`) is completely fine. Only the hub's **type** must not be `DEVICE`.
 
+**Demo:** [`examples/demo-plant`](../../examples/demo-plant/) — hub + plant objects; [`examples/platform-primitive`](../../examples/platform-primitive/) — minimal `SINGLETON` hub only.
+
 **How validation enforces this ([ADR-0060](decisions/0060-solution-authoring-constraints.md)):**
 - Default interactive validate/deploy reports `LOGIC_HOST_DEVICE` as a **WARNING** so you can iterate while prototyping.
 - Strict ship checks (`ispf validate --strict`, `POST .../deploy?strict=true`, `examples/` CI, and marketplace publishing) treat `LOGIC_HOST_DEVICE` as an **ERROR**.

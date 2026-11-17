@@ -8,6 +8,8 @@
 
 См. также: [Как устроен ISPF](learn.md) · [Архитектура](architecture.md) · [Шаблоны объектов (Blueprints)](blueprints.md) · [Правила расчёта (привязки)](bindings.md).
 
+**Пример:** встроенный `demo-sensor-01` (идёт с сервером); минимальное дерево в пакете — [`examples/platform-primitive`](../../examples/platform-primitive/).
+
 ---
 
 ## Иерархия дерева и пути

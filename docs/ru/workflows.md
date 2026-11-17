@@ -6,6 +6,8 @@
 
 Узел типа **`WORKFLOW`** (шаблон `workflow-v1`, ветка `root.platform.workflows`) описывает пошаговый процесс: автоматические действия на сервере, ветвления по условиям CEL, ожидание таймеров/сигналов и постановку задач дежурному оператору в рабочую очередь (**Work Queue**). Движок написан на чистой Java в модуле `ispf-plugin-workflow` без внешних тяжёлых серверов Camunda/Flowable.
 
+**Пример:** [`examples/demo-plant`](../../examples/demo-plant/) — `mes-work-order-dispatch.bpmn`; в профиле `local` также есть встроенный `demo-alarm-handler`.
+
 ---
 
 ## Переменные узла `WORKFLOW` и статусы

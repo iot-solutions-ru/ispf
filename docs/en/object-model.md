@@ -8,6 +8,8 @@ Every entity in ISPF — field devices, logic hubs, operator dashboards, SCADA m
 
 **Related guides:** [How ISPF works](learn.md) · [Architecture](architecture.md) · [Blueprints](blueprints.md) · [Binding rules](bindings.md).
 
+**Demo:** built-in `demo-sensor-01` (ships with the server); smallest bundle tree: [`examples/platform-primitive`](../../examples/platform-primitive/).
+
 ---
 
 ## 1. Tree Hierarchy and Paths

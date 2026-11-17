@@ -6,6 +6,8 @@
 
 **Related guides:** [Workflows & BPMN](workflows.md) · [Operator guide](operator-guide.md) · [Escalation workflow templates](reference-escalation-templates.md) · [ADR-0039](decisions/0039-unified-alarm-architecture.md) · [ADR-0062](decisions/0062-correlator-keyed-dispatch.md).
 
+**Demo:** [`examples/alert-rule-evolution`](../../examples/alert-rule-evolution/) — extending an alert rule; [`examples/ot-alarm-classify`](../../examples/ot-alarm-classify/) — classify an OT alarm.
+
 ---
 
 ## 1. Platform Events and the Event Journal
