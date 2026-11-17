@@ -196,9 +196,10 @@ public class PlatformBriefingService {
                 .append(featureCount)
                 .append(" (search_context).\n");
         sb.append("Logic hosts: SINGLETON or INSTANCE — never ObjectType.DEVICE for orchestration.\n");
-        sb.append("Tools: list_drivers, get_driver_help, get_widget_catalog, list_object_blueprints, ")
-                .append("list_examples, get_example_bundle, search_context.\n");
-        sb.append("Do not invent a short protocol list from memory; cite driverIds from this index or list_drivers.\n");
+        sb.append("Tools: search_context (concepts), list_drivers (protocol inventory only), get_driver_help, ")
+                .append("get_widget_catalog, list_object_blueprints, list_examples, get_example_bundle.\n");
+        sb.append("Do not invent a short protocol list from memory; cite driverIds from this index or one list_drivers call.\n");
+        sb.append("Never pass angle-bracket placeholders as tool arguments.\n");
     }
 
     private static int maturityRank(DriverMaturity maturity) {

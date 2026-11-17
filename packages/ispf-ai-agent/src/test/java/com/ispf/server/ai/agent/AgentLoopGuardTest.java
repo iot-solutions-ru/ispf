@@ -88,6 +88,78 @@ class AgentLoopGuardTest {
     }
 
     @Test
+    void blocksFurtherListDriversAfterUnfilteredOkWithoutStoppingFirstOffense() {
+        List<Map<String, Object>> steps = List.of(okStep("list_drivers", Map.of()));
+        var first = AgentLoopGuard.checkHardBlock(
+                "list_drivers",
+                Map.of("query", "mqtt"),
+                steps
+        );
+        assertTrue(first.isPresent());
+        assertTrue(first.get().blocked());
+        assertFalse(first.get().stopTurn());
+        assertTrue(first.get().hint().toLowerCase(Locale.ROOT).contains("finish"));
+
+        List<Map<String, Object>> afterBlock = List.of(
+                okStep("list_drivers", Map.of()),
+                Map.of(
+                        "type", "tool",
+                        "tool", "list_drivers",
+                        "arguments", Map.of("query", "mqtt"),
+                        "result", Map.of(
+                                "status", "ERROR",
+                                "error", first.get().error(),
+                                "loopGuardBlocked", true
+                        )
+                )
+        );
+        var second = AgentLoopGuard.checkHardBlock(
+                "list_drivers",
+                Map.of("query", "<название протокола>"),
+                afterBlock
+        );
+        assertTrue(second.isPresent());
+        assertTrue(second.get().stopTurn());
+    }
+
+    @Test
+    void blocksAngleBracketListDriversQuery() {
+        var first = AgentLoopGuard.checkHardBlock(
+                "list_drivers",
+                Map.of("query", "<название протокола>"),
+                List.of()
+        );
+        assertTrue(first.isPresent());
+        assertFalse(first.get().stopTurn());
+        assertTrue(first.get().error().contains("placeholder"));
+        assertTrue(AgentLoopGuard.looksLikeAngleBracketPlaceholder("<название протокола>"));
+        assertFalse(AgentLoopGuard.looksLikeAngleBracketPlaceholder("mqtt"));
+    }
+
+    @Test
+    void allowsSecondListDriversWhenFirstWasFiltered() {
+        List<Map<String, Object>> steps = List.of(
+                okStep("list_drivers", Map.of("query", "bacnet"))
+        );
+        var block = AgentLoopGuard.checkHardBlock(
+                "list_drivers",
+                Map.of("query", "dnp3"),
+                steps
+        );
+        assertTrue(block.isEmpty());
+    }
+
+    @Test
+    void placeholderQueryDoesNotCreateDistinctListDriversFingerprint() {
+        String empty = AgentLoopGuard.discoveryArgFingerprint("list_drivers", Map.of());
+        String placeholder = AgentLoopGuard.discoveryArgFingerprint(
+                "list_drivers",
+                Map.of("query", "<название протокола>")
+        );
+        assertTrue(empty.equals(placeholder));
+    }
+
+    @Test
     void snmpHintRequiresExactDriverIdNotSubstring() {
         assertFalse(AgentLoopGuard.continuationHint(
                 "get_driver_help",
@@ -638,6 +710,15 @@ class AgentLoopGuardTest {
 
     private static Map<String, Object> step(String tool, Map<String, Object> arguments) {
         return Map.of("type", "tool", "tool", tool, "arguments", arguments);
+    }
+
+    private static Map<String, Object> okStep(String tool, Map<String, Object> arguments) {
+        return Map.of(
+                "type", "tool",
+                "tool", tool,
+                "arguments", arguments,
+                "result", Map.of("status", "OK")
+        );
     }
 
     private static Map<String, Object> layoutStep(String path) {

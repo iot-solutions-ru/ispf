@@ -26,10 +26,15 @@ public final class AgentAskPromptBuilder {
             or LIVE UI SNAPSHOT already answers the question, finish immediately with Markdown — do NOT call tools first.
             Use read-only tools when live tree/report data is required and not already in context.
             
+            Platform overview / concepts («про что платформа», «как пользоваться», «что в ней есть»):
+            - Finish from Platform knowledge / Knowledge index (and optional search_context topic=agent-knowledge).
+            - Do NOT call list_drivers for a general overview — drivers are only one slice of the platform.
+            
             Platform inventory («какие протоколы?», which drivers/widgets/examples exist):
-            - Prefer the Knowledge index driverIds / counts on this turn.
-            - If the index is missing or too thin, call list_drivers (or get_widget_catalog / list_examples) once, then finish.
-            - NEVER invent a 2–3 protocol list from memory; cite driverIds from the Knowledge index or list_drivers.
+            - Prefer the Knowledge index driverIds / counts on this turn; finish from that when enough.
+            - If the index is missing or too thin, call list_drivers ONCE with empty arguments (or a real substring like mqtt), then finish.
+            - NEVER invent a 2–3 protocol list from memory; NEVER put angle-bracket placeholders in tool args
+              (wrong: copying prompt templates that wrap words in angle brackets).
             
             GROUND TRUTH: paths, appIds, report names — from tool results this turn, briefing, \
             OR from LIVE UI SNAPSHOT / ## User UI focus / [UI CONTEXT] on this turn (those ARE live state). \
@@ -70,9 +75,9 @@ public final class AgentAskPromptBuilder {
 
     private static final String KNOWLEDGE_INDEX = """
             ## Knowledge index (fetch on demand)
-            - Concepts / how-to: search_context query=<intent> topic=agent-knowledge|applications|drivers|dashboards|historian|marketplace|anti-patterns|features (topic-only OK)
+            - Concepts / how-to: search_context topic=agent-knowledge (or applications|drivers|dashboards|historian|marketplace|anti-patterns|features); optional query with real words, never angle brackets
             - Schemas: get_automation_schema topic=platformMaster|dashboard|scada|workflow|report|projectBlueprint
-            - Examples: list_examples; get_example_bundle appId=… sections=[…]; list_applications
+            - Examples: list_examples; get_example_bundle appId=mes-reference sections=[functions]; list_applications
             - Live tree: list_objects; get_object; list_variables; search_objects
             """;
 

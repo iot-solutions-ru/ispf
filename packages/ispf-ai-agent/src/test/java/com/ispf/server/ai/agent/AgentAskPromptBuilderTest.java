@@ -17,7 +17,10 @@ class AgentAskPromptBuilderTest {
         assertThat(prompt).doesNotContain("specIntakeGuide");
         assertThat(prompt).doesNotContain("Утвердить полный план");
         assertThat(prompt).contains("FINISH FROM BRIEFING");
+        assertThat(prompt).contains("Platform overview");
+        assertThat(prompt).contains("NEVER put angle-bracket placeholders");
         assertThat(prompt).contains("Knowledge index");
+        assertThat(prompt).doesNotContain("query=<");
         assertThat(prompt).doesNotContain("## Reference playbooks");
     }
 

@@ -300,9 +300,89 @@ final class AgentLoopGuard {
     private static String driverInventoryHint() {
         return """
                 Driver list received — count and driverIds above are authoritative for this instance. \
-                For inventory / «which protocols» questions: finish with Markdown from that list (do not invent a short list). \
-                To create a device: pick one driverId, enable_agent_tool_pack pack=devices, then create_object / configure_driver. \
+                Finish NOW with Markdown from that list / the Knowledge index. \
+                Do NOT call list_drivers again (no query= placeholders like <protocol name>). \
+                Platform overview questions: answer concepts from the Knowledge index / search_context topic=agent-knowledge. \
+                To create a device (Execute only): pick one real driverId, enable_agent_tool_pack pack=devices, then create_object. \
                 Only run an SNMP demo when the user asked for SNMP.""";
+    }
+
+    /**
+     * After an unfiltered inventory OK (or a placeholder query), block further list_drivers.
+     * First offense keeps {@code stopTurn=false} so Ask can finish from the hint; repeats escalate.
+     */
+    private static Optional<BlockDecision> checkListDriversInventoryDone(
+            List<Map<String, Object>> steps,
+            Map<String, Object> toolArgs
+    ) {
+        long anyCalls = totalToolCount(steps, "list_drivers");
+        boolean escalate = anyCalls >= DISCOVERY_HARD_BLOCK || hasPriorListDriversGuardBlock(steps);
+        String query = stringArg(toolArgs == null ? Map.of() : toolArgs, "query");
+        if (looksLikeAngleBracketPlaceholder(query)) {
+            return Optional.of(new BlockDecision(
+                    "Hard block: list_drivers query looks like a prompt placeholder (" + query + ") — not a real filter",
+                    "Do not copy angle-bracket placeholders into tool arguments. "
+                            + "Finish NOW from the Knowledge index / prior list_drivers result, "
+                            + "or (only if none yet) call list_drivers once with empty arguments or a real substring (mqtt).",
+                    escalate || anyCalls >= 1
+            ));
+        }
+        if (hasSuccessfulUnfilteredListDrivers(steps)) {
+            return Optional.of(new BlockDecision(
+                    "Hard block: unfiltered list_drivers already succeeded this turn — stop looping",
+                    driverInventoryHint(),
+                    escalate
+            ));
+        }
+        return Optional.empty();
+    }
+
+    private static boolean hasPriorListDriversGuardBlock(List<Map<String, Object>> steps) {
+        if (steps == null) {
+            return false;
+        }
+        String normalized = "list_drivers";
+        return steps.stream()
+                .filter(step -> "tool".equals(String.valueOf(step.get("type"))))
+                .filter(step -> normalized.equals(normalize(String.valueOf(step.get("tool")))))
+                .anyMatch(step -> {
+                    Map<String, Object> result = stepMap(step, "result");
+                    return Boolean.TRUE.equals(result.get("loopGuardBlocked"))
+                            || String.valueOf(result.get("error")).contains("Hard block");
+                });
+    }
+
+    private static boolean hasSuccessfulUnfilteredListDrivers(List<Map<String, Object>> steps) {
+        if (steps == null) {
+            return false;
+        }
+        for (Map<String, Object> step : steps) {
+            if (!"tool".equals(String.valueOf(step.get("type")))) {
+                continue;
+            }
+            if (!"list_drivers".equals(normalize(String.valueOf(step.get("tool"))))) {
+                continue;
+            }
+            Map<String, Object> result = stepMap(step, "result");
+            if (!"OK".equals(String.valueOf(result.get("status")))) {
+                continue;
+            }
+            Map<String, Object> args = stepMap(step, "arguments");
+            String query = stringArg(args, "query");
+            String maturity = stringArg(args, "maturity");
+            if ((query.isBlank() || looksLikeAngleBracketPlaceholder(query)) && maturity.isBlank()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    static boolean looksLikeAngleBracketPlaceholder(String value) {
+        if (value == null || value.isBlank()) {
+            return false;
+        }
+        String trimmed = value.trim();
+        return trimmed.indexOf('<') >= 0 && trimmed.indexOf('>') > trimmed.indexOf('<');
     }
 
     private static boolean lastExampleBundleRequestedSections(List<Map<String, Object>> steps) {
@@ -418,19 +498,28 @@ final class AgentLoopGuard {
             return oscillation;
         }
         String normalized = normalize(toolName);
+        if ("list_drivers".equals(normalized)) {
+            Optional<BlockDecision> inventoryDone = checkListDriversInventoryDone(steps, toolArgs);
+            if (inventoryDone.isPresent()) {
+                return inventoryDone;
+            }
+        }
         if (DISCOVERY_LOOP_TOOLS.contains(normalized)) {
             // Same tool with different args (e.g. get_automation_schema topic=dashboard vs workflow) is not a loop.
             String discoveryFp = discoveryArgFingerprint(normalized, toolArgs);
             long sameCallCount = totalToolCountWithFingerprint(steps, normalized, discoveryFp);
             if (sameCallCount >= DISCOVERY_HARD_BLOCK) {
                 String hint = discoveryHardBlockHint(normalized, steps, toolArgs);
+                boolean stopTurn = "list_drivers".equals(normalized)
+                        && (sameCallCount >= DISCOVERY_HARD_BLOCK + 1
+                        || hasPriorListDriversGuardBlock(steps));
                 return Optional.of(new BlockDecision(
                         "Hard block: discovery tool '" + normalized + "'"
                                 + (discoveryFp.isBlank() ? "" : " (" + discoveryFp + ")")
                                 + " called " + sameCallCount
                                 + " times this turn with the same arguments — stop looping",
                         hint,
-                        false
+                        stopTurn
                 ));
             }
         }
@@ -538,7 +627,7 @@ final class AgentLoopGuard {
             case "get_widget_catalog" -> keyArgs(args, "type", "widgetType");
             case "get_deploy_playbook" -> keyArgs(args, "playbook", "id", "name");
             case "list_examples" -> keyArgs(args, "query", "tag");
-            case "list_drivers" -> keyArgs(args, "query", "maturity");
+            case "list_drivers" -> keyArgsIgnoringPlaceholders(args, "query", "maturity");
             default -> keyArgs(args, "topic", "query", "path", "name");
         };
     }
@@ -548,6 +637,22 @@ final class AgentLoopGuard {
         for (String key : keys) {
             String value = stringArg(args, key);
             if (value.isBlank()) {
+                continue;
+            }
+            if (!sb.isEmpty()) {
+                sb.append('|');
+            }
+            sb.append(key).append('=').append(value.toLowerCase(Locale.ROOT));
+        }
+        return sb.toString();
+    }
+
+    /** Angle-bracket prompt placeholders collapse to empty so they do not invent a new fingerprint. */
+    private static String keyArgsIgnoringPlaceholders(Map<String, Object> args, String... keys) {
+        StringBuilder sb = new StringBuilder();
+        for (String key : keys) {
+            String value = stringArg(args, key);
+            if (value.isBlank() || looksLikeAngleBracketPlaceholder(value)) {
                 continue;
             }
             if (!sb.isEmpty()) {
