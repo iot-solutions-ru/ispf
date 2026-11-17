@@ -214,6 +214,7 @@ curl -X POST "http://localhost:8080/api/v1/drivers/runtime/start?devicePath=root
 
 ### Куда двигаться дальше
 
+- **[Виртуальный кластер](virt-cluster.md)** — один вызов ставит три виртуальных устройства, хаб, два дашборда, тревогу и операторское приложение.
 - **[Если первая сессия не завелась](troubleshooting.md)** — консоль не открывается, вход не принимает `admin` / `admin` или `demo-sensor-01` стоит на месте.
 - **[Как устроен ISPF](learn.md)** — пройдите **Маршрут Б**, чтобы за день собрать свой первый проект с оборудованием и расчётами.
 - **[Руководство разработчика решений](solution-developer-guide.md)** — как оформить таблицы SQL, функции и экраны в переносимый пакет `bundle.json` (`ispf pack` / `validate` / `deploy`). Команды `ispf login` и `ispf doctor` описаны в [tools/ispf-cli/README.md](../../tools/ispf-cli/README.md).

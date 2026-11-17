@@ -72,6 +72,8 @@ From a checkout of this repository, start two processes: the API (`local` profil
 
 Demo solutions are on **System**, tab **Solutions** (page title "Solution catalog", block **Marketplace**). The default catalog is `https://marketplace.ispf.ai`. The ISPF process must reach that host. `admin` installs a listing; `operator` receives 403.
 
+The built-in virtual cluster is one call, `POST /api/v1/platform/presets/virt-cluster`. What it creates, and the operator URL: [Virtual cluster](virt-cluster.md).
+
 ---
 
 ## Path B — Your first project (one engineering day)
@@ -131,6 +133,7 @@ Ready-to-explore reference examples in `examples/`: [Lab without a PLC](lab-with
 | Question | Page |
 |----------|------|
 | How do I install and start ISPF? | [Getting started](getting-started.md) · [Deployment](deployment.md) |
+| Where is the built-in virtual cluster? | [Virtual cluster](virt-cluster.md) |
 | The console, login, or demo sensor failed | [Troubleshooting](troubleshooting.md) |
 | What does a specific term mean? | [Glossary](glossary.md) |
 | Which functions are available in formulas? | [Expression language](expression-language.md) |

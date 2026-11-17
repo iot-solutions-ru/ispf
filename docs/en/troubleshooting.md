@@ -29,7 +29,16 @@ curl -sS http://localhost:8080/actuator/health
 ./gradlew :packages:ispf-server:bootRun --args="--spring.profiles.active=local"
 ```
 
-**`/api/v1/info` answers, but `http://localhost:8080` returns 404.** This is a source `bootRun`, which serves only the API on port 8080. Start the console in a second terminal (`cd apps/web-console && npm install && npm run dev`) and open `http://localhost:5173`. The portable zip and the container serve the console on port 8080 themselves.
+**`/api/v1/info` answers, but `http://localhost:8080` returns 404.** This is a source `bootRun`, which serves only the API on port 8080. Spring's Whitelabel page is that 404. Start the console in a second terminal (`cd apps/web-console && npm install && npm run dev`) and open `http://localhost:5173`. The portable zip and the container serve the console on port 8080 themselves.
+
+**`bootRun` says the port is already in use.** Something is already listening. Ask it who it is:
+
+```bash
+curl -sS http://localhost:8080/api/v1/info
+curl -sS http://localhost:8080/api/v1/auth/config
+```
+
+`shortName` `ISPF` means this platform. `version` and `javaVersion` identify the build. `environment` is `ispf.environment` (default `dev`). It is not the Spring profile and not the directory that launched the process. `mode` `local` in auth config means `admin` / `admin` applies. `mode` `oidc` means those passwords are not this server's login. With a token, `GET /api/v1/platform/effective-config` includes `profile.activeProfiles` when at least one Spring profile is active (for example `local`). A process started with no profile omits that field. The API does not name the checkout folder or the person who started the process.
 
 **Something else answers, and it is not ISPF.** Another program owns port 8080, or an older ISPF is still running. Stop that process, or start this one with a different `ISPF_SERVER_PORT`.
 

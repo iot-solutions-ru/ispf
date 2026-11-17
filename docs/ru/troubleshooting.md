@@ -29,7 +29,16 @@ curl -sS http://localhost:8080/actuator/health
 ./gradlew :packages:ispf-server:bootRun --args="--spring.profiles.active=local"
 ```
 
-**`/api/v1/info` отвечает, а `http://localhost:8080` отдаёт 404.** Так и должно быть при запуске из исходников: `bootRun` отдаёт на порту 8080 только API. Запустите консоль во втором терминале (`cd apps/web-console && npm install && npm run dev`) и откройте `http://localhost:5173`. Готовый архив и контейнер отдают консоль на порту 8080 сами.
+**`/api/v1/info` отвечает, а `http://localhost:8080` отдаёт 404.** Так и должно быть при запуске из исходников: `bootRun` отдаёт на порту 8080 только API. Белая страница Spring Whitelabel — это тот же 404. Запустите консоль во втором терминале (`cd apps/web-console && npm install && npm run dev`) и откройте `http://localhost:5173`. Готовый архив и контейнер отдают консоль на порту 8080 сами.
+
+**`bootRun` пишет, что порт уже занят.** Кто-то уже слушает этот порт. Спросите у него, кто он:
+
+```bash
+curl -sS http://localhost:8080/api/v1/info
+curl -sS http://localhost:8080/api/v1/auth/config
+```
+
+`shortName` `ISPF` значит, что это эта платформа. `version` и `javaVersion` называют сборку. `environment` — это `ispf.environment` (по умолчанию `dev`). Это не имя профиля Spring и не каталог, из которого процесс запущен. `mode` `local` в ответе auth config значит, что подходит `admin` / `admin`. `mode` `oidc` значит, что эти пароли — не вход на этот сервер. С токеном `GET /api/v1/platform/effective-config` содержит `profile.activeProfiles`, если активен хотя бы один профиль Spring (например `local`). У процесса без профиля этого поля нет. API не называет папку клона и того, кто запустил процесс.
 
 **Порт отвечает, но это не ISPF.** Порт 8080 занят другой программой, либо ещё работает прошлый процесс ISPF. Остановите его или задайте этому экземпляру другой `ISPF_SERVER_PORT`.
 

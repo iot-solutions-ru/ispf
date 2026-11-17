@@ -54,6 +54,8 @@ POST /api/v1/solutions/marketplaces/default-publisher/listings/<slug>/install
 
 `operator` is 403 on that install. A companion screen lands at `/apps/<appId>/`. Direct `POST /api/v1/applications/.../deploy` still requires a signed license when that check is on. Details: `docs/en/marketplace.md`.
 
+The built-in virtual cluster is not a marketplace card. `POST /api/v1/platform/presets/virt-cluster` with an `admin` or `developer` token installs it. Paths and the operator URL: `docs/en/virt-cluster.md`. If `bootRun` reports port 8080 already in use, `GET /api/v1/info` (no token) returns `version`, `javaVersion`, and `environment`. That call does not name the checkout directory. `GET /api/v1/auth/config` returns `mode`. With a token, `GET /api/v1/platform/effective-config` includes `profile.activeProfiles` when a Spring profile is active. A process with no profile omits that field.
+
 ## Logic objects (hard rule — canon)
 
 The object that holds application / orchestration / twin logic must **not** be `ObjectType.DEVICE`. DEVICE = drivers and telemetry only.
