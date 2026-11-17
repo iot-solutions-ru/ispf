@@ -94,11 +94,11 @@ Config:
 ```yaml
 ispf:
   ai:
-    briefing-max-chars: 12000
-    briefing-every-turn: false   # true = full static briefing every turn; default first turn only + live always
+    briefing-max-chars: 32768
+    briefing-every-turn: false   # true = full static dump every turn; default first turn only
 ```
 
-On follow-up turns (default): static drivers/examples/features omitted; **live snapshot** still refreshed.
+Every turn includes a compact **Knowledge index** (loaded driver count/ids, widget/example counts, tool pointers). On follow-up turns (default): the full static dump (per-driver lines, examples, featureIndex) is omitted; the knowledge index and **live snapshot** still refresh. Catalog tools (`list_drivers`, `get_widget_catalog`, `list_object_blueprints`) are compacted before the LLM window; `get_example_bundle` keeps section bodies when `sections` is set. History replays user text and a short assistant summary — not raw tool JSON.
 
 ---
 

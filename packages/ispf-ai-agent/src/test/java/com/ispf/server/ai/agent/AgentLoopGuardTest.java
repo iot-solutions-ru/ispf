@@ -59,10 +59,59 @@ class AgentLoopGuardTest {
     }
 
     @Test
-    void hintsExecuteAfterSingleGetDriverHelp() {
-        String hint = AgentLoopGuard.continuationHint("get_driver_help", List.of(step("get_driver_help")), 96);
+    void hintsExecuteAfterSingleGetDriverHelpForSnmp() {
+        String hint = AgentLoopGuard.continuationHint(
+                "get_driver_help",
+                List.of(step("get_driver_help", Map.of("driverId", "snmp"))),
+                96
+        );
         assertTrue(hint.toLowerCase(Locale.ROOT).contains("stop"));
         assertTrue(hint.contains("snmp-agent-v1"));
+    }
+
+    @Test
+    void hintsInventoryAfterListDriversWithoutSnmpDemo() {
+        String hint = AgentLoopGuard.continuationHint("list_drivers", List.of(step("list_drivers")), 96);
+        assertTrue(hint.toLowerCase(Locale.ROOT).contains("authoritative"));
+        assertFalse(hint.contains("snmp-agent-v1"));
+    }
+
+    @Test
+    void listDriversFingerprintIncludesQueryAndMaturity() {
+        String empty = AgentLoopGuard.discoveryArgFingerprint("list_drivers", Map.of());
+        String filtered = AgentLoopGuard.discoveryArgFingerprint(
+                "list_drivers",
+                Map.of("query", "mqtt", "maturity", "PRODUCTION")
+        );
+        assertFalse(filtered.isBlank());
+        assertTrue(!empty.equals(filtered));
+    }
+
+    @Test
+    void snmpHintRequiresExactDriverIdNotSubstring() {
+        assertFalse(AgentLoopGuard.continuationHint(
+                "get_driver_help",
+                List.of(step("get_driver_help", Map.of("driverId", "snmp-trap"))),
+                96
+        ).contains("snmp-agent-v1"));
+        String snmpHint = AgentLoopGuard.continuationHint(
+                "get_driver_help",
+                List.of(step("get_driver_help", Map.of("driverId", "snmp"))),
+                96
+        );
+        assertTrue(snmpHint.contains("snmp-agent-v1"));
+        assertTrue(snmpHint.contains("Q&A or Admin Copilot"));
+    }
+
+    @Test
+    void exampleBundleWithoutSectionsAllowsSectionsFollowUp() {
+        String hint = AgentLoopGuard.continuationHint(
+                "get_example_bundle",
+                List.of(step("get_example_bundle", Map.of("appId", "mes-reference"))),
+                96
+        );
+        assertTrue(hint.contains("manifestSections") || hint.contains("sections=["));
+        assertFalse(hint.contains("Finish NOW with {\"type\":\"finish\""));
     }
 
     @Test

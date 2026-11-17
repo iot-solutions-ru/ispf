@@ -51,6 +51,43 @@ class AgentCopilotPromptBuilderTest {
     }
 
     @Test
+    void injectsKnowledgeIndexFromBriefing() {
+        String briefing = """
+                ### Other
+                ignore
+                ### Knowledge index
+                Drivers: mqtt, modbus (call list_drivers).
+                Widgets: 12 types.
+                Tools: list_drivers, get_driver_help, list_object_blueprints, get_example_bundle.
+                ### More
+                also ignore
+                """;
+        String prompt = AgentCopilotPromptBuilder.build(
+                "root",
+                List.of(
+                        Map.of("name", "list_drivers", "description", "Drivers"),
+                        Map.of("name", "search_context", "description", "Search")
+                ),
+                false,
+                null,
+                briefing
+        );
+        assertThat(prompt).contains("Platform knowledge (compact)");
+        assertThat(prompt).contains("### Knowledge index");
+        assertThat(prompt).contains("Drivers: mqtt, modbus");
+        assertThat(prompt).contains("list_drivers");
+        assertThat(prompt).doesNotContain("Tools: list_object_blueprints");
+        assertThat(prompt).doesNotContain("### Other");
+        assertThat(prompt).doesNotContain("also ignore");
+    }
+
+    @Test
+    void extractKnowledgeIndexFallsBackWhenMarkerMissing() {
+        assertThat(AgentCopilotPromptBuilder.extractKnowledgeIndex("short briefing"))
+                .isEqualTo("short briefing");
+    }
+
+    @Test
     void settingsFocusHidesDiscoveryTools() {
         Map<String, Object> focus = Map.of(
                 "surface", "system",

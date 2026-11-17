@@ -41,7 +41,7 @@ ispf:
 
 - Select marketplace endpoint
 - Search and filter (free / paid)
-- **Free** — one-click install (platform proxies download + deploy). Unsigned manifests are accepted only on this marketplace install path when `ispf.license.require-signed-bundles=true`; direct `POST .../deploy` still requires a signed `license` block.
+- **Free** — one-click install (platform proxies download + deploy). Unsigned manifests are accepted only on this marketplace install path when `ispf.license.require-signed-bundles=true`; direct `POST .../deploy` still requires a signed `license` block. Install is allowed for **`admin`** and **`developer`**; **`operator`** receives **403**.
 - **Paid** — enter activation code → signed bundle deploy; without key — link to vendor
 
 ## Platform API

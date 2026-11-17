@@ -1,5 +1,7 @@
 package com.ispf.server.ai.agent;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -170,8 +172,11 @@ final class AgentLoopGuard {
                     Report data received. Prefer finish with a summary if the goal is met; \
                     otherwise continue with one more targeted read tool.""";
         }
-        if ("get_driver_help".equals(lastTool) || "list_drivers".equals(lastTool)) {
-            return snmpOrDriverExecuteHint();
+        if ("list_drivers".equals(lastTool)) {
+            return driverInventoryHint();
+        }
+        if ("get_driver_help".equals(lastTool)) {
+            return snmpAwareDriverHelpHint(steps);
         }
         if ("create_object".equals(lastTool)) {
             String typeHint = createObjectTypeHint(steps);
@@ -223,11 +228,17 @@ final class AgentLoopGuard {
                     list_variables on each device before finish.""";
         }
         if ("get_example_bundle".equals(lastTool)) {
+            if (lastExampleBundleRequestedSections(steps)) {
+                return """
+                        Example bundle section bodies are in the tool result above. \
+                        Finish NOW with Markdown summarizing those section contents (names/purpose of items). \
+                        Do NOT re-dump raw JSON. Re-call only for another appId or different sections.""";
+            }
             return """
-                    Example bundle loaded — full manifest is in the tool result above and in the UI step. \
-                    Finish NOW with {"type":"finish","summary":"Markdown: section names and purpose only","result":{}}. \
-                    Do NOT embed manifest JSON in summary (no ``` fences) or in result.plan.sections. \
-                    Re-calling get_example_bundle is unnecessary unless the user asks for another appId/sections.""";
+                    Example section index (manifestSections) is in the tool result above. \
+                    If the user needs field/section detail, call get_example_bundle once more with \
+                    sections=[…] for those keys; otherwise finish with Markdown of section names and purpose. \
+                    Do NOT embed manifest JSON in summary (no ``` fences) or in result.plan.sections.""";
         }
         if ("set_variable".equals(lastTool) && lastStepErrorContains(steps, "Variable not found: layout")) {
             return """
@@ -245,8 +256,9 @@ final class AgentLoopGuard {
             return batchHint;
         }
         if (isRepeatedTool(lastTool, steps)) {
-            if (DISCOVERY_LOOP_TOOLS.contains(normalize(lastTool))) {
-                return snmpOrDriverExecuteHint();
+            String normalizedRepeated = normalize(lastTool);
+            if (DISCOVERY_LOOP_TOOLS.contains(normalizedRepeated)) {
+                return discoveryHardBlockHint(normalizedRepeated, steps, Map.of());
             }
             return """
                     You called the same tool repeatedly. Change strategy or emit {"type":"finish",...}. \
@@ -270,17 +282,101 @@ final class AgentLoopGuard {
         return defaultHint(steps, maxStepsTotal);
     }
 
-    private static String snmpOrDriverExecuteHint() {
+    private static String discoveryHardBlockHint(
+            String toolName,
+            List<Map<String, Object>> steps,
+            Map<String, Object> toolArgs
+    ) {
+        if ("list_drivers".equals(toolName)) {
+            return driverInventoryHint();
+        }
+        if ("get_driver_help".equals(toolName)) {
+            return snmpAwareDriverHelpHint(appendProposedStep(steps, toolName, toolArgs));
+        }
+        return "Discovery result for '" + toolName
+                + "' is already above — stop repeating it; act on prior results or finish with Markdown.";
+    }
+
+    private static String driverInventoryHint() {
         return """
-                Driver/docs discovery is enough — STOP get_driver_help / search_context loops. \
-                Execute SNMP demo NOW: enable_agent_tool_pack pack=devices then pack=dashboards; \
-                list_objects parent=root.platform.devices; \
-                create_object parentPath=root.platform.devices name=demo-snmp type=DEVICE \
-                displayName="Demo SNMP" templateId=snmp-agent-v1 driverId=snmp autoStartDriver=false; \
-                set_variable path=<device> name=driverConfigJson value={"host":"127.0.0.1","port":161,"version":"2c","community":"public"}; \
-                configure_driver devicePath=<device> driverId=snmp autoStart=true; list_variables path=<device>; \
-                create_object DASHBOARD under root.platform.dashboards; \
-                set_dashboard_layout template=snmp-host-monitoring (or empty + widgets bound to list_variables).""";
+                Driver list received — count and driverIds above are authoritative for this instance. \
+                For inventory / «which protocols» questions: finish with Markdown from that list (do not invent a short list). \
+                To create a device: pick one driverId, enable_agent_tool_pack pack=devices, then create_object / configure_driver. \
+                Only run an SNMP demo when the user asked for SNMP.""";
+    }
+
+    private static boolean lastExampleBundleRequestedSections(List<Map<String, Object>> steps) {
+        if (steps == null || steps.isEmpty()) {
+            return false;
+        }
+        Map<String, Object> last = steps.get(steps.size() - 1);
+        Object args = last.get("arguments");
+        if (!(args instanceof Map<?, ?>)) {
+            args = last.get("args");
+        }
+        if (!(args instanceof Map<?, ?> map)) {
+            return false;
+        }
+        Object sections = map.get("sections");
+        if (sections instanceof List<?> list) {
+            return !list.isEmpty();
+        }
+        return sections instanceof String text && !text.isBlank();
+    }
+
+    private static String snmpAwareDriverHelpHint(List<Map<String, Object>> steps) {
+        if (lastDriverHelpLooksLikeSnmp(steps)) {
+            return """
+                    Driver/docs discovery is enough — STOP get_driver_help / search_context loops. \
+                    For Q&A or Admin Copilot: finish with Markdown from the driver help above. \
+                    Only run the SNMP demo steps below when the user asked to provision SNMP in Studio: \
+                    enable_agent_tool_pack pack=devices then pack=dashboards; \
+                    list_objects parent=root.platform.devices; \
+                    create_object parentPath=root.platform.devices name=demo-snmp type=DEVICE \
+                    displayName="Demo SNMP" templateId=snmp-agent-v1 driverId=snmp autoStartDriver=false; \
+                    set_variable path=<device> name=driverConfigJson value={"host":"127.0.0.1","port":161,"version":"2c","community":"public"}; \
+                    configure_driver devicePath=<device> driverId=snmp autoStart=true; list_variables path=<device>; \
+                    create_object DASHBOARD under root.platform.dashboards; \
+                    set_dashboard_layout template=snmp-host-monitoring (or empty + widgets bound to list_variables).""";
+        }
+        return """
+                Driver help loaded — STOP repeating get_driver_help / search_context. \
+                Next: create/configure with that driverId, or finish with Markdown if this was Q&A.""";
+    }
+
+    private static boolean lastDriverHelpLooksLikeSnmp(List<Map<String, Object>> steps) {
+        if (steps == null || steps.isEmpty()) {
+            return false;
+        }
+        Map<String, Object> last = steps.get(steps.size() - 1);
+        Object args = last.get("arguments");
+        if (!(args instanceof Map<?, ?>)) {
+            args = last.get("args");
+        }
+        if (!(args instanceof Map<?, ?> map)) {
+            return false;
+        }
+        for (String key : List.of("driverId", "driver", "name")) {
+            Object value = map.get(key);
+            if (value != null && String.valueOf(value).trim().equalsIgnoreCase("snmp")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static List<Map<String, Object>> appendProposedStep(
+            List<Map<String, Object>> steps,
+            String toolName,
+            Map<String, Object> toolArgs
+    ) {
+        List<Map<String, Object>> withProposed = new ArrayList<>(steps == null ? List.of() : steps);
+        Map<String, Object> proposed = new LinkedHashMap<>();
+        proposed.put("type", "tool");
+        proposed.put("tool", toolName);
+        proposed.put("arguments", toolArgs == null ? Map.of() : toolArgs);
+        withProposed.add(proposed);
+        return withProposed;
     }
 
     private static String defaultHint(List<Map<String, Object>> steps, int maxStepsTotal) {
@@ -327,12 +423,13 @@ final class AgentLoopGuard {
             String discoveryFp = discoveryArgFingerprint(normalized, toolArgs);
             long sameCallCount = totalToolCountWithFingerprint(steps, normalized, discoveryFp);
             if (sameCallCount >= DISCOVERY_HARD_BLOCK) {
+                String hint = discoveryHardBlockHint(normalized, steps, toolArgs);
                 return Optional.of(new BlockDecision(
                         "Hard block: discovery tool '" + normalized + "'"
                                 + (discoveryFp.isBlank() ? "" : " (" + discoveryFp + ")")
                                 + " called " + sameCallCount
                                 + " times this turn with the same arguments — stop looping",
-                        snmpOrDriverExecuteHint(),
+                        hint,
                         false
                 ));
             }
@@ -437,11 +534,11 @@ final class AgentLoopGuard {
             case "search_context" -> keyArgs(args, "topic", "query");
             case "search_platform_recipes" -> keyArgs(args, "query");
             case "get_driver_help" -> keyArgs(args, "driverId", "driver", "name");
-            case "get_example_bundle" -> keyArgs(args, "appId", "exampleId");
+            case "get_example_bundle" -> keyArgs(args, "appId", "exampleId", "sections");
             case "get_widget_catalog" -> keyArgs(args, "type", "widgetType");
             case "get_deploy_playbook" -> keyArgs(args, "playbook", "id", "name");
             case "list_examples" -> keyArgs(args, "query", "tag");
-            case "list_drivers" -> "";
+            case "list_drivers" -> keyArgs(args, "query", "maturity");
             default -> keyArgs(args, "topic", "query", "path", "name");
         };
     }

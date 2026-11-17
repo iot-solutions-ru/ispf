@@ -128,16 +128,18 @@ class AgentLiveRegressionSuiteTest {
         try {
             // Hybrid first when a bundle is declared — even if playbook is the solution generator.
             // Avoids flaky LLM plant-spec when deploy tools already prove the path (BL-178).
-            String deployAppId = resolveDeployAppId(scenario);
-            if (deployAppId != null && !deployAppId.isBlank()) {
-                ScenarioCase deployCase = scenario.withAppId(deployAppId);
-                Map<String, Object> hybrid = tryDeployPlaybook(deployCase);
-                if ("OK".equals(hybrid.get("status"))) {
-                    hybrid.put("id", scenario.id());
-                    hybrid.put("path", "tool-playbook");
-                    return hybrid;
+            if (!"knowledge".equals(scenario.kind())) {
+                String deployAppId = resolveDeployAppId(scenario);
+                if (deployAppId != null && !deployAppId.isBlank()) {
+                    ScenarioCase deployCase = scenario.withAppId(deployAppId);
+                    Map<String, Object> hybrid = tryDeployPlaybook(deployCase);
+                    if ("OK".equals(hybrid.get("status"))) {
+                        hybrid.put("id", scenario.id());
+                        hybrid.put("path", "tool-playbook");
+                        return hybrid;
+                    }
+                    row.put("hybridError", hybrid.get("error"));
                 }
-                row.put("hybridError", hybrid.get("error"));
             }
 
             if ("AgentSolutionGeneratorPlaybook".equals(scenario.playbook())
@@ -169,7 +171,9 @@ class AgentLiveRegressionSuiteTest {
                     List.of(new SimpleGrantedAuthority("ROLE_admin"))
             );
             String prompt = buildPrompt(scenario);
-            Map<String, Object> response = agentService.run(prompt, "root", auth, "admin");
+            Map<String, Object> response = "knowledge".equals(scenario.kind())
+                    ? agentService.run(prompt, "root", auth, "admin", "ask")
+                    : agentService.run(prompt, "root", auth, "admin");
             List<Map<String, Object>> steps = extractSteps(response);
             Set<String> tools = toolNames(steps);
             String status = String.valueOf(response.get("status"));
@@ -186,6 +190,20 @@ class AgentLiveRegressionSuiteTest {
             for (String path : scenario.requiredObjectPaths()) {
                 if (objectManager.tree().findByPath(path).isEmpty()) {
                     failures.add("missing object: " + path);
+                }
+            }
+            String summary = String.valueOf(response.getOrDefault("summary", ""));
+            String summaryLower = summary.toLowerCase(Locale.ROOT);
+            for (String needle : scenario.mustMention()) {
+                if (needle != null && !needle.isBlank()
+                        && !summaryLower.contains(needle.toLowerCase(Locale.ROOT))) {
+                    failures.add("summary missing mustMention: " + needle);
+                }
+            }
+            for (String phrase : scenario.forbiddenPhrases()) {
+                if (phrase != null && !phrase.isBlank()
+                        && summaryLower.contains(phrase.toLowerCase(Locale.ROOT))) {
+                    failures.add("summary contains forbiddenPhrase: " + phrase);
                 }
             }
             if (scenario.appId() != null && !scenario.appId().isBlank()
@@ -345,7 +363,12 @@ class AgentLiveRegressionSuiteTest {
                 String manifestPath = node.path("bundle").path("manifestPath").asText(null);
                 boolean hasBundle = node.path("bundle").hasNonNull("appId");
 
-                if ("platform".equals(mode) && !"platform-primitive".equals(kind)) {
+                if ("platform".equals(mode)
+                        && !"platform-primitive".equals(kind)
+                        && !"knowledge".equals(kind)) {
+                    continue;
+                }
+                if ("knowledge".equals(mode) && !"knowledge".equals(kind)) {
                     continue;
                 }
                 if ("bundle".equals(mode) && !hasBundle && !"platform-primitive".equals(kind)) {
@@ -362,9 +385,28 @@ class AgentLiveRegressionSuiteTest {
                 if (pathsNode.isArray()) {
                     pathsNode.forEach(p -> requiredPaths.add(p.asText()));
                 }
+                List<String> mustMention = new ArrayList<>();
+                JsonNode mentionNode = node.path("acceptance").path("mustMention");
+                if (mentionNode.isArray()) {
+                    mentionNode.forEach(m -> mustMention.add(m.asText()));
+                }
+                List<String> forbiddenPhrases = new ArrayList<>();
+                JsonNode forbiddenNode = node.path("acceptance").path("forbiddenPhrases");
+                if (forbiddenNode.isArray()) {
+                    forbiddenNode.forEach(f -> forbiddenPhrases.add(f.asText()));
+                }
 
                 out.add(new ScenarioCase(
-                        id, kind, playbook, prompt, appId, manifestPath, requiredTools, requiredPaths));
+                        id,
+                        kind,
+                        playbook,
+                        prompt,
+                        appId,
+                        manifestPath,
+                        requiredTools,
+                        requiredPaths,
+                        mustMention,
+                        forbiddenPhrases));
                 if (max > 0 && out.size() >= max) {
                     break;
                 }
@@ -485,7 +527,9 @@ class AgentLiveRegressionSuiteTest {
             String appId,
             String manifestPath,
             List<String> requiredTools,
-            List<String> requiredObjectPaths
+            List<String> requiredObjectPaths,
+            List<String> mustMention,
+            List<String> forbiddenPhrases
     ) {
         ScenarioCase withAppId(String newAppId) {
             return new ScenarioCase(
@@ -496,7 +540,9 @@ class AgentLiveRegressionSuiteTest {
                     newAppId,
                     resolveManifestPath(this, newAppId),
                     requiredTools,
-                    requiredObjectPaths
+                    requiredObjectPaths,
+                    mustMention,
+                    forbiddenPhrases
             );
         }
     }

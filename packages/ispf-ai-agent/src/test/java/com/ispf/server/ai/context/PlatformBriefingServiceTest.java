@@ -67,7 +67,13 @@ class PlatformBriefingServiceTest {
                         "appId", "mes-reference",
                         "purpose", "MES reference",
                         "keySections", "functions, objects"
-                ))
+                )),
+                "driverCatalog", List.of(
+                        Map.of("driverId", "snmp"),
+                        Map.of("driverId", "virtual"),
+                        Map.of("driverId", "opcua")
+                ),
+                "featureIndex", List.of(Map.of("title", "Bundle deploy", "description", "manifest JSON"))
         ));
         when(driverCatalog.list()).thenReturn(List.of(
                 new DriverMetadata("snmp", "SNMP", "1", "SNMP driver", "ISPF", Map.of(), DriverMaturity.PRODUCTION),
@@ -106,6 +112,9 @@ class PlatformBriefingServiceTest {
 
         String briefing = briefingService.buildBriefing("root", true);
 
+        assertTrue(briefing.contains("Knowledge index"));
+        assertTrue(briefing.contains("Drivers loaded here: 2"));
+        assertTrue(briefing.contains("pack catalog has 3"));
         assertTrue(briefing.contains("snmp"));
         assertTrue(briefing.contains("virtual"));
         assertTrue(briefing.contains("mes-reference"));
@@ -113,5 +122,34 @@ class PlatformBriefingServiceTest {
         assertTrue(briefing.contains("root.platform"));
         assertTrue(briefing.contains("DEVICE: 1"));
         assertTrue(briefing.contains("pump-1"));
+    }
+
+    @Test
+    void followUpTurnKeepsKnowledgeIndexWithoutFullStaticDump() {
+        when(contextPackService.contextPackVersion()).thenReturn("ispf-0.7.8");
+        when(contextPackService.loadPack()).thenReturn(Map.of(
+                "exampleSummaries", List.of(Map.of("appId", "mes-reference", "purpose", "MES", "keySections", "x")),
+                "driverCatalog", List.of(Map.of("driverId", "a"), Map.of("driverId", "b"), Map.of("driverId", "c")),
+                "featureIndex", List.of(Map.of("title", "History", "description", "historian"))
+        ));
+        when(driverCatalog.list()).thenReturn(List.of(
+                new DriverMetadata("virtual", "Virtual", "1", "Simulator", "ISPF", Map.of(), DriverMaturity.PRODUCTION)
+        ));
+        when(applicationDataStore.listAllApps()).thenReturn(List.of());
+        when(objectTreePort.tree()).thenReturn(objectTree);
+        when(objectTree.all()).thenReturn(List.of());
+        when(objectTree.findByPath("root.platform")).thenReturn(Optional.empty());
+        when(objectTree.childrenOf("root")).thenReturn(List.of());
+
+        String briefing = briefingService.buildBriefing("root", false);
+
+        assertTrue(briefing.contains("Knowledge index"));
+        assertTrue(briefing.contains("Drivers loaded here: 1"));
+        assertTrue(briefing.contains("pack catalog has 3"));
+        assertTrue(briefing.contains("driverIds (1 of 1 loaded"));
+        assertTrue(briefing.contains("virtual"));
+        assertTrue(briefing.contains("SINGLETON or INSTANCE"));
+        assertTrue(!briefing.contains("### Drivers (driverId | name | maturity)"));
+        assertTrue(!briefing.contains("### Reference examples"));
     }
 }

@@ -1,0 +1,19 @@
+{
+  "id": "platform-knowledge-protocols",
+  "version": "1.0.0",
+  "domain": "platform",
+  "lane": "agent",
+  "kind": "knowledge",
+  "tags": ["knowledge", "drivers", "ask"],
+  "title": "Ask which protocols/drivers ISPF supports",
+  "description": "Grounded driver inventory — must not invent only SNMP/Modbus/MQTT",
+  "prompt": "какие протоколы поддерживает?",
+  "acceptance": {
+    "requiredTools": ["list_drivers"],
+    "mustMention": ["virtual", "mqtt", "modbus", "http"],
+    "forbiddenPhrases": [
+      "поддерживает протоколы SNMP, Modbus и MQTT",
+      "supports SNMP, Modbus, and MQTT"
+    ]
+  }
+}

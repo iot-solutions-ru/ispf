@@ -15,6 +15,7 @@ The short IDs in the parked table (`P-OT`, `P-WEBAUTHN`, and the rest) are the l
 | You get this | You do not get this |
 |--------------|---------------------|
 | Portable zip, container, and `bootRun` load the small driver set (`virtual`, `modbus`, `mqtt`, `http`, `jdbc`, and the rest of that set) | OPC UA, SNMP, and the rest of the 160+ catalog |
+| The in-product AI agent sees **loaded** drivers (and says so when the pack catalog is larger) | An answer that invents the full 160+ list on a laptop without those packs |
 | Local profile: embedded H2 and the accounts `admin` / `admin`, `developer` / `developer`, `operator` / `operator` | Those passwords on a `prod` or OIDC server. Change them before the machine is reachable on a network |
 | History on the laptop is that local database | A ClickHouse cluster created by ISPF, or a second copy of the historian buffer on another ISPF node |
 | Disk spool in front of sole-store ClickHouse exists and is off | The spool turning itself on, or applying to JDBC / dual-write |

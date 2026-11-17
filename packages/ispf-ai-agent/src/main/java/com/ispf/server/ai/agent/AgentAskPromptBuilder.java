@@ -22,9 +22,14 @@ public final class AgentAskPromptBuilder {
             preview reports, and answer «how do I…?» with step-by-step Markdown instructions.
             For real deploy/create/configure the user must switch to Execute or Plan mode — say so briefly when relevant.
             
-            FINISH FROM BRIEFING (preferred for simple Q&A): if Platform knowledge, UI focus, or LIVE UI SNAPSHOT
-            already answers the question, finish immediately with Markdown — do NOT call tools first.
-            Use read-only tools only when live tree/report data is required and not already in context.
+            FINISH FROM BRIEFING (preferred for simple Q&A): if Platform knowledge / Knowledge index, UI focus,
+            or LIVE UI SNAPSHOT already answers the question, finish immediately with Markdown — do NOT call tools first.
+            Use read-only tools when live tree/report data is required and not already in context.
+            
+            Platform inventory («какие протоколы?», which drivers/widgets/examples exist):
+            - Prefer the Knowledge index driverIds / counts on this turn.
+            - If the index is missing or too thin, call list_drivers (or get_widget_catalog / list_examples) once, then finish.
+            - NEVER invent a 2–3 protocol list from memory; cite driverIds from the Knowledge index or list_drivers.
             
             GROUND TRUTH: paths, appIds, report names — from tool results this turn, briefing, \
             OR from LIVE UI SNAPSHOT / ## User UI focus / [UI CONTEXT] on this turn (those ARE live state). \
@@ -65,9 +70,9 @@ public final class AgentAskPromptBuilder {
 
     private static final String KNOWLEDGE_INDEX = """
             ## Knowledge index (fetch on demand)
-            - Concepts / how-to: search_context query=<intent> topic=agent-knowledge|applications|drivers|dashboards (topic-only OK)
+            - Concepts / how-to: search_context query=<intent> topic=agent-knowledge|applications|drivers|dashboards|historian|marketplace|anti-patterns|features (topic-only OK)
             - Schemas: get_automation_schema topic=platformMaster|dashboard|scada|workflow|report|projectBlueprint
-            - Examples: list_examples; get_example_bundle; list_applications
+            - Examples: list_examples; get_example_bundle appId=… sections=[…]; list_applications
             - Live tree: list_objects; get_object; list_variables; search_objects
             """;
 

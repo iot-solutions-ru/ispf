@@ -1,5 +1,6 @@
 package com.ispf.server.ai.context;
 
+import com.ispf.driver.DriverMaturity;
 import com.ispf.driver.DriverMetadata;
 import com.ispf.server.application.bundle.ApplicationBundleSnapshotStore;
 import com.ispf.server.application.data.ApplicationDataStore;
@@ -34,6 +35,7 @@ public class PlatformBriefingService {
 
     private static final int LIVE_CHILDREN_CAP = 30;
     private static final int FOLDER_CHILDREN_CAP = 12;
+    private static final int MAX_INLINE_DRIVER_IDS = 25;
     private static final String PLATFORM_ROOT = "root.platform";
 
     private static final Set<ObjectType> LIVE_OBJECT_COUNT_TYPES = Set.of(
@@ -124,6 +126,7 @@ public class PlatformBriefingService {
     private String buildBriefingUncached(String rootPath, boolean includeStaticKnowledge) {
         StringBuilder sb = new StringBuilder();
         sb.append("Context pack: ").append(contextPackService.contextPackVersion()).append('\n');
+        appendKnowledgeIndex(sb, includeStaticKnowledge);
         if (includeStaticKnowledge) {
             appendDrivers(sb);
             appendVirtualProfiles(sb);
@@ -133,6 +136,102 @@ public class PlatformBriefingService {
         }
         appendLiveSnapshot(sb, rootPath);
         return truncate(sb.toString(), aiProperties.getBriefingMaxChars());
+    }
+
+    /**
+     * Compact platform map on every turn (including follow-ups when full static dump is omitted).
+     */
+    private void appendKnowledgeIndex(StringBuilder sb, boolean includeStaticKnowledge) {
+        List<DriverMetadata> liveDrivers = driverCatalog.list();
+        EnumMap<DriverMaturity, Integer> byMaturity = new EnumMap<>(DriverMaturity.class);
+        for (DriverMetadata driver : liveDrivers) {
+            byMaturity.merge(driver.maturity(), 1, Integer::sum);
+        }
+        int packDriverCount = packDriverCatalogSize();
+        int liveCount = liveDrivers.size();
+        sb.append("\n### Knowledge index (every turn)\n");
+        sb.append("Drivers loaded here: ")
+                .append(liveCount)
+                .append(" (PRODUCTION ")
+                .append(byMaturity.getOrDefault(DriverMaturity.PRODUCTION, 0))
+                .append(" / BETA ")
+                .append(byMaturity.getOrDefault(DriverMaturity.BETA, 0))
+                .append(" / STUB ")
+                .append(byMaturity.getOrDefault(DriverMaturity.STUB, 0))
+                .append(')');
+        if (packDriverCount > 0 && liveCount < packDriverCount) {
+            sb.append(" — pack catalog has ")
+                    .append(packDriverCount)
+                    .append("; others need driver packs on this instance");
+        }
+        sb.append('\n');
+        // Full dump on turn 1 already lists every driver; keep a short sample on follow-ups only.
+        if (!includeStaticKnowledge && !liveDrivers.isEmpty()) {
+            List<DriverMetadata> ordered = new ArrayList<>(liveDrivers);
+            ordered.sort((a, b) -> {
+                int byMat = Integer.compare(maturityRank(a.maturity()), maturityRank(b.maturity()));
+                return byMat != 0 ? byMat : a.id().compareToIgnoreCase(b.id());
+            });
+            int shown = Math.min(ordered.size(), MAX_INLINE_DRIVER_IDS);
+            sb.append("driverIds (")
+                    .append(shown)
+                    .append(" of ")
+                    .append(liveCount)
+                    .append(" loaded; call list_drivers for full list): ");
+            for (int i = 0; i < shown; i++) {
+                if (i > 0) {
+                    sb.append(", ");
+                }
+                sb.append(ordered.get(i).id());
+            }
+            sb.append('\n');
+        }
+        int exampleCount = exampleSummaryCount();
+        int featureCount = featureIndexCount();
+        sb.append("Widgets: ")
+                .append(AgentWidgetCatalog.all().size())
+                .append(" types (get_widget_catalog). Reference examples: ")
+                .append(exampleCount)
+                .append(" (list_examples / get_example_bundle). Features: ")
+                .append(featureCount)
+                .append(" (search_context).\n");
+        sb.append("Logic hosts: SINGLETON or INSTANCE — never ObjectType.DEVICE for orchestration.\n");
+        sb.append("Tools: list_drivers, get_driver_help, get_widget_catalog, list_object_blueprints, ")
+                .append("list_examples, get_example_bundle, search_context.\n");
+        sb.append("Do not invent a short protocol list from memory; cite driverIds from this index or list_drivers.\n");
+    }
+
+    private static int maturityRank(DriverMaturity maturity) {
+        if (maturity == null) {
+            return 9;
+        }
+        return switch (maturity) {
+            case PRODUCTION -> 0;
+            case BETA -> 1;
+            case STUB -> 2;
+        };
+    }
+
+    private int packDriverCatalogSize() {
+        Object catalog = contextPackService.loadPack().get("driverCatalog");
+        return catalog instanceof List<?> list ? list.size() : 0;
+    }
+
+    private int exampleSummaryCount() {
+        Object summaries = contextPackService.loadPack().get("exampleSummaries");
+        if (summaries instanceof List<?> list) {
+            return list.size();
+        }
+        Object examples = contextPackService.loadPack().get("examples");
+        return examples instanceof List<?> list ? list.size() : 0;
+    }
+
+    private int featureIndexCount() {
+        Object fromPack = contextPackService.loadPack().get("featureIndex");
+        if (fromPack instanceof List<?> list && !list.isEmpty()) {
+            return list.size();
+        }
+        return FEATURE_INDEX.size();
     }
 
     private void appendDrivers(StringBuilder sb) {

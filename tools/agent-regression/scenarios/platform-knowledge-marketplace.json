@@ -1,0 +1,15 @@
+{
+  "id": "platform-knowledge-marketplace",
+  "version": "1.0.0",
+  "domain": "platform",
+  "lane": "agent",
+  "kind": "knowledge",
+  "tags": ["knowledge", "marketplace", "ask"],
+  "title": "Ask how marketplace install works",
+  "description": "Catalog install path and admin vs operator",
+  "prompt": "How do I install a free demo from the marketplace, and can operator do it?",
+  "acceptance": {
+    "requiredTools": ["search_context"],
+    "mustMention": ["admin", "operator"]
+  }
+}

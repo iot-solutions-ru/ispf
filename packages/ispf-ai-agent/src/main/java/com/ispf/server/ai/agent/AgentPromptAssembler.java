@@ -54,7 +54,10 @@ final class AgentPromptAssembler {
     ) throws Exception {
         String llmUserText = prepared.llmText();
         List<LlmMessage> messages = new ArrayList<>();
-        boolean includeStatic = aiProperties.isBriefingEveryTurn() || session.turns().isEmpty();
+        boolean copilotChannel = "copilot".equalsIgnoreCase(session.runState().clientChannel());
+        // Copilot only injects the Knowledge index — keep includeStatic=false so driverIds sample is present.
+        boolean includeStatic = !copilotChannel
+                && (aiProperties.isBriefingEveryTurn() || session.turns().isEmpty());
         String briefing = platformBriefingService.buildBriefing(session.rootPath(), includeStatic);
         List<Map<String, Object>> activeTools = AgentToolSurface.filterCatalog(
                 toolRegistry.toolCatalog(profile),
@@ -79,12 +82,13 @@ final class AgentPromptAssembler {
                     memorySection,
                     knowledgeSection
             );
-        } else if ("copilot".equalsIgnoreCase(session.runState().clientChannel())) {
+        } else if (copilotChannel) {
             systemPrompt = AgentCopilotPromptBuilder.build(
                     session.rootPath(),
                     toolRegistry.toolCatalog(profile),
                     prepared.hasImages(),
-                    session.runState().clientFocus()
+                    session.runState().clientFocus(),
+                    briefing
             );
             if (hasTextAttachment(prepared.attachmentMetadata())) {
                 systemPrompt += AgentAttachmentPromptSection.forTextAttachments();

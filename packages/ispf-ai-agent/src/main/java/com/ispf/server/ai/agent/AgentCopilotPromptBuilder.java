@@ -20,6 +20,8 @@ public final class AgentCopilotPromptBuilder {
             "list_binding_rules",
             "get_variable",
             "search_context",
+            "list_drivers",
+            "get_driver_help",
             "list_events",
             "explain_error",
             "get_widget_catalog",
@@ -43,6 +45,8 @@ public final class AgentCopilotPromptBuilder {
             "list_objects",
             "get_object",
             "search_context",
+            "list_drivers",
+            "get_driver_help",
             "list_variables",
             "describe_variables",
             "list_binding_rules",
@@ -104,7 +108,7 @@ public final class AgentCopilotPromptBuilder {
             List<Map<String, Object>> fullToolCatalog,
             boolean hasImages
     ) {
-        return build(rootPath, fullToolCatalog, hasImages, null);
+        return build(rootPath, fullToolCatalog, hasImages, null, null);
     }
 
     public static String build(
@@ -113,11 +117,26 @@ public final class AgentCopilotPromptBuilder {
             boolean hasImages,
             Map<String, Object> clientFocus
     ) {
+        return build(rootPath, fullToolCatalog, hasImages, clientFocus, null);
+    }
+
+    public static String build(
+            String rootPath,
+            List<Map<String, Object>> fullToolCatalog,
+            boolean hasImages,
+            Map<String, Object> clientFocus,
+            String platformBriefing
+    ) {
         String effectiveRoot = rootPath == null || rootPath.isBlank() ? "root" : rootPath.trim();
         List<Map<String, Object>> tools = filterTools(fullToolCatalog, clientFocus);
         StringBuilder prompt = new StringBuilder(HEADER.length() + 2048);
         prompt.append(HEADER);
         prompt.append("\nDefault tree root: ").append(effectiveRoot).append("\n");
+        if (platformBriefing != null && !platformBriefing.isBlank()) {
+            prompt.append("\n## Platform knowledge (compact)\n");
+            prompt.append(extractKnowledgeIndex(platformBriefing));
+            prompt.append('\n');
+        }
         prompt.append("Tools for screen help (").append(tools.size()).append("):\n");
         for (Map<String, Object> tool : tools) {
             prompt.append("- ")
@@ -134,6 +153,29 @@ public final class AgentCopilotPromptBuilder {
                     """);
         }
         return prompt.toString();
+    }
+
+    /** Prefer the every-turn Knowledge index block; fall back to a short head of the briefing. */
+    static String extractKnowledgeIndex(String briefing) {
+        int start = briefing.indexOf("### Knowledge index");
+        if (start < 0) {
+            return briefing.length() > 2_000 ? briefing.substring(0, 2_000) + "…" : briefing;
+        }
+        int end = briefing.indexOf("\n### ", start + 1);
+        String block = end < 0 ? briefing.substring(start) : briefing.substring(start, end);
+        // Copilot prints its own allowed-tools list; drop the Studio tool roster line.
+        StringBuilder cleaned = new StringBuilder(block.length());
+        for (String line : block.split("\n", -1)) {
+            if (line.startsWith("Tools:")) {
+                continue;
+            }
+            if (!cleaned.isEmpty()) {
+                cleaned.append('\n');
+            }
+            cleaned.append(line);
+        }
+        String result = cleaned.toString();
+        return result.length() > 3_000 ? result.substring(0, 3_000) + "…" : result;
     }
 
     static List<Map<String, Object>> filterTools(List<Map<String, Object>> fullToolCatalog) {

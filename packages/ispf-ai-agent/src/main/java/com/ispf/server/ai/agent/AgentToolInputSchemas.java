@@ -551,8 +551,18 @@ public final class AgentToolInputSchemas {
         ));
         catalog.put("get_example_bundle", objectSchema(
                 props(
-                        "exampleId", stringProp("Example id"),
-                        "name", stringProp("Example name")
+                        "appId", stringProp("Reference example appId (e.g. mes-reference)"),
+                        "exampleId", stringProp("Alias of appId"),
+                        "name", stringProp("Alias of appId"),
+                        "sections", arrayProp("Optional manifest section names (functions, objects, …)")
+                ),
+                List.of(),
+                true
+        ));
+        catalog.put("list_drivers", objectSchema(
+                props(
+                        "query", stringProp("Optional substring filter on id/name/description"),
+                        "maturity", stringProp("Optional PRODUCTION|BETA|STUB")
                 ),
                 List.of(),
                 true
@@ -740,7 +750,6 @@ public final class AgentToolInputSchemas {
                 req("path"),
                 false
         ));
-        catalog.put("list_drivers", emptyObject());
         catalog.put("list_event_catalog", objectSchema(
                 props(
                         "appId", stringProp("Application id")

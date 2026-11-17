@@ -147,6 +147,9 @@ public final class AgentWidgetCatalog {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("status", "OK");
         result.put("count", widgets.size());
+        if (!typeQ.isEmpty()) {
+            result.put("typeFilter", typeQ);
+        }
         result.put("widgets", widgets);
         result.put("fieldSemantics", AgentWidgetPropertiesGuide.fieldSemantics());
         result.put("bindings", bindingGuide());

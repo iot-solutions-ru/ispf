@@ -74,7 +74,9 @@ final class AgentKnowledgeTools {
 
             @Override
             public String description() {
-                return "List device drivers on this platform. Args: optional query, optional maturity (PRODUCTION|BETA|STUB). "
+                return "List device drivers loaded on this instance. Args: optional query, optional maturity "
+                        + "(PRODUCTION|BETA|STUB). Prefer a query when asking about one protocol. "
+                        + "Result count is authoritative; large catalogs are compacted for the LLM. "
                         + "Each row has evidence LOOPBACK_VERIFIED or FIELD (FIELD is a named plant gate; none are field-proven today) "
                         + "and readOnly when write is not declared.";
             }
@@ -162,12 +164,15 @@ final class AgentKnowledgeTools {
             @Override
             @SuppressWarnings("unchecked")
             public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
-                List<String> sections = null;
-                Object raw = arguments.get("sections");
-                if (raw instanceof List<?> list) {
-                    sections = list.stream().map(String::valueOf).toList();
+                List<String> sections = parseSectionsArg(arguments.get("sections"));
+                String appId = stringArg(arguments, "appId");
+                if (appId.isBlank()) {
+                    appId = stringArg(arguments, "exampleId");
                 }
-                return searchService.exampleBundle(stringArg(arguments, "appId"), sections);
+                if (appId.isBlank()) {
+                    appId = stringArg(arguments, "name");
+                }
+                return searchService.exampleBundle(appId, sections);
             }
         };
     }
@@ -240,5 +245,22 @@ final class AgentKnowledgeTools {
     private static String optionalString(Map<String, Object> args, String key) {
         String value = stringArg(args, key);
         return value.isBlank() ? null : value;
+    }
+
+    private static List<String> parseSectionsArg(Object raw) {
+        if (raw instanceof List<?> list) {
+            return list.stream()
+                    .map(String::valueOf)
+                    .map(String::trim)
+                    .filter(s -> !s.isBlank())
+                    .toList();
+        }
+        if (raw instanceof String text && !text.isBlank()) {
+            return java.util.Arrays.stream(text.split("[,\\s]+"))
+                    .map(String::trim)
+                    .filter(s -> !s.isBlank())
+                    .toList();
+        }
+        return null;
     }
 }
