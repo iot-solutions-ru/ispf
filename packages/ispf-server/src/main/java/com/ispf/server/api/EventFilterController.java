@@ -53,13 +53,14 @@ public class EventFilterController {
     ) {
         String canonical = requirePathRead(path, authentication);
         eventFilterObjectService.getByPath(canonical);
-        if (objectPath != null && !objectPath.isBlank()) {
-            tenantScopeService.requirePathInScope(
-                    tenantVirtualRootService.toCanonical(objectPath, authentication),
-                    authentication
-            );
-        }
-        return eventService.list(objectPath, limit, canonical);
+        String canonicalObject = objectPath == null || objectPath.isBlank()
+                ? null
+                : requirePathRead(objectPath, authentication);
+        return eventService.list(canonicalObject, limit, canonical).stream()
+                .filter(event -> tenantScopeService.isPathVisible(event.objectPath(), authentication))
+                .filter(event -> objectAccessService.canRead(event.objectPath(), authentication))
+                .map(event -> virtualizeEvent(event, authentication))
+                .toList();
     }
 
     @GetMapping
@@ -144,6 +145,21 @@ public class EventFilterController {
         String canonical = tenantVirtualRootService.toCanonical(path, authentication);
         tenantScopeService.requirePathInScope(canonical, authentication);
         return canonical;
+    }
+
+    private ObjectEvent virtualizeEvent(ObjectEvent event, Authentication authentication) {
+        String virtual = tenantVirtualRootService.toVirtual(event.objectPath(), authentication);
+        if (virtual == null || virtual.equals(event.objectPath())) {
+            return event;
+        }
+        return new ObjectEvent(
+                event.id(),
+                virtual,
+                event.eventName(),
+                event.level(),
+                event.payload(),
+                event.timestamp()
+        );
     }
 
     private static EventFilterDefinition toDefinition(String path, SaveEventFilterRequest request) {
