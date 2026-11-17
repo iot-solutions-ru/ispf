@@ -17,18 +17,22 @@ import org.mockito.ArgumentCaptor;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 class BlueprintBindingRulesMergerStartupSyncTest {
 
     @Test
-    void startupSyncKeepsSavedTemplatedRuleMergesCleanSiblingAndEvaluates() {
+    void startupSyncKeepsSavedTemplatedRuleMergesCleanSiblingWithoutEvaluating() {
         BlueprintRegistry registry = new BlueprintRegistry();
         BlueprintBindingRule templated = new BlueprintBindingRule(
                 "limit",
@@ -101,9 +105,10 @@ class BlueprintBindingRulesMergerStartupSyncTest {
                 registry
         );
 
-        List<String> problems = merger.syncBlueprintRulesAtStartup(
+        List<BlueprintStartupRulesHealth.Problem> problems = merger.syncBlueprintRulesAtStartup(
                 "root.platform.devices.hub.sensor",
-                model
+                model,
+                Set.of()
         );
 
         assertThat(problems).isEmpty();
@@ -120,7 +125,7 @@ class BlueprintBindingRulesMergerStartupSyncTest {
         BindingRule mergedCopy = saved.stream().filter(r -> r.id().equals("copy")).findFirst().orElseThrow();
         assertThat(mergedCopy.expression()).isEqualTo("temperature");
         verify(depIndex).rebuild("root.platform.devices.hub.sensor");
-        verify(ruleEngine).runRulesForObject("root.platform.devices.hub.sensor");
+        verifyNoInteractions(ruleEngine);
     }
 
     @Test
@@ -206,11 +211,18 @@ class BlueprintBindingRulesMergerStartupSyncTest {
                 registry
         );
 
-        List<String> problems = merger.syncBlueprintRulesAtStartup("root.platform.devices.obj", model);
+        List<BlueprintStartupRulesHealth.Problem> problems =
+                merger.syncBlueprintRulesAtStartup("root.platform.devices.obj", model, Set.of());
 
-        assertThat(problems).hasSize(2);
-        assertThat(problems.get(0)).contains("missing").contains("no saved");
-        assertThat(problems.get(1)).contains("bad").contains("${...}");
+        assertThat(problems)
+                .extracting(BlueprintStartupRulesHealth.Problem::ruleId, BlueprintStartupRulesHealth.Problem::kind)
+                .containsExactly(
+                        tuple("missing", BlueprintStartupRulesHealth.Kind.MISSING),
+                        tuple("bad", BlueprintStartupRulesHealth.Kind.UNRESOLVED)
+                );
+        assertThat(problems.get(0).message()).contains("missing").contains("no saved");
+        assertThat(problems.get(1).message()).contains("bad").contains("${...}");
+        assertThat(problems).allSatisfy(problem -> assertThat(problem.blueprintId()).isEqualTo("templated"));
         verify(rulesService).saveRulesAllowingUnresolvedPlaceholders(eq("root.platform.devices.obj"), any());
     }
 
@@ -279,10 +291,102 @@ class BlueprintBindingRulesMergerStartupSyncTest {
                 registry
         );
 
-        assertThat(merger.syncBlueprintRulesAtStartup("root.obj", model)).isEmpty();
+        assertThat(merger.syncBlueprintRulesAtStartup("root.obj", model, Set.of())).isEmpty();
         @SuppressWarnings("unchecked")
         ArgumentCaptor<List<BindingRule>> savedCaptor = ArgumentCaptor.forClass(List.class);
         verify(rulesService).saveRulesAllowingUnresolvedPlaceholders(eq("root.obj"), savedCaptor.capture());
         assertThat(savedCaptor.getValue().getFirst().name()).isEqualTo("Copy chamber-1");
+    }
+
+    @Test
+    void startupSyncLeavesRuleOwnedByAnotherBlueprintAsSaved() {
+        BlueprintRegistry registry = new BlueprintRegistry();
+        BlueprintDefinition model = new BlueprintDefinition(
+                "primary",
+                "primary",
+                "",
+                BlueprintType.INSTANCE,
+                ObjectType.CUSTOM,
+                "",
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(BlueprintBindingRule.of("copy", "temperature", "temperature")),
+                Map.of(),
+                Instant.EPOCH,
+                Instant.EPOCH
+        );
+        registry.register(model);
+
+        BindingRule mixinCopy = new BindingRule(
+                "copy",
+                "copy",
+                true,
+                0,
+                null,
+                "",
+                "temperature * 2",
+                new BindingTarget("variable", "temperature", "value", null, null, null)
+        );
+        BindingRulesService rulesService = mock(BindingRulesService.class);
+        when(rulesService.listRules("root.obj")).thenReturn(List.of(mixinCopy));
+        BindingFormulaResolver formulaResolver = mock(BindingFormulaResolver.class);
+        when(formulaResolver.resolve(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        BlueprintBindingRulesMerger merger = new BlueprintBindingRulesMerger(
+                rulesService,
+                mock(BindingDependencyIndex.class),
+                mock(BindingRuleEngine.class),
+                formulaResolver,
+                mock(BlueprintAnalyticsFormulaSupport.class),
+                new BlueprintParameterResolver(),
+                registry
+        );
+
+        assertThat(merger.syncBlueprintRulesAtStartup("root.obj", model, Set.of("copy"))).isEmpty();
+        verify(rulesService).saveRulesAllowingUnresolvedPlaceholders("root.obj", List.of(mixinCopy));
+    }
+
+    @Test
+    void removeBlueprintRulesKeepsUnresolvedSiblingWithoutStrictValidation() {
+        BindingRule unresolvedSibling = new BindingRule(
+                "limit",
+                "limit",
+                true,
+                0,
+                null,
+                "",
+                "1",
+                new BindingTarget("variable", "sharedLimit", "value", null, null, "${parentPath}/sharedLimit")
+        );
+        BindingRule owned = new BindingRule(
+                "copy",
+                "copy",
+                true,
+                0,
+                null,
+                "",
+                "temperature",
+                new BindingTarget("variable", "temperature", "value", null, null, null)
+        );
+        BindingRulesService rulesService = mock(BindingRulesService.class);
+        when(rulesService.listRules("root.obj")).thenReturn(List.of(unresolvedSibling, owned));
+        BindingDependencyIndex depIndex = mock(BindingDependencyIndex.class);
+
+        BlueprintBindingRulesMerger merger = new BlueprintBindingRulesMerger(
+                rulesService,
+                depIndex,
+                mock(BindingRuleEngine.class),
+                mock(BindingFormulaResolver.class),
+                mock(BlueprintAnalyticsFormulaSupport.class),
+                new BlueprintParameterResolver(),
+                new BlueprintRegistry()
+        );
+
+        merger.removeBlueprintRules("root.obj", List.of("copy"));
+
+        verify(rulesService).saveRulesAllowingUnresolvedPlaceholders("root.obj", List.of(unresolvedSibling));
+        verify(rulesService, never()).saveRules(any(), any());
+        verify(depIndex).rebuild("root.obj");
     }
 }

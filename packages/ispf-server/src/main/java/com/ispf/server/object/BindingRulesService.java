@@ -127,8 +127,8 @@ public class BindingRulesService {
     }
 
     /**
-     * Startup blueprint sync may keep a previously saved rule that still contains
-     * unresolved placeholders so clean sibling rules can still be persisted.
+     * For startup blueprint sync and blueprint detach, which may re-save a previously saved rule
+     * that still contains unresolved placeholders so clean sibling rules can still be persisted.
      * Unresolved rules are written as-is (no formula resolve / validate); evaluation skips them.
      */
     public List<BindingRule> saveRulesAllowingUnresolvedPlaceholders(String objectPath, List<BindingRule> rules) {

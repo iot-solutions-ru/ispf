@@ -117,12 +117,19 @@ public class BlueprintBindingRulesMerger {
      * attach values are not stored on the object, so re-substituting defaults would wipe a
      * resolved saved expression. When the blueprint rule still contains unresolved placeholders,
      * the saved instance rule is kept; missing or still-unresolved saved rules are reported for
-     * readiness DOWN. Rules without leftover placeholders are merged with an empty parameter
-     * map and evaluated (engine skips any rule that still has unresolved placeholders).
+     * readiness DOWN. Rules without leftover placeholders are merged with an empty parameter map.
      *
-     * @return problem descriptions for readiness (empty when healthy for this object)
+     * <p>Nothing is evaluated here: this runs inside {@code ObjectManager.initialize()}, and
+     * {@code BindingRulesStartupRunner} fires {@code onStartup} rules once the tree is ready.
+     *
+     * @param ruleIdsOwnedElsewhere rule ids another blueprint on the same object owns; left as saved
+     * @return templated rules whose saved instance rule is missing or unresolved (empty when healthy)
      */
-    public List<String> syncBlueprintRulesAtStartup(String objectPath, BlueprintDefinition model) {
+    public List<BlueprintStartupRulesHealth.Problem> syncBlueprintRulesAtStartup(
+            String objectPath,
+            BlueprintDefinition model,
+            Set<String> ruleIdsOwnedElsewhere
+    ) {
         BlueprintDefinition effective = BlueprintEngine.flattenInheritance(model, blueprintRegistry);
         if (effective.bindingRules().isEmpty()) {
             return List.of();
@@ -132,20 +139,21 @@ public class BlueprintBindingRulesMerger {
         for (BindingRule existing : bindingRulesService.listRules(objectPath)) {
             byId.put(existing.id(), existing);
         }
-        List<String> problems = new ArrayList<>();
+        List<BlueprintStartupRulesHealth.Problem> problems = new ArrayList<>();
         for (BlueprintBindingRule modelRule : effective.bindingRules()) {
+            if (ruleIdsOwnedElsewhere.contains(modelRule.id())) {
+                continue;
+            }
             if (UnresolvedBindingPlaceholders.present(modelRule)) {
                 BindingRule saved = byId.get(modelRule.id());
                 if (saved == null) {
-                    String problem = objectPath + "#" + modelRule.id()
-                            + ": templated blueprint rule has no saved instance rule";
-                    problems.add(problem);
-                    log.warn(problem);
+                    problems.add(problem(
+                            objectPath, effective, modelRule, BlueprintStartupRulesHealth.Kind.MISSING
+                    ));
                 } else if (UnresolvedBindingPlaceholders.present(saved)) {
-                    String problem = objectPath + "#" + modelRule.id()
-                            + ": saved instance rule still contains ${...}";
-                    problems.add(problem);
-                    log.warn(problem);
+                    problems.add(problem(
+                            objectPath, effective, modelRule, BlueprintStartupRulesHealth.Kind.UNRESOLVED
+                    ));
                 }
                 // Keep saved as deployed; do not overlay blueprint defaults.
             } else {
@@ -157,18 +165,19 @@ public class BlueprintBindingRulesMerger {
         }
         bindingRulesService.saveRulesAllowingUnresolvedPlaceholders(objectPath, new ArrayList<>(byId.values()));
         dependencyIndex.rebuild(objectPath);
-        try {
-            bindingRuleEngine.runRulesForObject(objectPath);
-        } catch (RuntimeException ex) {
-            String problem = objectPath + ": " + ex.getMessage();
-            problems.add(problem);
-            log.error(
-                    "Startup binding rule evaluation failed for {} and was recorded for readiness",
-                    objectPath,
-                    ex
-            );
-        }
         return problems;
+    }
+
+    private static BlueprintStartupRulesHealth.Problem problem(
+            String objectPath,
+            BlueprintDefinition model,
+            BlueprintBindingRule modelRule,
+            BlueprintStartupRulesHealth.Kind kind
+    ) {
+        BlueprintStartupRulesHealth.Problem problem =
+                BlueprintStartupRulesHealth.Problem.of(objectPath, model, modelRule.id(), kind);
+        log.warn("{}", problem.message());
+        return problem;
     }
 
     public void removeBlueprintRules(String objectPath, List<String> bindingRuleIds) {
@@ -179,7 +188,8 @@ public class BlueprintBindingRulesMerger {
         List<BindingRule> remaining = bindingRulesService.listRules(objectPath).stream()
                 .filter(rule -> !remove.contains(rule.id()))
                 .toList();
-        bindingRulesService.saveRules(objectPath, remaining);
+        // A sibling kept unresolved at startup must not block detach.
+        bindingRulesService.saveRulesAllowingUnresolvedPlaceholders(objectPath, remaining);
         dependencyIndex.rebuild(objectPath);
     }
 
