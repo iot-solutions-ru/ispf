@@ -1,3 +1,5 @@
+import type { TFunction } from "i18next";
+
 export type WidgetType =
   | "value"
   | "toggle"
@@ -68,7 +70,7 @@ export const WIDGET_HISTORY_RANGE_OPTIONS: { id: WidgetHistoryRange; label: stri
 
 export function widgetHistoryRangeLabel(
   range: WidgetHistoryRange | undefined,
-  t?: (key: string, options?: { ns?: string }) => string
+  t?: TFunction
 ): string | undefined {
   const id = range ?? "live";
   if (t) {
@@ -93,7 +95,7 @@ export const HISTORY_TABLE_RANGE_IDS: HistoryTableRange[] = [
 
 export function historyTableRangeLabel(
   range: HistoryTableRange | undefined,
-  t?: (key: string, options?: { ns?: string }) => string
+  t?: TFunction
 ): string {
   const id = range ?? "5m";
   if (t) {

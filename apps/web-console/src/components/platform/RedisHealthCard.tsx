@@ -1,10 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
+import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 import { Alert, Space, Table, Tag, Typography } from "antd";
 import type { TableColumnsType } from "antd";
 import { fetchRedisHealth } from "../../api/redisHealth";
 
-function formatTtl(seconds: number, t: (key: string, opts?: { count: number }) => string): string {
+function formatTtl(seconds: number, t: TFunction): string {
   if (seconds >= 3600 && seconds % 3600 === 0) {
     return t("redisHealth.ttlHours", { count: seconds / 3600 });
   }

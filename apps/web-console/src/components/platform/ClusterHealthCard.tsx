@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 import { Alert, Space, Table, Tag, Typography } from "antd";
 import type { TableColumnsType } from "antd";
@@ -43,7 +44,7 @@ function ProfileBadge({
   t,
 }: {
   profile: string | null | undefined;
-  t: (key: string) => string;
+  t: TFunction;
 }) {
   const normalized = profile ?? "unknown";
   const labelKey = `clusterHealth.profile.${normalized}`;
@@ -80,7 +81,7 @@ function ClusterHealthContent({
   t,
 }: {
   data: ClusterHealth;
-  t: (key: string, options?: Record<string, unknown>) => string;
+  t: TFunction;
 }) {
   const summaryRows = [
     {
