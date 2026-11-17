@@ -8,11 +8,11 @@ plugins {
 dependencies {
     implementation(project(":packages:ispf-core"))
 
-    implementation("org.apache.parquet:parquet-avro:1.18.1") {
+    implementation("org.apache.parquet:parquet-avro:1.18.2") {
         exclude(group = "org.slf4j", module = "slf4j-reload4j")
         exclude(group = "ch.qos.reload4j", module = "reload4j")
     }
-    implementation("org.apache.parquet:parquet-hadoop:1.18.1") {
+    implementation("org.apache.parquet:parquet-hadoop:1.18.2") {
         exclude(group = "org.slf4j", module = "slf4j-reload4j")
         exclude(group = "ch.qos.reload4j", module = "reload4j")
     }
