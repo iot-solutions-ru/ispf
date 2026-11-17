@@ -40,6 +40,7 @@ class AgentToolResultCompactorTest {
         Map<String, Object> toolResult = new java.util.LinkedHashMap<>(Map.of(
                 "status", "OK",
                 "appId", "mes-reference",
+                "sectionsRequested", false,
                 "manifest", Map.of(
                         "migrations", List.of(Map.of("id", "001")),
                         "functions", Map.of("fn1", Map.of()),
@@ -55,5 +56,48 @@ class AgentToolResultCompactorTest {
         assertEquals(1, ((Map<?, ?>) sections.get("migrations")).get("itemCount"));
         assertEquals(1, ((Map<?, ?>) sections.get("functions")).get("keyCount"));
         assertEquals(0, ((Map<?, ?>) sections.get("objects")).get("itemCount"));
+    }
+
+    @Test
+    void keepsExampleBundleManifestWhenSectionsRequested() {
+        Map<String, Object> toolResult = new java.util.LinkedHashMap<>();
+        toolResult.put("status", "OK");
+        toolResult.put("appId", "mes-reference");
+        toolResult.put("sectionsRequested", true);
+        toolResult.put("requestedSections", List.of("functions"));
+        toolResult.put("manifest", Map.of("functions", Map.of("fn1", Map.of("type", "script"))));
+        Map<String, Object> compact = AgentToolResultCompactor.compactForLlm("get_example_bundle", toolResult);
+        assertTrue(compact.containsKey("manifest"));
+        assertTrue(!Boolean.TRUE.equals(compact.get("truncatedForLlm")));
+    }
+
+    @Test
+    void compactsLargeDriverListAndKeepsCount() {
+        List<Map<String, Object>> rows = new java.util.ArrayList<>();
+        for (int i = 0; i < 160; i++) {
+            rows.add(Map.of(
+                    "driverId", "d" + i,
+                    "name", "Driver " + i,
+                    "maturity", "PRODUCTION",
+                    "evidence", "LOOPBACK_VERIFIED",
+                    "readOnly", false,
+                    "capabilities", List.of("read"),
+                    "description", "Long description for driver number " + i + " with extra words"
+            ));
+        }
+        Map<String, Object> toolResult = new java.util.LinkedHashMap<>();
+        toolResult.put("status", "OK");
+        toolResult.put("count", 160);
+        toolResult.put("drivers", rows);
+        Map<String, Object> compact = AgentToolResultCompactor.compactForLlm("list_drivers", toolResult);
+        assertEquals(160, compact.get("count"));
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> drivers = (List<Map<String, Object>>) compact.get("drivers");
+        assertEquals(120, drivers.size());
+        assertTrue(Boolean.TRUE.equals(compact.get("truncatedForLlm")));
+        assertTrue(drivers.get(0).containsKey("driverId"));
+        assertTrue(!drivers.get(0).containsKey("capabilities"));
+        String json = drivers.toString();
+        assertTrue(json.length() < 14_000);
     }
 }

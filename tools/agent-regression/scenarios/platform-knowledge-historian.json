@@ -1,0 +1,15 @@
+{
+  "id": "platform-knowledge-historian",
+  "version": "1.0.0",
+  "domain": "platform",
+  "lane": "agent",
+  "kind": "knowledge",
+  "tags": ["knowledge", "historian", "ask"],
+  "title": "Ask how variable history / buckets work",
+  "description": "Historian grounding via search_context or briefing — windowBucket/rollupBuckets",
+  "prompt": "How do I enable history for a variable and chart it? What are windowBucket and rollupBuckets?",
+  "acceptance": {
+    "requiredTools": ["search_context"],
+    "mustMention": ["historyEnabled", "windowBucket"]
+  }
+}

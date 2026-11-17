@@ -1,0 +1,15 @@
+{
+  "id": "platform-knowledge-anti-patterns",
+  "version": "1.0.0",
+  "domain": "platform",
+  "lane": "agent",
+  "kind": "knowledge",
+  "tags": ["knowledge", "anti-patterns", "ask"],
+  "title": "Ask about binding limits and logic host type",
+  "description": "Anti-patterns: logic≠DEVICE, binding pass/depth limits",
+  "prompt": "Why can bindings loop, and where should orchestration logic live — on a DEVICE?",
+  "acceptance": {
+    "requiredTools": ["search_context"],
+    "mustMention": ["SINGLETON", "DEVICE"]
+  }
+}

@@ -202,8 +202,18 @@ public class TreeFirstAgentService {
 
     public Map<String, Object> run(String goal, String rootPath, Authentication authentication, String actor)
             throws Exception {
+        return run(goal, rootPath, authentication, actor, null);
+    }
+
+    public Map<String, Object> run(
+            String goal,
+            String rootPath,
+            Authentication authentication,
+            String actor,
+            String interactionMode
+    ) throws Exception {
         AgentSession session = sessionStore.create(actor, rootPath);
-        return runTurn(session, goal, authentication, actor);
+        return runTurn(session, goal, authentication, actor, interactionMode);
     }
 
     public Map<String, Object> runTurn(

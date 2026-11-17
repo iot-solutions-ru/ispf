@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * Shrinks bulky tool results before they are fed back into the LLM loop (full results stay in step audit).
@@ -13,6 +12,8 @@ final class AgentToolResultCompactor {
 
     private static final int MAX_REPORT_ROWS_FOR_LLM = 12;
     private static final int MAX_HISTORY_SAMPLES_FOR_LLM = 24;
+    private static final int MAX_CATALOG_ROWS_FOR_LLM = 120;
+    private static final int MAX_DESC_CHARS = 80;
 
     private AgentToolResultCompactor() {
     }
@@ -33,6 +34,12 @@ final class AgentToolResultCompactor {
             compactBffResult(copy);
         } else if ("get_example_bundle".equals(toolName)) {
             compactExampleBundle(copy);
+        } else if ("list_drivers".equals(toolName)) {
+            compactCatalogRows(copy, "drivers", "driverId", "maturity", "description");
+        } else if ("get_widget_catalog".equals(toolName)) {
+            compactWidgetCatalog(copy);
+        } else if ("list_object_blueprints".equals(toolName)) {
+            compactCatalogRows(copy, "blueprints", "templateId", "BlueprintType", "description");
         }
         return copy;
     }
@@ -72,6 +79,16 @@ final class AgentToolResultCompactor {
         if (!(manifest instanceof Map<?, ?> manifestMap)) {
             return;
         }
+        boolean sectionsRequested = Boolean.TRUE.equals(toolResult.get("sectionsRequested"))
+                || (toolResult.get("requestedSections") instanceof List<?> requested && !requested.isEmpty());
+        if (sectionsRequested) {
+            // Keep filtered section bodies so Ask/how-to can cite real content.
+            toolResult.put(
+                    "llmHint",
+                    "Manifest subset matches requestedSections — summarize those sections; do not re-dump huge JSON."
+            );
+            return;
+        }
         Map<String, Object> sections = new LinkedHashMap<>();
         for (Map.Entry<?, ?> entry : manifestMap.entrySet()) {
             String section = String.valueOf(entry.getKey());
@@ -90,7 +107,92 @@ final class AgentToolResultCompactor {
         toolResult.put(
                 "llmHint",
                 "Full manifest is in the tool step UI — finish with a Markdown summary of section names and purpose only; "
-                        + "never re-dump manifest JSON in finish summary or result.plan."
+                        + "never re-dump manifest JSON in finish summary or result.plan. "
+                        + "Re-call with sections=[...] to load specific section bodies."
+        );
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void compactCatalogRows(
+            Map<String, Object> toolResult,
+            String listKey,
+            String idKey,
+            String typeKey,
+            String descKey
+    ) {
+        Object raw = toolResult.get(listKey);
+        if (!(raw instanceof List<?> rows) || rows.isEmpty()) {
+            return;
+        }
+        int total = rows.size();
+        toolResult.put("count", total);
+        List<Map<String, Object>> compact = new ArrayList<>();
+        int limit = Math.min(total, MAX_CATALOG_ROWS_FOR_LLM);
+        for (int i = 0; i < limit; i++) {
+            Object item = rows.get(i);
+            if (!(item instanceof Map<?, ?> row)) {
+                continue;
+            }
+            Map<String, Object> slim = new LinkedHashMap<>();
+            Object id = row.get(idKey);
+            if (id != null) {
+                slim.put(idKey, id);
+            }
+            Object type = row.get(typeKey);
+            if (type != null) {
+                slim.put(typeKey, type);
+            }
+            Object desc = row.get(descKey);
+            if (desc != null) {
+                String text = String.valueOf(desc);
+                slim.put(descKey, text.length() > MAX_DESC_CHARS ? text.substring(0, MAX_DESC_CHARS) + "…" : text);
+            }
+            compact.add(slim);
+        }
+        toolResult.put(listKey, compact);
+        if (total > MAX_CATALOG_ROWS_FOR_LLM) {
+            toolResult.put("truncatedForLlm", true);
+            toolResult.put(
+                    "llmHint",
+                    "Showing " + compact.size() + " of " + total
+                            + " rows — filter with query/maturity (or type=) for the rest; count is authoritative."
+            );
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void compactWidgetCatalog(Map<String, Object> toolResult) {
+        Object typeFilter = toolResult.get("typeFilter");
+        boolean typed = typeFilter != null && !String.valueOf(typeFilter).isBlank();
+        Object raw = toolResult.get("widgets");
+        if (!(raw instanceof List<?> widgets) || widgets.isEmpty()) {
+            return;
+        }
+        if (typed && widgets.size() == 1) {
+            // Single-type lookup keeps propertySpec / full row for authoring.
+            return;
+        }
+        List<Map<String, Object>> compact = new ArrayList<>();
+        for (Object item : widgets) {
+            if (!(item instanceof Map<?, ?> row)) {
+                continue;
+            }
+            Map<String, Object> slim = new LinkedHashMap<>();
+            slim.put("type", row.get("type"));
+            slim.put("binding", row.get("binding"));
+            slim.put("purpose", row.get("purpose"));
+            compact.add(slim);
+        }
+        toolResult.put("widgets", compact);
+        toolResult.put("count", compact.size());
+        toolResult.remove("fieldSemantics");
+        toolResult.remove("bindings");
+        toolResult.remove("commonFields");
+        toolResult.remove("propertySpec");
+        toolResult.put("truncatedForLlm", true);
+        toolResult.put(
+                "llmHint",
+                "Widget index only — call get_widget_catalog type=<widgetType> for fields before add_dashboard_widget."
         );
     }
 

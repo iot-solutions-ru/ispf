@@ -59,10 +59,21 @@ class AgentLoopGuardTest {
     }
 
     @Test
-    void hintsExecuteAfterSingleGetDriverHelp() {
-        String hint = AgentLoopGuard.continuationHint("get_driver_help", List.of(step("get_driver_help")), 96);
+    void hintsExecuteAfterSingleGetDriverHelpForSnmp() {
+        String hint = AgentLoopGuard.continuationHint(
+                "get_driver_help",
+                List.of(step("get_driver_help", Map.of("driverId", "snmp"))),
+                96
+        );
         assertTrue(hint.toLowerCase(Locale.ROOT).contains("stop"));
         assertTrue(hint.contains("snmp-agent-v1"));
+    }
+
+    @Test
+    void hintsInventoryAfterListDriversWithoutSnmpDemo() {
+        String hint = AgentLoopGuard.continuationHint("list_drivers", List.of(step("list_drivers")), 96);
+        assertTrue(hint.toLowerCase(Locale.ROOT).contains("authoritative"));
+        assertFalse(hint.contains("snmp-agent-v1"));
     }
 
     @Test

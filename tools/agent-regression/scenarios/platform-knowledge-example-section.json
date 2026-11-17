@@ -1,0 +1,15 @@
+{
+  "id": "platform-knowledge-example-section",
+  "version": "1.0.0",
+  "domain": "platform",
+  "lane": "agent",
+  "kind": "knowledge",
+  "tags": ["knowledge", "examples", "ask"],
+  "title": "Ask for contents of an example bundle section",
+  "description": "get_example_bundle with sections must yield real content, not only counts",
+  "prompt": "What does the mes-reference functions section contain? Summarize the function names.",
+  "acceptance": {
+    "requiredTools": ["get_example_bundle"],
+    "mustMention": ["mes-reference"]
+  }
+}

@@ -218,9 +218,30 @@ FEATURE_INDEX = [
     {
         "id": "drivers",
         "title": "Device drivers",
-        "description": "SNMP, Modbus, MQTT, virtual, OPC UA, …",
-        "keywords": "driver snmp modbus virtual mqtt",
+        "description": "Full catalog via list_drivers / driverCatalog; maturity PRODUCTION|BETA|STUB",
+        "keywords": "driver protocol catalog list_drivers maturity production beta stub",
         "docRef": "DRIVERS.md",
+    },
+    {
+        "id": "historian",
+        "title": "Variable history",
+        "description": "historyEnabled, windowBucket, rollupBuckets; JDBC/ClickHouse historian",
+        "keywords": "historian historyEnabled windowBucket rollupBuckets variable history trend",
+        "docRef": "variable-history.md",
+    },
+    {
+        "id": "marketplace",
+        "title": "Solution marketplace",
+        "description": "Catalog install on System → Solutions; admin/developer can install; operator 403",
+        "keywords": "marketplace catalog install solutions listing admin operator",
+        "docRef": "marketplace.md",
+    },
+    {
+        "id": "anti-patterns",
+        "title": "Common design mistakes",
+        "description": "Logic≠DEVICE, binding owner/limits, MQTT journal defaults, heavy widget expressions",
+        "keywords": "anti-patterns LOGIC_HOST_DEVICE MAX_PASSES bindings eventJournalEnabled",
+        "docRef": "anti-patterns.md",
     },
     {
         "id": "events",
@@ -627,6 +648,10 @@ def build_doc_chunks() -> list[dict]:
         ("load-testing", "Load testing baselines", "loadtest", DOCS / "load-testing.md", 8000),
         ("analytics-tags", "Analytics tag catalog lineage", "analytics", DOCS / "analytics-tag-catalog.md", 6000),
         ("analytics-gaps", "AF-capable gaps vs PI-class", "analytics", DOCS / "analytics-platform-gaps.md", 4000),
+        ("anti-patterns", "Common design mistakes and validators", "anti-patterns", DOCS / "anti-patterns.md", 8000),
+        ("marketplace", "Solution marketplace catalog install", "marketplace", DOCS / "marketplace.md", 7000),
+        ("variable-history", "Variable history historian windowBucket", "historian", DOCS / "variable-history.md", 9000),
+        ("historian-cookbook", "Historian calculation cookbook windowBucket rollupBuckets", "historian", DOCS / "analytics-historian-cookbook.md", 10000),
     ]
     chunks: list[dict] = []
     for chunk_id, title, topic, path, max_chars in slices:

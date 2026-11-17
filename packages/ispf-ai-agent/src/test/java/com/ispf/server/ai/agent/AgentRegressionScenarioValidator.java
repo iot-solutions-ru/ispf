@@ -40,10 +40,15 @@ final class AgentRegressionScenarioValidator {
             "bundle",
             "acceptance"
     );
-    private static final Set<String> KINDS = Set.of("platform-primitive");
+    private static final Set<String> KINDS = Set.of("platform-primitive", "knowledge");
     private static final Set<String> BUNDLE_PROPERTIES = Set.of("appId", "manifestPath");
     private static final Set<String> ACCEPTANCE_PROPERTIES = Set.of(
-            "validateBundle", "requiredTools", "requiredObjectPaths", "operatorSurfaces"
+            "validateBundle",
+            "requiredTools",
+            "requiredObjectPaths",
+            "operatorSurfaces",
+            "mustMention",
+            "forbiddenPhrases"
     );
     private static final Set<String> OPERATOR_SURFACES = Set.of(
             "solutions",
@@ -226,9 +231,27 @@ final class AgentRegressionScenarioValidator {
                     }
                 }
             }
+            validateStringArray(acceptance.get("mustMention"), "acceptance.mustMention", 2, result);
+            validateStringArray(acceptance.get("forbiddenPhrases"), "acceptance.forbiddenPhrases", 3, result);
         }
 
         return result;
+    }
+
+    private void validateStringArray(JsonNode node, String fieldName, int minLength, ScenarioResult result) {
+        if (node == null || node.isNull()) {
+            return;
+        }
+        if (!node.isArray() || node.isEmpty()) {
+            result.errors.add(fieldName + " must be a non-empty array");
+            return;
+        }
+        for (JsonNode item : node) {
+            String value = item.asText("");
+            if (value.trim().length() < minLength) {
+                result.errors.add(fieldName + " entries must be strings of length >= " + minLength);
+            }
+        }
     }
 
     private void validateBundleNode(JsonNode bundle, ScenarioResult result) throws IOException {

@@ -62,7 +62,8 @@ public class ContextPackSearchService {
         if (matchesTopic(normalizedTopic, "drivers", "all")) {
             collectDriverHits(pack, q, hits);
         }
-        if (matchesTopic(normalizedTopic, "features", "all")) {
+        if (matchesTopic(normalizedTopic, "features", "all", "agent-knowledge")
+                || matchesTopic(normalizedTopic, "historian", "marketplace", "anti-patterns", "drivers")) {
             collectFeatureHits(pack, q, hits);
         }
         if (matchesTopic(normalizedTopic, "examples", "all")) {
@@ -194,6 +195,7 @@ public class ContextPackSearchService {
             }
             if (sections == null || sections.isEmpty()) {
                 subset.put("manifest", castMap(manifestMap));
+                subset.put("sectionsRequested", false);
             } else {
                 Map<String, Object> filtered = new LinkedHashMap<>();
                 for (String section : sections) {
@@ -202,6 +204,8 @@ public class ContextPackSearchService {
                     }
                 }
                 subset.put("manifest", filtered);
+                subset.put("sectionsRequested", true);
+                subset.put("requestedSections", List.copyOf(sections));
             }
             subset.put("status", "OK");
             return subset;
@@ -311,7 +315,11 @@ public class ContextPackSearchService {
                 continue;
             }
             String chunkTopic = String.valueOf(row.get("topic") != null ? row.get("topic") : "all");
-            if (!topic.equals("all") && !chunkTopic.equals(topic) && !chunkTopic.equals("all")) {
+            // agent-knowledge is a routing topic — search across docChunks instead of filtering them out.
+            if (!topic.equals("all")
+                    && !topic.equals("agent-knowledge")
+                    && !chunkTopic.equals(topic)
+                    && !chunkTopic.equals("all")) {
                 continue;
             }
             int lexical = scoreRow(row, q, Set.of("id", "title", "keywords", "text"));
