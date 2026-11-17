@@ -40,7 +40,7 @@
     "dompurify": "^3.4.17",
     "exceljs": "^4.4.0",
     "framer-motion": "^14.14.0",
-    "i18next": "^26.7.2",
+    "i18next": "^27.1.1",
     "maplibre-gl": "^6.4.1",
     "qrcode": "^1.5.4",
     "react": "^19.3.1",

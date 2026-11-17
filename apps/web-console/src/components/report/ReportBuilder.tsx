@@ -1,4 +1,5 @@
 import { Button, Space } from "antd";
+import type { TFunction } from "i18next";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useOptionalUserTimeZone } from "../../context/useUserTimeZone";
@@ -36,7 +37,7 @@ import {
 } from "./reportBuilderUtils";
 import type { ReportKind } from "./reportBuilderUtils";
 
-function validationErrorMessage(code: string, t: (key: string, opts?: Record<string, unknown>) => string): string {
+function validationErrorMessage(code: string, t: TFunction): string {
   const [key, value] = code.split(":");
   if (value) {
     if (key === "error.paramInvalid") return t("report:error.paramInvalid", { name: value });

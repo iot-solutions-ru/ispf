@@ -511,7 +511,7 @@ export default function DeviceDriverPanel({ devicePath, canManage }: DeviceDrive
                   {mappingValidation.issues.map((issue) => {
                     const i18n = driverMappingIssueI18n(issue);
                     const issueTitle = i18n
-                      ? t(`inspector:${i18n.messageKey}`, i18n.messageParams)
+                      ? t(`inspector:${i18n.messageKey}`, i18n.messageParams ?? {})
                       : issue.message;
                     const issueDetail = i18n?.detailKey ? t(`inspector:${i18n.detailKey}`) : null;
                     return (
