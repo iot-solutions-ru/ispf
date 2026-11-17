@@ -12,8 +12,11 @@ final class AgentToolResultCompactor {
 
     private static final int MAX_REPORT_ROWS_FOR_LLM = 12;
     private static final int MAX_HISTORY_SAMPLES_FOR_LLM = 24;
-    private static final int MAX_CATALOG_ROWS_FOR_LLM = 120;
-    private static final int MAX_DESC_CHARS = 80;
+    /** Cap keeps Jackson-serialized driver rows under TreeFirstAgentService's 14k mid-JSON cut. */
+    private static final int MAX_CATALOG_ROWS_FOR_LLM = 50;
+    private static final int MAX_DESC_CHARS = 60;
+    private static final int MAX_SECTION_CHARS_FOR_LLM = 6_000;
+    private static final int MAX_MANIFEST_CHARS_FOR_LLM = 11_000;
 
     private AgentToolResultCompactor() {
     }
@@ -35,11 +38,11 @@ final class AgentToolResultCompactor {
         } else if ("get_example_bundle".equals(toolName)) {
             compactExampleBundle(copy);
         } else if ("list_drivers".equals(toolName)) {
-            compactCatalogRows(copy, "drivers", "driverId", "maturity", "description");
+            compactDriverRows(copy);
         } else if ("get_widget_catalog".equals(toolName)) {
             compactWidgetCatalog(copy);
         } else if ("list_object_blueprints".equals(toolName)) {
-            compactCatalogRows(copy, "blueprints", "templateId", "BlueprintType", "description");
+            compactBlueprintRows(copy);
         }
         return copy;
     }
@@ -82,7 +85,7 @@ final class AgentToolResultCompactor {
         boolean sectionsRequested = Boolean.TRUE.equals(toolResult.get("sectionsRequested"))
                 || (toolResult.get("requestedSections") instanceof List<?> requested && !requested.isEmpty());
         if (sectionsRequested) {
-            // Keep filtered section bodies so Ask/how-to can cite real content.
+            capManifestSections(toolResult, (Map<?, ?>) manifestMap);
             toolResult.put(
                     "llmHint",
                     "Manifest subset matches requestedSections — summarize those sections; do not re-dump huge JSON."
@@ -113,14 +116,35 @@ final class AgentToolResultCompactor {
     }
 
     @SuppressWarnings("unchecked")
-    private static void compactCatalogRows(
-            Map<String, Object> toolResult,
-            String listKey,
-            String idKey,
-            String typeKey,
-            String descKey
-    ) {
-        Object raw = toolResult.get(listKey);
+    private static void capManifestSections(Map<String, Object> toolResult, Map<?, ?> manifestMap) {
+        int sectionCount = Math.max(1, manifestMap.size());
+        int perSectionLimit = Math.min(
+                MAX_SECTION_CHARS_FOR_LLM,
+                Math.max(800, MAX_MANIFEST_CHARS_FOR_LLM / sectionCount)
+        );
+        Map<String, Object> capped = new LinkedHashMap<>();
+        boolean truncated = false;
+        for (Map.Entry<?, ?> entry : manifestMap.entrySet()) {
+            String key = String.valueOf(entry.getKey());
+            Object value = entry.getValue();
+            String asText = String.valueOf(value);
+            if (asText.length() > perSectionLimit) {
+                capped.put(key, asText.substring(0, perSectionLimit) + "…");
+                truncated = true;
+            } else {
+                capped.put(key, value);
+            }
+        }
+        toolResult.put("manifest", capped);
+        if (truncated) {
+            toolResult.put("truncatedForLlm", true);
+            toolResult.put("sectionTruncatedForLlm", true);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void compactDriverRows(Map<String, Object> toolResult) {
+        Object raw = toolResult.get("drivers");
         if (!(raw instanceof List<?> rows) || rows.isEmpty()) {
             return;
         }
@@ -134,29 +158,71 @@ final class AgentToolResultCompactor {
                 continue;
             }
             Map<String, Object> slim = new LinkedHashMap<>();
-            Object id = row.get(idKey);
-            if (id != null) {
-                slim.put(idKey, id);
-            }
-            Object type = row.get(typeKey);
-            if (type != null) {
-                slim.put(typeKey, type);
-            }
-            Object desc = row.get(descKey);
+            putIfPresent(slim, row, "driverId");
+            putIfPresent(slim, row, "name");
+            putIfPresent(slim, row, "maturity");
+            putIfPresent(slim, row, "evidence");
+            putIfPresent(slim, row, "readOnly");
+            Object desc = row.get("description");
             if (desc != null) {
                 String text = String.valueOf(desc);
-                slim.put(descKey, text.length() > MAX_DESC_CHARS ? text.substring(0, MAX_DESC_CHARS) + "…" : text);
+                slim.put("description", text.length() > MAX_DESC_CHARS ? text.substring(0, MAX_DESC_CHARS) + "…" : text);
             }
             compact.add(slim);
         }
-        toolResult.put(listKey, compact);
+        toolResult.put("drivers", compact);
         if (total > MAX_CATALOG_ROWS_FOR_LLM) {
             toolResult.put("truncatedForLlm", true);
             toolResult.put(
                     "llmHint",
                     "Showing " + compact.size() + " of " + total
-                            + " rows — filter with query/maturity (or type=) for the rest; count is authoritative."
+                            + " drivers — filter with query/maturity for the rest; count is authoritative."
             );
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void compactBlueprintRows(Map<String, Object> toolResult) {
+        Object raw = toolResult.get("blueprints");
+        if (!(raw instanceof List<?> rows) || rows.isEmpty()) {
+            return;
+        }
+        int total = rows.size();
+        toolResult.put("count", total);
+        List<Map<String, Object>> compact = new ArrayList<>();
+        int limit = Math.min(total, MAX_CATALOG_ROWS_FOR_LLM);
+        for (int i = 0; i < limit; i++) {
+            Object item = rows.get(i);
+            if (!(item instanceof Map<?, ?> row)) {
+                continue;
+            }
+            Map<String, Object> slim = new LinkedHashMap<>();
+            putIfPresent(slim, row, "templateId");
+            putIfPresent(slim, row, "blueprintId");
+            putIfPresent(slim, row, "BlueprintType");
+            putIfPresent(slim, row, "targetObjectType");
+            Object desc = row.get("description");
+            if (desc != null) {
+                String text = String.valueOf(desc);
+                slim.put("description", text.length() > MAX_DESC_CHARS ? text.substring(0, MAX_DESC_CHARS) + "…" : text);
+            }
+            compact.add(slim);
+        }
+        toolResult.put("blueprints", compact);
+        if (total > MAX_CATALOG_ROWS_FOR_LLM) {
+            toolResult.put("truncatedForLlm", true);
+            toolResult.put(
+                    "llmHint",
+                    "Showing " + compact.size() + " of " + total
+                            + " blueprints — filter with query for the rest; count is authoritative."
+            );
+        }
+    }
+
+    private static void putIfPresent(Map<String, Object> target, Map<?, ?> source, String key) {
+        Object value = source.get(key);
+        if (value != null) {
+            target.put(key, value);
         }
     }
 

@@ -107,6 +107,52 @@ class AgentPlanGuardTest {
     }
 
     @Test
+    void askModeAllowsFollowUpAfterUntypedWidgetCatalog() {
+        AgentRunState state = new AgentRunState();
+        state.setInteractionMode(AgentInteractionMode.ASK);
+        assertThat(AgentPlanGuard.askModeContinuationHint(
+                state,
+                List.of(toolStep("get_widget_catalog")),
+                "get_widget_catalog"
+        )).contains("ONE targeted follow-up");
+        assertThat(AgentPlanGuard.askModeContinuationHint(
+                state,
+                List.of(toolStep("get_widget_catalog", Map.of("type", "gauge"))),
+                "get_widget_catalog"
+        )).contains("enough discovery");
+    }
+
+    @Test
+    void askModeAllowsFollowUpAfterExampleBundleWithoutSections() {
+        AgentRunState state = new AgentRunState();
+        state.setInteractionMode(AgentInteractionMode.ASK);
+        assertThat(AgentPlanGuard.askModeContinuationHint(
+                state,
+                List.of(toolStep("get_example_bundle", Map.of("appId", "mes-reference"))),
+                "get_example_bundle"
+        )).contains("ONE targeted follow-up");
+        assertThat(AgentPlanGuard.askModeContinuationHint(
+                state,
+                List.of(toolStep("get_example_bundle", Map.of(
+                        "appId", "mes-reference",
+                        "sections", List.of("functions")
+                ))),
+                "get_example_bundle"
+        )).contains("enough discovery");
+    }
+
+    @Test
+    void askModeFinishesAfterListDriversInventory() {
+        AgentRunState state = new AgentRunState();
+        state.setInteractionMode(AgentInteractionMode.ASK);
+        assertThat(AgentPlanGuard.askModeContinuationHint(
+                state,
+                List.of(toolStep("list_drivers")),
+                "list_drivers"
+        )).contains("finish");
+    }
+
+    @Test
     void planningContinuationHintSkippedInAskMode() {
         AgentRunState state = new AgentRunState();
         state.setInteractionMode(AgentInteractionMode.ASK);
@@ -582,5 +628,9 @@ class AgentPlanGuardTest {
 
     private static Map<String, Object> toolStep(String tool) {
         return Map.of("type", "tool", "tool", tool);
+    }
+
+    private static Map<String, Object> toolStep(String tool, Map<String, Object> arguments) {
+        return Map.of("type", "tool", "tool", tool, "arguments", arguments);
     }
 }

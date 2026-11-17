@@ -190,7 +190,7 @@ public class PlatformBriefingService {
         int featureCount = featureIndexCount();
         sb.append("Widgets: ")
                 .append(AgentWidgetCatalog.all().size())
-                .append(" types (get_widget_catalog). Examples: ")
+                .append(" types (get_widget_catalog). Reference examples: ")
                 .append(exampleCount)
                 .append(" (list_examples / get_example_bundle). Features: ")
                 .append(featureCount)

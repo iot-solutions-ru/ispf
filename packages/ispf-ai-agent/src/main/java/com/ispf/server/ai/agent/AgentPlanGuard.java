@@ -746,13 +746,50 @@ final class AgentPlanGuard {
                     Optional result.suggestions: switch to Execute mode to deploy for real.""";
         }
         long discoveryCount = steps == null ? 0 : steps.stream().filter(AgentPlanGuard::isDiscoveryStep).count();
-        if (discoveryCount >= 1) {
+        if (discoveryCount < 1) {
+            return null;
+        }
+        // Non-blank hint required: null falls through to AgentLoopGuard which may force Finish NOW.
+        if (discoveryCount == 1 && askNeedsFollowUpDiscovery(lastTool, steps)) {
             return """
-                    Ask mode: enough discovery for this turn — finish with a plain Markdown how-to answer. \
+                    Ask mode: catalog/section index loaded. Make at most ONE targeted follow-up \
+                    (get_widget_catalog type=… or get_example_bundle sections=[…]) if field/section detail \
+                    is needed; otherwise finish NOW with Markdown how-to. \
                     Do NOT call import_package, configure_operator_ui, or other mutations. \
                     No phase=plan, plan, or questions in result.""";
         }
-        return null;
+        return """
+                Ask mode: enough discovery for this turn — finish with a plain Markdown how-to answer. \
+                Do NOT call import_package, configure_operator_ui, or other mutations. \
+                No phase=plan, plan, or questions in result.""";
+    }
+
+    /**
+     * True when the last call was a broad catalog index that may need one typed follow-up
+     * (widget type= or example sections=). list_drivers inventory finishes from the full list.
+     */
+    private static boolean askNeedsFollowUpDiscovery(String lastTool, List<Map<String, Object>> steps) {
+        if (lastTool == null || steps == null || steps.isEmpty()) {
+            return false;
+        }
+        Map<String, Object> last = steps.get(steps.size() - 1);
+        Object args = last.get("arguments");
+        if (!(args instanceof Map<?, ?>)) {
+            args = last.get("args");
+        }
+        Map<?, ?> argMap = args instanceof Map<?, ?> m ? m : Map.of();
+        if ("get_widget_catalog".equals(lastTool)) {
+            Object type = argMap.get("type");
+            return type == null || String.valueOf(type).isBlank();
+        }
+        if ("get_example_bundle".equals(lastTool)) {
+            Object sections = argMap.get("sections");
+            if (sections instanceof List<?> list) {
+                return list.isEmpty();
+            }
+            return sections == null || String.valueOf(sections).isBlank();
+        }
+        return false;
     }
 
     static String planningContinuationHint(

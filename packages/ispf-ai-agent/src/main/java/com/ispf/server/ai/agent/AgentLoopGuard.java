@@ -235,10 +235,10 @@ final class AgentLoopGuard {
                         Do NOT re-dump raw JSON. Re-call only for another appId or different sections.""";
             }
             return """
-                    Example bundle loaded — full manifest is in the tool result above and in the UI step. \
-                    Finish NOW with {"type":"finish","summary":"Markdown: section names and purpose only","result":{}}. \
-                    Do NOT embed manifest JSON in summary (no ``` fences) or in result.plan.sections. \
-                    Re-calling get_example_bundle is unnecessary unless the user asks for another appId/sections.""";
+                    Example section index (manifestSections) is in the tool result above. \
+                    If the user needs field/section detail, call get_example_bundle once more with \
+                    sections=[…] for those keys; otherwise finish with Markdown of section names and purpose. \
+                    Do NOT embed manifest JSON in summary (no ``` fences) or in result.plan.sections.""";
         }
         if ("set_variable".equals(lastTool) && lastStepErrorContains(steps, "Variable not found: layout")) {
             return """
@@ -328,7 +328,9 @@ final class AgentLoopGuard {
         if (lastDriverHelpLooksLikeSnmp(steps)) {
             return """
                     Driver/docs discovery is enough — STOP get_driver_help / search_context loops. \
-                    Execute SNMP demo NOW: enable_agent_tool_pack pack=devices then pack=dashboards; \
+                    For Q&A or Admin Copilot: finish with Markdown from the driver help above. \
+                    Only run the SNMP demo steps below when the user asked to provision SNMP in Studio: \
+                    enable_agent_tool_pack pack=devices then pack=dashboards; \
                     list_objects parent=root.platform.devices; \
                     create_object parentPath=root.platform.devices name=demo-snmp type=DEVICE \
                     displayName="Demo SNMP" templateId=snmp-agent-v1 driverId=snmp autoStartDriver=false; \
@@ -351,18 +353,16 @@ final class AgentLoopGuard {
         if (!(args instanceof Map<?, ?>)) {
             args = last.get("args");
         }
-        if (args instanceof Map<?, ?> map) {
-            Object driverId = map.get("driverId");
-            if (driverId != null && String.valueOf(driverId).toLowerCase(Locale.ROOT).contains("snmp")) {
+        if (!(args instanceof Map<?, ?> map)) {
+            return false;
+        }
+        for (String key : List.of("driverId", "driver", "name")) {
+            Object value = map.get(key);
+            if (value != null && String.valueOf(value).trim().equalsIgnoreCase("snmp")) {
                 return true;
             }
         }
-        Object name = last.get("tool");
-        if (name == null) {
-            name = last.get("name");
-        }
-        return "get_driver_help".equals(String.valueOf(name))
-                && String.valueOf(last).toLowerCase(Locale.ROOT).contains("snmp");
+        return false;
     }
 
     private static List<Map<String, Object>> appendProposedStep(
@@ -538,7 +538,7 @@ final class AgentLoopGuard {
             case "get_widget_catalog" -> keyArgs(args, "type", "widgetType");
             case "get_deploy_playbook" -> keyArgs(args, "playbook", "id", "name");
             case "list_examples" -> keyArgs(args, "query", "tag");
-            case "list_drivers" -> "";
+            case "list_drivers" -> keyArgs(args, "query", "maturity");
             default -> keyArgs(args, "topic", "query", "path", "name");
         };
     }
