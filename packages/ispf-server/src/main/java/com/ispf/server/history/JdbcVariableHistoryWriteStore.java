@@ -8,7 +8,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.time.Instant;
+import java.util.Calendar;
 import java.util.List;
+import java.util.TimeZone;
 
 /**
  * Batched JDBC inserts for historian — avoids per-row JPA {@code IDENTITY} round-trips.
@@ -45,17 +48,7 @@ public class JdbcVariableHistoryWriteStore implements VariableHistoryWriteStore 
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void appendOne(VariableHistoryWriteRecord record) {
-        jdbcTemplate.update(
-                INSERT_SQL,
-                record.objectPath(),
-                record.variableName(),
-                record.fieldName(),
-                Timestamp.from(record.sampledAt()),
-                Timestamp.from(record.observedAt()),
-                record.valueDouble(),
-                record.valueText(),
-                record.quality()
-        );
+        jdbcTemplate.update(INSERT_SQL, statement -> bindInsert(statement, record));
     }
 
     private static void bindInsert(java.sql.PreparedStatement statement, VariableHistoryWriteRecord record)
@@ -63,8 +56,8 @@ public class JdbcVariableHistoryWriteStore implements VariableHistoryWriteStore 
         statement.setString(1, record.objectPath());
         statement.setString(2, record.variableName());
         statement.setString(3, record.fieldName());
-        statement.setTimestamp(4, Timestamp.from(record.sampledAt()));
-        statement.setTimestamp(5, Timestamp.from(record.observedAt()));
+        bindUtcTimestamp(statement, 4, record.sampledAt());
+        bindUtcTimestamp(statement, 5, record.observedAt());
         if (record.valueDouble() != null) {
             statement.setDouble(6, record.valueDouble());
         } else {
@@ -80,5 +73,16 @@ public class JdbcVariableHistoryWriteStore implements VariableHistoryWriteStore 
         } else {
             statement.setNull(8, Types.VARCHAR);
         }
+    }
+
+    /**
+     * {@code variable_samples} stores {@code TIMESTAMP} without a time zone and Hibernate reads it as UTC.
+     * {@link java.sql.PreparedStatement#setTimestamp(int, Timestamp)} sends the JVM zone, so a Moscow
+     * clock stores a sample three hours ahead of the instant that was written.
+     */
+    private static void bindUtcTimestamp(java.sql.PreparedStatement statement, int index, Instant instant)
+            throws java.sql.SQLException {
+        Calendar utc = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+        statement.setTimestamp(index, Timestamp.from(instant), utc);
     }
 }
