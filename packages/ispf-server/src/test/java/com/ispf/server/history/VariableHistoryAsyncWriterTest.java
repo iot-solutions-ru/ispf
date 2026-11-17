@@ -19,6 +19,7 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
@@ -178,6 +179,14 @@ class VariableHistoryAsyncWriterTest {
     void batchSecondaryFailureDoesNotFanOutPerSampleRetries() throws Exception {
         doThrow(new HistorianSecondaryWriteFailedException("secondary down", new IllegalStateException("CH down")))
                 .when(batchPersister).persistBatch(anyList());
+        // Three samples with batchSize 2 flush in two or three batches; wait for all of them.
+        CountDownLatch flushedSamples = new CountDownLatch(3);
+        doAnswer(invocation -> {
+            for (long count = invocation.getArgument(0); count > 0; count--) {
+                flushedSamples.countDown();
+            }
+            return null;
+        }).when(automationMetricsRecorder).recordVariableHistoryFlushed(anyLong());
 
         writer.enqueue(List.of(
                 sample("root.a", "temperature", "value", 1.0),
@@ -185,13 +194,10 @@ class VariableHistoryAsyncWriterTest {
                 sample("root.c", "temperature", "value", 3.0)
         ));
 
-        verify(batchPersister, timeout(5000).atLeastOnce()).persistBatch(anyList());
+        assertTrue(flushedSamples.await(5, TimeUnit.SECONDS),
+                "expected flushed metric >= 3, got " + (3 - flushedSamples.getCount()));
+        verify(batchPersister, atLeastOnce()).persistBatch(anyList());
         verify(batchPersister, never()).persistOne(org.mockito.ArgumentMatchers.any());
-        ArgumentCaptor<Long> flushedCaptor = ArgumentCaptor.forClass(Long.class);
-        verify(automationMetricsRecorder, timeout(5000).atLeastOnce())
-                .recordVariableHistoryFlushed(flushedCaptor.capture());
-        long totalFlushed = flushedCaptor.getAllValues().stream().mapToLong(Long::longValue).sum();
-        assertTrue(totalFlushed >= 3, "expected flushed metric >= 3, got " + totalFlushed);
     }
 
     @Test
