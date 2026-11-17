@@ -110,6 +110,8 @@ To prevent race conditions and infinite recalculation loops when multiple rules 
 | `context` | `path` | Writes to `@dashboardContext` on a `DASHBOARD` object ([Platform logic](platform-logic.md)) |
 | `event` | `eventName` (or `ref`) | Publishes a platform event with the evaluated payload |
 
+An `event` rule publishes at most once per activation, however many passes the engine makes. With a non-blank `condition`, a variable change, context change, startup, or manual run publishes only when the condition has become true; the rule publishes again after an activation finds the condition false. That state is kept in the object's `@bindingState`, so a restart does not publish the event again. An `onEvent` / `onEventRef` event or a `periodicMs` tick publishes each time the condition holds. A rule with a blank condition publishes on every activation.
+
 ---
 
 ## 5. REST API and Web Console

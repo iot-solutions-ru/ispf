@@ -9,6 +9,7 @@ import com.ispf.core.object.PlatformObject;
 import com.ispf.expression.BindingEvaluationContext;
 import com.ispf.expression.BindingExpressionEvaluator;
 import com.ispf.expression.ExpressionEngine;
+import com.ispf.expression.InMemoryBindingStatePort;
 import com.ispf.server.binding.BindingInvokeAuditService;
 import com.ispf.server.event.EventService;
 import com.ispf.server.object.pubsub.ObjectChangePublicationService;
@@ -104,7 +105,8 @@ class BindingRuleEngineUnknownEventTargetTest {
                 audit,
                 mock(ObjectEntityMapper.class),
                 new ObjectMapper(),
-                mock(EventService.class)
+                mock(EventService.class),
+                new InMemoryBindingStatePort()
         );
     }
 }

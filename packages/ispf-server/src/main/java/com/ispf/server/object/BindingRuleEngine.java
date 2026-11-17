@@ -12,6 +12,7 @@ import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
 import com.ispf.expression.BindingEvaluationContext;
 import com.ispf.expression.BindingExpressionEvaluator;
+import com.ispf.expression.BindingStatePort;
 import com.ispf.expression.ExpressionEngine;
 import com.ispf.expression.ExpressionException;
 import com.ispf.core.ref.PlatformRef;
@@ -67,6 +68,7 @@ public class BindingRuleEngine {
     private final ObjectEntityMapper entityMapper;
     private final ObjectMapper objectMapper;
     private final EventService eventService;
+    private final BindingStatePort bindingStatePort;
 
     public BindingRuleEngine(
             ObjectManager objectManager,
@@ -79,7 +81,8 @@ public class BindingRuleEngine {
             BindingInvokeAuditService bindingAuditService,
             ObjectEntityMapper entityMapper,
             ObjectMapper objectMapper,
-            EventService eventService
+            EventService eventService,
+            BindingStatePort bindingStatePort
     ) {
         this.objectManager = objectManager;
         this.bindingRulesService = bindingRulesService;
@@ -92,6 +95,7 @@ public class BindingRuleEngine {
         this.entityMapper = entityMapper;
         this.objectMapper = objectMapper;
         this.eventService = eventService;
+        this.bindingStatePort = bindingStatePort;
     }
 
     public void onStartup(String objectPath) {
@@ -164,9 +168,11 @@ public class BindingRuleEngine {
         }
         try {
             Set<String> changedVariables = new LinkedHashSet<>();
+            // Event rules this chain already emitted; a later pass must not emit them again.
+            Set<String> firedEventRules = new LinkedHashSet<>();
             boolean changedInPass = false;
             for (int pass = 0; pass < MAX_PASSES; pass++) {
-                changedInPass = evaluatePass(objectPath, trigger, changedVariables);
+                changedInPass = evaluatePass(objectPath, trigger, changedVariables, firedEventRules);
                 if (!changedInPass) {
                     break;
                 }
@@ -192,7 +198,12 @@ public class BindingRuleEngine {
                 && !BindingStateVariables.BINDING_STATE.equals(variableName);
     }
 
-    private boolean evaluatePass(String objectPath, Trigger trigger, Set<String> changedVariables) {
+    private boolean evaluatePass(
+            String objectPath,
+            Trigger trigger,
+            Set<String> changedVariables,
+            Set<String> firedEventRules
+    ) {
         PlatformObject object = objectManager.require(objectPath);
         List<BindingRule> rules = bindingRulesService.listRules(objectPath).stream()
                 .filter(BindingRule::enabled)
@@ -208,7 +219,7 @@ public class BindingRuleEngine {
                 scheduleAsyncRule(objectPath, rule, trigger);
                 continue;
             }
-            if (evaluateRule(object, rule, changedVariables, trigger)) {
+            if (evaluateRule(object, rule, changedVariables, firedEventRules, trigger)) {
                 changed = true;
             }
         }
@@ -225,7 +236,7 @@ public class BindingRuleEngine {
         }
         PlatformObject object = objectManager.require(objectPath);
         Set<String> changedVariables = new LinkedHashSet<>();
-        if (evaluateRule(object, rule, changedVariables, trigger)) {
+        if (evaluateRule(object, rule, changedVariables, new LinkedHashSet<>(), trigger)) {
             for (String variableName : changedVariables) {
                 if (shouldPublishVariableUpdate(variableName)) {
                     publicationService.publishVariableChange(objectPath, variableName, null);
@@ -257,6 +268,7 @@ public class BindingRuleEngine {
             PlatformObject object,
             BindingRule rule,
             Set<String> changedVariables,
+            Set<String> firedEventRules,
             Trigger trigger
     ) {
         BindingTarget target = rule.target();
@@ -264,7 +276,7 @@ public class BindingRuleEngine {
             return evaluateContextRule(object, rule, changedVariables, trigger);
         }
         if (target.isEvent()) {
-            return evaluateEventRule(object, rule, trigger);
+            return evaluateEventRule(object, rule, firedEventRules, trigger);
         }
         if (target.isAction()) {
             return evaluateActionRule(object, rule, trigger);
@@ -470,13 +482,32 @@ public class BindingRuleEngine {
         }
     }
 
-    private boolean evaluateEventRule(PlatformObject object, BindingRule rule, Trigger trigger) {
+    private boolean evaluateEventRule(
+            PlatformObject object,
+            BindingRule rule,
+            Set<String> firedEventRules,
+            Trigger trigger
+    ) {
         long start = System.nanoTime();
         boolean success = true;
         boolean changed = false;
         String error = null;
+        String latchKey = eventLatchKey(object.path(), rule.id());
         try {
             if (!conditionPasses(object, rule.condition())) {
+                firedEventRules.remove(rule.id());
+                if (isEventLatched(latchKey)) {
+                    bindingStatePort.putBoolean(latchKey, false);
+                }
+                return false;
+            }
+            if (firedEventRules.contains(rule.id())) {
+                return false;
+            }
+            // A blank condition never turns false, so a latch kept across chains would never re-arm.
+            boolean conditional = !rule.condition().isBlank();
+            boolean latched = conditional && isEventLatched(latchKey);
+            if (latched && !trigger.isOccurrence()) {
                 return false;
             }
             ResolvedEventTarget target = resolveEventTarget(object.path(), rule.target());
@@ -495,9 +526,23 @@ public class BindingRuleEngine {
             }
             Object computed = expressionEngine.evaluate(rule.expression(), object, readContextMap(object));
             DataRecord payload = payloadFromExpressionResult(computed);
-            eventService.fire(target.objectPath(), target.eventName(), payload);
+            boolean claim = conditional && !latched;
+            if (claim) {
+                // Set before firing: a synchronous listener of this event can re-enter this rule.
+                bindingStatePort.putBoolean(latchKey, true);
+            }
+            try {
+                eventService.fire(target.objectPath(), target.eventName(), payload);
+            } catch (RuntimeException ex) {
+                if (claim) {
+                    releaseEventLatch(latchKey, ex);
+                }
+                throw ex;
+            }
+            firedEventRules.add(rule.id());
             changed = true;
-            return true;
+            // An emission writes no variable, so it must not request another pass.
+            return false;
         } catch (RuntimeException ex) {
             success = false;
             error = ex.getMessage();
@@ -514,6 +559,23 @@ public class BindingRuleEngine {
                     null
             );
         }
+    }
+
+    private boolean isEventLatched(String latchKey) {
+        return bindingStatePort.previousBoolean(latchKey).orElse(false);
+    }
+
+    private void releaseEventLatch(String latchKey, RuntimeException cause) {
+        try {
+            bindingStatePort.putBoolean(latchKey, false);
+        } catch (RuntimeException ex) {
+            cause.addSuppressed(ex);
+        }
+    }
+
+    // Stateful functions key @bindingState entries by target variable; the '@' prefix keeps these apart.
+    private static String eventLatchKey(String objectPath, String ruleId) {
+        return objectPath + "|@event:" + ruleId;
     }
 
     private ResolvedEventTarget resolveEventTarget(String ruleObjectPath, BindingTarget target) {
@@ -601,6 +663,11 @@ public class BindingRuleEngine {
             String ruleId
     ) {
         enum Kind { STARTUP, VARIABLE_CHANGE, MANUAL, CONTEXT_CHANGE, EVENT, PERIODIC }
+
+        /** Event and timer activations are occurrences of their own; the other kinds re-evaluate object state. */
+        boolean isOccurrence() {
+            return kind == Kind.EVENT || kind == Kind.PERIODIC;
+        }
 
         static Trigger startup() {
             return new Trigger(Kind.STARTUP, null, null, null, null);
