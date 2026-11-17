@@ -164,9 +164,12 @@ public class BindingRuleEngine {
         }
         try {
             Set<String> changedVariables = new LinkedHashSet<>();
+            // Event rules that already fired while their condition stayed true.
+            // A later pass of this chain must not emit the same event again.
+            Set<String> firedEventRules = new LinkedHashSet<>();
             boolean changedInPass = false;
             for (int pass = 0; pass < MAX_PASSES; pass++) {
-                changedInPass = evaluatePass(objectPath, trigger, changedVariables);
+                changedInPass = evaluatePass(objectPath, trigger, changedVariables, firedEventRules);
                 if (!changedInPass) {
                     break;
                 }
@@ -192,7 +195,12 @@ public class BindingRuleEngine {
                 && !BindingStateVariables.BINDING_STATE.equals(variableName);
     }
 
-    private boolean evaluatePass(String objectPath, Trigger trigger, Set<String> changedVariables) {
+    private boolean evaluatePass(
+            String objectPath,
+            Trigger trigger,
+            Set<String> changedVariables,
+            Set<String> firedEventRules
+    ) {
         PlatformObject object = objectManager.require(objectPath);
         List<BindingRule> rules = bindingRulesService.listRules(objectPath).stream()
                 .filter(BindingRule::enabled)
@@ -208,7 +216,7 @@ public class BindingRuleEngine {
                 scheduleAsyncRule(objectPath, rule, trigger);
                 continue;
             }
-            if (evaluateRule(object, rule, changedVariables, trigger)) {
+            if (evaluateRule(object, rule, changedVariables, firedEventRules, trigger)) {
                 changed = true;
             }
         }
@@ -225,7 +233,7 @@ public class BindingRuleEngine {
         }
         PlatformObject object = objectManager.require(objectPath);
         Set<String> changedVariables = new LinkedHashSet<>();
-        if (evaluateRule(object, rule, changedVariables, trigger)) {
+        if (evaluateRule(object, rule, changedVariables, new LinkedHashSet<>(), trigger)) {
             for (String variableName : changedVariables) {
                 if (shouldPublishVariableUpdate(variableName)) {
                     publicationService.publishVariableChange(objectPath, variableName, null);
@@ -257,6 +265,7 @@ public class BindingRuleEngine {
             PlatformObject object,
             BindingRule rule,
             Set<String> changedVariables,
+            Set<String> firedEventRules,
             Trigger trigger
     ) {
         BindingTarget target = rule.target();
@@ -264,7 +273,7 @@ public class BindingRuleEngine {
             return evaluateContextRule(object, rule, changedVariables, trigger);
         }
         if (target.isEvent()) {
-            return evaluateEventRule(object, rule, trigger);
+            return evaluateEventRule(object, rule, firedEventRules, trigger);
         }
         if (target.isAction()) {
             return evaluateActionRule(object, rule, trigger);
@@ -470,15 +479,24 @@ public class BindingRuleEngine {
         }
     }
 
-    private boolean evaluateEventRule(PlatformObject object, BindingRule rule, Trigger trigger) {
+    private boolean evaluateEventRule(
+            PlatformObject object,
+            BindingRule rule,
+            Set<String> firedEventRules,
+            Trigger trigger
+    ) {
+        if (!conditionPasses(object, rule.condition())) {
+            firedEventRules.remove(rule.id());
+            return false;
+        }
+        if (firedEventRules.contains(rule.id())) {
+            return false;
+        }
         long start = System.nanoTime();
         boolean success = true;
         boolean changed = false;
         String error = null;
         try {
-            if (!conditionPasses(object, rule.condition())) {
-                return false;
-            }
             ResolvedEventTarget target = resolveEventTarget(object.path(), rule.target());
             if (target == null) {
                 success = false;
@@ -496,8 +514,11 @@ public class BindingRuleEngine {
             Object computed = expressionEngine.evaluate(rule.expression(), object, readContextMap(object));
             DataRecord payload = payloadFromExpressionResult(computed);
             eventService.fire(target.objectPath(), target.eventName(), payload);
+            firedEventRules.add(rule.id());
             changed = true;
-            return true;
+            // The emission is not a variable write. Another pass would see the same
+            // true condition and emit the event again until MAX_PASSES.
+            return false;
         } catch (RuntimeException ex) {
             success = false;
             error = ex.getMessage();
