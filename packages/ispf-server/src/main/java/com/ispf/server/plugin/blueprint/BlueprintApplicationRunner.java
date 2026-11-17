@@ -1,11 +1,7 @@
 package com.ispf.server.plugin.blueprint;
 
-import com.ispf.core.binding.BindingActivators;
-import com.ispf.core.binding.BindingTarget;
-import com.ispf.core.binding.BindingVariableRef;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
-import com.ispf.plugin.blueprint.BlueprintBindingRule;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
@@ -22,9 +18,11 @@ import com.ispf.server.dashboard.DashboardDemoRulesBootstrap;
 import com.ispf.server.driver.DeviceProvisioningService;
 import com.ispf.plugin.workflow.WorkflowLifecycleStatus;
 import com.ispf.server.workflow.WorkflowDefinitions;
+import com.ispf.plugin.blueprint.BlueprintCatalogRoots;
 import com.ispf.plugin.blueprint.BlueprintDefinition;
 import com.ispf.plugin.blueprint.BlueprintEngine;
 import com.ispf.plugin.blueprint.BlueprintRegistry;
+import com.ispf.plugin.blueprint.BlueprintType;
 import com.ispf.plugin.blueprint.BlueprintVariableDefinition;
 import org.springframework.stereotype.Component;
 
@@ -51,6 +49,7 @@ public class BlueprintApplicationRunner {
     private final DashboardDemoRulesBootstrap dashboardDemoRulesBootstrap;
     private final ObjectBindingStatePort bindingStatePort;
     private final BindingRulesService bindingRulesService;
+    private final BlueprintStartupRulesHealth startupRulesHealth;
 
     public BlueprintApplicationRunner(
             BlueprintEngine blueprintEngine,
@@ -62,7 +61,8 @@ public class BlueprintApplicationRunner {
             DeviceProvisioningService deviceProvisioningService,
             DashboardDemoRulesBootstrap dashboardDemoRulesBootstrap,
             ObjectBindingStatePort bindingStatePort,
-            BindingRulesService bindingRulesService
+            BindingRulesService bindingRulesService,
+            BlueprintStartupRulesHealth startupRulesHealth
     ) {
         this.blueprintEngine = blueprintEngine;
         this.blueprintRegistry = blueprintRegistry;
@@ -74,6 +74,7 @@ public class BlueprintApplicationRunner {
         this.dashboardDemoRulesBootstrap = dashboardDemoRulesBootstrap;
         this.bindingStatePort = bindingStatePort;
         this.bindingRulesService = bindingRulesService;
+        this.startupRulesHealth = startupRulesHealth;
     }
 
     public void restoreAttachments() {
@@ -339,9 +340,11 @@ public class BlueprintApplicationRunner {
     }
 
     /**
-     * Aligns per-variable history metadata on all objects instantiated from a model.
+     * Aligns per-variable history metadata and binding rules on objects instantiated from a model.
+     * Definition catalog nodes under instance-types / mixin-blueprints are skipped; singletons remain.
      */
     public void syncAllBlueprintBackedVariableMetadata() {
+        startupRulesHealth.reset();
         for (PlatformObject node : objectManager.tree().all()) {
             try {
                 syncBlueprintBackedVariableMetadata(node);
@@ -351,11 +354,15 @@ public class BlueprintApplicationRunner {
                         node.path(),
                         ex
                 );
+                startupRulesHealth.report(node.path() + ": " + ex.getMessage());
             }
         }
     }
 
     private void syncBlueprintBackedVariableMetadata(PlatformObject node) {
+        if (BlueprintCatalogRoots.isDefinitionPath(node.path())) {
+            return;
+        }
         Optional<String> templateId = node.templateId();
         if (templateId.isEmpty() || templateId.get().isBlank()) {
             return;
@@ -367,7 +374,14 @@ public class BlueprintApplicationRunner {
         if (model.isEmpty()) {
             return;
         }
-        if (syncModelVariableMetadata(model.get(), node.path())) {
+        BlueprintDefinition resolved = model.get();
+        // Catalog stub under singleton-blueprints when live instance lives elsewhere.
+        if (resolved.type() == BlueprintType.SINGLETON
+                && node.path().equals(resolved.catalogObjectPath())
+                && !node.path().equals(BlueprintEngine.singletonInstancePath(resolved))) {
+            return;
+        }
+        if (syncModelVariableMetadata(resolved, node.path())) {
             objectManager.persistNodeTree(node.path());
         }
     }
@@ -415,81 +429,12 @@ public class BlueprintApplicationRunner {
             }
         }
         if (!effective.bindingRules().isEmpty()) {
-            if (containsRawPlaceholder(effective)) {
-                // Instance parameters are not stored on the object. Substituting the
-                // blueprint's own defaults would overwrite the deployed rule, and a
-                // leftover ${...} is evaluated inside ObjectManager.initialize.
-                log.warn(
-                        "Skip blueprint rule merge on startup for {}: a rule still contains ${...}. Saved rules stay as deployed.",
-                        objectPath
-                );
-            } else {
-                bindingRulesMerger.mergeBlueprintRules(objectPath, effective, effective.parameters(), false);
-                changed = true;
-            }
+            startupRulesHealth.reportAll(
+                    bindingRulesMerger.syncBlueprintRulesAtStartup(objectPath, effective)
+            );
+            changed = true;
         }
         return changed;
-    }
-
-    /** True when any rule field still contains a raw {@code ${}}. Blueprint defaults are not applied first. */
-    static boolean containsRawPlaceholder(BlueprintDefinition model) {
-        for (BlueprintBindingRule rule : model.bindingRules()) {
-            if (hasPlaceholder(rule.id())
-                    || hasPlaceholder(rule.name())
-                    || hasPlaceholder(rule.condition())
-                    || hasPlaceholder(rule.expression())
-                    || hasPlaceholder(rule.targetVariable())
-                    || hasPlaceholder(rule.targetField())
-                    || hasPlaceholder(rule.kind())
-                    || hasPlaceholder(rule.windowBucket())
-                    || hasPlaceholder(rule.formulaRef())
-                    || hasPlaceholder(rule.formulaScope())
-                    || hasPlaceholder(rule.formulaAppId())) {
-                return true;
-            }
-            if (rule.rollupBuckets() != null) {
-                for (String bucket : rule.rollupBuckets()) {
-                    if (hasPlaceholder(bucket)) {
-                        return true;
-                    }
-                }
-            }
-            if (rule.formulaParams() != null) {
-                for (String value : rule.formulaParams().values()) {
-                    if (hasPlaceholder(value)) {
-                        return true;
-                    }
-                }
-            }
-            BindingTarget target = rule.target();
-            if (target != null && (hasPlaceholder(target.kind())
-                    || hasPlaceholder(target.variableName())
-                    || hasPlaceholder(target.field())
-                    || hasPlaceholder(target.path())
-                    || hasPlaceholder(target.eventName())
-                    || hasPlaceholder(target.ref()))) {
-                return true;
-            }
-            BindingActivators activators = rule.activators();
-            if (activators != null && (hasPlaceholder(activators.onEvent())
-                    || hasPlaceholder(activators.onEventRef()))) {
-                return true;
-            }
-            if (activators != null) {
-                for (BindingVariableRef ref : activators.onVariableChange()) {
-                    if (hasPlaceholder(ref.objectPath())
-                            || hasPlaceholder(ref.variableName())
-                            || hasPlaceholder(ref.ref())) {
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
-    }
-
-    private static boolean hasPlaceholder(String text) {
-        return text != null && text.contains("${");
     }
 
     private void ensureSnmpDriverMappings(PlatformObject device) {

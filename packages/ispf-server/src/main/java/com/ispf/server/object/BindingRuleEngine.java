@@ -24,6 +24,7 @@ import com.ispf.server.event.EventService;
 import com.ispf.server.persistence.ObjectEntityMapper;
 import tools.jackson.databind.ObjectMapper;
 import com.ispf.server.object.pubsub.ObjectChangePublicationService;
+import com.ispf.server.plugin.blueprint.UnresolvedBindingPlaceholders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -201,6 +202,9 @@ public class BindingRuleEngine {
                 .toList();
         boolean changed = false;
         for (BindingRule rule : rules) {
+            if (UnresolvedBindingPlaceholders.blocksEvaluation(rule)) {
+                continue;
+            }
             if (!matchesTrigger(objectPath, rule, trigger)) {
                 continue;
             }
@@ -220,6 +224,9 @@ public class BindingRuleEngine {
     }
 
     private void runSingleAsyncRule(String objectPath, BindingRule rule, Trigger trigger) {
+        if (UnresolvedBindingPlaceholders.blocksEvaluation(rule)) {
+            return;
+        }
         if (!matchesTrigger(objectPath, rule, trigger)) {
             return;
         }

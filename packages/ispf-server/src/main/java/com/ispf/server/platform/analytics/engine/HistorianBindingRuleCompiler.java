@@ -54,6 +54,9 @@ public final class HistorianBindingRuleCompiler {
         if (rule == null || !rule.isHistorian()) {
             return Optional.empty();
         }
+        if (com.ispf.server.plugin.blueprint.UnresolvedBindingPlaceholders.blocksEvaluation(rule)) {
+            return Optional.empty();
+        }
         if (!rule.target().isVariable()) {
             return Optional.empty();
         }

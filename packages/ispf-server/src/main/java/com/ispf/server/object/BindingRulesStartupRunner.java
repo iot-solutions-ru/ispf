@@ -2,6 +2,7 @@ package com.ispf.server.object;
 
 import com.ispf.core.binding.BindingRule;
 import com.ispf.core.object.ObjectNotFoundException;
+import com.ispf.server.plugin.blueprint.UnresolvedBindingPlaceholders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -69,6 +70,7 @@ public class BindingRulesStartupRunner {
             try {
                 List<BindingRule> reactive = bindingRulesService.listRules(path).stream()
                         .filter(BindingRule::isReactive)
+                        .filter(rule -> !UnresolvedBindingPlaceholders.present(rule))
                         .toList();
                 periodicScheduleRegistry.syncObject(path, reactive);
             } catch (ObjectNotFoundException ex) {

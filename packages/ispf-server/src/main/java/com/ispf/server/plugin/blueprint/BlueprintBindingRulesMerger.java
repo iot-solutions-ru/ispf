@@ -12,6 +12,8 @@ import com.ispf.server.object.BindingDependencyIndex;
 import com.ispf.server.object.BindingRuleEngine;
 import com.ispf.server.object.BindingRulesService;
 import com.ispf.server.platform.analytics.formula.BindingFormulaResolver;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -23,6 +25,8 @@ import java.util.Set;
 
 @Service
 public class BlueprintBindingRulesMerger {
+
+    private static final Logger log = LoggerFactory.getLogger(BlueprintBindingRulesMerger.class);
 
     public static final String NOT_EXPORTED = "notExported";
 
@@ -104,6 +108,67 @@ public class BlueprintBindingRulesMerger {
         if (evaluateRules) {
             bindingRuleEngine.runRulesForObject(objectPath);
         }
+    }
+
+    /**
+     * Startup-only merge for objects already instantiated from a blueprint.
+     *
+     * <p>Decides per rule. Template {@code model.parameters()} are never applied — instance
+     * attach values are not stored on the object, so re-substituting defaults would wipe a
+     * resolved saved expression. When the blueprint rule still contains unresolved placeholders,
+     * the saved instance rule is kept; missing or still-unresolved saved rules are reported for
+     * readiness DOWN. Rules without leftover placeholders are merged with an empty parameter
+     * map and evaluated (engine skips any rule that still has unresolved placeholders).
+     *
+     * @return problem descriptions for readiness (empty when healthy for this object)
+     */
+    public List<String> syncBlueprintRulesAtStartup(String objectPath, BlueprintDefinition model) {
+        BlueprintDefinition effective = BlueprintEngine.flattenInheritance(model, blueprintRegistry);
+        if (effective.bindingRules().isEmpty()) {
+            return List.of();
+        }
+        blueprintAnalyticsFormulaSupport.mergeBlueprintFormulas(effective);
+        Map<String, BindingRule> byId = new LinkedHashMap<>();
+        for (BindingRule existing : bindingRulesService.listRules(objectPath)) {
+            byId.put(existing.id(), existing);
+        }
+        List<String> problems = new ArrayList<>();
+        for (BlueprintBindingRule modelRule : effective.bindingRules()) {
+            if (UnresolvedBindingPlaceholders.present(modelRule)) {
+                BindingRule saved = byId.get(modelRule.id());
+                if (saved == null) {
+                    String problem = objectPath + "#" + modelRule.id()
+                            + ": templated blueprint rule has no saved instance rule";
+                    problems.add(problem);
+                    log.warn(problem);
+                } else if (UnresolvedBindingPlaceholders.present(saved)) {
+                    String problem = objectPath + "#" + modelRule.id()
+                            + ": saved instance rule still contains ${...}";
+                    problems.add(problem);
+                    log.warn(problem);
+                }
+                // Keep saved as deployed; do not overlay blueprint defaults.
+            } else {
+                BindingRule resolved = bindingFormulaResolver.resolve(
+                        resolve(modelRule, Map.of(), parameterResolver)
+                );
+                byId.put(resolved.id(), resolved);
+            }
+        }
+        bindingRulesService.saveRulesAllowingUnresolvedPlaceholders(objectPath, new ArrayList<>(byId.values()));
+        dependencyIndex.rebuild(objectPath);
+        try {
+            bindingRuleEngine.runRulesForObject(objectPath);
+        } catch (RuntimeException ex) {
+            String problem = objectPath + ": " + ex.getMessage();
+            problems.add(problem);
+            log.error(
+                    "Startup binding rule evaluation failed for {} and was recorded for readiness",
+                    objectPath,
+                    ex
+            );
+        }
+        return problems;
     }
 
     public void removeBlueprintRules(String objectPath, List<String> bindingRuleIds) {
