@@ -8,6 +8,7 @@ import com.ispf.server.object.ObjectManager;
 import com.ispf.server.security.acl.ObjectAccessService;
 import com.ispf.server.tenant.TenantScopeService;
 import com.ispf.server.tenant.TenantVirtualRootService;
+import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
@@ -20,6 +21,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -36,9 +38,14 @@ class EventListObjectReadAclTest {
     private static final String OPEN = "root.devices.pump";
     private static final String CLOSED = "root.devices.vault";
     private static final String FILTER = "root.platform.event-filters.sample";
+    private static final String VIRTUAL_PUMP = "root.platform.devices.pump";
+    private static final String TENANT_PUMP = "root.tenant.acme.platform.devices.pump";
+    private static final String FOREIGN_PUMP = "root.tenant.other.platform.devices.pump";
 
     private EventService eventService;
     private ObjectAccessService objectAccessService;
+    private TenantScopeService tenantScopeService;
+    private TenantVirtualRootService tenantVirtualRootService;
     private EventController eventController;
     private EventFilterController eventFilterController;
     private Authentication operator;
@@ -47,8 +54,8 @@ class EventListObjectReadAclTest {
     void setUp() {
         eventService = mock(EventService.class);
         objectAccessService = mock(ObjectAccessService.class);
-        TenantScopeService tenantScopeService = mock(TenantScopeService.class);
-        TenantVirtualRootService tenantVirtualRootService = mock(TenantVirtualRootService.class);
+        tenantScopeService = mock(TenantScopeService.class);
+        tenantVirtualRootService = mock(TenantVirtualRootService.class);
         when(tenantVirtualRootService.toCanonical(any(), any())).thenAnswer(invocation -> invocation.getArgument(0));
         when(tenantVirtualRootService.toVirtual(anyString(), any(Authentication.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
@@ -74,11 +81,24 @@ class EventListObjectReadAclTest {
     void listByPathDeniesObjectTheCallerCannotRead() {
         deny(CLOSED);
 
-        assertThatThrownBy(() -> eventController.list(CLOSED, 50, null, null, operator))
-                .isInstanceOf(ResponseStatusException.class)
-                .extracting(exception -> ((ResponseStatusException) exception).getStatusCode())
-                .isEqualTo(HttpStatus.FORBIDDEN);
+        assertForbidden(() -> eventController.list(CLOSED, 50, null, null, operator));
         verify(eventService, never()).list(nullable(String.class), anyInt(), nullable(String.class), nullable(String.class));
+    }
+
+    @Test
+    void listByFilterPathDeniesFilterTheCallerCannotRead() {
+        deny(FILTER);
+
+        assertForbidden(() -> eventController.list(null, 50, FILTER, null, operator));
+        verify(eventService, never()).list(nullable(String.class), anyInt(), nullable(String.class), nullable(String.class));
+    }
+
+    @Test
+    void journalStatusDeniesObjectTheCallerCannotRead() {
+        deny(CLOSED);
+
+        assertForbidden(() -> eventController.journalStatus(CLOSED, operator));
+        verify(eventService, never()).journalStatus(nullable(String.class));
     }
 
     @Test
@@ -98,10 +118,7 @@ class EventListObjectReadAclTest {
     @Test
     void filteredListDeniesRequestedObjectAndDropsClosedEvents() {
         deny(CLOSED);
-        assertThatThrownBy(() -> eventFilterController.apply(FILTER, CLOSED, 50, operator))
-                .isInstanceOf(ResponseStatusException.class)
-                .extracting(exception -> ((ResponseStatusException) exception).getStatusCode())
-                .isEqualTo(HttpStatus.FORBIDDEN);
+        assertForbidden(() -> eventFilterController.apply(FILTER, CLOSED, 50, operator));
 
         allow(OPEN);
         when(eventService.list(nullable(String.class), anyInt(), nullable(String.class)))
@@ -109,6 +126,28 @@ class EventListObjectReadAclTest {
         assertThat(eventFilterController.apply(FILTER, null, 50, operator))
                 .extracting(ObjectEvent::eventName)
                 .containsExactly("kept");
+    }
+
+    @Test
+    void filteredListQueriesCanonicalObjectAndReturnsVirtualPaths() {
+        when(tenantVirtualRootService.toCanonical(eq(VIRTUAL_PUMP), any())).thenReturn(TENANT_PUMP);
+        when(tenantVirtualRootService.toVirtual(eq(TENANT_PUMP), any(Authentication.class))).thenReturn(VIRTUAL_PUMP);
+        when(tenantScopeService.isPathVisible(eq(FOREIGN_PUMP), any())).thenReturn(false);
+        allow(TENANT_PUMP);
+        allow(FOREIGN_PUMP);
+        when(eventService.list(eq(TENANT_PUMP), anyInt(), eq(FILTER)))
+                .thenReturn(List.of(event(TENANT_PUMP, "kept"), event(FOREIGN_PUMP, "foreign")));
+
+        assertThat(eventFilterController.apply(FILTER, VIRTUAL_PUMP, 50, operator))
+                .extracting(ObjectEvent::objectPath, ObjectEvent::eventName)
+                .containsExactly(tuple(VIRTUAL_PUMP, "kept"));
+    }
+
+    private static void assertForbidden(ThrowingCallable call) {
+        assertThatThrownBy(call)
+                .isInstanceOf(ResponseStatusException.class)
+                .extracting(exception -> ((ResponseStatusException) exception).getStatusCode())
+                .isEqualTo(HttpStatus.FORBIDDEN);
     }
 
     private void allow(String path) {

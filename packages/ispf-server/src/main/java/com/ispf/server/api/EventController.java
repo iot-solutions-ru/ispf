@@ -64,6 +64,7 @@ public class EventController {
         }
         if (canonicalFilter != null) {
             tenantScopeService.requirePathInScope(canonicalFilter, authentication);
+            objectAccessService.requireRead(canonicalFilter, authentication);
         }
         try {
             return eventService.list(canonicalObject, limit, canonicalFilter, expr).stream()
@@ -84,6 +85,7 @@ public class EventController {
         String canonical = canonicalizeOptional(objectPath, authentication);
         if (canonical != null) {
             tenantScopeService.requirePathInScope(canonical, authentication);
+            objectAccessService.requireRead(canonical, authentication);
         }
         return eventService.journalStatus(canonical);
     }
