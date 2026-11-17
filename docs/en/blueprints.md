@@ -94,7 +94,7 @@ Instantiating the template in `bundle.json`:
 }
 ```
 
-**Demo:** [`examples/oil-control`](../../examples/oil-control/) — tank `INSTANCE` blueprints with `${code}` in SQL bindings and alert names.
+**Demo:** [`examples/oil-control`](../../examples/oil-control/) — tank `INSTANCE` blueprints with `${code}` in SQL bindings.
 
 ---
 

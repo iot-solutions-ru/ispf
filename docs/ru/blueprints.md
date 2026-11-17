@@ -74,9 +74,7 @@
 - **Правила расчёта** (`ModelBindingRule`) — см. [Правила расчёта](bindings.md);
 - **Шаблонные SQL-привязки** (`sqlBindings`) и **шаблонные правила тревог** (`alertRules`), которые разворачиваются для каждого созданного экземпляра.
 
-При создании экземпляра подставляются встроенные переменные (`${self.path}`, `${self.name}`, `${self.displayName}`, `${parentPath}` / `${self.parentPath}`) и пользовательские параметры из `parameters`.
-
-**Пример:** [`examples/oil-control`](../../examples/oil-control/) — шаблоны резервуаров с `${code}` в SQL-привязках и именах тревог.
+При создании экземпляра подставляются встроенные переменные (`${self.path}`, `${self.name}`, `${self.displayName}`, `${parentPath}` / `${self.parentPath}`) и пользовательские параметры из `parameters`:
 
 ```json
 {
@@ -114,6 +112,8 @@
   "parameters": { "code": "RVS-1" }
 }
 ```
+
+**Пример:** [`examples/oil-control`](../../examples/oil-control/) — шаблоны резервуаров с `${code}` в SQL-привязках.
 
 ---
 

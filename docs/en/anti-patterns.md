@@ -18,7 +18,7 @@ Related guides: [How ISPF works](learn.md) · [Application architecture rules](a
 
 **How to do it in ISPF:** Keep widgets thin — bind them directly to object variables (`temperature`, `pumpStatusText`, `shiftEfficiency`). Put calculations, unit conversions, and branching in **calculation rules** (*binding rules*) or **functions** on a `SINGLETON` or `INSTANCE` logic object. If you build a custom React web UI, call those same object functions via `POST /api/v1/bff/invoke`.
 
-**Demo:** [`examples/spreadsheet-demo`](../../examples/spreadsheet-demo/) — spreadsheet widget bound to object data (logic stays on the hub).
+**Demo:** [`examples/platform-primitive`](../../examples/platform-primitive/) — thin dashboard bound to a `SINGLETON` hub (logic stays off the widget).
 
 **Platform check:** `BundleManifestValidator` raises warning `HEAVY_WIDGET_EXPRESSION` whenever a widget `expression`, `condition`, or `script` reaches **400 characters or more**. Overly long binding formulas are also flagged on save by `BindingCascadeAnalyzer`.
 
