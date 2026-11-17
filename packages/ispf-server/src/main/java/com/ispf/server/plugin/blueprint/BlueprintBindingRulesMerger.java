@@ -12,6 +12,8 @@ import com.ispf.server.object.BindingDependencyIndex;
 import com.ispf.server.object.BindingRuleEngine;
 import com.ispf.server.object.BindingRulesService;
 import com.ispf.server.platform.analytics.formula.BindingFormulaResolver;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -23,6 +25,8 @@ import java.util.Set;
 
 @Service
 public class BlueprintBindingRulesMerger {
+
+    private static final Logger log = LoggerFactory.getLogger(BlueprintBindingRulesMerger.class);
 
     public static final String NOT_EXPORTED = "notExported";
 
@@ -106,6 +110,76 @@ public class BlueprintBindingRulesMerger {
         }
     }
 
+    /**
+     * Startup-only merge for objects already instantiated from a blueprint.
+     *
+     * <p>Decides per rule. Template {@code model.parameters()} are never applied — instance
+     * attach values are not stored on the object, so re-substituting defaults would wipe a
+     * resolved saved expression. When the blueprint rule still contains unresolved placeholders,
+     * the saved instance rule is kept; missing or still-unresolved saved rules are reported for
+     * readiness DOWN. Rules without leftover placeholders are merged with an empty parameter map.
+     *
+     * <p>Nothing is evaluated here: this runs inside {@code ObjectManager.initialize()}, and
+     * {@code BindingRulesStartupRunner} fires {@code onStartup} rules once the tree is ready.
+     *
+     * @param ruleIdsOwnedElsewhere rule ids another blueprint on the same object owns; left as saved
+     * @return templated rules whose saved instance rule is missing or unresolved (empty when healthy)
+     */
+    public List<BlueprintStartupRulesHealth.Problem> syncBlueprintRulesAtStartup(
+            String objectPath,
+            BlueprintDefinition model,
+            Set<String> ruleIdsOwnedElsewhere
+    ) {
+        BlueprintDefinition effective = BlueprintEngine.flattenInheritance(model, blueprintRegistry);
+        if (effective.bindingRules().isEmpty()) {
+            return List.of();
+        }
+        blueprintAnalyticsFormulaSupport.mergeBlueprintFormulas(effective);
+        Map<String, BindingRule> byId = new LinkedHashMap<>();
+        for (BindingRule existing : bindingRulesService.listRules(objectPath)) {
+            byId.put(existing.id(), existing);
+        }
+        List<BlueprintStartupRulesHealth.Problem> problems = new ArrayList<>();
+        for (BlueprintBindingRule modelRule : effective.bindingRules()) {
+            if (ruleIdsOwnedElsewhere.contains(modelRule.id())) {
+                continue;
+            }
+            if (UnresolvedBindingPlaceholders.present(modelRule)) {
+                BindingRule saved = byId.get(modelRule.id());
+                if (saved == null) {
+                    problems.add(problem(
+                            objectPath, effective, modelRule, BlueprintStartupRulesHealth.Kind.MISSING
+                    ));
+                } else if (UnresolvedBindingPlaceholders.present(saved)) {
+                    problems.add(problem(
+                            objectPath, effective, modelRule, BlueprintStartupRulesHealth.Kind.UNRESOLVED
+                    ));
+                }
+                // Keep saved as deployed; do not overlay blueprint defaults.
+            } else {
+                BindingRule resolved = bindingFormulaResolver.resolve(
+                        resolve(modelRule, Map.of(), parameterResolver)
+                );
+                byId.put(resolved.id(), resolved);
+            }
+        }
+        bindingRulesService.saveRulesAllowingUnresolvedPlaceholders(objectPath, new ArrayList<>(byId.values()));
+        dependencyIndex.rebuild(objectPath);
+        return problems;
+    }
+
+    private static BlueprintStartupRulesHealth.Problem problem(
+            String objectPath,
+            BlueprintDefinition model,
+            BlueprintBindingRule modelRule,
+            BlueprintStartupRulesHealth.Kind kind
+    ) {
+        BlueprintStartupRulesHealth.Problem problem =
+                BlueprintStartupRulesHealth.Problem.of(objectPath, model, modelRule.id(), kind);
+        log.warn("{}", problem.message());
+        return problem;
+    }
+
     public void removeBlueprintRules(String objectPath, List<String> bindingRuleIds) {
         if (bindingRuleIds == null || bindingRuleIds.isEmpty()) {
             return;
@@ -114,7 +188,8 @@ public class BlueprintBindingRulesMerger {
         List<BindingRule> remaining = bindingRulesService.listRules(objectPath).stream()
                 .filter(rule -> !remove.contains(rule.id()))
                 .toList();
-        bindingRulesService.saveRules(objectPath, remaining);
+        // A sibling kept unresolved at startup must not block detach.
+        bindingRulesService.saveRulesAllowingUnresolvedPlaceholders(objectPath, remaining);
         dependencyIndex.rebuild(objectPath);
     }
 

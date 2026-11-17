@@ -27,6 +27,7 @@ import com.ispf.server.platform.analytics.engine.AnalyticsEngineScheduler;
 import com.ispf.server.platform.analytics.engine.AnalyticsTagCatalogService;
 import com.ispf.server.platform.analytics.engine.HistorianBindingRuleCompiler;
 import com.ispf.server.platform.analytics.formula.BindingFormulaResolver;
+import com.ispf.server.plugin.blueprint.UnresolvedBindingPlaceholders;
 import com.ispf.core.ref.PlatformRef;
 import com.ispf.core.ref.PlatformRefKind;
 import com.ispf.core.ref.PlatformRefParser;
@@ -122,15 +123,36 @@ public class BindingRulesService {
     }
 
     public List<BindingRule> saveRules(String objectPath, List<BindingRule> rules) {
+        return saveRules(objectPath, rules, false);
+    }
+
+    /**
+     * For startup blueprint sync and blueprint detach, which may re-save a previously saved rule
+     * that still contains unresolved placeholders so clean sibling rules can still be persisted.
+     * Unresolved rules are written as-is (no formula resolve / validate); evaluation skips them.
+     */
+    public List<BindingRule> saveRulesAllowingUnresolvedPlaceholders(String objectPath, List<BindingRule> rules) {
+        return saveRules(objectPath, rules, true);
+    }
+
+    private List<BindingRule> saveRules(String objectPath, List<BindingRule> rules, boolean allowUnresolved) {
         synchronized (rulesLocks.computeIfAbsent(objectPath, ignored -> new Object())) {
             assertOwnedRulesRetained(objectPath, rules);
             List<BindingRule> normalized = normalizeRules(rules).stream()
-                    .map(bindingFormulaResolver::resolve)
+                    .map(rule -> allowUnresolved && UnresolvedBindingPlaceholders.present(rule)
+                            ? rule
+                            : bindingFormulaResolver.resolve(rule))
                     .toList();
             for (BindingRule rule : normalized) {
+                if (allowUnresolved && UnresolvedBindingPlaceholders.present(rule)) {
+                    continue;
+                }
                 validateRule(objectPath, rule);
             }
-            for (String warning : BindingCascadeAnalyzer.warnings(normalized)) {
+            List<BindingRule> forCascade = allowUnresolved
+                    ? normalized.stream().filter(rule -> !UnresolvedBindingPlaceholders.present(rule)).toList()
+                    : normalized;
+            for (String warning : BindingCascadeAnalyzer.warnings(forCascade)) {
                 log.warn("[binding:{}] {}", objectPath, warning);
             }
             boolean historianChanged = normalized.stream().anyMatch(BindingRule::isHistorian);
@@ -139,7 +161,10 @@ public class BindingRulesService {
             rulesCache.put(objectPath, frozen);
             periodicScheduleRegistry.syncObject(
                     objectPath,
-                    frozen.stream().filter(BindingRule::isReactive).toList()
+                    frozen.stream()
+                            .filter(BindingRule::isReactive)
+                            .filter(rule -> !UnresolvedBindingPlaceholders.present(rule))
+                            .toList()
             );
             periodicScheduler.reschedule();
             if (historianChanged) {

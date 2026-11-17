@@ -5,6 +5,7 @@ import com.ispf.core.binding.BindingRule;
 import com.ispf.core.binding.BindingVariableRef;
 import com.ispf.core.ref.PlatformRef;
 import com.ispf.expression.BindingDependencyParser;
+import com.ispf.server.plugin.blueprint.UnresolvedBindingPlaceholders;
 import org.springframework.stereotype.Component;
 
 import java.util.LinkedHashSet;
@@ -31,7 +32,7 @@ public class BindingDependencyIndex {
         synchronized (this) {
             removeObject(objectPath);
             for (BindingRule rule : rules) {
-                if (!rule.enabled()) {
+                if (!rule.enabled() || UnresolvedBindingPlaceholders.blocksEvaluation(rule)) {
                     continue;
                 }
                 registerRule(objectPath, rule);
@@ -49,7 +50,7 @@ public class BindingDependencyIndex {
             eventConsumersByKey.clear();
             for (Map.Entry<String, java.util.List<BindingRule>> entry : rulesByPath.entrySet()) {
                 for (BindingRule rule : entry.getValue()) {
-                    if (!rule.enabled()) {
+                    if (!rule.enabled() || UnresolvedBindingPlaceholders.blocksEvaluation(rule)) {
                         continue;
                     }
                     registerRule(entry.getKey(), rule);

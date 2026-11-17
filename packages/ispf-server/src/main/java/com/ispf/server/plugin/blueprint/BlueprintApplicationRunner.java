@@ -1,11 +1,7 @@
 package com.ispf.server.plugin.blueprint;
 
-import com.ispf.core.binding.BindingActivators;
-import com.ispf.core.binding.BindingTarget;
-import com.ispf.core.binding.BindingVariableRef;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
-import com.ispf.plugin.blueprint.BlueprintBindingRule;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
@@ -22,16 +18,24 @@ import com.ispf.server.dashboard.DashboardDemoRulesBootstrap;
 import com.ispf.server.driver.DeviceProvisioningService;
 import com.ispf.plugin.workflow.WorkflowLifecycleStatus;
 import com.ispf.server.workflow.WorkflowDefinitions;
+import com.ispf.plugin.blueprint.BlueprintBindingRule;
+import com.ispf.plugin.blueprint.BlueprintCatalogRoots;
 import com.ispf.plugin.blueprint.BlueprintDefinition;
 import com.ispf.plugin.blueprint.BlueprintEngine;
 import com.ispf.plugin.blueprint.BlueprintRegistry;
+import com.ispf.plugin.blueprint.BlueprintType;
 import com.ispf.plugin.blueprint.BlueprintVariableDefinition;
 import org.springframework.stereotype.Component;
 
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Applies built-in models to demo objects after bootstrap.
@@ -51,6 +55,7 @@ public class BlueprintApplicationRunner {
     private final DashboardDemoRulesBootstrap dashboardDemoRulesBootstrap;
     private final ObjectBindingStatePort bindingStatePort;
     private final BindingRulesService bindingRulesService;
+    private final BlueprintStartupRulesHealth startupRulesHealth;
 
     public BlueprintApplicationRunner(
             BlueprintEngine blueprintEngine,
@@ -62,7 +67,8 @@ public class BlueprintApplicationRunner {
             DeviceProvisioningService deviceProvisioningService,
             DashboardDemoRulesBootstrap dashboardDemoRulesBootstrap,
             ObjectBindingStatePort bindingStatePort,
-            BindingRulesService bindingRulesService
+            BindingRulesService bindingRulesService,
+            BlueprintStartupRulesHealth startupRulesHealth
     ) {
         this.blueprintEngine = blueprintEngine;
         this.blueprintRegistry = blueprintRegistry;
@@ -74,6 +80,7 @@ public class BlueprintApplicationRunner {
         this.dashboardDemoRulesBootstrap = dashboardDemoRulesBootstrap;
         this.bindingStatePort = bindingStatePort;
         this.bindingRulesService = bindingRulesService;
+        this.startupRulesHealth = startupRulesHealth;
     }
 
     public void restoreAttachments() {
@@ -339,9 +346,12 @@ public class BlueprintApplicationRunner {
     }
 
     /**
-     * Aligns per-variable history metadata on all objects instantiated from a model.
+     * Aligns per-variable history metadata and binding rules on objects instantiated from a model:
+     * the primary template plus every applied blueprint (MIXINs).
+     * Definition catalog nodes under instance-types / mixin-blueprints are skipped; singletons remain.
      */
     public void syncAllBlueprintBackedVariableMetadata() {
+        startupRulesHealth.reset();
         for (PlatformObject node : objectManager.tree().all()) {
             try {
                 syncBlueprintBackedVariableMetadata(node);
@@ -356,39 +366,78 @@ public class BlueprintApplicationRunner {
     }
 
     private void syncBlueprintBackedVariableMetadata(PlatformObject node) {
-        Optional<String> templateId = node.templateId();
-        if (templateId.isEmpty() || templateId.get().isBlank()) {
+        if (BlueprintCatalogRoots.isDefinitionPath(node.path())) {
             return;
         }
-        Optional<BlueprintDefinition> model = blueprintRegistry.findById(templateId.get());
-        if (model.isEmpty()) {
-            model = blueprintRegistry.findByName(templateId.get());
+        List<BlueprintDefinition> models = appliedModels(node);
+        Set<String> modelIds = models.stream().map(BlueprintDefinition::id).collect(Collectors.toSet());
+        boolean changed = false;
+        for (BlueprintDefinition model : models) {
+            // Catalog stub under singleton-blueprints when live instance lives elsewhere.
+            if (model.type() == BlueprintType.SINGLETON
+                    && node.path().equals(model.catalogObjectPath())
+                    && !node.path().equals(BlueprintEngine.singletonInstancePath(model))) {
+                continue;
+            }
+            Set<String> otherModelIds = new HashSet<>(modelIds);
+            otherModelIds.remove(model.id());
+            try {
+                changed |= syncModelVariableMetadata(model, node.path(), otherModelIds);
+            } catch (RuntimeException ex) {
+                log.error(
+                        "Blueprint {} metadata sync failed for {} and was skipped so the server can finish starting",
+                        model.id(),
+                        node.path(),
+                        ex
+                );
+            }
         }
-        if (model.isEmpty()) {
-            return;
-        }
-        if (syncModelVariableMetadata(model.get(), node.path())) {
+        if (changed) {
             objectManager.persistNodeTree(node.path());
         }
+    }
+
+    /** Primary template first, then applied blueprints in apply order; each model once. */
+    private List<BlueprintDefinition> appliedModels(PlatformObject node) {
+        Set<String> refs = new LinkedHashSet<>();
+        node.templateId().ifPresent(refs::add);
+        refs.addAll(node.appliedBlueprintIds());
+        Map<String, BlueprintDefinition> byId = new LinkedHashMap<>();
+        for (String ref : refs) {
+            if (ref.isBlank()) {
+                continue;
+            }
+            blueprintRegistry.findById(ref)
+                    .or(() -> blueprintRegistry.findByName(ref))
+                    .ifPresent(model -> byId.putIfAbsent(model.id(), model));
+        }
+        return List.copyOf(byId.values());
     }
 
     /**
      * Adds variables and OID mappings missing on demo SNMP devices created before HOST-RESOURCES-MIB support.
      */
     private void syncSnmpAgentDevice(BlueprintDefinition model, String devicePath) {
-        if (syncModelVariableMetadata(model, devicePath)) {
+        if (syncModelVariableMetadata(model, devicePath, Set.of())) {
             // in-memory updates only; caller persists
         }
         ensureSnmpDriverMappings(objectManager.require(devicePath));
     }
 
-    private boolean syncModelVariableMetadata(BlueprintDefinition model, String objectPath) {
+    /**
+     * @param otherModelIds other blueprints synced on the same object; a name one of them owns
+     *                      (last apply wins) is left to that blueprint
+     */
+    private boolean syncModelVariableMetadata(BlueprintDefinition model, String objectPath, Set<String> otherModelIds) {
         BlueprintDefinition effective = BlueprintEngine.flattenInheritance(model, blueprintRegistry);
         PlatformObject target = objectManager.require(objectPath);
         boolean changed = false;
         for (BlueprintVariableDefinition varDef : effective.variables()) {
             Optional<Variable> existingOpt = target.getVariable(varDef.name());
             if (existingOpt.isPresent()) {
+                if (ownedByOther(target.ownerOfVariable(varDef.name()), otherModelIds)) {
+                    continue;
+                }
                 Variable existing = existingOpt.get();
                 if (existing.historyEnabled() != varDef.historyEnabled()
                         || !Objects.equals(
@@ -415,81 +464,20 @@ public class BlueprintApplicationRunner {
             }
         }
         if (!effective.bindingRules().isEmpty()) {
-            if (containsRawPlaceholder(effective)) {
-                // Instance parameters are not stored on the object. Substituting the
-                // blueprint's own defaults would overwrite the deployed rule, and a
-                // leftover ${...} is evaluated inside ObjectManager.initialize.
-                log.warn(
-                        "Skip blueprint rule merge on startup for {}: a rule still contains ${...}. Saved rules stay as deployed.",
-                        objectPath
-                );
-            } else {
-                bindingRulesMerger.mergeBlueprintRules(objectPath, effective, effective.parameters(), false);
-                changed = true;
-            }
+            Set<String> ruleIdsOwnedElsewhere = effective.bindingRules().stream()
+                    .map(BlueprintBindingRule::id)
+                    .filter(ruleId -> ownedByOther(target.ownerOfBindingRule(ruleId), otherModelIds))
+                    .collect(Collectors.toSet());
+            startupRulesHealth.reportAll(
+                    bindingRulesMerger.syncBlueprintRulesAtStartup(objectPath, effective, ruleIdsOwnedElsewhere)
+            );
+            changed = true;
         }
         return changed;
     }
 
-    /** True when any rule field still contains a raw {@code ${}}. Blueprint defaults are not applied first. */
-    static boolean containsRawPlaceholder(BlueprintDefinition model) {
-        for (BlueprintBindingRule rule : model.bindingRules()) {
-            if (hasPlaceholder(rule.id())
-                    || hasPlaceholder(rule.name())
-                    || hasPlaceholder(rule.condition())
-                    || hasPlaceholder(rule.expression())
-                    || hasPlaceholder(rule.targetVariable())
-                    || hasPlaceholder(rule.targetField())
-                    || hasPlaceholder(rule.kind())
-                    || hasPlaceholder(rule.windowBucket())
-                    || hasPlaceholder(rule.formulaRef())
-                    || hasPlaceholder(rule.formulaScope())
-                    || hasPlaceholder(rule.formulaAppId())) {
-                return true;
-            }
-            if (rule.rollupBuckets() != null) {
-                for (String bucket : rule.rollupBuckets()) {
-                    if (hasPlaceholder(bucket)) {
-                        return true;
-                    }
-                }
-            }
-            if (rule.formulaParams() != null) {
-                for (String value : rule.formulaParams().values()) {
-                    if (hasPlaceholder(value)) {
-                        return true;
-                    }
-                }
-            }
-            BindingTarget target = rule.target();
-            if (target != null && (hasPlaceholder(target.kind())
-                    || hasPlaceholder(target.variableName())
-                    || hasPlaceholder(target.field())
-                    || hasPlaceholder(target.path())
-                    || hasPlaceholder(target.eventName())
-                    || hasPlaceholder(target.ref()))) {
-                return true;
-            }
-            BindingActivators activators = rule.activators();
-            if (activators != null && (hasPlaceholder(activators.onEvent())
-                    || hasPlaceholder(activators.onEventRef()))) {
-                return true;
-            }
-            if (activators != null) {
-                for (BindingVariableRef ref : activators.onVariableChange()) {
-                    if (hasPlaceholder(ref.objectPath())
-                            || hasPlaceholder(ref.variableName())
-                            || hasPlaceholder(ref.ref())) {
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
-    }
-
-    private static boolean hasPlaceholder(String text) {
-        return text != null && text.contains("${");
+    private static boolean ownedByOther(Optional<String> owner, Set<String> otherModelIds) {
+        return owner.isPresent() && otherModelIds.contains(owner.get());
     }
 
     private void ensureSnmpDriverMappings(PlatformObject device) {

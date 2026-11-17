@@ -56,7 +56,7 @@ management:
       show-details: when_authorized
       group:
         readiness:
-          include: readinessState,clusterFixture,tenantCatalog
+          include: readinessState,clusterFixture,tenantCatalog,blueprintStartupRules
     prometheus:
       access: read_only
   metrics:
