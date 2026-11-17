@@ -79,7 +79,7 @@
   "agent.suggest.scada": "Help me build or extend a SCADA mimic screen",
   "agent.suggest.bundle": "Explain how to package and deploy an application bundle",
   "agent.details.running": "Current steps",
-  "agent.details.waiting": "Waiting for the first tool step…",
+  "agent.details.waiting": "Waiting for the model…",
   "agent.details.collapsedCount": "{{count}} identical OK steps collapsed",
   "agent.details.ok": "Details",
   "agent.details.error": "What went wrong",

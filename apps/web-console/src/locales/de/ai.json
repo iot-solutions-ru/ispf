@@ -23,7 +23,7 @@
   "agent.details.rawPreview": "Modellausgabefragment",
   "agent.details.running": "Aktuelle Schritte",
   "agent.details.truncated": "Antwort abgeschnitten",
-  "agent.details.waiting": "Warte auf den ersten Schritt…",
+  "agent.details.waiting": "Warte auf das Modell…",
   "agent.details.collapsedCount": "{{count}} identische OK-Schritte zusammengefasst",
   "agent.documents.delete": "Löschen",
   "agent.documents.description": "Beschreibung",

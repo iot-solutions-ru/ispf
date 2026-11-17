@@ -273,6 +273,14 @@ public final class AgentStepHumanizer {
                 "正在准备请求…");
     }
 
+    public static String waitingForModel(String uiLocale) {
+        return t(uiLocale,
+                "Waiting for the model…",
+                "Ожидание ответа модели…",
+                "Warte auf das Modell…",
+                "等待模型回复…");
+    }
+
     public static String parseErrorLabel(String uiLocale, boolean truncated) {
         if (truncated) {
             return t(uiLocale,

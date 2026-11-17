@@ -48,9 +48,10 @@ export function AgentRunDetails({
   const devicePath = typeof result?.devicePath === "string" ? result.devicePath : undefined;
   const dashboardPath =
     typeof result?.dashboardPath === "string" ? result.dashboardPath : undefined;
-  const { toolSteps, diagnosticSteps } = useMemo(() => ({
+  const { toolSteps, diagnosticSteps, statusSteps } = useMemo(() => ({
     toolSteps: steps.filter((step) => step.type === "tool"),
     diagnosticSteps: steps.filter((step) => step.type === "error" || step.type === "guard"),
+    statusSteps: steps.filter((step) => step.type === "status"),
   }), [steps]);
   const collapsedToolSteps = useMemo(
     () => collapseConsecutiveToolSteps(toolSteps),
@@ -58,6 +59,9 @@ export function AgentRunDetails({
   );
   const isRunning = status === "RUNNING";
   const detailCount = toolSteps.length + diagnosticSteps.length;
+  const latestStatusLabel = statusSteps.length > 0
+    ? statusSteps[statusSteps.length - 1]?.label
+    : undefined;
 
   return (
     <details className="ai-agent-run-details" open={open || undefined}>
@@ -70,7 +74,9 @@ export function AgentRunDetails({
         {detailCount > 0 ? ` (${detailCount})` : ""}
       </summary>
       {placeholder && toolSteps.length === 0 && diagnosticSteps.length === 0 && (
-        <p className="op-muted ai-agent-step-placeholder">{t("agent.details.waiting")}</p>
+        <p className="op-muted ai-agent-step-placeholder">
+          {latestStatusLabel || t("agent.details.waiting")}
+        </p>
       )}
       {steps.length > 0 && !isRunning && (
         <div className="ai-agent-details-tabs" role="tablist" aria-label={t("agent.trace.viewAria")}>

@@ -20,7 +20,8 @@ public final class AgentAskPromptBuilder {
             
             Your job: explain platform concepts, document procedures, list/describe what exists, \
             preview reports, and answer «how do I…?» with step-by-step Markdown instructions.
-            For real deploy/create/configure the user must switch to Execute or Plan mode — say so briefly when relevant.
+            For real deploy/create/configure («создай демо SNMP», «разверни»): say in 1–2 short sentences to switch to Execute —
+            do NOT invent a long fake deploy playbook and do NOT call list_drivers first.
             
             FINISH FROM BRIEFING (preferred for simple Q&A): if Platform knowledge / Knowledge index, UI focus,
             or LIVE UI SNAPSHOT already answers the question, finish immediately with Markdown — do NOT call tools first.

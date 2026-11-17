@@ -55,8 +55,12 @@ final class AgentPromptAssembler {
         String llmUserText = prepared.llmText();
         List<LlmMessage> messages = new ArrayList<>();
         boolean copilotChannel = "copilot".equalsIgnoreCase(session.runState().clientChannel());
-        // Copilot only injects the Knowledge index — keep includeStatic=false so driverIds sample is present.
+        boolean askMode = profile != AgentProfile.OPERATOR
+                && !copilotChannel
+                && session.runState().interactionMode() == AgentInteractionMode.ASK;
+        // Copilot/Ask: compact Knowledge index (+ live snapshot). Full static dump is for Studio Execute/Plan.
         boolean includeStatic = !copilotChannel
+                && !askMode
                 && (aiProperties.isBriefingEveryTurn() || session.turns().isEmpty());
         String briefing = platformBriefingService.buildBriefing(session.rootPath(), includeStatic);
         List<Map<String, Object>> activeTools = AgentToolSurface.filterCatalog(
@@ -93,20 +97,19 @@ final class AgentPromptAssembler {
             if (hasTextAttachment(prepared.attachmentMetadata())) {
                 systemPrompt += AgentAttachmentPromptSection.forTextAttachments();
             }
-        } else if (session.runState().interactionMode() == AgentInteractionMode.ASK) {
+        } else if (askMode) {
             String sessionDocs = sessionDocumentService.formatPromptSection(
                     session.sessionId(),
                     llmUserText
             );
-            boolean uiFocusPresent = session.runState().clientFocus() != null
-                    && !session.runState().clientFocus().isEmpty();
+            // Never inline bulky reference playbooks — they dominate prefill and stall first-token UX.
             systemPrompt = AgentAskPromptBuilder.build(
                     session.rootPath(),
                     activeTools,
                     briefing,
                     prepared.hasImages(),
                     sessionDocs,
-                    !uiFocusPresent
+                    false
             );
             if (hasTextAttachment(prepared.attachmentMetadata())) {
                 systemPrompt += AgentAttachmentPromptSection.forTextAttachments();

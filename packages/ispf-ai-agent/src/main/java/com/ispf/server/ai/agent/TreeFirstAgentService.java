@@ -375,6 +375,12 @@ public class TreeFirstAgentService {
 
                 boolean hasTextAttachment = AgentPromptAssembler.hasTextAttachment(attachmentMetadata);
                 cancellationRegistry.touch(session.sessionId());
+                publishStep(session.sessionId(), Map.of(
+                        "step", stepNumber,
+                        "type", "status",
+                        "label", AgentStepHumanizer.waitingForModel(uiLocale),
+                        "result", Map.of("status", "RUNNING", "phase", "llm")
+                ));
                 AgentLlmActionResolver.ParseAttempt parsed = AgentLlmActionResolver.resolve(
                         objectMapper,
                         llmProviderRegistry,
