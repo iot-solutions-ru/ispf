@@ -7,6 +7,11 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 10
+    # scala-library stays on 2.13.x for embedded-kafka_2.13 (Kafka test classpath).
+    # Majors (3.x) need a coordinated Scala 3 / artifact rename; see #672 / #764.
+    ignore:
+      - dependency-name: "org.scala-lang:scala-library"
+        update-types: ["version-update:semver-major"]
     groups:
       parquet:
         patterns:
