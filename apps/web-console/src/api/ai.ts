@@ -80,7 +80,7 @@ export interface AiAgentTool {
 
 export interface AiAgentStep {
   step: number;
-  type: "tool" | "finish" | "error" | "guard";
+  type: "tool" | "finish" | "error" | "guard" | "status";
   tool?: string;
   label?: string;
   arguments?: Record<string, unknown>;
