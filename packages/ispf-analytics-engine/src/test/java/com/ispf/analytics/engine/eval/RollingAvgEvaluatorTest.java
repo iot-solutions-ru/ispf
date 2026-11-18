@@ -43,6 +43,32 @@ class RollingAvgEvaluatorTest {
         assertThat(result.outputs()).containsEntry("avgTemperature5m", -20.5);
     }
 
+    @Test
+    void nearNowEmptyWindowMayUseLiveForChainBootstrap() {
+        AnalyticsEvaluationResult result = new RollingAvgEvaluator().evaluate(
+                tag(),
+                new EmptyHistorian(),
+                new FixedLivePort(-20.0),
+                AnalyticsEvaluationOptions.now()
+        );
+
+        assertThat(result.status()).isEqualTo("ok");
+        assertThat(result.outputs()).containsEntry("avgTemperature5m", -20.0);
+    }
+
+    @Test
+    void futureAsOfEmptyWindowDoesNotReturnTheLiveValue() {
+        AnalyticsEvaluationResult result = new RollingAvgEvaluator().evaluate(
+                tag(),
+                new EmptyHistorian(),
+                new FixedLivePort(-20.0),
+                new AnalyticsEvaluationOptions(Instant.parse("2099-01-01T00:00:00Z"))
+        );
+
+        assertThat(result.status()).isEqualTo("skipped");
+        assertThat(result.outputs()).isEmpty();
+    }
+
     private static AnalyticsTagDefinition tag() {
         return new AnalyticsTagDefinition(
                 "root.room/tag/avg",
