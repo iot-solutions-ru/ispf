@@ -156,4 +156,23 @@ class EventFilterMatcherTest {
 
         assertThat(matcher.matchesExpression("false", event)).isFalse();
     }
+
+    @Test
+    void nonBooleanExpressionIsRejected() {
+        ObjectEvent event = ObjectEvent.of(
+                "root.platform.devices.pump-1",
+                "tick",
+                EventLevel.INFO,
+                DataRecord.empty(DataSchema.builder("payload").build())
+        );
+
+        assertThatThrownBy(() -> matcher.matchesExpression("1", event))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Event filter expression must return a boolean");
+        assertThatThrownBy(() -> matcher.matchesExpression("null", event))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Event filter expression must return a boolean");
+        assertThat(matcher.matchesExpression("true", event)).isTrue();
+        assertThat(matcher.matchesExpression("false", event)).isFalse();
+    }
 }

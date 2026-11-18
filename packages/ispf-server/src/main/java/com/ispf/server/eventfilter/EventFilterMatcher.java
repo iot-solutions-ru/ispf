@@ -95,7 +95,7 @@ public class EventFilterMatcher {
             if (result instanceof Boolean bool) {
                 return bool;
             }
-            return Boolean.parseBoolean(String.valueOf(result));
+            throw new IllegalArgumentException("Event filter expression must return a boolean");
         } catch (ExpressionException ex) {
             throw new IllegalStateException(
                     "Event filter expression failed: " + expression + ": " + ex.getMessage(),
