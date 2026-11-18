@@ -215,6 +215,12 @@ public final class AgentJudgeService {
             String userMessage,
             AgentRunState runState
     ) {
+        AgentAssignmentType current = AgentAssignmentClassifier.classify(userMessage).type();
+        if (current == AgentAssignmentType.EXPLORE_READONLY) {
+            // A how-to or a small follow-up must not inherit a plant/SCADA smoke gate
+            // from an earlier plan in the same session.
+            return current;
+        }
         String raw = extractAssignmentType(finishResult);
         if (raw == null) {
             raw = extractAssignmentType(storedPlan);

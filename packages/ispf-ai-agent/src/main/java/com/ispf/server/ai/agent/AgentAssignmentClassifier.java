@@ -59,6 +59,9 @@ public final class AgentAssignmentClassifier {
         if (matchesAny(text, "scada", "mimic", "мимик", "мнемо", "p&id", "p&id", "hmi")) {
             return new Classification(AgentAssignmentType.SCADA_HMI, 0.86, false, "scada_hmi");
         }
+        if (isExplanationRequest(text)) {
+            return new Classification(AgentAssignmentType.EXPLORE_READONLY, 0.84, true, "_default");
+        }
         if (text.length() > 500 || matchesAny(text, "приложение", "appendix", "kpi", "опэ", "forecast", "lstm",
                 "machine learning", "оператор", "ролевая модель")) {
             return new Classification(AgentAssignmentType.INDUSTRIAL_FACILITY, 0.75, false, "industrial_oil_gas");
@@ -83,6 +86,12 @@ public final class AgentAssignmentClassifier {
     private static boolean isFollowUp(String text) {
         return matchesAny(text, "добавь", "add ", "на тот дашборд", "that dashboard", "that device",
                 "на дашборд", "график на", "chart on", "update widget", "ещё один");
+    }
+
+    /** Show/how-to questions are not a plant build, even when they mention a device. */
+    private static boolean isExplanationRequest(String text) {
+        return matchesAny(text, "показать", "покажите", "как созда", "как работ", "how to", "how do", "how does",
+                "how is", "explain");
     }
 
     private static boolean matchesAny(String text, String... keywords) {
