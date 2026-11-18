@@ -22,6 +22,7 @@ import org.springframework.stereotype.Component;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -91,7 +92,12 @@ public class FunctionScriptEngine {
             Map<String, Object> vars = new LinkedHashMap<>();
             vars.put("input", inputMap);
             vars.put("app", Map.of("id", context == null || context.appId() == null ? "" : context.appId()));
-            return executeSteps(steps, vars, outputSchema, context, true);
+            TimestampZone timestampZone = containsSql(steps) ? alignPlatformTimestampZone() : TimestampZone.UNCHANGED;
+            try {
+                return executeSteps(steps, vars, outputSchema, context, true);
+            } finally {
+                restorePlatformTimestampZone(timestampZone);
+            }
         } catch (RuntimeException ex) {
             throw ex;
         } catch (Exception ex) {
@@ -621,6 +627,72 @@ public class FunctionScriptEngine {
 
     private JdbcTemplate jdbc() {
         return FunctionScriptJdbcScope.activeOr(jdbcTemplate);
+    }
+
+    /**
+     * {@code variable_samples.sampled_at} is a timestamp without a zone, written as a UTC wall time.
+     * A function parameter with a zone is compared in the session zone, so a JVM zone of UTC+3
+     * selects the previous hour. Platform script SQL uses UTC for that comparison.
+     */
+    private TimestampZone alignPlatformTimestampZone() {
+        if (jdbc() != jdbcTemplate) {
+            return TimestampZone.UNCHANGED;
+        }
+        return jdbcTemplate.execute((Connection connection) -> {
+            String product = connection.getMetaData().getDatabaseProductName();
+            String sql = timestampZoneSql(product);
+            if (sql == null) {
+                return TimestampZone.UNCHANGED;
+            }
+            try (Statement statement = connection.createStatement()) {
+                statement.execute(sql);
+            }
+            return product.toLowerCase(Locale.ROOT).contains("h2") ? TimestampZone.H2 : TimestampZone.UNCHANGED;
+        });
+    }
+
+    private void restorePlatformTimestampZone(TimestampZone timestampZone) {
+        if (timestampZone != TimestampZone.H2) {
+            return;
+        }
+        jdbcTemplate.execute("SET TIME ZONE LOCAL");
+    }
+
+    static String timestampZoneSql(String productName) {
+        String product = productName == null ? "" : productName.toLowerCase(Locale.ROOT);
+        if (product.contains("postgresql")) {
+            return "SET LOCAL TIME ZONE 'UTC'";
+        }
+        if (product.contains("h2")) {
+            return "SET TIME ZONE 'UTC'";
+        }
+        return null;
+    }
+
+    private static boolean containsSql(JsonNode node) {
+        if (node == null || node.isMissingNode() || node.isNull()) {
+            return false;
+        }
+        if (node.isObject()) {
+            String type = node.path("type").asText("");
+            if (type.equals("selectOne") || type.equals("selectMany")
+                    || type.equals("selectForUpdate") || type.equals("exec")) {
+                return true;
+            }
+        }
+        if (node.isObject() || node.isArray()) {
+            for (JsonNode child : node) {
+                if (containsSql(child)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private enum TimestampZone {
+        UNCHANGED,
+        H2
     }
 
     private void acquireAdvisoryLock(String key) {
