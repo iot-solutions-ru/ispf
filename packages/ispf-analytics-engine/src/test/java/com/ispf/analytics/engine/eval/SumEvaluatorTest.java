@@ -31,7 +31,8 @@ class SumEvaluatorTest {
 
         assertThat(historian.lastFrom).isEqualTo(AS_OF.minus(Duration.ofMinutes(5)));
         assertThat(result.status()).isEqualTo("ok");
-        assertThat(result.outputs()).containsEntry("sumTemperature", 4.0);
+        // Weighted by sample count: 1.5*2 + 2.5*2 = 8.0 (not unweighted 1.5+2.5).
+        assertThat(result.outputs()).containsEntry("sumTemperature", 8.0);
     }
 
     private static AnalyticsTagDefinition tag() {

@@ -45,8 +45,9 @@ public final class SumEvaluator extends WindowedHistorianEvaluator {
         double total = 0.0;
         boolean any = false;
         for (HistorianPort.HistorianBucket bucket : buckets) {
-            if (bucket.avg() != null && !bucket.avg().isNaN()) {
-                total += bucket.avg();
+            Double avg = bucket.avg();
+            if (avg != null && Double.isFinite(avg)) {
+                total += avg * Math.max(bucket.count(), 1);
                 any = true;
             }
         }
