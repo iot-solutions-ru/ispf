@@ -11,11 +11,31 @@ import static org.assertj.core.api.Assertions.assertThat;
 class AgentPlanGuardTest {
 
     @Test
-    void autoModeEntersPlanningForScadaRequest() {
+    void autoModeLeavesTheDecisionToTheModel() {
         AgentRunState state = new AgentRunState();
         state.setInteractionMode(AgentInteractionMode.AUTO);
-        AgentPlanGuard.beginTurn(state, "Создай SCADA мнемосхему насосной станции с дашбордом", AgentProfile.ADMIN);
-        assertThat(state.planPhase()).isEqualTo(AgentPlanPhase.PLANNING);
+        AgentPlanGuard.beginTurn(
+                state,
+                "Как создать мнемосхему на платформе? Объясни по шагам.",
+                AgentProfile.ADMIN,
+                true,
+                null
+        );
+        assertThat(state.planPhase()).isEqualTo(AgentPlanPhase.NONE);
+        assertThat(state.storedPlan()).isEmpty();
+
+        AgentPlanGuard.beginTurn(state, "Создай SCADA мнемосхему насосной станции с дашбордом", AgentProfile.ADMIN, true, null);
+        assertThat(state.planPhase()).isEqualTo(AgentPlanPhase.NONE);
+
+        Map<String, Object> answer = new java.util.LinkedHashMap<>();
+        answer.put("summary", "Мнемосхему собирают так.");
+        assertThat(AgentPlanGuard.evaluateFinish(
+                state, answer, List.of(), "Как создать мнемосхему на платформе? Объясни по шагам.", AgentProfile.ADMIN
+        )).isEqualTo(AgentPlanGuard.FinishOutcome.ALLOW_EXECUTION);
+
+        String prompt = AgentPlanPromptSection.forRunState(state);
+        assertThat(prompt).contains("you decide");
+        assertThat(prompt).contains("still a question");
     }
 
     @Test
@@ -223,6 +243,19 @@ class AgentPlanGuardTest {
                 state, finish, List.of(), "Какие устройства есть?", AgentProfile.ADMIN
         );
         assertThat(outcome).isEqualTo(AgentPlanGuard.FinishOutcome.ALLOW_EXECUTION);
+    }
+
+    @Test
+    void autoAnswerTurnWithoutMutationIsAnswerOnly() {
+        AgentRunState state = new AgentRunState();
+        state.setInteractionMode(AgentInteractionMode.AUTO);
+        AgentPlanGuard.beginTurn(state, "Почему не работает мнемосхема?", AgentProfile.ADMIN);
+        assertThat(AgentPlanGuard.isAnswerOnlyAutoTurn(state, List.of(toolStep("list_objects")))).isTrue();
+        assertThat(AgentPlanGuard.isAnswerOnlyAutoTurn(state, List.of(toolStep("create_object")))).isFalse();
+        assertThat(AgentPlanGuard.isAnswerOnlyAutoTurn(state, List.of(toolStep("set_variable")))).isFalse();
+
+        state.setPlanPhase(AgentPlanPhase.PLANNING);
+        assertThat(AgentPlanGuard.isAnswerOnlyAutoTurn(state, List.of())).isFalse();
     }
 
     @Test

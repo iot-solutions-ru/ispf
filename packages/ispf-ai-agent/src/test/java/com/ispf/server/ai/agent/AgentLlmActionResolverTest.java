@@ -45,6 +45,20 @@ class AgentLlmActionResolverTest {
     }
 
     @Test
+    void autoGreetingIsTheAnswerAndIsNotSentBackForJson() {
+        AgentRunState state = new AgentRunState();
+        state.setInteractionMode(AgentInteractionMode.AUTO);
+        assertThat(TreeFirstAgentService.allowPlainTextFinish(AgentProfile.ADMIN, false, false, state)).isTrue();
+
+        state.setPlanPhase(AgentPlanPhase.PLANNING);
+        assertThat(TreeFirstAgentService.allowPlainTextFinish(AgentProfile.ADMIN, false, false, state)).isFalse();
+
+        state.setInteractionMode(AgentInteractionMode.EXECUTE);
+        state.setPlanPhase(AgentPlanPhase.NONE);
+        assertThat(TreeFirstAgentService.allowPlainTextFinish(AgentProfile.ADMIN, false, false, state)).isFalse();
+    }
+
+    @Test
     void executeProseStillRetriesForAJsonAction() throws Exception {
         LlmProviderRegistry registry = mock(LlmProviderRegistry.class);
         when(registry.complete(any()))

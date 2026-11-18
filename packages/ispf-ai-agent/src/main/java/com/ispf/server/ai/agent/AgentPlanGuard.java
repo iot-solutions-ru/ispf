@@ -10,9 +10,9 @@ import java.util.Set;
 /**
  * Enforces plan-before-execute workflow for the platform admin agent.
  * <p>
- * In planning phases only read-only discovery tools are allowed. Complex tasks in {@link AgentInteractionMode#AUTO}
- * enter planning automatically; {@link AgentInteractionMode#PLAN} always plans first;
- * {@link AgentInteractionMode#ASK} never mutates.
+ * In planning phases only read-only discovery tools are allowed. {@link AgentInteractionMode#AUTO}
+ * does not classify the message: the model decides whether to answer, act, or open a plan.
+ * {@link AgentInteractionMode#PLAN} plans first; {@link AgentInteractionMode#ASK} never mutates.
  */
 final class AgentPlanGuard {
 
@@ -163,13 +163,10 @@ final class AgentPlanGuard {
             }
             return false;
         }
-        if (requiresPlanning(userMessage)) {
-            runState.setPlanPhase(AgentPlanPhase.PLANNING);
-        } else if (requireApprovalForMutate
-                && !runState.isPlanApproved()
-                && impliesPlatformMutation(userMessage)) {
-            runState.setPlanPhase(AgentPlanPhase.PLANNING);
-        }
+        // AUTO: keywords must not decide. A how-to that mentions a mimic is still a question,
+        // and only the model can tell. It answers, acts, or finishes with phase=plan.
+        // Mutation tools stay behind plan approval (AgentMutateApprovalGuard). A template hint
+        // is filled in only when a previous turn already opened planning and left the draft empty.
         AgentLitePlanBootstrap.seedDraftPlanIfNeeded(runState, userMessage, requireApprovalForMutate);
         return false;
     }
@@ -290,7 +287,7 @@ final class AgentPlanGuard {
             return FinishOutcome.ALLOW_PLAN;
         }
         if (requiresPlanning(userMessage)
-                && runState.interactionMode() != AgentInteractionMode.EXECUTE
+                && runState.interactionMode() == AgentInteractionMode.PLAN
                 && runState.planPhase() == AgentPlanPhase.NONE) {
             return FinishOutcome.BLOCK_NEEDS_PLAN;
         }
@@ -588,6 +585,30 @@ final class AgentPlanGuard {
         if (runState.planPhase() == AgentPlanPhase.APPROVED) {
             runState.resetPlan();
         }
+    }
+
+    /**
+     * AUTO turn that answered without changing the platform: no plan opened, no approval, and no
+     * mutating tool attempted (a refused one counts). Build checks for a mimic, alert or workflow
+     * must not reject a plain answer to a question that merely mentions them.
+     */
+    static boolean isAnswerOnlyAutoTurn(AgentRunState runState, List<Map<String, Object>> steps) {
+        if (runState == null || runState.interactionMode() != AgentInteractionMode.AUTO) {
+            return false;
+        }
+        if (runState.isPlanApproved() || runState.isPlanningActive() || runState.isMutationsUnlockedForTurn()) {
+            return false;
+        }
+        if (steps == null) {
+            return true;
+        }
+        for (Map<String, Object> step : steps) {
+            Object tool = step != null ? step.get("tool") : null;
+            if (tool != null && !String.valueOf(tool).isBlank() && !isReadOnlyTool(String.valueOf(tool))) {
+                return false;
+            }
+        }
+        return true;
     }
 
     static boolean restrictsMutations(AgentRunState runState) {

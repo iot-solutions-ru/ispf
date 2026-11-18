@@ -406,7 +406,7 @@ public class TreeFirstAgentService {
                                     askMode
                             ),
                             aiProperties.getAgentParseRetries(),
-                            profile == AgentProfile.OPERATOR || askMode || copilotChannel,
+                            allowPlainTextFinish(profile, askMode, copilotChannel, session.runState()),
                             new AgentLlmActionResolver.ResolveContext(
                                     hasTextAttachment,
                                     !askMode && session.runState().isPlanningActive(),
@@ -603,6 +603,8 @@ public class TreeFirstAgentService {
                         break;
                     }
                     AcceptanceVerdict.Result executionAcceptance = null;
+                    final boolean answerOnlyAuto = profile != AgentProfile.OPERATOR
+                            && AgentPlanGuard.isAnswerOnlyAutoTurn(session.runState(), steps);
                     String pictureSummary = null;
                     String honestSummary = null;
                     if (profile != AgentProfile.OPERATOR) {
@@ -755,7 +757,7 @@ public class TreeFirstAgentService {
                             AgentPlanGuard.capturePlan(session.runState(), candidateResult);
                             syncRunPlanState(session);
                         }
-                        if (planOutcome == AgentPlanGuard.FinishOutcome.ALLOW_EXECUTION) {
+                        if (planOutcome == AgentPlanGuard.FinishOutcome.ALLOW_EXECUTION && !answerOnlyAuto) {
                             executionAcceptance = AcceptanceVerdict.evaluate(
                                     steps,
                                     userMessage,
@@ -827,6 +829,7 @@ public class TreeFirstAgentService {
                                 }
                             }
                             // ADR-0051: pre-finish judge (REWORK) — step logs + live tree sensors.
+                            // Skipped for a plain AUTO answer: this block runs only when !answerOnlyAuto.
                             AgentJudgeService.JudgeResult judge = AgentJudgeService.evaluate(
                                     steps,
                                     session.runState(),
@@ -1278,6 +1281,11 @@ public class TreeFirstAgentService {
                                 }
                                 executedTool = toolName;
                                 agentMetrics.recordGuardBlock("mutateApproval");
+                                if (session.runState().interactionMode() == AgentInteractionMode.AUTO
+                                        && session.runState().planPhase() == AgentPlanPhase.NONE) {
+                                    // AUTO asked for a change and it was refused: the next finish must be a plan.
+                                    session.runState().setPlanPhase(AgentPlanPhase.PLANNING);
+                                }
                             } else {
                                 toolResult = executeToolWithTransientRetry(toolName, toolArgs, context);
                                 if ("list_reports".equals(toolName)) {
@@ -1992,6 +2000,26 @@ public class TreeFirstAgentService {
         String trimmed = content.trim();
         int limit = Math.max(80, maxChars);
         return trimmed.length() <= limit ? trimmed : trimmed.substring(0, limit - 3) + "...";
+    }
+
+    /**
+     * A finished prose reply is the answer the user already watched stream in.
+     * Asking the model for JSON on the same row replaces it — «привет» became a prompt to create a device.
+     * Plan and Execute still retry, and so does Auto once a plan is open: there the reply must be a tool call.
+     */
+    static boolean allowPlainTextFinish(
+            AgentProfile profile,
+            boolean askMode,
+            boolean copilotChannel,
+            AgentRunState runState
+    ) {
+        if (profile == AgentProfile.OPERATOR || askMode || copilotChannel) {
+            return true;
+        }
+        return runState != null
+                && runState.interactionMode() == AgentInteractionMode.AUTO
+                && !runState.isPlanApproved()
+                && !runState.isPlanningActive();
     }
 
     /**

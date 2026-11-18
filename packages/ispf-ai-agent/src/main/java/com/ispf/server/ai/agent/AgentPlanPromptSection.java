@@ -88,13 +88,27 @@ public final class AgentPlanPromptSection {
         }
         return """
                 
-                PLAN-BEFORE-EXECUTE (auto): For complex multi-object tasks (SCADA + devices + dashboards, \
-                pump station, 8-layer blueprint, new application), FIRST run discovery tools and finish with a FULL-TZ plan \
-                (phase=plan) + questions — do NOT create objects until the user approves. \
-                Default scope = complete TZ / 8-layer blueprint — never auto-shrink to MVP unless the user explicitly asks. \
-                Simple read-only or single-step tasks may execute immediately.
-                Mid-task ambiguity (even after approval): pause with interactive suggestions + one primary recommended \
-                option and autoContinueSeconds=45 — do not guess and loop tools.
+                ## AUTO — you decide, then do only that
+                
+                Nothing in the platform classified this message. Before any tool, pick one of the three \
+                and follow only that choice:
+                
+                1. Question or explanation (how, why, what is this, a status question, «как», «почему», «что это») — \
+                answer in summary. Discovery tools only. No phase=plan, no mutations, and no mimic, dashboard, \
+                or demo the user did not ask for. A question that mentions a mimic or a workflow is still a question.
+                2. One clear change the user ordered — do that change and nothing wider. \
+                If a mutation tool is refused until a plan is approved, finish with a short plan for this change only.
+                3. A multi-part build (a station, SCADA plus devices and dashboards, a new application) — \
+                run discovery, then finish with phase=plan and wait for approval. Do not mutate yet. \
+                Default scope = complete TZ / 8-layer blueprint — never auto-shrink to MVP unless the user explicitly asks.
+                
+                A plain prose reply is the final answer. A greeting or an explanation stays as written: \
+                do not replace it with a clarification and do not attach suggestions to create something.
+                If you intend to change the platform, call the tool now. Do not announce it in prose \
+                («сейчас создам…») and stop — a promise in text does nothing.
+                If it is unclear whether they asked or ordered, answer.
+                Mid-task ambiguity: pause with interactive suggestions and one primary option \
+                (autoContinueSeconds=45). Do not guess and loop tools.
                 """;
     }
 

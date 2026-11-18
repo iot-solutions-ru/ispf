@@ -101,17 +101,11 @@ class AgentLitePlanBootstrapTest {
     }
 
     @Test
-    void seedsDraftOnBeginTurnForMutationTask() {
+    void seedsDraftOnlyAfterPlanningHasStarted() {
         AgentRunState state = new AgentRunState();
         state.setInteractionMode(AgentInteractionMode.AUTO);
-        AgentPlanGuard.beginTurn(
-                state,
-                "Создай workflow для симуляции гидроудара",
-                AgentProfile.ADMIN,
-                true,
-                null
-        );
-        assertThat(state.planPhase()).isEqualTo(AgentPlanPhase.PLANNING);
+        state.setPlanPhase(AgentPlanPhase.PLANNING);
+        AgentLitePlanBootstrap.seedDraftPlanIfNeeded(state, "Создай workflow для симуляции гидроудара", true);
         assertThat(state.storedPlan()).isNotEmpty();
         assertThat(state.storedPlan().get("goal")).isNotNull();
         assertThat(AgentLitePlanBootstrap.isTemplateDraft(state.storedPlan())).isTrue();

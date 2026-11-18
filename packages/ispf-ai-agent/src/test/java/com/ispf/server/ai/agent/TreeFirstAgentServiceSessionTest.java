@@ -210,11 +210,29 @@ class TreeFirstAgentServiceSessionTest {
                 ));
 
         AgentSession session = AgentSession.create("admin", "root");
+        session.runState().setInteractionMode(AgentInteractionMode.EXECUTE);
         var auth = new UsernamePasswordAuthenticationToken("admin", "secret");
         Map<String, Object> result = agentService.runTurn(session, "list devices", auth, "admin");
 
         assertEquals("OK", result.get("status"));
         verify(llmProviderRegistry, org.mockito.Mockito.times(2)).complete(any());
+    }
+
+    @Test
+    void autoProseReplyIsTheAnswerWithoutASecondCall() throws Exception {
+        when(llmProviderRegistry.complete(any())).thenReturn(new LlmResponse(
+                "Привет! Чем могу помочь?",
+                "test-model",
+                new LlmUsage(1, 1, 2)
+        ));
+
+        AgentSession session = AgentSession.create("admin", "root");
+        var auth = new UsernamePasswordAuthenticationToken("admin", "secret");
+        Map<String, Object> result = agentService.runTurn(session, "привет", auth, "admin");
+
+        assertEquals("OK", result.get("status"));
+        assertEquals("Привет! Чем могу помочь?", result.get("summary"));
+        verify(llmProviderRegistry, org.mockito.Mockito.times(1)).complete(any());
     }
 
     @Test
@@ -227,6 +245,7 @@ class TreeFirstAgentServiceSessionTest {
         ));
 
         AgentSession session = AgentSession.create("admin", "root");
+        session.runState().setInteractionMode(AgentInteractionMode.EXECUTE);
         session.runState().setUiLocale("ru");
         var auth = new UsernamePasswordAuthenticationToken("admin", "secret");
         Map<String, Object> result = agentService.runTurn(session, "do something", auth, "admin");
