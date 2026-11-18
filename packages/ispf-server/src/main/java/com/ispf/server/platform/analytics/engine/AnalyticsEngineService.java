@@ -126,6 +126,7 @@ public class AnalyticsEngineService {
     ) {
         List<AnalyticsEvaluationResult> results = evaluateWithSession(tags, options);
         applyEngineResults(results, observedAt);
+        metadataService.recordEvaluations(results, observedAt);
         return results;
     }
 
