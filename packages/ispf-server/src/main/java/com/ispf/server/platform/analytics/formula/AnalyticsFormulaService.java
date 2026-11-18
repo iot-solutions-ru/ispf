@@ -151,7 +151,41 @@ public class AnalyticsFormulaService {
     @Transactional
     public String expand(String id, Map<String, String> parameters, String scope, String appId) {
         AnalyticsFormula formula = get(id, scope, appId);
-        return AnalyticsFormulaExpander.expand(formula.expression(), parameters);
+        return AnalyticsFormulaExpander.expand(
+                formula.expression(),
+                withDefaults(formula.parameters(), parameters)
+        );
+    }
+
+    static Map<String, String> withDefaults(
+            List<AnalyticsFormulaParameter> declared,
+            Map<String, String> supplied
+    ) {
+        Map<String, String> resolved = new LinkedHashMap<>();
+        if (supplied != null) {
+            for (Map.Entry<String, String> entry : supplied.entrySet()) {
+                if (entry.getValue() != null) {
+                    resolved.put(entry.getKey(), entry.getValue());
+                }
+            }
+        }
+        if (declared == null) {
+            return resolved;
+        }
+        for (AnalyticsFormulaParameter parameter : declared) {
+            if (parameter == null || parameter.name() == null || parameter.name().isBlank()) {
+                continue;
+            }
+            if (resolved.containsKey(parameter.name())) {
+                continue;
+            }
+            String defaultValue = parameter.defaultValue();
+            if (defaultValue == null || defaultValue.isBlank()) {
+                continue;
+            }
+            resolved.put(parameter.name(), defaultValue);
+        }
+        return resolved;
     }
 
     @Transactional
