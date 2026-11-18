@@ -215,6 +215,7 @@ export default function DataSourceEditor({ path, onClose, onOpenProperties }: Da
 
         <section className="data-source-editor-browser panel-card">
           <DataSourceBrowser
+            key={path}
             path={path}
             writesEnabled={dataQuery.data?.connectionMode !== "external"}
           />

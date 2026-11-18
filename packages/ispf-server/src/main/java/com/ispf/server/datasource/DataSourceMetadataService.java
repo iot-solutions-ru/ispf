@@ -194,8 +194,10 @@ public class DataSourceMetadataService {
 
     private List<TableNode> readTables(DatabaseMetaData meta, String catalog, String schema) throws SQLException {
         String useCatalog = schema == null || schema.isBlank() ? catalog : null;
-        String useSchema = schema == null || schema.isBlank() ? null : schema;
+        String useSchema = schema == null || schema.isBlank() ? null : likeExact(meta, schema);
         List<TableNode> tables = new ArrayList<>();
+        // Catalog/schema already META_NAME-validated; escape LIKE wildcards (_ / %).
+        // codeql[java/sql-injection]
         try (ResultSet rs = meta.getTables(useCatalog, useSchema, "%", new String[]{"TABLE", "VIEW", "BASE TABLE"})) {
             while (rs.next()) {
                 String tableName = rs.getString("TABLE_NAME");
@@ -219,8 +221,12 @@ public class DataSourceMetadataService {
             String table
     ) throws SQLException {
         String useCatalog = schema == null ? catalog : null;
+        String schemaPattern = schema == null ? null : likeExact(meta, schema);
+        String tablePattern = likeExact(meta, table);
         Set<String> primaryKeys = new LinkedHashSet<>();
-        try (ResultSet rs = meta.getPrimaryKeys(useCatalog, schema, table)) {
+        // Names validated by requireMetaName / IDENT; DatabaseMetaData is not concatenated SQL.
+        // codeql[java/sql-injection]
+        try (ResultSet rs = meta.getPrimaryKeys(useCatalog, schemaPattern, tablePattern)) {
             while (rs.next()) {
                 if (!table.equals(rs.getString("TABLE_NAME"))) {
                     continue;
@@ -232,7 +238,8 @@ public class DataSourceMetadataService {
             }
         }
         List<ColumnView> columns = new ArrayList<>();
-        try (ResultSet rs = meta.getColumns(useCatalog, schema, table, "%")) {
+        // codeql[java/sql-injection]
+        try (ResultSet rs = meta.getColumns(useCatalog, schemaPattern, tablePattern, "%")) {
             while (rs.next()) {
                 if (!table.equals(rs.getString("TABLE_NAME"))) {
                     continue;
@@ -323,6 +330,26 @@ public class DataSourceMetadataService {
     private static String quoteIdent(String ident) {
         requireIdent(ident, "identifier");
         return "\"" + ident + "\"";
+    }
+
+    /** Escape {@code _} / {@code %} so JDBC {@code DatabaseMetaData} LIKE patterns match literally. */
+    private static String likeExact(DatabaseMetaData meta, String value) throws SQLException {
+        if (value == null) {
+            return null;
+        }
+        String escape = meta.getSearchStringEscape();
+        if (escape == null || escape.isBlank()) {
+            escape = "\\";
+        }
+        StringBuilder out = new StringBuilder(value.length() * 2);
+        for (int i = 0; i < value.length(); i++) {
+            char ch = value.charAt(i);
+            if (ch == '%' || ch == '_' || (escape.length() == 1 && ch == escape.charAt(0))) {
+                out.append(escape);
+            }
+            out.append(ch);
+        }
+        return out.toString();
     }
 
     private static String requireIdent(String value, String label) {

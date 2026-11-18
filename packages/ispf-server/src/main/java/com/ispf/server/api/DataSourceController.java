@@ -10,6 +10,7 @@ import com.ispf.server.security.acl.ObjectAccessService;
 import com.ispf.server.tenant.TenantLocalDataAccessGuard;
 import com.ispf.server.tenant.TenantScopeService;
 import com.ispf.server.tenant.TenantVirtualRootService;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import org.springframework.security.core.Authentication;
@@ -161,7 +162,7 @@ public class DataSourceController {
     @PostMapping("/by-path/ddl/create-table")
     public DataSourceMetadataService.CreatedTable createTable(
             @RequestParam String path,
-            @RequestBody CreateTableRequest request,
+            @Valid @RequestBody CreateTableRequest request,
             Authentication authentication
     ) {
         String canonical = requirePathWrite(path, authentication);

@@ -93,6 +93,7 @@ public class ExternalDataSourceRegistry {
         hikari.setMaximumPoolSize(config.maximumPoolSize());
         hikari.setMinimumIdle(1);
         hikari.setConnectionTimeout(10_000);
+        hikari.setReadOnly(true);
         return new HikariDataSource(hikari);
     }
 }
