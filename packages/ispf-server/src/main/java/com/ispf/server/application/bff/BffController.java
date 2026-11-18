@@ -42,6 +42,13 @@ public class BffController {
 
     @PostMapping("/invoke")
     public Map<String, Object> invoke(@RequestBody BffInvokeRequest request, Authentication authentication) {
+        if (request == null
+                || request.objectPath() == null
+                || request.objectPath().isBlank()
+                || request.functionName() == null
+                || request.functionName().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "objectPath and functionName are required");
+        }
         invokeAccessService.requireDirectInvoke(request.objectPath(), request.functionName(), authentication);
         requireUiPackOwnsFunction(request.objectPath(), request.functionName(), authentication);
         DataRecord output = VariableAclRequestContext.callAsMember(

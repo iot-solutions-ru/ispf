@@ -87,6 +87,9 @@ public class ObjectTree {
     }
 
     public Optional<PlatformObject> findByPath(String path) {
+        if (path == null) {
+            return Optional.empty();
+        }
         return Optional.ofNullable(nodesByPath.get(path));
     }
 
