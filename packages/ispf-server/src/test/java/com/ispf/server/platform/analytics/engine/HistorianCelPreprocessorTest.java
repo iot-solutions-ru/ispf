@@ -70,6 +70,26 @@ class HistorianCelPreprocessorTest {
     }
 
     @Test
+    void unclosedParenIsNotEntirelyOneCall() {
+        assertThat(HistorianCelPreprocessor.isEntirelyOneCall("avg(root.devices.a/temperature, 5m")).isFalse();
+    }
+
+    @Test
+    void celWrapperAroundHistorianCallIsCelExpression() {
+        String expression = "double(avg(root.devices.a/temperature, 5m))";
+        assertThat(HistorianCelPreprocessor.isEntirelyOneCall(expression)).isFalse();
+        assertThat(HistorianCelPreprocessor.isCelExpression(expression)).isTrue();
+    }
+
+    @Test
+    void loneMaxCallIsEntirelyOneCall() {
+        assertThat(HistorianCelPreprocessor.isEntirelyOneCall(
+                "max(root.devices.a/temperature, 5m)")).isTrue();
+        assertThat(HistorianCelPreprocessor.isCelExpression(
+                "max(root.devices.a/temperature, 5m)")).isFalse();
+    }
+
+    @Test
     void rejectsDotFormHistorianSource() {
         assertThatThrownBy(() -> HistorianCelPreprocessor.expand(
                 "avg(root.platform.devices.analytics-demo.chain-a.derived-a, 5m)",

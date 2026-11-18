@@ -59,16 +59,26 @@ public final class HistorianCelPreprocessor {
         if (open <= 0) {
             return false;
         }
-        String name = trimmed.substring(0, open).trim();
-        if (!name.matches("[A-Za-z][A-Za-z0-9]*")) {
+        String name = trimmed.substring(0, open).trim().toLowerCase(Locale.ROOT);
+        // Only historian builtins count as a single helper call; CEL wrappers like double(avg(...)) stay CEL.
+        if (!name.matches("avg|min|max|last|sum|live|totalizer")) {
             return false;
         }
         int depth = 0;
         boolean inString = false;
+        boolean escape = false;
         char quote = 0;
         for (int i = open; i < trimmed.length(); i++) {
             char current = trimmed.charAt(i);
             if (inString) {
+                if (escape) {
+                    escape = false;
+                    continue;
+                }
+                if (current == '\\') {
+                    escape = true;
+                    continue;
+                }
                 if (current == quote) {
                     inString = false;
                 }
@@ -88,7 +98,8 @@ public final class HistorianCelPreprocessor {
                 }
             }
         }
-        return depth > 0;
+        // Unclosed parentheses are not a complete single call.
+        return false;
     }
 
     public static List<AnalyticsSourceRef> extractSources(String expression) {
