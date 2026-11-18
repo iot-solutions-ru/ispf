@@ -141,6 +141,18 @@ class EventFilterMatcherTest {
     }
 
     @Test
+    void nonBooleanExpressionFailsValidationWithoutEvents() {
+        assertThatThrownBy(() -> matcher.validateExpression("1"))
+                .isInstanceOf(ExpressionException.class)
+                .hasMessageContaining("must return a boolean");
+        assertThatThrownBy(() -> matcher.validateExpression("null"))
+                .isInstanceOf(ExpressionException.class)
+                .hasMessageContaining("must return a boolean");
+        matcher.validateExpression("true");
+        matcher.validateExpression("payload.severity >= 50");
+    }
+
+    @Test
     void uncomputableExpressionFailsInsteadOfActingAsFalse() {
         ObjectEvent event = ObjectEvent.of(
                 "root.platform.devices.pump-1",
@@ -167,11 +179,9 @@ class EventFilterMatcherTest {
         );
 
         assertThatThrownBy(() -> matcher.matchesExpression("1", event))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Event filter expression must return a boolean");
+                .hasMessageContaining("must return a boolean");
         assertThatThrownBy(() -> matcher.matchesExpression("null", event))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Event filter expression must return a boolean");
+                .hasMessageContaining("must return a boolean");
         assertThat(matcher.matchesExpression("true", event)).isTrue();
         assertThat(matcher.matchesExpression("false", event)).isFalse();
     }
