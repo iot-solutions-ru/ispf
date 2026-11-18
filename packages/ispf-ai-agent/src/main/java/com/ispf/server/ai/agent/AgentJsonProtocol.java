@@ -403,6 +403,10 @@ public final class AgentJsonProtocol {
             return finishAction(objectMapper, node);
         }
         if ("tool".equalsIgnoreCase(type)) {
+            String toolName = textOrNull(node, "name", "tool");
+            if (isFinishToolName(toolName)) {
+                return finishActionFromToolArgs(topLevelFinishArgs(objectMapper, node));
+            }
             return toolAction(
                     objectMapper,
                     textOrNull(node, "name", "tool"),
@@ -440,6 +444,26 @@ public final class AgentJsonProtocol {
             );
         }
         throw new IllegalArgumentException("Agent action must be {\"type\":\"tool\",...} or {\"type\":\"finish\",...}");
+    }
+
+    /** {"type":"tool","name":"finish","summary":...,"result":...} carries the answer beside, not inside, arguments. */
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> topLevelFinishArgs(ObjectMapper objectMapper, JsonNode node) {
+        Map<String, Object> args = new LinkedHashMap<>();
+        node.properties().forEach(entry -> {
+            String key = entry.getKey();
+            if (!"type".equals(key) && !"name".equals(key) && !"tool".equals(key)
+                    && !"arguments".equals(key) && !"parameters".equals(key)) {
+                args.put(key, objectMapper.convertValue(entry.getValue(), Object.class));
+            }
+        });
+        for (String nested : List.of("arguments", "parameters")) {
+            JsonNode argsNode = node.get(nested);
+            if (argsNode != null && argsNode.isObject()) {
+                args.putAll(objectMapper.convertValue(argsNode, Map.class));
+            }
+        }
+        return args;
     }
 
     private static boolean looksLikeBareFinishResult(JsonNode node) {

@@ -155,6 +155,21 @@ class AgentJsonProtocolTest {
     }
 
     @Test
+    void finishToolKeepsTopLevelSummary() throws Exception {
+        String content = """
+                {"type":"tool","name":"finish","summary":"Создано устройство audit-exec-01.","result":{"devicePath":"root.platform.devices.audit-exec-01"}}
+                """;
+        AgentJsonProtocol.AgentAction action = AgentJsonProtocol.parse(objectMapper, content);
+        assertEquals("finish", action.type());
+        assertEquals("Создано устройство audit-exec-01.", action.summary());
+        assertEquals("root.platform.devices.audit-exec-01", action.result().get("devicePath"));
+
+        AgentJsonProtocol.AgentAction nested = AgentJsonProtocol.parse(objectMapper,
+                "{\"type\":\"tool\",\"name\":\"finish\",\"arguments\":{\"summary\":\"Готово, всё сделано.\"}}");
+        assertEquals("Готово, всё сделано.", nested.summary());
+    }
+
+    @Test
     void parsesFunctionStyleToolCall() throws Exception {
         String content = """
                 {"type":"function","name":"add_dashboard_widget","parameters":{"path":"root.platform.dashboards.snmp-host-monitoring","widget":{"id":"if-speed"}}}
