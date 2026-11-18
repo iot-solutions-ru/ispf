@@ -178,7 +178,7 @@ public final class AgentSpecPlanValidator {
                 warnings.add("this turn: max " + maxThisTurn + " new sections — split across planning turns");
             }
             Map<String, Object> previewMerged = AgentPlanGuard.mergePlans(
-                    runState != null ? runState.storedPlan() : Map.of(),
+                    runState != null ? runState.modelPlan() : Map.of(),
                     plan
             );
             int totalSections = AgentPlanSections.readSections(previewMerged).size();
@@ -233,7 +233,7 @@ public final class AgentSpecPlanValidator {
         }
 
         Map<String, Object> previewPlan = AgentPlanGuard.mergePlans(
-                runState != null ? runState.storedPlan() : Map.of(),
+                runState != null ? runState.modelPlan() : Map.of(),
                 plan
         );
         AgentAnalyticalIntake.mergeFinishIntakeIntoPlan(previewPlan, finishResult);

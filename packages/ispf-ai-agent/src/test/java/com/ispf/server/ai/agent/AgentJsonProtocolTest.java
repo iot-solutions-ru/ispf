@@ -5,6 +5,7 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -28,6 +29,71 @@ class AgentJsonProtocolTest {
         assertEquals("tool", action.type());
         assertEquals("list_objects", action.toolName());
         assertEquals("root.platform.devices", action.arguments().get("parent"));
+    }
+
+    @Test
+    void runsTheFirstCanonicalToolWhenTheModelListsSeveral() throws Exception {
+        String content = """
+                {"type":"tool","name":"create_virtual_device","arguments":{"parentPath":"root.platform.devices","name":"audit-sensor-01"}}
+                {"type":"tool","name":"list_variables","arguments":{"path":"root.platform.devices.audit-sensor-01"}}
+                """;
+        AgentJsonProtocol.AgentAction action = AgentJsonProtocol.parse(objectMapper, content);
+        assertEquals("create_virtual_device", action.toolName());
+    }
+
+    @Test
+    void skipsAProseTemplateBeforeTheRealAction() throws Exception {
+        String content = """
+                Формат: {"type":"tool","name":"<tool>","arguments":{}}
+                {"type":"tool","name":"list_drivers","arguments":{}}
+                """;
+        AgentJsonProtocol.AgentAction action = AgentJsonProtocol.parse(objectMapper, content);
+        assertEquals("list_drivers", action.toolName());
+    }
+
+    @Test
+    void illustrativeJsonFenceInProseDoesNotHideTheTrailingFinish() throws Exception {
+        String content = "Пример настройки драйвера:\n```json\n{\"port\": 502}\n```\n"
+                + "{\"type\":\"finish\",\"summary\":\"Готово\"}";
+        AgentJsonProtocol.AgentAction action = AgentJsonProtocol.parse(objectMapper, content);
+        assertEquals("finish", action.type());
+        assertEquals("Готово", action.summary());
+    }
+
+    @Test
+    void jsonFenceInsideSummaryAfterPrefaceIsNotExtracted() throws Exception {
+        String content = "Ответ:\n{\"type\":\"finish\",\"summary\":\"Манифест:\\n```json\\n{\\\"appId\\\":\\\"mes\\\"}\\n```\"}";
+        AgentJsonProtocol.AgentAction action = AgentJsonProtocol.parse(objectMapper, content);
+        assertEquals("finish", action.type());
+        assertTrue(action.summary().contains("appId"));
+    }
+
+    @Test
+    void plainAnswerKeepsItsJsonExample() {
+        String content = "Создайте переменную так:\n\n```json\n{\"name\":\"temperature\",\"type\":\"DOUBLE\"}\n```\n\nЗатем привяжите её к виджету.";
+        Optional<AgentJsonProtocol.AgentAction> plain = AgentJsonProtocol.tryParsePlainTextFinish(content);
+        assertTrue(plain.isPresent());
+        assertEquals(content, plain.get().summary());
+        assertTrue(AgentJsonProtocol.tryParsePlainTextFinish(
+                "Проверю объекты.\n<tool_call>\n{\"name\":\"list_objects\",\"arguments\":{broken}\n</tool_call>").isEmpty());
+    }
+
+    @Test
+    void salvagedTruncatedFinishUnescapesNewlinesAndUnicode() {
+        String content = "{\"type\":\"finish\",\"summary\":\"Шаг 1\\nШаг 2 \\u041f\\u0443\\u043b\\u044c\\u0442 и ещё текст который обрез";
+        Optional<AgentJsonProtocol.AgentAction> salvaged =
+                AgentJsonProtocol.trySalvageTruncatedFinish(objectMapper, content, "ru");
+        assertTrue(salvaged.isPresent());
+        assertTrue(salvaged.get().summary().startsWith("Шаг 1\nШаг 2 Пульт"), salvaged.get().summary());
+    }
+
+    @Test
+    void proseBeforeActionKeepsTheStreamedAnswer() {
+        String content = "### Создание мнемосхемы\n\n1. Создайте объект MIMIC.\n2. Добавьте элементы.\n"
+                + "{\"type\":\"finish\",\"summary\":\"\"}";
+        assertEquals("### Создание мнемосхемы\n\n1. Создайте объект MIMIC.\n2. Добавьте элементы.",
+                AgentJsonProtocol.proseBeforeAction(content));
+        assertNull(AgentJsonProtocol.proseBeforeAction("{\"type\":\"finish\",\"summary\":\"\"}"));
     }
 
     @Test

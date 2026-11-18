@@ -52,6 +52,30 @@ class AgentPlanGuardTest {
     }
 
     @Test
+    void shortApprovalTokensCountOnlyAsTheWholeMessage() {
+        assertThat(AgentPlanGuard.isApprovalMessage("go")).isTrue();
+        assertThat(AgentPlanGuard.isApprovalMessage("Go!")).isTrue();
+        assertThat(AgentPlanGuard.isApprovalMessage("Какая category у драйвера mongo?")).isFalse();
+        assertThat(AgentPlanGuard.isApprovalMessage("Покажи algorithm в Django")).isFalse();
+        assertThat(AgentPlanGuard.isApprovalMessage("go ahead")).isTrue();
+    }
+
+    @Test
+    void executeFinishIsNotBlockedByAPlanLeftInTheSession() {
+        AgentRunState state = new AgentRunState();
+        state.setInteractionMode(AgentInteractionMode.EXECUTE);
+        state.setStoredPlan(Map.of("goal", "NPS SCADA", "steps", List.of(Map.of("title", "Создать насос"))));
+        var outcome = AgentPlanGuard.evaluateFinish(
+                state,
+                Map.of(),
+                List.of(toolStep("list_objects")),
+                "Покажи список устройств",
+                AgentProfile.ADMIN
+        );
+        assertThat(outcome).isEqualTo(AgentPlanGuard.FinishOutcome.ALLOW_EXECUTION);
+    }
+
+    @Test
     void blocksExecutionFinishWithoutPlan() {
         AgentRunState state = new AgentRunState();
         state.setPlanPhase(AgentPlanPhase.PLANNING);

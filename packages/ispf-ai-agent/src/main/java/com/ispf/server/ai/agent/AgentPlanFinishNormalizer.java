@@ -21,7 +21,8 @@ public final class AgentPlanFinishNormalizer {
         Map<String, Object> incomingPlan = finishResult.get("plan") instanceof Map<?, ?> m
                 ? new LinkedHashMap<>((Map<String, Object>) m)
                 : new LinkedHashMap<>();
-        Map<String, Object> previewMerged = AgentPlanGuard.mergePlans(runState.storedPlan(), incomingPlan);
+        Map<String, Object> previewMerged = AgentPlanGuard.mergePlans(
+                AgentLitePlanBootstrap.modelPlan(runState), incomingPlan);
         AgentAnalyticalIntake.mergeFinishIntakeIntoPlan(previewMerged, finishResult);
 
         if (!AgentPhasedPlanIntake.readyForApproval(previewMerged, finishResult)) {

@@ -177,8 +177,28 @@ public final class AgentJsonProtocol {
         for (int i = quote + 1; i < searchIn.length(); i++) {
             char ch = searchIn.charAt(i);
             if (escaped) {
-                sb.append(ch);
                 escaped = false;
+                switch (ch) {
+                    case 'n' -> sb.append('\n');
+                    case 't' -> sb.append('\t');
+                    case 'r' -> sb.append('\r');
+                    case 'b' -> sb.append('\b');
+                    case 'f' -> sb.append('\f');
+                    case 'u' -> {
+                        if (i + 4 < searchIn.length()) {
+                            try {
+                                sb.append((char) Integer.parseInt(searchIn.substring(i + 1, i + 5), 16));
+                                i += 4;
+                            } catch (NumberFormatException ex) {
+                                sb.append(ch);
+                            }
+                        } else {
+                            // Reply cut inside a unicode escape: drop the partial escape.
+                            i = searchIn.length();
+                        }
+                    }
+                    default -> sb.append(ch);
+                }
                 continue;
             }
             if (ch == '\\') {
@@ -241,22 +261,70 @@ public final class AgentJsonProtocol {
     }
 
     /**
+     * Markdown the model wrote before its JSON action (or the whole reply when it used a native
+     * tool call). Used when a finish carries no summary, so the user keeps the answer they saw streaming.
+     */
+    public static String proseBeforeAction(String content) {
+        if (content == null || content.isBlank()) {
+            return null;
+        }
+        String text = content;
+        int thinkEnd = text.lastIndexOf("</think>");
+        if (thinkEnd >= 0) {
+            text = text.substring(thinkEnd + "</think>".length());
+        }
+        List<Integer> markers = actionMarkerPositions(text);
+        if (!markers.isEmpty()) {
+            text = text.substring(0, markers.get(0));
+        }
+        int fences = 0;
+        for (int idx = text.indexOf("```"); idx >= 0; idx = text.indexOf("```", idx + 3)) {
+            fences++;
+        }
+        if (fences % 2 == 1) {
+            text = text.substring(0, text.lastIndexOf("```"));
+        }
+        int toolTag = indexOfIgnoreCase(text, "<tool_call>");
+        if (toolTag >= 0) {
+            text = text.substring(0, toolTag);
+        }
+        String trimmed = text.trim();
+        return trimmed.length() >= 16 ? trimmed : null;
+    }
+
+    /**
      * Operator copilot fallback when the model answers in plain language after tool steps.
      */
     public static Optional<AgentAction> tryParsePlainTextFinish(String content) {
-        String normalized = normalizeModelContent(content);
-        if (normalized == null || normalized.isBlank()) {
+        if (content == null || content.isBlank()) {
             return Optional.empty();
         }
-        String trimmed = normalized.trim();
+        // Keep the whole Markdown answer: illustrative ```json blocks belong to it.
+        String text = content;
+        int thinkEnd = text.lastIndexOf("</think>");
+        if (thinkEnd >= 0) {
+            text = text.substring(thinkEnd + "</think>".length());
+        }
+        String trimmed = text.trim();
         if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
             return Optional.empty();
         }
         if (trimmed.length() < 16) {
             return Optional.empty();
         }
-        if (trimmed.contains("{\"type\"") || trimmed.contains("{\"type\":")) {
+        if (trimmed.contains("{\"type\"") || !actionMarkerPositions(trimmed).isEmpty()
+                || indexOfIgnoreCase(trimmed, "<tool_call>") >= 0) {
             return Optional.empty();
+        }
+        if (trimmed.startsWith("```") && trimmed.endsWith("```")) {
+            String body = trimmed.substring(3, trimmed.length() - 3);
+            if (body.regionMatches(true, 0, "json", 0, 4)) {
+                body = body.substring(4);
+            }
+            body = body.trim();
+            if (body.startsWith("{") || body.startsWith("[")) {
+                return Optional.empty();
+            }
         }
         return Optional.of(new AgentAction("finish", null, null, trimmed, Map.of()));
     }
@@ -551,30 +619,20 @@ public final class AgentJsonProtocol {
             trimmed = trimmed.substring(redactedEnd + "</think>".length()).trim();
         }
         trimmed = stripToolCallXmlWrappers(trimmed);
-        // Outer agent action JSON must win over ```json fences embedded in finish summary strings.
-        if (findActionJsonStart(trimmed) == 0) {
+        // Outer agent action JSON must win over ```json fences embedded in finish summary strings
+        // and over illustrative fences in the prose before the action.
+        List<Integer> markers = actionMarkerPositions(trimmed);
+        int actionStart = markers.isEmpty() ? -1 : markers.get(0);
+        if (actionStart == 0) {
             return trimmed;
         }
-        int fenceStart = trimmed.indexOf("```json");
-        if (fenceStart >= 0) {
-            int bodyStart = fenceStart + "```json".length();
-            int fenceEnd = trimmed.indexOf("```", bodyStart);
-            if (fenceEnd > bodyStart) {
-                return trimmed.substring(bodyStart, fenceEnd).trim();
-            }
+        if (actionStart < 0 && trimmed.startsWith("{") && findJsonObjectEnd(trimmed, 0) == trimmed.length() - 1) {
+            return trimmed;
         }
-        int plainFence = trimmed.indexOf("```");
-        if (plainFence >= 0) {
-            int bodyStart = plainFence + 3;
-            int fenceEnd = trimmed.indexOf("```", bodyStart);
-            if (fenceEnd > bodyStart) {
-                String body = trimmed.substring(bodyStart, fenceEnd).trim();
-                if (body.startsWith("{") || body.startsWith("[")) {
-                    return body;
-                }
-            }
+        String fenced = fencedJsonBody(trimmed, actionStart);
+        if (fenced != null) {
+            return fenced;
         }
-        int actionStart = findActionJsonStart(trimmed);
         if (actionStart >= 0) {
             int arrayStart = trimmed.lastIndexOf('[', actionStart);
             if (arrayStart >= 0 && arrayStart < actionStart) {
@@ -627,32 +685,23 @@ public final class AgentJsonProtocol {
         return lowerHay.indexOf(lowerNeedle);
     }
 
-    private static int findActionJsonStart(String content) {
-        int best = -1;
-        for (String marker : new String[]{
-                "{\"type\":\"tool\"",
-                "{\"type\": \"tool\"",
-                "{\"type\":\"finish\"",
-                "{\"type\": \"finish\"",
-                "{\"type\":\"function\"",
-                "{\"type\": \"function\"",
-                "{\"type\":\"tool_call\"",
-                "{\"type\": \"tool_call\""
-        }) {
-            int idx = content.lastIndexOf(marker);
-            if (idx > best) {
-                best = idx;
-            }
-        }
-        return best;
-    }
+    private static final String[] ACTION_MARKERS = {
+            "{\"type\":\"tool\"",
+            "{\"type\": \"tool\"",
+            "{\"type\":\"finish\"",
+            "{\"type\": \"finish\"",
+            "{\"type\":\"function\"",
+            "{\"type\": \"function\"",
+            "{\"type\":\"tool_call\"",
+            "{\"type\": \"tool_call\""
+    };
 
     private static String extractJsonObject(ObjectMapper objectMapper, String content) throws Exception {
         String trimmed = content != null ? content.trim() : "";
-        int anchored = findActionJsonStart(trimmed);
-        if (anchored >= 0) {
+        // The model writes actions in the order it intends them; run the first one it wrote.
+        for (int anchored : actionMarkerPositions(trimmed)) {
             String candidate = tryParseActionObject(objectMapper, trimmed, anchored);
-            if (candidate != null) {
+            if (candidate != null && hasUsableToolName(objectMapper, candidate)) {
                 return candidate;
             }
         }
@@ -706,6 +755,62 @@ public final class AgentJsonProtocol {
             throw new IllegalArgumentException("Agent response does not contain a JSON action object");
         }
         return best;
+    }
+
+    private static List<Integer> actionMarkerPositions(String content) {
+        java.util.TreeSet<Integer> positions = new java.util.TreeSet<>();
+        for (String marker : ACTION_MARKERS) {
+            for (int idx = content.indexOf(marker); idx >= 0; idx = content.indexOf(marker, idx + 1)) {
+                positions.add(idx);
+            }
+        }
+        return List.copyOf(positions);
+    }
+
+    /**
+     * Body of the first code fence holding JSON. When an action marker exists, only a fence that
+     * contains it counts; earlier fences are examples in the prose.
+     */
+    private static String fencedJsonBody(String content, int actionStart) {
+        int open = content.indexOf("```");
+        while (open >= 0) {
+            int bodyStart = open + 3;
+            if (content.regionMatches(true, bodyStart, "json", 0, 4)) {
+                bodyStart += 4;
+            }
+            int close = content.indexOf("```", bodyStart);
+            if (close < 0) {
+                return null;
+            }
+            String body = content.substring(bodyStart, close).trim();
+            boolean holdsAction = actionStart < 0 || (actionStart >= bodyStart && actionStart < close);
+            if (holdsAction && (body.startsWith("{") || body.startsWith("["))) {
+                return body;
+            }
+            open = content.indexOf("```", close + 3);
+        }
+        return null;
+    }
+
+    /** Skips prose templates such as {"type":"tool","name":"<tool>"}. */
+    private static boolean hasUsableToolName(ObjectMapper objectMapper, String candidate) {
+        try {
+            JsonNode node = objectMapper.readTree(candidate);
+            String type = node.path("type").asString("").trim();
+            if (!"tool".equals(type) && !"function".equals(type) && !"tool_call".equals(type)) {
+                return true;
+            }
+            String name = node.path("name").asString("");
+            if (name.isBlank()) {
+                name = node.path("tool").asString("");
+            }
+            if (name.isBlank()) {
+                name = node.path("function").path("name").asString("");
+            }
+            return isLikelyToolName(name.trim());
+        } catch (Exception ex) {
+            return false;
+        }
     }
 
     private static String tryParseActionObject(ObjectMapper objectMapper, String content, int start) {

@@ -406,7 +406,7 @@ public class TreeFirstAgentService {
                                     askMode
                             ),
                             aiProperties.getAgentParseRetries(),
-                            profile == AgentProfile.OPERATOR,
+                            profile == AgentProfile.OPERATOR || askMode || copilotChannel,
                             new AgentLlmActionResolver.ResolveContext(
                                     hasTextAttachment,
                                     !askMode && session.runState().isPlanningActive(),
@@ -501,6 +501,19 @@ public class TreeFirstAgentService {
                 }
 
                 AgentJsonProtocol.AgentAction agentAction = AgentJsonProtocol.normalizeAction(parsed.action());
+                if ("finish".equals(agentAction.type())
+                        && (agentAction.summary() == null || agentAction.summary().isBlank())) {
+                    String prose = AgentJsonProtocol.proseBeforeAction(response != null ? response.content() : null);
+                    if (prose != null) {
+                        agentAction = new AgentJsonProtocol.AgentAction(
+                                agentAction.type(),
+                                agentAction.toolName(),
+                                agentAction.arguments(),
+                                prose,
+                                agentAction.result()
+                        );
+                    }
+                }
                 if ("finish".equals(agentAction.type())) {
                     Map<String, Object> candidateResult = agentAction.result() != null
                             ? new LinkedHashMap<>(agentAction.result())
@@ -590,6 +603,8 @@ public class TreeFirstAgentService {
                         break;
                     }
                     AcceptanceVerdict.Result executionAcceptance = null;
+                    String pictureSummary = null;
+                    String honestSummary = null;
                     if (profile != AgentProfile.OPERATOR) {
                         AgentPlanGuard.FinishOutcome planOutcome = AgentPlanGuard.evaluateFinish(
                                 session.runState(),
@@ -622,39 +637,50 @@ public class TreeFirstAgentService {
                                                             : AgentLitePlanBootstrap.PLANNING_GUARD_ERROR;
                             if (planOutcome == AgentPlanGuard.FinishOutcome.BLOCK_NEEDS_PLAN
                                     && AgentLitePlanBootstrap.shouldRecoverFromPlanningGuardLoop(steps, guardError)) {
-                                var recovered = AgentLitePlanBootstrap.resolveFinishPlan(llmUserText, session.runState());
-                                if (recovered.isPresent()) {
-                                    finishResult = new LinkedHashMap<>(recovered.get());
-                                    AgentPlanGuard.capturePlan(session.runState(), finishResult);
-                                    syncRunPlanState(session);
-                                    finishSummary = AgentStepHumanizer.litePlanReadySummary(uiLocale);
-                                    finalStatus = AgentTurnStatus.OK;
-                                    Map<String, Object> finishStep = Map.of(
-                                            "step", stepNumber,
-                                            "type", "finish",
-                                            "summary", finishSummary,
-                                            "label", AgentStepHumanizer.label("finish", null, null, null, finishSummary, uiLocale),
-                                            "result", finishResult,
-                                            "litePlanRecovered", true
-                                    );
-                                    steps.add(finishStep);
-                                    publishStep(session.sessionId(), finishStep);
-                                    recordTurnAudit(
-                                            session,
-                                            turnId,
-                                            stepNumber,
-                                            "agent_finish",
-                                            actor,
-                                            userMessage,
-                                            finalStatus,
-                                            response.model(),
-                                            List.of(),
-                                            parsed.llmLatencyMs(),
-                                            response,
-                                            profile
-                                    );
-                                    break;
+                                // Hand the turn back with the model's own words; a canned plan would be
+                                // something the model never proposed, yet approvable.
+                                AgentLitePlanBootstrap.clearTemplateDraft(session.runState());
+                                if (session.runState().modelPlan().isEmpty()) {
+                                    // Nothing to approve: a later "утверждаю" must not unlock mutations.
+                                    session.runState().setPlanPhase(AgentPlanPhase.NONE);
                                 }
+                                syncRunPlanState(session);
+                                String modelText = agentAction.summary() != null && !agentAction.summary().isBlank()
+                                        ? agentAction.summary()
+                                        : AgentJsonProtocol.proseBeforeAction(response.content());
+                                finishSummary = AgentStepHumanizer.planNotProducedSummary(uiLocale, modelText);
+                                finishResult = new LinkedHashMap<>();
+                                finishResult.put("interactive", true);
+                                finishResult.put("planNotProduced", true);
+                                finishResult.put("suggestions", List.of(Map.of(
+                                        "label", AgentStepHumanizer.askForPlanLabel(uiLocale),
+                                        "message", AgentStepHumanizer.askForPlanMessage(uiLocale)
+                                )));
+                                finalStatus = AgentTurnStatus.OK;
+                                Map<String, Object> finishStep = Map.of(
+                                        "step", stepNumber,
+                                        "type", "finish",
+                                        "summary", finishSummary,
+                                        "label", AgentStepHumanizer.label("finish", null, null, null, finishSummary, uiLocale),
+                                        "result", finishResult
+                                );
+                                steps.add(finishStep);
+                                publishStep(session.sessionId(), finishStep);
+                                recordTurnAudit(
+                                        session,
+                                        turnId,
+                                        stepNumber,
+                                        "agent_finish",
+                                        actor,
+                                        userMessage,
+                                        finalStatus,
+                                        response.model(),
+                                        List.of(),
+                                        parsed.llmLatencyMs(),
+                                        response,
+                                        profile
+                                );
+                                break;
                             }
                             String guardHint = planOutcome == AgentPlanGuard.FinishOutcome.BLOCK_NEEDS_APPROVAL
                                     ? "Wait for user approval (e.g. «Да, начинаем») before finishing with devicePath/dashboardPath."
@@ -738,6 +764,28 @@ public class TreeFirstAgentService {
                             var block = AgentPlatformTurnGuard.blockIfNeeded(executionAcceptance);
                             if (block.isPresent()) {
                                 AgentPlatformTurnGuard.BlockDecision decision = block.get();
+                                boolean pictureWaived = false;
+                                if (AgentLlmJudge.softKeywordCheck(decision.checkId())) {
+                                    AgentLlmJudge.Opinion picture = AgentLlmJudge.review(
+                                            llmProviderRegistry,
+                                            aiProperties,
+                                            userMessage,
+                                            agentAction.summary(),
+                                            steps,
+                                            List.of(decision.checkId() + ": " + decision.error())
+                                    );
+                                    stepNumber = publishJudgeLlmStep(session, steps, stepNumber, picture, false, uiLocale);
+                                    if (picture.approved()) {
+                                        pictureSummary = picture.reason();
+                                        pictureWaived = true;
+                                    }
+                                } else if ("errors.none".equals(decision.checkId())
+                                        && session.runState().reworkRoundCount() >= 1) {
+                                    // The judge below sees every finding and asks once whether this is an honest report.
+                                    pictureWaived = true;
+                                }
+                                // A waived check still goes through the judge below, which keeps hard evidence.
+                                if (!pictureWaived) {
                                 session.runState().incrementReworkRound();
                                 if (AgentPlatformTurnGuard.isStuckGuardLoop(steps, decision.error())) {
                                     finishSummary = AgentStepHumanizer.platformGuardStuckSummary(uiLocale);
@@ -776,6 +824,7 @@ public class TreeFirstAgentService {
                                                 + "\n\nContinue with tools until devices have telemetry, then finish."
                                 ));
                                 continue;
+                                }
                             }
                             // ADR-0051: pre-finish judge (REWORK) — step logs + live tree sensors.
                             AgentJudgeService.JudgeResult judge = AgentJudgeService.evaluate(
@@ -785,6 +834,117 @@ public class TreeFirstAgentService {
                                     userMessage,
                                     liveTreeSensors()
                             );
+                            // Repeated failures end in a user gate; an honest failure report may still close the turn.
+                            boolean moderationGate =
+                                    judge.verdict() == AgentJudgeService.Verdict.USER_MODERATION_REQUIRED;
+                            if (judge.blocksFinish() && (!judge.verdict().requiresUserIntervention() || moderationGate)) {
+                                if (honestSummary != null
+                                        && AgentLlmJudge.canConsultHonesty(judge.issues(), userMessage)) {
+                                    judge = new AgentJudgeService.JudgeResult(
+                                            AgentJudgeService.Verdict.APPROVE,
+                                            honestSummary,
+                                            null,
+                                            List.of()
+                                    );
+                                } else if (moderationGate) {
+                                    AgentLlmJudge.Opinion honest = AgentLlmJudge.reviewHonesty(
+                                            llmProviderRegistry,
+                                            aiProperties,
+                                            userMessage,
+                                            agentAction.summary(),
+                                            steps,
+                                            judge.issues()
+                                    );
+                                    stepNumber = publishJudgeLlmStep(session, steps, stepNumber, honest, true, uiLocale);
+                                    if (honest.approved()) {
+                                        honestSummary = honest.reason();
+                                        judge = new AgentJudgeService.JudgeResult(
+                                                AgentJudgeService.Verdict.APPROVE,
+                                                honestSummary,
+                                                null,
+                                                List.of()
+                                        );
+                                    } else if (honest.reason() != null) {
+                                        String prior = judge.hint() != null ? judge.hint() : "";
+                                        judge = new AgentJudgeService.JudgeResult(
+                                                judge.verdict(),
+                                                judge.summary(),
+                                                prior.isBlank() ? honest.reason() : honest.reason() + "\n" + prior,
+                                                judge.issues()
+                                        );
+                                    }
+                                } else if (pictureSummary != null
+                                        && AgentLlmJudge.canConsult(judge.issues(), userMessage)) {
+                                    judge = new AgentJudgeService.JudgeResult(
+                                            AgentJudgeService.Verdict.APPROVE,
+                                            pictureSummary,
+                                            null,
+                                            List.of()
+                                    );
+                                } else if (session.runState().reworkRoundCount() >= 1
+                                        && AgentLlmJudge.canConsultHonesty(judge.issues(), userMessage)) {
+                                    AgentLlmJudge.Opinion honest = AgentLlmJudge.reviewHonesty(
+                                            llmProviderRegistry,
+                                            aiProperties,
+                                            userMessage,
+                                            agentAction.summary(),
+                                            steps,
+                                            judge.issues()
+                                    );
+                                    stepNumber = publishJudgeLlmStep(session, steps, stepNumber, honest, true, uiLocale);
+                                    if (honest.approved()) {
+                                        honestSummary = honest.reason();
+                                        judge = new AgentJudgeService.JudgeResult(
+                                                AgentJudgeService.Verdict.APPROVE,
+                                                honestSummary,
+                                                null,
+                                                List.of()
+                                        );
+                                    } else if (honest.reason() != null) {
+                                        String prior = judge.hint() != null ? judge.hint() : "";
+                                        judge = new AgentJudgeService.JudgeResult(
+                                                judge.verdict(),
+                                                judge.summary(),
+                                                prior.isBlank() ? honest.reason() : honest.reason() + "\n" + prior,
+                                                judge.issues()
+                                        );
+                                    }
+                                } else {
+                                    AgentLlmJudge.Opinion picture = AgentLlmJudge.review(
+                                            llmProviderRegistry,
+                                            aiProperties,
+                                            userMessage,
+                                            agentAction.summary(),
+                                            steps,
+                                            judge.issues()
+                                    );
+                                    stepNumber = publishJudgeLlmStep(session, steps, stepNumber, picture, false, uiLocale);
+                                    if (picture.approved()) {
+                                        pictureSummary = picture.reason();
+                                        log.info(
+                                                "LLM judge accepted finish despite rule findings: {}",
+                                                picture.reason()
+                                        );
+                                        judge = new AgentJudgeService.JudgeResult(
+                                                AgentJudgeService.Verdict.APPROVE,
+                                                picture.reason(),
+                                                null,
+                                                List.of()
+                                        );
+                                    } else if (picture.reason() != null) {
+                                        String prior = judge.hint() != null ? judge.hint() : "";
+                                        String hint = prior.isBlank()
+                                                ? picture.reason()
+                                                : picture.reason() + "\n" + prior;
+                                        judge = new AgentJudgeService.JudgeResult(
+                                                judge.verdict(),
+                                                judge.summary(),
+                                                hint,
+                                                judge.issues()
+                                        );
+                                    }
+                                }
+                            }
                             if (judge.blocksFinish()) {
                                 Map<String, Object> judgeMap = new LinkedHashMap<>();
                                 judgeMap.put("verdict", judge.verdict().name());
@@ -882,12 +1042,20 @@ public class TreeFirstAgentService {
                                 continue;
                             }
                             session.runState().resetReworkRounds();
-                            AgentPlanGuard.completeExecution(session.runState());
+                            if (honestSummary == null) {
+                                // A reported failure keeps the plan so the user can continue it.
+                                AgentPlanGuard.completeExecution(session.runState());
+                            }
                         }
                     }
                     finishSummary = agentAction.summary();
                     finishResult = candidateResult;
+                    if (honestSummary != null) {
+                        finishResult = finishResult != null ? new LinkedHashMap<>(finishResult) : new LinkedHashMap<>();
+                        finishResult.put("honestFailure", true);
+                    }
                     finalStatus = AgentTurnStatus.OK;
+                    String llmJudgeSummary = honestSummary != null ? honestSummary : pictureSummary;
                     Map<String, Object> finishStep = new LinkedHashMap<>();
                     finishStep.put("step", stepNumber);
                     finishStep.put("type", "finish");
@@ -896,6 +1064,17 @@ public class TreeFirstAgentService {
                     finishStep.put("result", finishResult);
                     if (executionAcceptance != null) {
                         finishStep.put("acceptance", executionAcceptance.toMap());
+                    }
+                    if (llmJudgeSummary != null) {
+                        finishStep.put(
+                                "judge",
+                                Map.of(
+                                        "verdict", AgentJudgeService.Verdict.APPROVE.name(),
+                                        "summary", llmJudgeSummary,
+                                        "source", "llm"
+                                )
+                        );
+                    } else if (executionAcceptance != null) {
                         finishStep.put(
                                 "judge",
                                 Map.of(
@@ -1138,8 +1317,8 @@ public class TreeFirstAgentService {
                     finishResult = new LinkedHashMap<>();
                     finishResult.put("interactive", true);
                     finishResult.put("loopNoiseStopped", true);
-                    finishResult.put("awaitingUser", true);
-                    finishResult.put("autoContinueSeconds", 45);
+                    // No awaitingUser/autoContinueSeconds: the platform stopped the loop, so the next
+                    // turn must be the user's click, not a timer.
                     if (loopNoiseHint != null && !loopNoiseHint.isBlank()) {
                         finishResult.put("hint", loopNoiseHint);
                     }
@@ -1219,7 +1398,22 @@ public class TreeFirstAgentService {
                 }
             }
 
-            if (finishSummary == null && !AgentTurnStatus.CANCELLED.equals(finalStatus)) {
+            if (AgentLitePlanBootstrap.isTemplateDraft(session.runState().storedPlan())) {
+                AgentLitePlanBootstrap.clearTemplateDraft(session.runState());
+                syncRunPlanState(session);
+            }
+            // finalStatus stays ERROR with no summary only when the loop ran out of steps.
+            if ((finishSummary == null || finishSummary.isBlank()) && AgentTurnStatus.OK.equals(finalStatus)) {
+                if (AgentPlanGuard.isPlanFinish(finishResult) || AgentPlanGuard.isClarificationOnlyFinish(finishResult)) {
+                    finishSummary = AgentStepHumanizer.label("finish", null, null, null, null, uiLocale);
+                } else {
+                    finishSummary = AgentStepHumanizer.finishWithoutAnswer(uiLocale);
+                    finishResult = finishResult != null ? new LinkedHashMap<>(finishResult) : new LinkedHashMap<>();
+                    finishResult.put("interactive", true);
+                    finishResult.put("emptyFinish", true);
+                }
+            }
+            if (finishSummary == null && AgentTurnStatus.ERROR.equals(finalStatus)) {
                 finalStatus = AgentTurnStatus.OK;
                 int completed = actionStepCount(steps);
                 finishSummary = AgentStepHumanizer.isRussian(uiLocale)
@@ -1303,6 +1497,7 @@ public class TreeFirstAgentService {
             Map<String, Object> result = new LinkedHashMap<>();
             result.put("interactive", true);
             result.put("asyncFailure", true);
+            AgentLitePlanBootstrap.clearTemplateDraft(session.runState());
             persistCompletedTurn(
                     session,
                     UUID.randomUUID().toString(),
@@ -1426,6 +1621,35 @@ public class TreeFirstAgentService {
             current = current.getCause();
         }
         return false;
+    }
+
+    /** Returns the step number for the rows that follow, so each row keeps a distinct number. */
+    private int publishJudgeLlmStep(
+            AgentSession session,
+            List<Map<String, Object>> steps,
+            int stepNumber,
+            AgentLlmJudge.Opinion opinion,
+            boolean honesty,
+            String uiLocale
+    ) {
+        if (opinion == null || !opinion.consulted()) {
+            return stepNumber;
+        }
+        boolean answered = opinion.approved() || opinion.reason() != null;
+        Map<String, Object> step = new LinkedHashMap<>();
+        step.put("step", stepNumber);
+        step.put("type", "guard");
+        step.put("label", AgentStepHumanizer.judgeLlmLabel(uiLocale, honesty, opinion.approved(), answered));
+        if (opinion.reason() != null) {
+            step.put("summary", opinion.reason());
+            step.put("hint", opinion.reason());
+        }
+        step.put("checkId", honesty ? "judge.llm.honesty" : "judge.llm.picture");
+        step.put("verdict", opinion.approved() ? "APPROVE" : "REWORK");
+        step.put("latencyMs", opinion.latencyMs());
+        steps.add(step);
+        publishStep(session.sessionId(), step);
+        return Math.max(stepNumber + 1, steps.size() + 1);
     }
 
     private void syncRunPlanState(AgentSession session) {

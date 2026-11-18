@@ -53,7 +53,7 @@ final class AgentPlanGuard {
             "утверждаю", "утвердить", "подтверждаю", "начинай", "начинай выполнение",
             "approve", "go ahead", "start execution", "execute plan", "proceed", "да, начинай",
             "ок, начинай", "ok, start", "yes, start", "выполняй план", "приступай",
-            "начинаем", "да, начинаем", "yes, begin", "go", "lfg", "вперёд", "вперед"
+            "начинаем", "да, начинаем", "yes, begin", "вперёд", "вперед"
     };
 
     private static final String[] APPROVAL_VERBS = {
@@ -113,7 +113,7 @@ final class AgentPlanGuard {
             if (isApprovalMessage(userMessage, runState.planPhase())
                     && (runState.planPhase() == AgentPlanPhase.AWAITING_APPROVAL
                     || runState.planPhase() == AgentPlanPhase.PLANNING
-                    || !runState.storedPlan().isEmpty())) {
+                    || !runState.modelPlan().isEmpty())) {
                 runState.approvePlan(approverUsername);
                 return true;
             }
@@ -132,9 +132,9 @@ final class AgentPlanGuard {
             return false;
         }
         if (isApprovalMessage(userMessage, runState.planPhase())) {
+            // Approval needs a plan the model presented; a seeded template draft is not one.
             if (runState.planPhase() == AgentPlanPhase.AWAITING_APPROVAL
-                    || runState.planPhase() == AgentPlanPhase.PLANNING
-                    || !runState.storedPlan().isEmpty()) {
+                    || !runState.modelPlan().isEmpty()) {
                 runState.approvePlan(approverUsername);
                 return true;
             }
@@ -241,7 +241,8 @@ final class AgentPlanGuard {
                 }
                 return FinishOutcome.BLOCK_NEEDS_PLAN;
             }
-            if (looksLikePlanPayload(finishResult, runState)) {
+            // Only this finish counts here: a draft left in the session must not block every Execute answer.
+            if (finishPayloadLooksLikePlan(finishResult)) {
                 return FinishOutcome.BLOCK_NEEDS_PLAN;
             }
             return FinishOutcome.ALLOW_EXECUTION;
@@ -301,9 +302,17 @@ final class AgentPlanGuard {
             return;
         }
         Map<String, Object> incoming = extractPlanMap(finishResult.get("plan"));
-        Map<String, Object> merged = mergePlans(runState.storedPlan(), incoming);
-        merged = preserveNonEmptyFields(merged, runState.storedPlan());
+        // A seeded template is never merged in: the model's plan replaces it.
+        Map<String, Object> base = AgentLitePlanBootstrap.modelPlan(runState);
+        Map<String, Object> merged = mergePlans(base, incoming);
+        merged = preserveNonEmptyFields(merged, base);
         AgentAnalyticalIntake.mergeFinishIntakeIntoPlan(merged, finishResult);
+        if (!planHasContent(merged)) {
+            // Partial plan with nothing usable yet: keep planning, show no plan panel.
+            finishResult.put("phase", "plan");
+            finishResult.put("interactive", true);
+            return;
+        }
         runState.setStoredPlan(merged);
         finishResult.put("plan", merged);
         AgentAnalyticalIntake.enrichFinishFromPlan(finishResult, merged);
@@ -336,7 +345,7 @@ final class AgentPlanGuard {
                 && planHasContent(extractPlanMap(finishResult.get("plan")))) {
             return true;
         }
-        return !runState.storedPlan().isEmpty() && isInteractiveClarification(finishResult);
+        return !runState.modelPlan().isEmpty() && isInteractiveClarification(finishResult);
     }
 
     /**
@@ -346,7 +355,7 @@ final class AgentPlanGuard {
         if (finishPayloadLooksLikePlan(finishResult)) {
             return true;
         }
-        return runState != null && planHasContent(runState.storedPlan());
+        return planHasContent(AgentLitePlanBootstrap.modelPlan(runState));
     }
 
     /** Plan-shaped fields in the finish payload only (ignores session draft). */
@@ -452,7 +461,7 @@ final class AgentPlanGuard {
         if (finishResult != null && planHasContent(extractPlanMap(finishResult.get("plan")))) {
             return true;
         }
-        return runState != null && planHasContent(runState.storedPlan());
+        return planHasContent(AgentLitePlanBootstrap.modelPlan(runState));
     }
 
     private static boolean planHasContent(Map<String, Object> plan) {
@@ -646,7 +655,7 @@ final class AgentPlanGuard {
         if (runState == null) {
             return false;
         }
-        Map<String, Object> plan = runState.storedPlan();
+        Map<String, Object> plan = runState.modelPlan();
         if (plan == null || plan.isEmpty()) {
             return true;
         }
@@ -681,6 +690,11 @@ final class AgentPlanGuard {
             }
         }
         if (text.startsWith("утверждаю") || text.startsWith("approve")) {
+            return true;
+        }
+        // Short tokens only as the whole message: "go" inside "category" or "mongo" is not approval.
+        String bare = text.replaceAll("[!.\\s]+$", "");
+        if (bare.equals("go") || bare.equals("lfg")) {
             return true;
         }
         if (phase == AgentPlanPhase.AWAITING_APPROVAL && text.length() <= 40) {

@@ -39,6 +39,11 @@ public class AiProperties {
     private boolean agentAskNativeTools = false;
     /** Live token preview in the agent progress panel. */
     private boolean agentStreamTokens = true;
+    /**
+     * When rule checks would block finish without a hard failure, one model call sees the
+     * request, the proposed answer, and the steps, and may waive a false rework.
+     */
+    private boolean agentLlmJudge = true;
     private int agentParseRetries = 2;
     private int briefingMaxChars = 32_768;
     private boolean briefingEveryTurn = false;
@@ -221,6 +226,14 @@ public class AiProperties {
 
     public void setAgentStreamTokens(boolean agentStreamTokens) {
         this.agentStreamTokens = agentStreamTokens;
+    }
+
+    public boolean isAgentLlmJudge() {
+        return agentLlmJudge;
+    }
+
+    public void setAgentLlmJudge(boolean agentLlmJudge) {
+        this.agentLlmJudge = agentLlmJudge;
     }
 
     public int getAgentParseRetries() {

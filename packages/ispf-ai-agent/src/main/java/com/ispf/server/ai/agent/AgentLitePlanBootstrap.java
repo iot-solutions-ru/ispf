@@ -19,7 +19,26 @@ final class AgentLitePlanBootstrap {
 
     private static final int PLANNING_GUARD_RECOVERY_THRESHOLD = 2;
 
+    /** Marks a seeded draft: a prompt hint for the model, never a plan the user can approve. */
+    static final String DRAFT_SOURCE_KEY = "draftSource";
+    static final String DRAFT_SOURCE_TEMPLATE = "template";
+
     private AgentLitePlanBootstrap() {
+    }
+
+    static boolean isTemplateDraft(Map<String, Object> plan) {
+        return plan != null && DRAFT_SOURCE_TEMPLATE.equals(plan.get(DRAFT_SOURCE_KEY));
+    }
+
+    /** Plan the model itself wrote this session; a seeded template draft does not count. */
+    static Map<String, Object> modelPlan(AgentRunState runState) {
+        return runState == null ? Map.of() : runState.modelPlan();
+    }
+
+    static void clearTemplateDraft(AgentRunState runState) {
+        if (runState != null && isTemplateDraft(runState.storedPlan())) {
+            runState.setStoredPlan(Map.of());
+        }
     }
 
     static void seedDraftPlanIfNeeded(
@@ -36,32 +55,11 @@ final class AgentLitePlanBootstrap {
         if (!runState.storedPlan().isEmpty()) {
             return;
         }
-        resolveDraftPlan(userMessage, runState.planDepth()).ifPresent(runState::setStoredPlan);
-    }
-
-    static Optional<Map<String, Object>> resolveFinishPlan(String userMessage, AgentRunState runState) {
-        if (userMessage == null || userMessage.isBlank()) {
-            return Optional.empty();
-        }
-        AgentPlanDepth depth = runState != null ? runState.planDepth() : AgentPlanDepth.LITE;
-        Map<String, Object> draft = resolveDraftPlan(userMessage, depth).orElse(null);
-        if (draft == null || draft.isEmpty()) {
-            return Optional.empty();
-        }
-        Map<String, Object> finish = new LinkedHashMap<>();
-        finish.put("phase", "plan");
-        finish.put("interactive", true);
-        finish.put("plan", new LinkedHashMap<>(draft));
-        finish.put("planDepth", AgentPlanDepth.LITE.name());
-        finish.put("suggestions", List.of(Map.of(
-                "label", "Утвердить полный план",
-                "message", "Утверждаю план, начинай выполнение",
-                "primary", true
-        )));
-        if (runState != null && !runState.storedPlan().isEmpty()) {
-            finish.put("plan", AgentPlanGuard.mergePlans(runState.storedPlan(), draft));
-        }
-        return Optional.of(finish);
+        resolveDraftPlan(userMessage, runState.planDepth()).ifPresent(draft -> {
+            Map<String, Object> marked = new LinkedHashMap<>(draft);
+            marked.put(DRAFT_SOURCE_KEY, DRAFT_SOURCE_TEMPLATE);
+            runState.setStoredPlan(marked);
+        });
     }
 
     static boolean shouldRecoverFromPlanningGuardLoop(List<Map<String, Object>> steps, String guardError) {

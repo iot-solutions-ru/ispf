@@ -107,6 +107,46 @@ class AgentLitePlanBootstrapTest {
         assertThat(state.planPhase()).isEqualTo(AgentPlanPhase.PLANNING);
         assertThat(state.storedPlan()).isNotEmpty();
         assertThat(state.storedPlan().get("goal")).isNotNull();
+        assertThat(AgentLitePlanBootstrap.isTemplateDraft(state.storedPlan())).isTrue();
+    }
+
+    @Test
+    void templateDraftIsNeitherAPlanNorMergedIntoTheModelPlan() {
+        AgentRunState state = new AgentRunState();
+        state.setInteractionMode(AgentInteractionMode.AUTO);
+        AgentPlanGuard.beginTurn(state, "Создай workflow для симуляции гидроудара", AgentProfile.ADMIN, true, null);
+
+        assertThat(AgentPlanGuard.hasStructuredPlanContent(Map.of("phase", "plan"), state)).isFalse();
+
+        Map<String, Object> finish = new java.util.LinkedHashMap<>();
+        finish.put("phase", "plan");
+        finish.put("plan", Map.of("goal", "Гидроудар", "steps", List.of("1. Создать WORKFLOW hydro")));
+        AgentPlanGuard.capturePlan(state, finish);
+        assertThat(state.storedPlan().get("steps")).isEqualTo(List.of("1. Создать WORKFLOW hydro"));
+        assertThat(AgentLitePlanBootstrap.isTemplateDraft(state.storedPlan())).isFalse();
+    }
+
+    @Test
+    void templateDraftCannotBeApprovedOrShown() {
+        AgentRunState state = new AgentRunState();
+        state.setInteractionMode(AgentInteractionMode.AUTO);
+        AgentPlanGuard.beginTurn(state, "Создай workflow для симуляции гидроудара", AgentProfile.ADMIN, true, null);
+        assertThat(state.planStateSummary()).doesNotContainKey("plan");
+
+        AgentPlanGuard.beginTurn(state, "Утверждаю план, начинай выполнение", AgentProfile.ADMIN, true, null);
+        assertThat(state.isPlanApproved()).isFalse();
+    }
+
+    @Test
+    void clearsTemplateDraftOnly() {
+        AgentRunState state = new AgentRunState();
+        state.setStoredPlan(Map.of("goal", "x", AgentLitePlanBootstrap.DRAFT_SOURCE_KEY, AgentLitePlanBootstrap.DRAFT_SOURCE_TEMPLATE));
+        AgentLitePlanBootstrap.clearTemplateDraft(state);
+        assertThat(state.storedPlan()).isEmpty();
+
+        state.setStoredPlan(Map.of("goal", "model plan"));
+        AgentLitePlanBootstrap.clearTemplateDraft(state);
+        assertThat(state.storedPlan()).containsEntry("goal", "model plan");
     }
 
     @Test
@@ -119,14 +159,6 @@ class AgentLitePlanBootstrapTest {
                 steps,
                 AgentLitePlanBootstrap.PLANNING_GUARD_ERROR
         )).isTrue();
-
-        var finish = AgentLitePlanBootstrap.resolveFinishPlan(
-                "Настрой alert rule для high pressure на lab-pump-01",
-                new AgentRunState()
-        );
-        assertThat(finish).isPresent();
-        assertThat(AgentPlanGuard.isPlanFinish(finish.get())).isTrue();
-        assertThat(AgentPlanGuard.hasStructuredPlanContent(finish.get(), new AgentRunState())).isTrue();
     }
 
     @Test

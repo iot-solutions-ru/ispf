@@ -23,6 +23,9 @@ import java.util.function.Function;
  */
 final class AgentLlmActionResolver {
 
+    private static final java.util.regex.Pattern TOOL_NAME =
+            java.util.regex.Pattern.compile("[A-Za-z][A-Za-z0-9_.\\-]{0,63}");
+
     private static final String JSON_NUDGE = """
             Your last reply was not a valid agent action. Reply with ONLY one JSON object, no markdown and no explanation:
             {"type":"tool","name":"<tool>","arguments":{...}}
@@ -181,6 +184,13 @@ final class AgentLlmActionResolver {
                     throw new LlmException("Agent run cancelled");
                 }
                 lastError = ex.getMessage();
+                Optional<AgentJsonProtocol.AgentAction> prose = allowPlainTextFinish
+                        ? plainAnswer(lastResponse)
+                        : Optional.empty();
+                if (prose.isPresent()) {
+                    // The user already watched this answer stream in; a JSON-only retry would replace it.
+                    return new ParseAttempt(lastResponse, prose.get(), false, null, totalLlmLatencyMs);
+                }
                 if (attempt < attempts - 1) {
                     String assistantEcho = assistantEchoForRetry(lastResponse);
                     messages.add(new LlmMessage("assistant", assistantEcho));
@@ -188,7 +198,8 @@ final class AgentLlmActionResolver {
                 }
             }
         }
-        if (allowPlainTextFinish && lastResponse != null) {
+        if (allowPlainTextFinish && lastResponse != null
+                && (lastResponse.toolCalls() == null || lastResponse.toolCalls().isEmpty())) {
             Optional<AgentJsonProtocol.AgentAction> plain = AgentJsonProtocol.tryParsePlainTextFinish(
                     lastResponse.content()
             );
@@ -217,6 +228,14 @@ final class AgentLlmActionResolver {
         return new ParseAttempt(lastResponse, null, true, lastError, totalLlmLatencyMs);
     }
 
+    private static Optional<AgentJsonProtocol.AgentAction> plainAnswer(LlmResponse response) {
+        if (response == null || response.truncatedByLength()
+                || (response.toolCalls() != null && !response.toolCalls().isEmpty())) {
+            return Optional.empty();
+        }
+        return AgentJsonProtocol.tryParsePlainTextFinish(response.content());
+    }
+
     private static boolean isCancelled(ResolveContext ctx) {
         return ctx != null && ctx.cancelled() != null && ctx.cancelled().getAsBoolean();
     }
@@ -230,7 +249,12 @@ final class AgentLlmActionResolver {
         if (response == null || response.toolCalls() == null || response.toolCalls().isEmpty()) {
             return Optional.empty();
         }
-        LlmToolCall call = response.toolCalls().get(0);
+        LlmToolCall call = repairNativeToolCall(objectMapper, response.toolCalls().get(0));
+        if (!call.equals(response.toolCalls().get(0)) || response.toolCalls().size() > 1) {
+            // The loop echoes these calls back to the provider; only the one we run may appear there.
+            response = new LlmResponse(
+                    response.content(), response.model(), response.usage(), response.finishReason(), List.of(call));
+        }
         if (AgentJsonProtocol.isFinishToolName(call.name())) {
             Optional<Map<String, Object>> parsedArgs = tryParseArguments(objectMapper, call.argumentsJson());
             if (parsedArgs.isPresent()) {
@@ -250,6 +274,43 @@ final class AgentLlmActionResolver {
                 null
         );
         return Optional.of(new ParseAttempt(response, action, false, null, totalLlmLatencyMs, call.id()));
+    }
+
+    /**
+     * vLLM tool parsers can turn malformed model JSON into a tool name such as
+     * {@code finish","arguments":{"summary":"..."}}. Recover the real name and arguments,
+     * or reject the call so the turn retries instead of running or auditing garbage.
+     */
+    static LlmToolCall repairNativeToolCall(ObjectMapper objectMapper, LlmToolCall call) {
+        String name = call.name() != null ? call.name().trim() : "";
+        if (TOOL_NAME.matcher(name).matches()) {
+            return call;
+        }
+        for (String candidate : new String[]{"{\"name\":\"" + name + "}", "{\"name\":\"" + name}) {
+            try {
+                JsonNode node = objectMapper.readTree(candidate);
+                String recovered = node.path("name").asString("").trim();
+                if (!TOOL_NAME.matcher(recovered).matches()) {
+                    continue;
+                }
+                JsonNode args = node.get("arguments");
+                String argumentsJson;
+                if (call.argumentsJson() != null && !call.argumentsJson().isBlank()
+                        && !"{}".equals(call.argumentsJson().trim())) {
+                    argumentsJson = call.argumentsJson();
+                } else if (args != null && args.isObject()) {
+                    argumentsJson = objectMapper.writeValueAsString(args);
+                } else if (args != null && args.isString()) {
+                    argumentsJson = args.asString();
+                } else {
+                    argumentsJson = "{}";
+                }
+                return new LlmToolCall(call.id(), recovered, argumentsJson);
+            } catch (Exception ignored) {
+                // try the next shape
+            }
+        }
+        throw new IllegalArgumentException("Native tool call has an invalid tool name");
     }
 
     private static Optional<AgentJsonProtocol.AgentAction> trySalvageAnyTruncatedFinish(

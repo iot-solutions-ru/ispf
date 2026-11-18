@@ -612,6 +612,7 @@ ispf:
     agent-native-tools: ${ISPF_AI_AGENT_NATIVE_TOOLS:auto}
     agent-ask-native-tools: ${ISPF_AI_AGENT_ASK_NATIVE_TOOLS:false}
     agent-stream-tokens: ${ISPF_AI_AGENT_STREAM_TOKENS:true}
+    agent-llm-judge: ${ISPF_AI_AGENT_LLM_JUDGE:true}
     agent-require-approval-for-mutate: ${ISPF_AI_AGENT_REQUIRE_APPROVAL_FOR_MUTATE:true}
     briefing-every-turn: ${ISPF_AI_BRIEFING_EVERY_TURN:false}
   reports:

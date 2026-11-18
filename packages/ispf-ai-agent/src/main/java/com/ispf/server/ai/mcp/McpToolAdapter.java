@@ -348,9 +348,9 @@ public class McpToolAdapter {
         if (runState.planPhase() == AgentPlanPhase.AWAITING_APPROVAL
                 || runState.planPhase() == AgentPlanPhase.APPROVED
                 || runState.planPhase() == AgentPlanPhase.PLANNING) {
-            return !runState.storedPlan().isEmpty();
+            return !runState.modelPlan().isEmpty();
         }
-        return runState.isPlanningActive() && !runState.storedPlan().isEmpty();
+        return runState.isPlanningActive() && !runState.modelPlan().isEmpty();
     }
 
     private static void maybePutDestructiveHint(Map<String, Object> tool, String toolName) {
