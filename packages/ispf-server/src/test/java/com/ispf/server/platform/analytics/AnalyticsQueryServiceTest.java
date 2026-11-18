@@ -122,6 +122,55 @@ class AnalyticsQueryServiceTest {
     }
 
     @Test
+    void lastAggReturnsTheLastSampleInTheBucket() {
+        AnalyticsQueryRateLimiter rateLimiter = new AnalyticsQueryRateLimiter(analyticsProperties);
+        AnalyticsQueryService service = new AnalyticsQueryService(
+                variableHistoryService,
+                analyticsProperties,
+                rateLimiter,
+                eventFrameService,
+                variableMemberAccessService
+        );
+        when(variableHistoryService.query(anyString(), anyString(), anyString(), any(), any(), anyInt()))
+                .thenReturn(new VariableHistoryService.VariableHistoryResponse(
+                        "root.platform.devices.coldchain-control.room-a",
+                        "temperature",
+                        "value",
+                        List.of(
+                                new VariableHistoryService.VariableHistorySample(
+                                        Instant.parse("2026-11-17T13:10:30Z"),
+                                        -22.75,
+                                        null
+                                ),
+                                new VariableHistoryService.VariableHistorySample(
+                                        Instant.parse("2026-11-17T13:11:11.788171Z"),
+                                        -20.0,
+                                        null
+                                )
+                        )
+                ));
+
+        AnalyticsQueryResponse response = service.query(new AnalyticsQueryRequest(
+                List.of(new AnalyticsQueryRequest.AnalyticsQueryTag(
+                        "root.platform.devices.coldchain-control.room-a",
+                        "temperature",
+                        "value",
+                        "temperature"
+                )),
+                Instant.parse("2026-11-17T13:10:00Z"),
+                Instant.parse("2026-11-17T13:14:59Z"),
+                "5m",
+                "last",
+                100,
+                null
+        ), OPERATOR);
+
+        assertThat(response.agg()).isEqualTo("last");
+        assertThat(response.timestamps()).containsExactly("2026-11-17T13:10:00Z");
+        assertThat(response.series().getFirst().values()).containsExactly(-20.0);
+    }
+
+    @Test
     void deniesOperatorWithoutVariableReadRoleBeforeSubmittingQueries() {
         AnalyticsQueryRateLimiter rateLimiter = new AnalyticsQueryRateLimiter(analyticsProperties);
         AnalyticsQueryService service = new AnalyticsQueryService(

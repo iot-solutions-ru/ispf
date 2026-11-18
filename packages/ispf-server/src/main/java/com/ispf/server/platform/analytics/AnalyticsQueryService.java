@@ -9,6 +9,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -155,6 +156,9 @@ public class AnalyticsQueryService {
             int maxBuckets,
             String agg
     ) {
+        if ("last".equals(agg)) {
+            return queryLast(tag, from, to, bucket, maxBuckets);
+        }
         VariableHistoryService.VariableHistoryAggregateResponse aggregate = variableHistoryService.aggregate(
                 tag.path(),
                 tag.variable(),
@@ -179,9 +183,50 @@ public class AnalyticsQueryService {
         return switch (agg) {
             case "min" -> bucket.min();
             case "max" -> bucket.max();
-            case "last" -> bucket.avg();
             default -> bucket.avg();
         };
+    }
+
+    private TagSeriesResult queryLast(
+            AnalyticsQueryRequest.AnalyticsQueryTag tag,
+            Instant from,
+            Instant to,
+            String bucket,
+            int maxBuckets
+    ) {
+        VariableHistoryService.VariableHistoryResponse history = variableHistoryService.query(
+                tag.path(),
+                tag.variable(),
+                tag.field(),
+                from,
+                to,
+                10_000
+        );
+        Duration duration = VariableHistoryService.parseBucket(bucket);
+        Map<Instant, Double> valuesByTs = new LinkedHashMap<>();
+        for (VariableHistoryService.VariableHistorySample sample : history.samples()) {
+            Double value = sample.value();
+            if (sample.ts() == null || value == null || !Double.isFinite(value)) {
+                continue;
+            }
+            valuesByTs.put(truncateToBucket(sample.ts(), duration), value);
+        }
+        if (valuesByTs.size() > maxBuckets) {
+            List<Instant> keys = new ArrayList<>(valuesByTs.keySet());
+            keys.sort(Instant::compareTo);
+            List<Instant> kept = keys.subList(keys.size() - maxBuckets, keys.size());
+            valuesByTs.keySet().retainAll(kept);
+        }
+        return new TagSeriesResult(tag, "raw", valuesByTs);
+    }
+
+    private static Instant truncateToBucket(Instant instant, Duration bucket) {
+        long bucketSeconds = bucket.getSeconds();
+        if (bucketSeconds <= 0) {
+            return instant;
+        }
+        long floored = Math.floorDiv(instant.getEpochSecond(), bucketSeconds) * bucketSeconds;
+        return Instant.ofEpochSecond(floored);
     }
 
     private void validate(AnalyticsQueryRequest request) {
