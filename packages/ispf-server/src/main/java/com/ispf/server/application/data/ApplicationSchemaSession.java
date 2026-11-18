@@ -8,6 +8,7 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 @Component
@@ -33,11 +34,8 @@ public class ApplicationSchemaSession {
         }
     }
 
-    // Error Prone [Finally]: the finally block deliberately rethrows the *same* action error (with the
-    // restore failure attached as suppressed) or, when the action succeeded, surfaces the restore failure.
-    // Nothing thrown by the try block is masked.
     @SuppressWarnings("Finally")
-    public void runInSchema(String schemaName, Runnable action) {
+    public <T> T callInSchema(String schemaName, Function<Connection, T> action) {
         ensureSchemaExists(schemaName);
         Connection connection = DataSourceUtils.getConnection(dataSource);
         String previousSchema = null;
@@ -47,7 +45,7 @@ public class ApplicationSchemaSession {
             // Never CREATE on the transactional connection — may be read-only (reports).
             switchSearchPath(connection, schemaName);
             try {
-                action.run();
+                return action.apply(connection);
             } catch (RuntimeException ex) {
                 actionError = ex;
                 throw ex;
@@ -68,6 +66,13 @@ public class ApplicationSchemaSession {
                 DataSourceUtils.releaseConnection(connection, dataSource);
             }
         }
+    }
+
+    public void runInSchema(String schemaName, Runnable action) {
+        callInSchema(schemaName, connection -> {
+            action.run();
+            return null;
+        });
     }
 
     /**

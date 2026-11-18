@@ -3,6 +3,7 @@ package com.ispf.server.datasource;
 import com.ispf.server.application.data.ApplicationSchemaSession;
 import com.ispf.server.tenant.TenantLocalDataAccessGuard;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -15,20 +16,17 @@ public class DataSourceSqlSession {
     private final DataSourceConnectionResolver connectionResolver;
     private final ApplicationSchemaSession schemaSession;
     private final ExternalDataSourceRegistry externalRegistry;
-    private final JdbcTemplate platformJdbcTemplate;
     private final TenantLocalDataAccessGuard tenantLocalDataAccessGuard;
 
     public DataSourceSqlSession(
             DataSourceConnectionResolver connectionResolver,
             ApplicationSchemaSession schemaSession,
             ExternalDataSourceRegistry externalRegistry,
-            JdbcTemplate platformJdbcTemplate,
             TenantLocalDataAccessGuard tenantLocalDataAccessGuard
     ) {
         this.connectionResolver = connectionResolver;
         this.schemaSession = schemaSession;
         this.externalRegistry = externalRegistry;
-        this.platformJdbcTemplate = platformJdbcTemplate;
         this.tenantLocalDataAccessGuard = tenantLocalDataAccessGuard;
     }
 
@@ -68,11 +66,10 @@ public class DataSourceSqlSession {
             return externalRegistry.callWithTemplate(dataSourcePath, action);
         }
         String schemaName = connectionResolver.resolveSchemaName(dataSourcePath);
-        final Object[] holder = new Object[1];
-        schemaSession.runInSchema(schemaName, () -> holder[0] = action.apply(platformJdbcTemplate));
-        @SuppressWarnings("unchecked")
-        T result = (T) holder[0];
-        return result;
+        return schemaSession.callInSchema(schemaName, connection -> {
+            JdbcTemplate schemaTemplate = new JdbcTemplate(new SingleConnectionDataSource(connection, true));
+            return action.apply(schemaTemplate);
+        });
     }
 
     public ConnectionTestResult testConnection(String dataSourcePath) {

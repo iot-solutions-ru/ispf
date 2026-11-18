@@ -10,6 +10,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -200,6 +201,116 @@ class PlatformSqlApiTest {
                                   }]
                                 }
                                 """))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void metadataListsInternalSchemaTablesAndColumns() throws Exception {
+        mockMvc.perform(post("/api/v1/data-sources/by-path/execute-query")
+                        .header("X-ISPF-Role", "admin")
+                        .param("path", DATA_SOURCE_PATH)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "query": "CREATE TABLE IF NOT EXISTS ds_meta_probe (id INT PRIMARY KEY, val VARCHAR(32))"
+                                }
+                                """))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/v1/data-sources/by-path/metadata")
+                        .header("X-ISPF-Role", "admin")
+                        .param("path", DATA_SOURCE_PATH))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.readOnly").value(false))
+                .andExpect(jsonPath("$.defaultSchema").value("app_sql_editor_test"))
+                .andExpect(jsonPath("$.schemas[0].name").value("app_sql_editor_test"))
+                .andExpect(jsonPath("$.schemas[0].tables[?(@.name=='ds_meta_probe')].type").value(hasItem("TABLE")));
+
+        mockMvc.perform(get("/api/v1/data-sources/by-path/metadata/columns")
+                        .header("X-ISPF-Role", "admin")
+                        .param("path", DATA_SOURCE_PATH)
+                        .param("schema", "app_sql_editor_test")
+                        .param("table", "ds_meta_probe"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.name=='id')].primaryKey").value(hasItem(true)))
+                .andExpect(jsonPath("$[?(@.name=='val')].nullable").value(hasItem(true)));
+    }
+
+    @Test
+    void createTableOnInternalSchemaIsQueryable() throws Exception {
+        mockMvc.perform(post("/api/v1/data-sources/by-path/execute-query")
+                        .header("X-ISPF-Role", "admin")
+                        .param("path", DATA_SOURCE_PATH)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"query": "DROP TABLE IF EXISTS ds_browser_created"}
+                                """))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/v1/data-sources/by-path/ddl/create-table")
+                        .header("X-ISPF-Role", "admin")
+                        .param("path", DATA_SOURCE_PATH)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "table": "ds_browser_created",
+                                  "columns": [
+                                    {"name": "id", "type": "INTEGER", "nullable": false, "primaryKey": true},
+                                    {"name": "label", "type": "VARCHAR", "length": 40, "nullable": true}
+                                  ]
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.schema").value("app_sql_editor_test"))
+                .andExpect(jsonPath("$.table").value("ds_browser_created"));
+
+        mockMvc.perform(post("/api/v1/data-sources/by-path/execute-query")
+                        .header("X-ISPF-Role", "admin")
+                        .param("path", DATA_SOURCE_PATH)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"query": "INSERT INTO ds_browser_created (id, label) VALUES (1, 'n')"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.kind").value("update"));
+    }
+
+    @Test
+    void createTableRejectsExternalDataSource() throws Exception {
+        String path = "root.platform.data-sources.ext-ddl-blocked";
+        mockMvc.perform(post("/api/v1/data-sources")
+                        .header("X-ISPF-Role", "admin")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "name": "ext-ddl-blocked",
+                                  "displayName": "External DDL blocked",
+                                  "connectionMode": "external",
+                                  "jdbcUrl": "jdbc:postgresql://127.0.0.1:1/none",
+                                  "jdbcUsername": "ispf",
+                                  "jdbcPassword": "wrong"
+                                }
+                                """))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/v1/data-sources/by-path/ddl/create-table")
+                        .header("X-ISPF-Role", "admin")
+                        .param("path", path)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "table": "items",
+                                  "columns": [{"name": "id", "type": "INTEGER", "primaryKey": true}]
+                                }
+                                """))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void metadataRequiresConfigRole() throws Exception {
+        mockMvc.perform(get("/api/v1/data-sources/by-path/metadata")
+                        .header("X-ISPF-Role", "operator")
+                        .param("path", DATA_SOURCE_PATH))
                 .andExpect(status().isForbidden());
     }
 
