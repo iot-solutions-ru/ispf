@@ -43,6 +43,37 @@ class HistorianBindingRuleCompilerTest {
     }
 
     @Test
+    void compoundExpressionCompilesAsCelWithTheRuleWindow() {
+        String expression = "max(root.platform.devices.demo-sensor-01/temperature, 5m)"
+                + " - min(root.platform.devices.demo-sensor-01/temperature, 5m)";
+        BindingRule rule = new BindingRule(
+                "cc-span",
+                "cc-span",
+                true,
+                0,
+                BindingRuleKind.HISTORIAN,
+                new BindingActivators(false, List.of(), null, 60_000L, false, false),
+                "",
+                expression,
+                new BindingTarget("variable", "span", "value", null, null),
+                "5m",
+                null
+        );
+        AnalyticsProperties properties = new AnalyticsProperties(
+                60_000L, true, true, 60_000L, false, 60_000L, 7, 20, 3_000L, 0
+        );
+        Optional<AnalyticsTagDefinition> compiled = HistorianBindingRuleCompiler.compile(
+                "root.platform.devices.demo-sensor-01",
+                rule,
+                properties
+        );
+        assertThat(compiled).isPresent();
+        assertThat(compiled.get().helper()).isEqualTo("cel");
+        assertThat(compiled.get().windowBucket()).isEqualTo("5m");
+        assertThat(compiled.get().expressionOrEmpty()).isEqualTo(expression);
+    }
+
+    @Test
     void compilesLastBuiltin() {
         assertBuiltinCompiles("last", "last");
     }

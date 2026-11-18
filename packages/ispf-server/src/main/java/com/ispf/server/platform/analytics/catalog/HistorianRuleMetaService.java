@@ -81,9 +81,11 @@ public class HistorianRuleMetaService {
         Instant at = observedAt != null ? observedAt : Instant.now();
         entry.put("lastEvalAt", at.toString());
         entry.put("lastEvalStatus", status != null ? status : "");
-        // Do not clobber DISABLED set by propagateQuality when an on-change tick re-records lastEval*.
+        // Do not clobber propagateQuality results when an on-change tick re-records lastEval*.
         String existingQuality = entry.get("quality");
-        if (!QUALITY_DISABLED.equals(existingQuality)) {
+        if (!QUALITY_DISABLED.equals(existingQuality)
+                && !QUALITY_UNCERTAIN.equals(existingQuality)
+                && !QUALITY_ERROR.equals(existingQuality)) {
             entry.put("quality", qualityForStatus(status));
         }
         all.put(ruleId, entry);

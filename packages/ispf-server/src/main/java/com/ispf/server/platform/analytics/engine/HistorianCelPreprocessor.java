@@ -30,11 +30,6 @@ public final class HistorianCelPreprocessor {
             Pattern.CASE_INSENSITIVE
     );
 
-    private static final Pattern SINGLE_BUILTIN = Pattern.compile(
-            "^(avg|min|max|last|sum|live)\\s*\\(.*\\)$",
-            Pattern.CASE_INSENSITIVE | Pattern.DOTALL
-    );
-
     private static final Pattern BUCKET = Pattern.compile("^\\d+[mhdw]$", Pattern.CASE_INSENSITIVE);
 
     private HistorianCelPreprocessor() {
@@ -45,10 +40,66 @@ public final class HistorianCelPreprocessor {
             return false;
         }
         String trimmed = expression.trim();
-        if (SINGLE_BUILTIN.matcher(trimmed).matches()) {
+        if (isEntirelyOneCall(trimmed)) {
             return false;
         }
         return HIST_CALL.matcher(trimmed).find();
+    }
+
+    /**
+     * True when {@code expression} is one call and nothing follows its closing parenthesis.
+     * {@code max(path, 5m) - min(path, 5m)} is not a single call.
+     */
+    public static boolean isEntirelyOneCall(String expression) {
+        if (expression == null || expression.isBlank()) {
+            return false;
+        }
+        String trimmed = expression.trim();
+        int open = trimmed.indexOf('(');
+        if (open <= 0) {
+            return false;
+        }
+        String name = trimmed.substring(0, open).trim().toLowerCase(Locale.ROOT);
+        // Only historian builtins count as a single helper call; CEL wrappers like double(avg(...)) stay CEL.
+        if (!name.matches("avg|min|max|last|sum|live|totalizer|rateofchange|oee")) {
+            return false;
+        }
+        int depth = 0;
+        boolean inString = false;
+        boolean escape = false;
+        char quote = 0;
+        for (int i = open; i < trimmed.length(); i++) {
+            char current = trimmed.charAt(i);
+            if (inString) {
+                if (escape) {
+                    escape = false;
+                    continue;
+                }
+                if (current == '\\') {
+                    escape = true;
+                    continue;
+                }
+                if (current == quote) {
+                    inString = false;
+                }
+                continue;
+            }
+            if (current == '\'' || current == '"') {
+                inString = true;
+                quote = current;
+                continue;
+            }
+            if (current == '(') {
+                depth++;
+            } else if (current == ')') {
+                depth--;
+                if (depth == 0) {
+                    return trimmed.substring(i + 1).isBlank();
+                }
+            }
+        }
+        // Unclosed parentheses are not a complete single call.
+        return false;
     }
 
     public static List<AnalyticsSourceRef> extractSources(String expression) {

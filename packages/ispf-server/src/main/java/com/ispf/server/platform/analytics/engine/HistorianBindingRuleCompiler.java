@@ -73,7 +73,7 @@ public final class HistorianBindingRuleCompiler {
 
         String expression = rule.expression().trim();
         Matcher builtin = BUILTIN_CALL.matcher(expression);
-        if (builtin.matches()) {
+        if (builtin.matches() && HistorianCelPreprocessor.isEntirelyOneCall(expression)) {
             return compileBuiltin(
                     tagPath,
                     builtin.group(1).toLowerCase(Locale.ROOT),
@@ -101,19 +101,24 @@ public final class HistorianBindingRuleCompiler {
             );
         }
         if (HistorianCelPreprocessor.isCelExpression(expression)) {
-            List<AnalyticsSourceRef> sources = HistorianCelPreprocessor.extractSources(expression);
-            return Optional.of(new AnalyticsTagDefinition(
-                    tagPath,
-                    "cel",
-                    sources,
-                    windowBucket,
-                    rollupBuckets,
-                    periodicMs,
-                    onChange,
-                    rule.enabled(),
-                    outputVariable,
-                    expression
-            ));
+            try {
+                List<AnalyticsSourceRef> sources = HistorianCelPreprocessor.extractSources(expression);
+                return Optional.of(new AnalyticsTagDefinition(
+                        tagPath,
+                        "cel",
+                        sources,
+                        windowBucket,
+                        rollupBuckets,
+                        periodicMs,
+                        onChange,
+                        rule.enabled(),
+                        outputVariable,
+                        expression
+                ));
+            } catch (RuntimeException ignored) {
+                // Malformed helper args (e.g. dangling quote) must not break catalog compile.
+                return Optional.empty();
+            }
         }
         return Optional.empty();
     }
