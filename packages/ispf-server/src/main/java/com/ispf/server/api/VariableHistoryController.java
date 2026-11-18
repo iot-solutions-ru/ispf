@@ -201,7 +201,8 @@ public class VariableHistoryController {
         if (e.getMessage() != null) {
             if (e.getMessage().startsWith("Unsupported bucket")
                     || e.getMessage().startsWith("Unsupported calendarRange")
-                    || e.getMessage().startsWith("Unsupported export format")) {
+                    || e.getMessage().startsWith("Unsupported export format")
+                    || e.getMessage().startsWith("History limit")) {
                 status = HttpStatus.BAD_REQUEST;
             } else if (e.getMessage().startsWith("Invalid IANA timeZone")) {
                 status = HttpStatus.BAD_REQUEST;
