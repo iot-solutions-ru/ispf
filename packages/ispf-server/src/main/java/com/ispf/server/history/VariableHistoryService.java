@@ -562,7 +562,13 @@ public class VariableHistoryService {
             return new VariableHistoryResponse(objectPath, variableName, field, List.of());
         }
 
-        int cappedLimit = Math.min(Math.max(limit, 1), 10_000);
+        if (limit < 0) {
+            throw new IllegalArgumentException("History limit must not be negative");
+        }
+        if (limit == 0) {
+            return new VariableHistoryResponse(objectPath, variableName, field, List.of());
+        }
+        int cappedLimit = Math.min(limit, 10_000);
 
         long started = System.nanoTime();
         List<VariableHistorySample> samples;
@@ -628,7 +634,20 @@ public class VariableHistoryService {
             );
         }
 
-        int cappedBuckets = Math.min(Math.max(maxBuckets, 1), 2_000);
+        if (maxBuckets < 0) {
+            throw new IllegalArgumentException("History limit must not be negative");
+        }
+        if (maxBuckets == 0) {
+            return new VariableHistoryAggregateResponse(
+                    objectPath,
+                    variableName,
+                    field,
+                    formatBucket(bucket),
+                    List.of(),
+                    "none"
+            );
+        }
+        int cappedBuckets = Math.min(maxBuckets, 2_000);
         long started = System.nanoTime();
         List<VariableHistoryBucket> result;
         String dataSource = "raw";
