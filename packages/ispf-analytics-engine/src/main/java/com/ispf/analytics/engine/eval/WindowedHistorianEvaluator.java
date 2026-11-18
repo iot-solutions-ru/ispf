@@ -8,8 +8,8 @@ import com.ispf.analytics.engine.AnalyticsTagDefinition;
 import com.ispf.analytics.engine.HistorianPort;
 import com.ispf.analytics.engine.LiveVariablePort;
 
+import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 
@@ -21,9 +21,19 @@ public abstract class WindowedHistorianEvaluator implements AnalyticsEvaluator {
             LiveVariablePort live,
             AnalyticsEvaluationOptions options
     ) {
+        return loadBuckets(tag, historian, live, options, Duration.ofHours(24));
+    }
+
+    protected List<HistorianPort.HistorianBucket> loadBuckets(
+            AnalyticsTagDefinition tag,
+            HistorianPort historian,
+            LiveVariablePort live,
+            AnalyticsEvaluationOptions options,
+            Duration window
+    ) {
         AnalyticsSourceRef source = tag.primarySource();
         Instant to = options.asOfOrNow();
-        Instant from = to.minus(24, ChronoUnit.HOURS);
+        Instant from = to.minus(window);
         return historian.aggregate(
                 source.path(),
                 source.variable(),
