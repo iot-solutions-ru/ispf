@@ -73,7 +73,7 @@ public final class HistorianBindingRuleCompiler {
 
         String expression = rule.expression().trim();
         Matcher builtin = BUILTIN_CALL.matcher(expression);
-        if (builtin.matches()) {
+        if (builtin.matches() && HistorianCelPreprocessor.isEntirelyOneCall(expression)) {
             return compileBuiltin(
                     tagPath,
                     builtin.group(1).toLowerCase(Locale.ROOT),
