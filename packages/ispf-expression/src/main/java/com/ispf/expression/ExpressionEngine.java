@@ -263,6 +263,15 @@ public class ExpressionEngine {
         String normalized = normalizeMapIndexSelects(expression);
         try {
             CelAbstractSyntaxTree ast = payloadCompiler.compile(normalized).getAst();
+            // Event filters must be boolean (or dyn for payload.<field> until runtime).
+            // Literals like 1 / null compile but must fail validation before an empty event list
+            // short-circuits and returns HTTP 200 [].
+            var resultType = ast.getResultType();
+            if (!SimpleType.BOOL.equals(resultType) && !SimpleType.DYN.equals(resultType)) {
+                throw new ExpressionException(
+                        "Event filter expression must return a boolean (got " + resultType.name() + ")"
+                );
+            }
             return new PayloadCompiledExpression(expression, ast, runtime);
         } catch (CelValidationException e) {
             throw new ExpressionException("Invalid expression: " + expression, e);
