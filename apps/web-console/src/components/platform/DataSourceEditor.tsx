@@ -3,14 +3,12 @@ import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Alert, Button, Input } from "antd";
 import {
-  executeDataSourceQuery,
   fetchDataSource,
   testDataSourceConnection,
   updateDataSource,
 } from "../../api/platformSql";
-import type { DataSourceQueryResult } from "../../api/platformSql";
 import PlatformSqlEditorShell from "./PlatformSqlEditorShell";
-import BffDataTable from "../operator/BffDataTable";
+import DataSourceBrowser from "./DataSourceBrowser";
 import DataSourceConnectionFields from "./DataSourceConnectionFields";
 import { isDataSourceConnectionValid } from "./dataSourceConnectionValidation";
 import type { DataSourceConnectionMode } from "./dataSourceConnectionValidation";
@@ -54,9 +52,6 @@ export default function DataSourceEditor({ path, onClose, onOpenProperties }: Da
   const [saveError, setSaveError] = useState<string | null>(null);
   const [testFeedback, setTestFeedback] = useState<string | null>(null);
   const [testOk, setTestOk] = useState<boolean | null>(null);
-  const [sqlQuery, setSqlQuery] = useState("SELECT 1 AS n");
-  const [queryError, setQueryError] = useState<string | null>(null);
-  const [queryResult, setQueryResult] = useState<DataSourceQueryResult | null>(null);
 
   useEffect(() => {
     if (!dataQuery.data) {
@@ -90,6 +85,7 @@ export default function DataSourceEditor({ path, onClose, onOpenProperties }: Da
     onSuccess: async () => {
       setSaveError(null);
       await queryClient.invalidateQueries({ queryKey: ["data-source", path] });
+      await queryClient.invalidateQueries({ queryKey: ["data-source-metadata", path] });
       await queryClient.invalidateQueries({ queryKey: ["objects"] });
     },
     onError: (error: Error) => setSaveError(error.message),
@@ -120,18 +116,6 @@ export default function DataSourceEditor({ path, onClose, onOpenProperties }: Da
     onError: (error: Error) => {
       setTestOk(false);
       setTestFeedback(error.message);
-    },
-  });
-
-  const executeMutation = useMutation({
-    mutationFn: () => executeDataSourceQuery(path, { query: sqlQuery }),
-    onSuccess: (result) => {
-      setQueryError(null);
-      setQueryResult(result);
-    },
-    onError: (error: Error) => {
-      setQueryError(error.message);
-      setQueryResult(null);
     },
   });
 
@@ -229,49 +213,12 @@ export default function DataSourceEditor({ path, onClose, onOpenProperties }: Da
           </form>
         </aside>
 
-        <section className="data-source-editor-sql panel-card" aria-label={t("platform:dataSource.sqlConsole")}>
-          <header className="data-source-sql-head">
-            <div>
-              <h3 className="data-source-section-title">{t("platform:dataSource.sqlConsole")}</h3>
-              <p className="data-source-sql-hint">{t("platform:dataSource.sqlHint")}</p>
-            </div>
-            <Button
-              type="primary"
-              disabled={executeMutation.isPending || !sqlQuery.trim()}
-              onClick={() => executeMutation.mutate()}
-            >
-              {executeMutation.isPending
-                ? t("platform:dataSource.executing")
-                : t("platform:dataSource.executeQuery")}
-            </Button>
-          </header>
-
-          <TextArea
-            className="data-source-sql-input mono"
-            value={sqlQuery}
-            onChange={(e) => setSqlQuery(e.target.value)}
-            spellCheck={false}
-            aria-label={t("platform:dataSource.sqlInputLabel")}
+        <section className="data-source-editor-browser panel-card">
+          <DataSourceBrowser
+            key={path}
+            path={path}
+            writesEnabled={dataQuery.data?.connectionMode !== "external"}
           />
-
-          {queryError && <StatusBanner tone="error">{queryError}</StatusBanner>}
-
-          {queryResult?.kind === "update" && (
-            <p className="data-source-sql-meta tabular-nums">
-              {t("platform:dataSource.updateResult", { count: queryResult.updateCount })}
-            </p>
-          )}
-
-          {queryResult?.kind === "rows" && (
-            <div className="data-source-sql-results">
-              <p className="data-source-sql-meta tabular-nums">
-                {t("platform:dataSource.rowCount", { count: queryResult.rowCount })}
-              </p>
-              <div className="data-source-sql-table-wrap">
-                <BffDataTable rows={queryResult.rows} />
-              </div>
-            </div>
-          )}
         </section>
       </div>
     </PlatformSqlEditorShell>

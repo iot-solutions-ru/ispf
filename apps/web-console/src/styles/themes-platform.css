@@ -3418,7 +3418,7 @@
 }
 
 .data-source-editor-settings,
-.data-source-editor-sql {
+.data-source-editor-browser {
   margin-bottom: 0;
   min-height: 0;
   display: flex;
@@ -3429,9 +3429,125 @@
   overflow: auto;
 }
 
-.data-source-editor-sql {
+.data-source-editor-browser {
   flex: 1 1 0;
   min-width: 0;
+  padding: 0.75rem;
+}
+
+.data-source-browser {
+  display: grid;
+  grid-template-columns: minmax(200px, 280px) minmax(0, 1fr);
+  gap: 0.75rem;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+.data-source-schema-pane,
+.data-source-work {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.data-source-schema-head,
+.data-source-schema-actions,
+.data-source-schema-open {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.data-source-schema-head {
+  justify-content: space-between;
+}
+
+.data-source-schema-head .data-source-section-title {
+  margin-bottom: 0;
+}
+
+.data-source-schema-tree {
+  flex: 1 1 auto;
+  min-height: 8rem;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.35rem 0.25rem;
+  background: var(--bg);
+}
+
+.data-source-work .ant-tabs {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.data-source-work .ant-tabs-content-holder,
+.data-source-work .ant-tabs-content,
+.data-source-work .ant-tabs-tabpane {
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+.data-source-work .ant-tabs-tabpane {
+  height: 100%;
+}
+
+.data-source-tab-body {
+  height: 100%;
+  min-height: 12rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.data-source-create-columns {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin: 0.75rem 0;
+}
+
+.data-source-create-column {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(7rem, 0.8fr) minmax(4.5rem, 0.55fr) auto auto auto;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.data-source-create-length-spacer {
+  display: block;
+  min-width: 0;
+}
+
+.data-source-create-flag {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .data-source-create-column {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .data-source-create-flag,
+  .data-source-create-column > button {
+    grid-column: 1 / -1;
+  }
+}
+
+.data-source-create-error {
+  margin: 0.6rem 0 0;
+  color: #fca5a5;
+  font-size: 0.82rem;
 }
 
 .data-source-section-title {
@@ -3651,8 +3767,17 @@
     min-height: 0;
   }
 
-  .data-source-editor-sql {
-    min-height: min(52vh, 520px);
+  .data-source-editor-browser,
+  .data-source-browser {
+    min-height: min(70vh, 720px);
+  }
+
+  .data-source-browser {
+    grid-template-columns: 1fr;
+  }
+
+  .data-source-schema-tree {
+    max-height: 220px;
   }
 
   .ds-connection-fields {

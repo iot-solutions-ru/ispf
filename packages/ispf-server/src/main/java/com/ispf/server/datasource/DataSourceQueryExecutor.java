@@ -1,8 +1,12 @@
 package com.ispf.server.datasource;
 
+import org.springframework.jdbc.core.ArgumentPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.stereotype.Service;
 
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -31,6 +35,10 @@ public class DataSourceQueryExecutor {
         List<Object> bindParams = DataSourceSqlSupport.normalizeParams(params);
         int rowLimit = resolveMaxRows(maxRows);
 
+        if (connectionResolver.isExternal(dataSourcePath) && DataSourceSqlSupport.isReadQuery(query)) {
+            return dataSourceSqlSession.callForMetadata(dataSourcePath, template ->
+                    executeOnTemplate(template, query, bindParams, rowLimit));
+        }
         return dataSourceSqlSession.callWithDataSource(dataSourcePath, template ->
                 executeOnTemplate(template, query, bindParams, rowLimit));
     }
@@ -42,20 +50,52 @@ public class DataSourceQueryExecutor {
             int rowLimit
     ) {
         if (DataSourceSqlSupport.isReadQuery(query)) {
-            List<Map<String, Object>> rows = template.queryForList(query, bindParams.toArray());
-            if (rows.size() > rowLimit) {
-                rows = new ArrayList<>(rows.subList(0, rowLimit));
-            }
-            List<Map<String, Object>> normalized = rows.stream()
-                    .map(DataSourceQueryExecutor::normalizeRow)
-                    .toList();
-            List<String> columns = normalized.isEmpty()
-                    ? List.of()
-                    : List.copyOf(normalized.get(0).keySet());
-            return DataSourceQueryResult.rows(normalized, columns, normalized.size());
+            ReadResult read = readLimited(template, query, bindParams, rowLimit);
+            return DataSourceQueryResult.rows(read.rows(), read.columns(), read.rows().size());
         }
         int updated = template.update(query, bindParams.toArray());
         return DataSourceQueryResult.update(updated);
+    }
+
+    /**
+     * Stops the driver at {@code rowLimit} via {@code Statement.setMaxRows} so a table preview
+     * does not pull the whole table. The shared {@link JdbcTemplate} is not mutated.
+     */
+    private static ReadResult readLimited(
+            JdbcTemplate template,
+            String query,
+            List<Object> bindParams,
+            int rowLimit
+    ) {
+        ArgumentPreparedStatementSetter setter = new ArgumentPreparedStatementSetter(bindParams.toArray()) {
+            @Override
+            public void setValues(java.sql.PreparedStatement ps) throws SQLException {
+                ps.setMaxRows(rowLimit);
+                super.setValues(ps);
+            }
+        };
+        ResultSetExtractor<ReadResult> extractor = rs -> {
+            ResultSetMetaData meta = rs.getMetaData();
+            int columnCount = meta.getColumnCount();
+            List<String> columnNames = new ArrayList<>(columnCount);
+            for (int i = 1; i <= columnCount; i++) {
+                columnNames.add(meta.getColumnLabel(i));
+            }
+            List<Map<String, Object>> rows = new ArrayList<>();
+            while (rs.next()) {
+                Map<String, Object> row = new LinkedHashMap<>();
+                for (int i = 1; i <= columnCount; i++) {
+                    row.put(columnNames.get(i - 1), rs.getObject(i));
+                }
+                rows.add(normalizeRow(row));
+            }
+            return new ReadResult(rows, List.copyOf(columnNames));
+        };
+        ReadResult read = template.query(query, setter, extractor);
+        return read != null ? read : new ReadResult(List.of(), List.of());
+    }
+
+    private record ReadResult(List<Map<String, Object>> rows, List<String> columns) {
     }
 
     private static int resolveMaxRows(Integer maxRows) {

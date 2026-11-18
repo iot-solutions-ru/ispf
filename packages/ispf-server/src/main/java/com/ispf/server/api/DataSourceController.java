@@ -2,6 +2,7 @@ package com.ispf.server.api;
 
 import com.ispf.server.datasource.ConnectionTestResult;
 import com.ispf.server.datasource.DataSourceConnectionResolver;
+import com.ispf.server.datasource.DataSourceMetadataService;
 import com.ispf.server.datasource.DataSourceObjectService;
 import com.ispf.server.datasource.DataSourcePathResolver;
 import com.ispf.server.datasource.DataSourceQueryResult;
@@ -9,7 +10,9 @@ import com.ispf.server.security.acl.ObjectAccessService;
 import com.ispf.server.tenant.TenantLocalDataAccessGuard;
 import com.ispf.server.tenant.TenantScopeService;
 import com.ispf.server.tenant.TenantVirtualRootService;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -29,6 +32,7 @@ import java.util.Objects;
 public class DataSourceController {
 
     private final DataSourceObjectService dataSourceObjectService;
+    private final DataSourceMetadataService dataSourceMetadataService;
     private final TenantScopeService tenantScopeService;
     private final TenantLocalDataAccessGuard tenantLocalDataAccessGuard;
     private final TenantVirtualRootService tenantVirtualRootService;
@@ -36,12 +40,14 @@ public class DataSourceController {
 
     public DataSourceController(
             DataSourceObjectService dataSourceObjectService,
+            DataSourceMetadataService dataSourceMetadataService,
             TenantScopeService tenantScopeService,
             TenantLocalDataAccessGuard tenantLocalDataAccessGuard,
             TenantVirtualRootService tenantVirtualRootService,
             ObjectAccessService objectAccessService
     ) {
         this.dataSourceObjectService = dataSourceObjectService;
+        this.dataSourceMetadataService = dataSourceMetadataService;
         this.tenantScopeService = tenantScopeService;
         this.tenantLocalDataAccessGuard = tenantLocalDataAccessGuard;
         this.tenantVirtualRootService = tenantVirtualRootService;
@@ -130,6 +136,40 @@ public class DataSourceController {
         );
     }
 
+    @GetMapping("/by-path/metadata")
+    public DataSourceMetadataService.DataSourceCatalog metadata(
+            @RequestParam String path,
+            Authentication authentication
+    ) {
+        String canonical = requirePathRead(path, authentication);
+        tenantLocalDataAccessGuard.requireAllowedDataSourcePath(canonical, authentication);
+        return dataSourceMetadataService.catalog(canonical);
+    }
+
+    @GetMapping("/by-path/metadata/columns")
+    public List<DataSourceMetadataService.ColumnView> columns(
+            @RequestParam String path,
+            @RequestParam(required = false) String catalog,
+            @RequestParam(required = false) String schema,
+            @RequestParam String table,
+            Authentication authentication
+    ) {
+        String canonical = requirePathRead(path, authentication);
+        tenantLocalDataAccessGuard.requireAllowedDataSourcePath(canonical, authentication);
+        return dataSourceMetadataService.columns(canonical, catalog, schema, table);
+    }
+
+    @PostMapping("/by-path/ddl/create-table")
+    public DataSourceMetadataService.CreatedTable createTable(
+            @RequestParam String path,
+            @Valid @RequestBody CreateTableRequest request,
+            Authentication authentication
+    ) {
+        String canonical = requirePathWrite(path, authentication);
+        tenantLocalDataAccessGuard.requireAllowedDataSourcePath(canonical, authentication);
+        return dataSourceMetadataService.createTable(canonical, request.table(), request.columns());
+    }
+
     private String requirePathRead(String path, Authentication authentication) {
         String canonical = requirePathAccess(path, authentication);
         objectAccessService.requireRead(canonical, authentication);
@@ -146,6 +186,12 @@ public class DataSourceController {
         String canonical = tenantVirtualRootService.toCanonical(path, authentication);
         tenantScopeService.requirePathInScope(canonical, authentication);
         return canonical;
+    }
+
+    public record CreateTableRequest(
+            @NotBlank String table,
+            @NotEmpty List<DataSourceMetadataService.ColumnSpec> columns
+    ) {
     }
 
     public record ExecuteQueryRequest(

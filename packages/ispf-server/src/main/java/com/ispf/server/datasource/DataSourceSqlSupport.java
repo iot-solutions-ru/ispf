@@ -48,6 +48,9 @@ public final class DataSourceSqlSupport {
         if (FORBIDDEN_EXTERNAL.matcher(sql).find()) {
             throw new IllegalArgumentException("write/DDL SQL is not allowed on external data sources");
         }
+        if (!isReadQuery(sql)) {
+            throw new IllegalArgumentException("write/DDL SQL is not allowed on external data sources");
+        }
     }
 
     public static boolean isReadQuery(String sql) {

@@ -134,6 +134,72 @@ export interface DataSourceQueryResult {
   updateCount: number;
 }
 
+export interface DataSourceTableNode {
+  name: string;
+  type: string;
+}
+
+export interface DataSourceSchemaNode {
+  name: string;
+  catalog: string | null;
+  schema: string | null;
+  truncated: boolean;
+  tables: DataSourceTableNode[];
+}
+
+export interface DataSourceCatalog {
+  readOnly: boolean;
+  schemasTruncated: boolean;
+  productName: string;
+  identifierQuote: string;
+  defaultSchema: string | null;
+  schemas: DataSourceSchemaNode[];
+}
+
+export interface DataSourceColumn {
+  name: string;
+  typeName: string;
+  size: number;
+  nullable: boolean;
+  primaryKey: boolean;
+}
+
+export interface DataSourceColumnSpec {
+  name: string;
+  type: string;
+  length?: number;
+  nullable?: boolean;
+  primaryKey?: boolean;
+}
+
+export function fetchDataSourceCatalog(path: string): Promise<DataSourceCatalog> {
+  return request(`/api/v1/data-sources/by-path/metadata?path=${encodeURIComponent(path)}`);
+}
+
+export function fetchDataSourceColumns(
+  path: string,
+  locator: { catalog?: string | null; schema?: string | null; table: string },
+): Promise<DataSourceColumn[]> {
+  const params = new URLSearchParams({ path, table: locator.table });
+  if (locator.catalog) {
+    params.set("catalog", locator.catalog);
+  }
+  if (locator.schema) {
+    params.set("schema", locator.schema);
+  }
+  return request(`/api/v1/data-sources/by-path/metadata/columns?${params.toString()}`);
+}
+
+export function createDataSourceTable(
+  path: string,
+  payload: { table: string; columns: DataSourceColumnSpec[] },
+): Promise<{ schema: string; table: string }> {
+  return request(`/api/v1/data-sources/by-path/ddl/create-table?path=${encodeURIComponent(path)}`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
 export function executeDataSourceQuery(
   path: string,
   payload: {

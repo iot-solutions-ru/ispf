@@ -4,6 +4,8 @@ import type { TFunction } from "i18next";
 
 interface BffDataTableProps {
   rows: Array<Record<string, unknown>>;
+  /** Header when `rows` is empty. Ignored once a row defines the columns. */
+  columnOrder?: string[];
   labels?: Record<string, string>;
   emptyMessage?: string;
   selectable?: boolean;
@@ -62,6 +64,7 @@ function matchesFilters(
 
 export default function BffDataTable({
   rows,
+  columnOrder,
   labels,
   emptyMessage,
   selectable = false,
@@ -75,7 +78,10 @@ export default function BffDataTable({
 }: BffDataTableProps) {
   const { t } = useTranslation(["operator", "common"]);
   const [filterDraft, setFilterDraft] = useState<Record<string, string>>({});
-  const columns = useMemo(() => (rows.length > 0 ? Object.keys(rows[0]) : []), [rows]);
+  const columns = useMemo(
+    () => (rows.length > 0 ? Object.keys(rows[0]) : (columnOrder ?? [])),
+    [rows, columnOrder],
+  );
   const activeFilterColumns = useMemo(() => {
     if (!filterable || columns.length === 0) return [];
     const requested = (filterColumns ?? []).filter((column) => columns.includes(column));
@@ -90,7 +96,7 @@ export default function BffDataTable({
     return rows.filter((row) => matchesFilters(row, activeFilterColumns, filterDraft));
   }, [rows, filterable, activeFilterColumns, filterDraft]);
 
-  if (rows.length === 0) {
+  if (columns.length === 0) {
     return <p className="op-muted">{emptyMessage ?? t("common:empty.noData")}</p>;
   }
 
@@ -138,7 +144,9 @@ export default function BffDataTable({
                 className="op-table-empty-filtered"
                 colSpan={columns.length + (selectable ? 1 : 0)}
               >
-                {t("bff.noFilterMatches")}
+                {rows.length === 0
+                  ? (emptyMessage ?? t("common:empty.noData"))
+                  : t("bff.noFilterMatches")}
               </td>
             </tr>
           )}
