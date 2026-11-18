@@ -59,6 +59,17 @@ class HistorianCelPreprocessorTest {
     }
 
     @Test
+    void averagesEveryBucketInsideTheWindow() {
+        String expanded = HistorianCelPreprocessor.expand(
+                "avg(root.platform.devices.coldchain-control.room-a/temperature, 1h)",
+                new TwoBucketHistorian(),
+                unusedLive(),
+                Instant.parse("2026-11-17T12:30:00Z")
+        );
+        assertThat(Double.parseDouble(expanded)).isEqualTo((-18.9 * 2 + -20.5 * 2) / 4);
+    }
+
+    @Test
     void rejectsDotFormHistorianSource() {
         assertThatThrownBy(() -> HistorianCelPreprocessor.expand(
                 "avg(root.platform.devices.analytics-demo.chain-a.derived-a, 5m)",
@@ -132,6 +143,36 @@ class HistorianCelPreprocessorTest {
         ) {
             calls++;
             return List.of(new HistorianBucket(to, avg, avg, avg, 1));
+        }
+
+        @Override
+        public List<HistorianSample> query(
+                String objectPath,
+                String variableName,
+                String fieldName,
+                Instant from,
+                Instant to,
+                int limit
+        ) {
+            return List.of();
+        }
+    }
+
+    private static final class TwoBucketHistorian implements HistorianPort {
+        @Override
+        public List<HistorianBucket> aggregate(
+                String objectPath,
+                String variableName,
+                String fieldName,
+                Instant from,
+                Instant to,
+                String windowBucket,
+                int maxBuckets
+        ) {
+            return List.of(
+                    new HistorianBucket(Instant.parse("2026-11-17T11:00:00Z"), -18.9, -19.0, -18.8, 2),
+                    new HistorianBucket(Instant.parse("2026-11-17T12:00:00Z"), -20.5, -21.0, -20.0, 2)
+            );
         }
 
         @Override

@@ -188,7 +188,7 @@ public final class HistorianCelPreprocessor {
             throw new IllegalStateException("No historian buckets for " + function + "(" + objectPath + "/" + variable + ")");
         }
         return switch (function) {
-            case "avg" -> requireFinite(latestMetric(buckets, HistorianPort.HistorianBucket::avg), function, objectPath, variable);
+            case "avg" -> requireFinite(windowAverage(buckets), function, objectPath, variable);
             case "min" -> requireFinite(latestMetric(buckets, HistorianPort.HistorianBucket::min), function, objectPath, variable);
             case "max" -> requireFinite(latestMetric(buckets, HistorianPort.HistorianBucket::max), function, objectPath, variable);
             case "sum" -> buckets.stream()
@@ -237,6 +237,23 @@ public final class HistorianCelPreprocessor {
         } catch (PlatformRefParseException ex) {
             throw new IllegalArgumentException(function + " requires slash ref argument (object/variable): " + first);
         }
+    }
+
+    private static Double windowAverage(List<HistorianPort.HistorianBucket> buckets) {
+        double weighted = 0.0;
+        long count = 0;
+        for (HistorianPort.HistorianBucket bucket : buckets) {
+            Double avg = bucket.avg();
+            if (avg == null || !Double.isFinite(avg) || bucket.count() <= 0) {
+                continue;
+            }
+            weighted += avg * bucket.count();
+            count += bucket.count();
+        }
+        if (count == 0) {
+            return null;
+        }
+        return weighted / count;
     }
 
     private static Double latestMetric(
