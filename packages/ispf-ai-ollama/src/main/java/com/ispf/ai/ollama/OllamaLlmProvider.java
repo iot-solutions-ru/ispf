@@ -5,11 +5,14 @@ import com.ispf.ai.LlmModelInfo;
 import com.ispf.ai.LlmProvider;
 import com.ispf.ai.LlmRequest;
 import com.ispf.ai.LlmResponse;
+import com.ispf.ai.http.LlmChatStream;
 import com.ispf.ai.http.LlmHttpSupport;
 
 import java.net.http.HttpClient;
 import java.time.Duration;
 import java.util.List;
+import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
 
 public class OllamaLlmProvider implements LlmProvider {
 
@@ -73,6 +76,41 @@ public class OllamaLlmProvider implements LlmProvider {
                 body
         );
         return LlmHttpSupport.parseOllamaChat(json, model);
+    }
+
+    @Override
+    public LlmResponse completeStreaming(
+            LlmRequest request,
+            Consumer<String> onPreview,
+            BooleanSupplier cancelled
+    ) throws LlmException {
+        if (!isAvailable()) {
+            throw new LlmException("Ollama provider is not configured");
+        }
+        String model = request.model() != null && !request.model().isBlank() ? request.model() : defaultModel;
+        LlmRequest effective = new LlmRequest(
+                model,
+                request.messages(),
+                request.maxTokens(),
+                request.temperature(),
+                request.providerOptions(),
+                request.tools(),
+                request.toolChoice()
+        );
+        var body = LlmChatStream.withStream(LlmHttpSupport.ollamaChatBody(effective), true);
+        try (var input = LlmHttpSupport.postStream(
+                httpClient,
+                timeout,
+                baseUrl + "/api/chat",
+                null,
+                body
+        )) {
+            return LlmChatStream.readOllamaNdjson(input, model, onPreview, cancelled);
+        } catch (LlmException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new LlmException("Failed to read Ollama stream: " + ex.getMessage(), ex);
+        }
     }
 
     @Override

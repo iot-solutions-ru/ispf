@@ -25,6 +25,7 @@
   "agent.details.truncated": "Antwort abgeschnitten",
   "agent.details.waiting": "Warte auf das Modell…",
   "agent.details.llmRound": "Modellantwort",
+  "agent.details.streaming": "Modell antwortet…",
   "agent.details.collapsedCount": "{{count}} identische OK-Schritte zusammengefasst",
   "agent.documents.delete": "Löschen",
   "agent.documents.description": "Beschreibung",

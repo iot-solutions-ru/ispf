@@ -68,7 +68,7 @@ export function fetchOperatorAgentProgress(
 ): Promise<AiAgentRunProgress> {
   return fetch(
     `/api/v1/operator-apps/${encodeURIComponent(appId)}/agent/sessions/${encodeURIComponent(sessionId)}/progress`,
-    { headers: getAuthHeaders() }
+    { headers: getAuthHeaders(), cache: "no-store" }
   ).then(async (response) => {
     if (!response.ok) {
       throw new Error(parseApiError(await response.text(), `Operator agent progress failed: ${response.status}`));
@@ -106,7 +106,7 @@ export function subscribeOperatorAgentProgress(
   };
 
   tick();
-  const timer = setInterval(tick, 500);
+  const timer = setInterval(tick, 250);
   return () => {
     cancelled = true;
     clearInterval(timer);

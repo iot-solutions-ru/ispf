@@ -958,7 +958,7 @@ export function subscribeAgentRunProgress(
   };
 
   tick();
-  const timer = setInterval(tick, 500);
+  const timer = setInterval(tick, 250);
   return () => {
     cancelled = true;
     clearInterval(timer);

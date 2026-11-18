@@ -15,6 +15,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
 
 @Service
 public class LlmProviderRegistry {
@@ -151,6 +153,24 @@ public class LlmProviderRegistry {
             throw new LlmException("LLM provider '" + provider.providerId() + "' is not configured");
         }
         return provider.complete(request);
+    }
+
+    public LlmResponse completeStreaming(
+            LlmRequest request,
+            Consumer<String> onPreview,
+            BooleanSupplier cancelled
+    ) throws LlmException {
+        if (cancelled != null && cancelled.getAsBoolean()) {
+            throw new LlmException("Agent run cancelled");
+        }
+        if (!properties.isAgentStreamTokens()) {
+            return complete(request);
+        }
+        LlmProvider provider = activeProvider();
+        if (!provider.isAvailable()) {
+            throw new LlmException("LLM provider '" + provider.providerId() + "' is not configured");
+        }
+        return provider.completeStreaming(request, onPreview, cancelled);
     }
 
     public boolean supportsToolCalling() {

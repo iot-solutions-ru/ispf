@@ -224,9 +224,18 @@ export function AgentRunDetails({
                   {step.error && (
                     <p className="ai-agent-step-error">{step.error}</p>
                   )}
-                  {step.rawPreview ? (
-                    <pre className="ai-agent-llm-preview">{step.rawPreview}</pre>
-                  ) : null}
+                  {(() => {
+                    const live = isRunning && step.result?.status === "RUNNING";
+                    if (!step.rawPreview && !live) {
+                      return null;
+                    }
+                    return (
+                      <pre className={live ? "ai-agent-llm-preview ai-agent-llm-live" : "ai-agent-llm-preview"}>
+                        {step.rawPreview || t("agent.details.streaming")}
+                        {live ? "▍" : ""}
+                      </pre>
+                    );
+                  })()}
                 </li>
               );
             }

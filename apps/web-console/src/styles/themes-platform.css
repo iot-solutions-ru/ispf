@@ -2607,6 +2607,11 @@
   font-style: italic;
 }
 
+.ai-agent-llm-live {
+  font-style: normal;
+  color: var(--text, inherit);
+}
+
 .ai-agent-diagnostic-list {
   margin: 0.5rem 0 0.75rem;
   padding: 0;

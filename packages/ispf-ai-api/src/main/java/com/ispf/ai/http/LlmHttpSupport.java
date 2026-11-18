@@ -14,6 +14,7 @@ import com.ispf.ai.LlmToolCall;
 import com.ispf.ai.LlmToolSpec;
 import com.ispf.ai.LlmUsage;
 
+import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -84,6 +85,45 @@ public final class LlmHttpSupport {
             throw new LlmException(formatHttpStatusFailure(url, result.statusCode(), result.body()));
         }
         return result.body();
+    }
+
+    /**
+     * POST that returns the raw body stream (SSE or NDJSON). Caller closes the stream.
+     */
+    public static InputStream postStream(
+            HttpClient client,
+            Duration timeout,
+            String url,
+            Map<String, String> headers,
+            ObjectNode body
+    ) throws LlmException {
+        try {
+            HttpRequest.Builder builder = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .timeout(timeout)
+                    .header("Content-Type", "application/json")
+                    .header("Accept", "text/event-stream, application/x-ndjson, application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(MAPPER.writeValueAsString(body)));
+            if (headers != null) {
+                headers.forEach(builder::header);
+            }
+            HttpResponse<InputStream> response = client.send(
+                    builder.build(),
+                    HttpResponse.BodyHandlers.ofInputStream()
+            );
+            if (response.statusCode() < 200 || response.statusCode() >= 300) {
+                String errorBody;
+                try (InputStream error = response.body()) {
+                    errorBody = new String(error.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+                }
+                throw new LlmException(formatHttpStatusFailure(url, response.statusCode(), errorBody));
+            }
+            return response.body();
+        } catch (LlmException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new LlmException(formatHttpFailure(url, ex), ex);
+        }
     }
 
     public static HttpResult postJsonWithStatus(

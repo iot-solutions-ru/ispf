@@ -1,5 +1,6 @@
 package com.ispf.server.ai.agent;
 
+import com.ispf.ai.LlmException;
 import com.ispf.ai.LlmMessage;
 import com.ispf.ai.LlmRequest;
 import com.ispf.ai.LlmResponse;
@@ -13,6 +14,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -55,8 +58,21 @@ final class AgentLlmActionResolver {
             boolean executionTurn,
             boolean askTurn,
             AgentPhasedPlanIntake.Stage phasedStage,
-            String uiLocale
+            String uiLocale,
+            Consumer<String> previewSink,
+            BooleanSupplier cancelled
     ) {
+        ResolveContext(
+                boolean textAttachment,
+                boolean planningTurn,
+                boolean executionTurn,
+                boolean askTurn,
+                AgentPhasedPlanIntake.Stage phasedStage,
+                String uiLocale
+        ) {
+            this(textAttachment, planningTurn, executionTurn, askTurn, phasedStage, uiLocale, null, null);
+        }
+
         static ResolveContext none() {
             return new ResolveContext(
                     false, false, false, false, AgentPhasedPlanIntake.Stage.DISCOVERY, "");
@@ -134,8 +150,19 @@ final class AgentLlmActionResolver {
         ResolveContext ctx = context != null ? context : ResolveContext.none();
         for (int attempt = 0; attempt < attempts; attempt++) {
             long llmStart = System.nanoTime();
-            lastResponse = llmProviderRegistry.complete(requestFactory.apply(messages));
+            if (ctx.previewSink() != null) {
+                lastResponse = llmProviderRegistry.completeStreaming(
+                        requestFactory.apply(messages),
+                        ctx.previewSink(),
+                        ctx.cancelled()
+                );
+            } else {
+                lastResponse = llmProviderRegistry.complete(requestFactory.apply(messages));
+            }
             totalLlmLatencyMs += (System.nanoTime() - llmStart) / 1_000_000L;
+            if (isCancelled(ctx)) {
+                throw new LlmException("Agent run cancelled");
+            }
             try {
                 Optional<ParseAttempt> nativeAction = parseNativeToolCall(
                         objectMapper, lastResponse, totalLlmLatencyMs, ctx);
@@ -147,6 +174,12 @@ final class AgentLlmActionResolver {
                 );
                 return new ParseAttempt(lastResponse, action, false, null, totalLlmLatencyMs);
             } catch (Exception ex) {
+                if (ex instanceof LlmException llmEx) {
+                    throw llmEx;
+                }
+                if (isCancelled(ctx)) {
+                    throw new LlmException("Agent run cancelled");
+                }
                 lastError = ex.getMessage();
                 if (attempt < attempts - 1) {
                     String assistantEcho = assistantEchoForRetry(lastResponse);
@@ -178,7 +211,14 @@ final class AgentLlmActionResolver {
                     totalLlmLatencyMs
             );
         }
+        if (isCancelled(ctx)) {
+            throw new LlmException("Agent run cancelled");
+        }
         return new ParseAttempt(lastResponse, null, true, lastError, totalLlmLatencyMs);
+    }
+
+    private static boolean isCancelled(ResolveContext ctx) {
+        return ctx != null && ctx.cancelled() != null && ctx.cancelled().getAsBoolean();
     }
 
     private static Optional<ParseAttempt> parseNativeToolCall(

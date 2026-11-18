@@ -163,6 +163,32 @@ public class AgentRunCancellationRegistry {
         }
     }
 
+    /**
+     * Insert or replace the live step that shares {@code streamKey} (one growing LLM row).
+     */
+    public void upsertStep(String sessionId, String streamKey, Map<String, Object> step) {
+        if (sessionId == null || streamKey == null || streamKey.isBlank() || step == null) {
+            return;
+        }
+        RunState state = runsBySession.get(sessionId);
+        if (state == null) {
+            return;
+        }
+        Map<String, Object> copy = new LinkedHashMap<>(step);
+        copy.put("streamKey", streamKey);
+        synchronized (state.steps) {
+            for (int i = 0; i < state.steps.size(); i++) {
+                if (streamKey.equals(String.valueOf(state.steps.get(i).get("streamKey")))) {
+                    state.steps.set(i, copy);
+                    state.lastProgressAtMs = System.currentTimeMillis();
+                    return;
+                }
+            }
+            state.steps.add(copy);
+            state.lastProgressAtMs = System.currentTimeMillis();
+        }
+    }
+
     public Map<String, Object> progress(String sessionId) {
         if (sessionId == null || sessionId.isBlank()) {
             return Map.of("running", false);
@@ -173,7 +199,7 @@ public class AgentRunCancellationRegistry {
             map.put("running", true);
             map.put("sessionId", sessionId);
             map.put("userMessage", state.userMessage);
-            map.put("steps", List.copyOf(state.steps));
+            map.put("steps", snapshotSteps(state));
             map.put("stepsCompleted", state.steps.size());
             if (state.planState != null && !state.planState.isEmpty()) {
                 map.put("planState", state.planState);
@@ -191,6 +217,12 @@ public class AgentRunCancellationRegistry {
         return Map.of("running", false);
     }
 
+    private static List<Map<String, Object>> snapshotSteps(RunState state) {
+        synchronized (state.steps) {
+            return List.copyOf(state.steps);
+        }
+    }
+
     private void closeRun(String sessionId, RunState state) {
         if (!runsBySession.remove(sessionId, state)) {
             return;
@@ -200,7 +232,7 @@ public class AgentRunCancellationRegistry {
         snap.put("completed", true);
         snap.put("sessionId", sessionId);
         snap.put("userMessage", state.userMessage);
-        snap.put("steps", List.copyOf(state.steps));
+        snap.put("steps", snapshotSteps(state));
         snap.put("stepsCompleted", state.steps.size());
         if (state.planState != null && !state.planState.isEmpty()) {
             snap.put("planState", state.planState);

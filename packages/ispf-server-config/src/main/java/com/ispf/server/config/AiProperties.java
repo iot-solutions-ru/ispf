@@ -37,6 +37,8 @@ public class AiProperties {
      * prefill (often +10–20k tokens). Default off for Ask regardless of {@link #agentNativeTools}.
      */
     private boolean agentAskNativeTools = false;
+    /** Live token preview in the agent progress panel. */
+    private boolean agentStreamTokens = true;
     private int agentParseRetries = 2;
     private int briefingMaxChars = 32_768;
     private boolean briefingEveryTurn = false;
@@ -211,6 +213,14 @@ public class AiProperties {
 
     public void setAgentAskNativeTools(boolean agentAskNativeTools) {
         this.agentAskNativeTools = agentAskNativeTools;
+    }
+
+    public boolean isAgentStreamTokens() {
+        return agentStreamTokens;
+    }
+
+    public void setAgentStreamTokens(boolean agentStreamTokens) {
+        this.agentStreamTokens = agentStreamTokens;
     }
 
     public int getAgentParseRetries() {

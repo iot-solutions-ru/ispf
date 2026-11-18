@@ -5,12 +5,15 @@ import com.ispf.ai.LlmModelInfo;
 import com.ispf.ai.LlmProvider;
 import com.ispf.ai.LlmRequest;
 import com.ispf.ai.LlmResponse;
+import com.ispf.ai.http.LlmChatStream;
 import com.ispf.ai.http.LlmHttpSupport;
 
 import java.net.http.HttpClient;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
 
 /**
  * OpenAI-compatible chat completions API (OpenAI, Azure OpenAI, local proxies).
@@ -79,6 +82,41 @@ public class OpenAiCompatibleLlmProvider implements LlmProvider {
                 body
         );
         return LlmHttpSupport.parseChatCompletion(json, model);
+    }
+
+    @Override
+    public LlmResponse completeStreaming(
+            LlmRequest request,
+            Consumer<String> onPreview,
+            BooleanSupplier cancelled
+    ) throws LlmException {
+        if (!isAvailable()) {
+            throw new LlmException("OpenAI-compatible provider is not configured");
+        }
+        String model = request.model() != null && !request.model().isBlank() ? request.model() : defaultModel;
+        LlmRequest effective = new LlmRequest(
+                model,
+                request.messages(),
+                request.maxTokens(),
+                request.temperature(),
+                request.providerOptions(),
+                request.tools(),
+                request.toolChoice()
+        );
+        var body = LlmChatStream.withStream(LlmHttpSupport.chatCompletionBody(effective), true);
+        try (var input = LlmHttpSupport.postStream(
+                httpClient,
+                timeout,
+                baseUrl + "/chat/completions",
+                authHeaders(),
+                body
+        )) {
+            return LlmChatStream.readOpenAiSse(input, model, onPreview, cancelled);
+        } catch (LlmException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new LlmException("Failed to read LLM stream: " + ex.getMessage(), ex);
+        }
     }
 
     @Override

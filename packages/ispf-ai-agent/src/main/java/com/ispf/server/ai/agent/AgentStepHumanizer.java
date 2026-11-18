@@ -281,6 +281,14 @@ public final class AgentStepHumanizer {
                 "等待模型回复…");
     }
 
+    public static String modelResponding(String uiLocale) {
+        return t(uiLocale,
+                "Model is replying…",
+                "Модель отвечает…",
+                "Modell antwortet…",
+                "模型正在回复…");
+    }
+
     public static String llmRoundLabel(String uiLocale, String actionType, String toolName) {
         String type = actionType == null ? "" : actionType.trim().toLowerCase(Locale.ROOT);
         if ("tool".equals(type) && toolName != null && !toolName.isBlank()) {

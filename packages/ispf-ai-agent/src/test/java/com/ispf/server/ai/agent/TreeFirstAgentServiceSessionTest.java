@@ -1,5 +1,6 @@
 package com.ispf.server.ai.agent;
 
+import com.ispf.ai.LlmException;
 import com.ispf.ai.LlmMessage;
 import com.ispf.ai.LlmProvider;
 import com.ispf.ai.LlmRequest;
@@ -33,6 +34,7 @@ import tools.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -98,6 +100,7 @@ class TreeFirstAgentServiceSessionTest {
         aiProperties.setModel("test-model");
         aiProperties.setAgentMaxSteps(96);
         aiProperties.setAgentMaxHistoryTurns(20);
+        aiProperties.setAgentStreamTokens(false);
         cancellationRegistry = new AgentRunCancellationRegistry();
 
         agentService = new TreeFirstAgentService(
@@ -397,5 +400,52 @@ class TreeFirstAgentServiceSessionTest {
             assertEquals("call-1", message.toolCallId());
             assertThat(message.content()).contains("\"status\":\"OK\"");
         });
+    }
+
+    @Test
+    void streamsTokenPreviewIntoTheLiveStep() throws Exception {
+        aiProperties.setAgentStreamTokens(true);
+        AgentSession session = AgentSession.create("admin", "root");
+        when(llmProviderRegistry.completeStreaming(any(), any(), any())).thenAnswer(invocation -> {
+            Consumer<String> preview = invocation.getArgument(1);
+            preview.accept("token-hello");
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> live = (List<Map<String, Object>>) agentService.runProgress(session.sessionId()).get("steps");
+            assertThat(live).anySatisfy(step -> {
+                assertEquals("llm", step.get("type"));
+                assertEquals("RUNNING", ((Map<?, ?>) step.get("result")).get("status"));
+                assertEquals("token-hello", step.get("rawPreview"));
+            });
+            return new LlmResponse(
+                    "{\"type\":\"finish\",\"summary\":\"done\",\"result\":{}}",
+                    "test-model",
+                    new LlmUsage(1, 1, 2)
+            );
+        });
+
+        var auth = new UsernamePasswordAuthenticationToken("admin", "secret");
+        Map<String, Object> result = agentService.runTurn(session, "hello", auth, "admin");
+
+        assertEquals("OK", result.get("status"));
+        verify(llmProviderRegistry).completeStreaming(any(), any(), any());
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> steps = (List<Map<String, Object>>) result.get("steps");
+        assertThat(steps).filteredOn(step -> "llm".equals(step.get("type"))).hasSize(1);
+    }
+
+    @Test
+    void cancelDuringStreamIsNotAParseError() throws Exception {
+        aiProperties.setAgentStreamTokens(true);
+        when(llmProviderRegistry.completeStreaming(any(), any(), any()))
+                .thenThrow(new LlmException("Agent run cancelled"));
+
+        AgentSession session = AgentSession.create("admin", "root");
+        var auth = new UsernamePasswordAuthenticationToken("admin", "secret");
+        Map<String, Object> result = agentService.runTurn(session, "hello", auth, "admin");
+
+        assertEquals("CANCELLED", result.get("status"));
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> steps = (List<Map<String, Object>>) result.get("steps");
+        assertThat(steps).noneMatch(step -> "error".equals(step.get("type")));
     }
 }

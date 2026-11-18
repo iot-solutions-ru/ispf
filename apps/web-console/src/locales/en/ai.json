@@ -81,6 +81,7 @@
   "agent.details.running": "Current steps",
   "agent.details.waiting": "Waiting for the model…",
   "agent.details.llmRound": "Model reply",
+  "agent.details.streaming": "Model is replying…",
   "agent.details.collapsedCount": "{{count}} identical OK steps collapsed",
   "agent.details.ok": "Details",
   "agent.details.error": "What went wrong",

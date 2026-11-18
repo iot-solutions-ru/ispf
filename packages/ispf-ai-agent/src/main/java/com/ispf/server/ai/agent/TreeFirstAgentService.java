@@ -35,6 +35,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.function.Consumer;
 
 @Service
 public class TreeFirstAgentService {
@@ -376,33 +377,65 @@ public class TreeFirstAgentService {
 
                 boolean hasTextAttachment = AgentPromptAssembler.hasTextAttachment(attachmentMetadata);
                 cancellationRegistry.touch(session.sessionId());
-                publishStep(session.sessionId(), Map.of(
-                        "step", stepNumber,
-                        "type", "status",
-                        "label", AgentStepHumanizer.waitingForModel(uiLocale),
-                        "result", Map.of("status", "RUNNING", "phase", "llm")
-                ));
-                AgentLlmActionResolver.ParseAttempt parsed = AgentLlmActionResolver.resolve(
-                        objectMapper,
-                        llmProviderRegistry,
-                        messages,
-                        requestMessages -> buildAgentLlmRequest(
-                                requestMessages,
-                                session.runState(),
-                                profile,
-                                askMode
-                        ),
-                        aiProperties.getAgentParseRetries(),
-                        profile == AgentProfile.OPERATOR,
-                        new AgentLlmActionResolver.ResolveContext(
-                                hasTextAttachment,
-                                !askMode && session.runState().isPlanningActive(),
-                                session.runState().isPlanApproved(),
-                                askMode,
-                                AgentPhasedPlanIntake.resolveStage(session.runState()),
-                                uiLocale
-                        )
-                );
+                boolean streamTokens = aiProperties.isAgentStreamTokens();
+                String streamKey = "llm-" + stepNumber;
+                if (streamTokens) {
+                    cancellationRegistry.upsertStep(
+                            session.sessionId(),
+                            streamKey,
+                            streamingLlmStep(stepNumber, streamKey, uiLocale, "")
+                    );
+                } else {
+                    publishStep(session.sessionId(), Map.of(
+                            "step", stepNumber,
+                            "type", "status",
+                            "label", AgentStepHumanizer.waitingForModel(uiLocale),
+                            "result", Map.of("status", "RUNNING", "phase", "llm")
+                    ));
+                }
+                AgentLlmActionResolver.ParseAttempt parsed;
+                try {
+                    parsed = AgentLlmActionResolver.resolve(
+                            objectMapper,
+                            llmProviderRegistry,
+                            messages,
+                            requestMessages -> buildAgentLlmRequest(
+                                    requestMessages,
+                                    session.runState(),
+                                    profile,
+                                    askMode
+                            ),
+                            aiProperties.getAgentParseRetries(),
+                            profile == AgentProfile.OPERATOR,
+                            new AgentLlmActionResolver.ResolveContext(
+                                    hasTextAttachment,
+                                    !askMode && session.runState().isPlanningActive(),
+                                    session.runState().isPlanApproved(),
+                                    askMode,
+                                    AgentPhasedPlanIntake.resolveStage(session.runState()),
+                                    uiLocale,
+                                    streamTokens
+                                            ? tokenPreviewSink(session.sessionId(), stepNumber, streamKey, uiLocale)
+                                            : null,
+                                    () -> cancellationRegistry.isCancelled(session.sessionId())
+                            )
+                    );
+                } catch (Exception ex) {
+                    if (cancellationRegistry.isCancelled(session.sessionId()) || isAgentRunCancelled(ex)) {
+                        clearStreamingPreview(session.sessionId(), streamTokens, stepNumber, streamKey, uiLocale, "CANCELLED");
+                        finalStatus = AgentTurnStatus.CANCELLED;
+                        finishSummary = AgentStepHumanizer.cancelledByUser(uiLocale, actionStepCount(steps));
+                        break;
+                    }
+                    clearStreamingPreview(session.sessionId(), streamTokens, stepNumber, streamKey, uiLocale, "ERROR");
+                    throw ex;
+                }
+                if (cancellationRegistry.isCancelled(session.sessionId())) {
+                    clearStreamingPreview(session.sessionId(), streamTokens, stepNumber, streamKey, uiLocale, "CANCELLED");
+                    finalStatus = AgentTurnStatus.CANCELLED;
+                    finishSummary = AgentStepHumanizer.cancelledByUser(uiLocale, actionStepCount(steps));
+                    break;
+                }
                 LlmResponse response = parsed.response();
                 recordTurnAudit(
                         session,
@@ -424,8 +457,13 @@ public class TreeFirstAgentService {
                         parsed,
                         response
                 );
+                if (streamTokens) {
+                    llmStep.put("streamKey", streamKey);
+                    cancellationRegistry.upsertStep(session.sessionId(), streamKey, llmStep);
+                } else {
+                    publishStep(session.sessionId(), llmStep);
+                }
                 steps.add(llmStep);
-                publishStep(session.sessionId(), llmStep);
                 // LLM row consumed this step index; tools/errors get the next free number.
                 stepNumber = steps.size() + 1;
                 if (parsed.failed() || parsed.action() == null) {
@@ -1316,6 +1354,78 @@ public class TreeFirstAgentService {
 
     private void publishStep(String sessionId, Map<String, Object> step) {
         cancellationRegistry.recordStep(sessionId, step);
+    }
+
+    private Consumer<String> tokenPreviewSink(String sessionId, int stepNumber, String streamKey, String uiLocale) {
+        long[] lastAt = {0L};
+        int[] lastLen = {0};
+        return preview -> {
+            if (preview == null || preview.isBlank()) {
+                return;
+            }
+            long now = System.currentTimeMillis();
+            int len = preview.length();
+            if (len < lastLen[0]) {
+                lastLen[0] = 0;
+            }
+            if (lastAt[0] != 0L && now - lastAt[0] < 100L && len - lastLen[0] < 24) {
+                return;
+            }
+            lastAt[0] = now;
+            lastLen[0] = len;
+            cancellationRegistry.upsertStep(
+                    sessionId,
+                    streamKey,
+                    streamingLlmStep(stepNumber, streamKey, uiLocale, preview)
+            );
+        };
+    }
+
+    private static Map<String, Object> streamingLlmStep(
+            int stepNumber,
+            String streamKey,
+            String uiLocale,
+            String preview
+    ) {
+        Map<String, Object> step = new LinkedHashMap<>();
+        step.put("step", stepNumber);
+        step.put("type", "llm");
+        step.put("streamKey", streamKey);
+        step.put("label", AgentStepHumanizer.modelResponding(uiLocale));
+        step.put("rawPreview", preview != null ? preview : "");
+        step.put("result", Map.of("status", "RUNNING", "phase", "llm"));
+        return step;
+    }
+
+    private void clearStreamingPreview(
+            String sessionId,
+            boolean streamTokens,
+            int stepNumber,
+            String streamKey,
+            String uiLocale,
+            String status
+    ) {
+        if (!streamTokens) {
+            return;
+        }
+        Map<String, Object> step = streamingLlmStep(stepNumber, streamKey, uiLocale, "");
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("status", status);
+        result.put("phase", "llm");
+        step.put("result", result);
+        cancellationRegistry.upsertStep(sessionId, streamKey, step);
+    }
+
+    private static boolean isAgentRunCancelled(Throwable ex) {
+        Throwable current = ex;
+        for (int depth = 0; current != null && depth < 8; depth++) {
+            String message = current.getMessage();
+            if (message != null && message.contains("Agent run cancelled")) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
     }
 
     private void syncRunPlanState(AgentSession session) {

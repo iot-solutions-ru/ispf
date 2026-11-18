@@ -25,6 +25,7 @@
   "agent.details.truncated": "Ответ обрезан",
   "agent.details.waiting": "Ожидание ответа модели…",
   "agent.details.llmRound": "Ответ модели",
+  "agent.details.streaming": "Модель отвечает…",
   "agent.details.collapsedCount": "Свернуто {{count}} одинаковых OK шагов",
   "agent.documents.delete": "Удалить",
   "agent.documents.description": "Описание",
