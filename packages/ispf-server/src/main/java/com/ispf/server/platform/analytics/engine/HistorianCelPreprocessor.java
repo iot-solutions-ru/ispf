@@ -229,6 +229,9 @@ public final class HistorianCelPreprocessor {
                 bucket = args.get(2).trim();
             } else if (args.size() < 2) {
                 throw new IllegalArgumentException(function + " requires window bucket for slash ref");
+            } else {
+                String supplied = args.size() >= 3 ? args.get(2).trim() : args.get(1).trim();
+                throw new IllegalArgumentException("Unsupported bucket: " + supplied);
             }
             return new HistorianTarget(ref.object(), ref.name(), field, bucket);
         } catch (PlatformRefParseException ex) {

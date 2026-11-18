@@ -46,6 +46,19 @@ class HistorianCelPreprocessorTest {
     }
 
     @Test
+    void rejectsUnknownWindowInsteadOfDefaultingToFiveMinutes() {
+        RecordingHistorian historian = new RecordingHistorian(-18.9);
+        assertThatThrownBy(() -> HistorianCelPreprocessor.expand(
+                "avg(root.platform.devices.coldchain-control.room-a/temperature, 5x)",
+                historian,
+                unusedLive(),
+                Instant.parse("2026-11-17T11:35:00Z")
+        )).isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Unsupported bucket: 5x");
+        assertThat(historian.calls).isZero();
+    }
+
+    @Test
     void rejectsDotFormHistorianSource() {
         assertThatThrownBy(() -> HistorianCelPreprocessor.expand(
                 "avg(root.platform.devices.analytics-demo.chain-a.derived-a, 5m)",
