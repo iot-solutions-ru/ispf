@@ -614,7 +614,14 @@ public class VariableHistoryService {
         Instant resolvedTo = to != null ? to : Instant.now();
         Instant resolvedFrom = from != null ? from : resolveHistoryStart(objectPath, variableName, resolvedTo);
         if (resolvedFrom.isAfter(resolvedTo)) {
-            resolvedFrom = resolvedTo.minus(1, ChronoUnit.HOURS);
+            return new VariableHistoryAggregateResponse(
+                    objectPath,
+                    variableName,
+                    field,
+                    formatBucket(bucket),
+                    List.of(),
+                    "none"
+            );
         }
 
         if (!isHistorizedVariable(objectPath, variableName)) {
