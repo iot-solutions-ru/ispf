@@ -70,4 +70,21 @@ class VariableHistoryListenerTest {
                 org.mockito.ArgumentMatchers.any()
         );
     }
+
+    @Test
+    void measurementWithoutRevisionStillSamples() {
+        VariableHistoryService history = mock(VariableHistoryService.class);
+        VariableHistoryListener listener = new VariableHistoryListener(history);
+
+        listener.handle(ObjectChangeEvent.variableUpdated(
+                "root.platform.devices.room",
+                "temperature"
+        ));
+
+        verify(history).recordVariableUpdate(
+                "root.platform.devices.room",
+                "temperature",
+                null
+        );
+    }
 }

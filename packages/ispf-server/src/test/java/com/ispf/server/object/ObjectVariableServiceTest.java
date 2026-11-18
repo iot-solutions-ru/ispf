@@ -487,7 +487,7 @@ class ObjectVariableServiceTest {
                 null,
                 null
         );
+        verify(variableHistoryService).forgetVariable(PATH, "temperature");
         verify(variableHistoryService).refreshSamplingPolicy(PATH, "temperature");
-        verify(variableHistoryService, org.mockito.Mockito.times(1)).forgetVariable(PATH, "temperature");
     }
 }

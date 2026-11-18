@@ -151,7 +151,7 @@ public class VariableHistoryService {
 
     /**
      * History policy changed. Drop the enabled-flag and changes-only caches, and keep the
-     * sample interval so a following measurement cannot land inside {@code minIntervalMs}.
+     * sample interval so a settings request cannot open a new sample inside {@code minIntervalMs}.
      */
     public void refreshSamplingPolicy(String objectPath, String variableName) {
         if (objectPath == null || variableName == null) {
