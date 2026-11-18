@@ -1,6 +1,7 @@
 package com.ispf.analytics.engine;
 
 import com.ispf.analytics.engine.eval.LastEvaluator;
+import com.ispf.analytics.engine.eval.LiveEvaluator;
 import com.ispf.analytics.engine.eval.MaxWindowEvaluator;
 import com.ispf.analytics.engine.eval.MinWindowEvaluator;
 import com.ispf.analytics.engine.eval.RateOfChangeEvaluator;
@@ -29,6 +30,7 @@ public final class AnalyticsEvaluatorRegistry {
         register(map, new RateOfChangeEvaluator());
         register(map, new TotalizerEvaluator());
         register(map, new LastEvaluator());
+        register(map, new LiveEvaluator());
         register(map, new MinWindowEvaluator());
         register(map, new MaxWindowEvaluator());
         return new AnalyticsEvaluatorRegistry(map);
