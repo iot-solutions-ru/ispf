@@ -149,6 +149,19 @@ public class VariableHistoryService {
         ingressCompressor.forgetPrefix(samplePrefix.substring(0, samplePrefix.length() - 1));
     }
 
+    /**
+     * History policy changed. Drop the enabled-flag and changes-only caches, and keep the
+     * sample interval so a following measurement cannot land inside {@code minIntervalMs}.
+     */
+    public void refreshSamplingPolicy(String objectPath, String variableName) {
+        if (objectPath == null || variableName == null) {
+            return;
+        }
+        String historizedKey = objectPath + "|" + variableName;
+        historizedCache.remove(historizedKey);
+        lastHistorizedRecord.remove(historizedKey);
+    }
+
     private static boolean keyBelongsToPath(String key, String objectPath, String prefix, String descendant) {
         return key.equals(objectPath)
                 || key.startsWith(prefix)

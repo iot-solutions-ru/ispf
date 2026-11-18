@@ -465,7 +465,7 @@ public class ObjectVariableService {
         objectManager.bumpRevision(node);
         telemetryPolicyService.invalidateVariable(path, name);
         if (variableHistoryService != null) {
-            variableHistoryService.forgetVariable(path, name);
+            variableHistoryService.refreshSamplingPolicy(path, name);
         }
         objectManager.recordAudit(
                 path,
