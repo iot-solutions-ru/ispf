@@ -24,9 +24,9 @@ export function buildAgentTurnGraph(steps: AiAgentStep[]): {
 
   const ordered = [...steps].sort((a, b) => a.step - b.step);
   for (const step of ordered) {
-    const id = `step-${step.step}`;
+    const id = `step-${step.type}-${step.step}-${nodes.length}`;
     const status =
-      step.type === "tool"
+      step.type === "tool" || step.type === "llm"
         ? step.result?.status === "ERROR"
           ? "ERROR"
           : step.result?.status === "OK"

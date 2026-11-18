@@ -123,12 +123,14 @@ export default function AiAgentChat() {
       prevMessageCountRef.current = messages.length;
       return;
     }
-    const toolStepCount = liveSteps.filter((step) => step.type === "tool").length;
+    const progressStepCount = liveSteps.filter(
+      (step) => step.type === "tool" || step.type === "llm"
+    ).length;
     const messagesChanged = messages.length !== prevMessageCountRef.current;
-    if (!messagesChanged && toolStepCount === lastScrolledToolCountRef.current) {
+    if (!messagesChanged && progressStepCount === lastScrolledToolCountRef.current) {
       return;
     }
-    lastScrolledToolCountRef.current = toolStepCount;
+    lastScrolledToolCountRef.current = progressStepCount;
     prevMessageCountRef.current = messages.length;
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [isPending, liveSteps, messages.length]);
@@ -140,7 +142,7 @@ export default function AiAgentChat() {
   const providerReady = provider?.available ?? false;
   const sending = isPending;
   const chatEnabled = providerReady && agentApiReady;
-  const toolStepCount = liveSteps.filter((s) => s.type === "tool").length;
+  const toolStepCount = liveSteps.filter((s) => s.type === "tool" || s.type === "llm").length;
   const hasUserTurns = messages.some((message) => message.role === "user");
 
   const modeOptions: AgentInteractionMode[] = ["auto", "execute", "plan", "ask"];

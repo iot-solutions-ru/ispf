@@ -281,6 +281,29 @@ public final class AgentStepHumanizer {
                 "等待模型回复…");
     }
 
+    public static String llmRoundLabel(String uiLocale, String actionType, String toolName) {
+        String type = actionType == null ? "" : actionType.trim().toLowerCase(Locale.ROOT);
+        if ("tool".equals(type) && toolName != null && !toolName.isBlank()) {
+            return t(uiLocale,
+                    "Model → call " + toolName,
+                    "Модель → вызов " + toolName,
+                    "Modell → Aufruf " + toolName,
+                    "模型 → 调用 " + toolName);
+        }
+        if ("finish".equals(type)) {
+            return t(uiLocale,
+                    "Model → finish answer",
+                    "Модель → готовый ответ",
+                    "Modell → Antwort fertig",
+                    "模型 → 完成回答");
+        }
+        return t(uiLocale,
+                "Model reply",
+                "Ответ модели",
+                "Modellantwort",
+                "模型回复");
+    }
+
     public static String parseErrorLabel(String uiLocale, boolean truncated) {
         if (truncated) {
             return t(uiLocale,

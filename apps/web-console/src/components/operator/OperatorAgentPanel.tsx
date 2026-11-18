@@ -91,7 +91,7 @@ export default function OperatorAgentPanel({
   }, [appId, isPending, sessionId]);
 
   const providerReady = statusQuery.data?.provider?.available ?? false;
-  const toolStepCount = liveSteps.filter((s) => s.type === "tool").length;
+  const toolStepCount = liveSteps.filter((s) => s.type === "tool" || s.type === "llm").length;
 
   const sendMessage = useCallback(
     async (text: string) => {

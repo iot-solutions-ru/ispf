@@ -5,6 +5,7 @@ import com.ispf.ai.LlmRequest;
 import com.ispf.ai.LlmResponse;
 import com.ispf.ai.LlmToolSpec;
 import com.ispf.server.ai.audit.AgentAuditMetrics;
+import com.ispf.server.ai.audit.AgentAuditRedactor;
 import com.ispf.server.ai.audit.AiToolAuditService;
 import com.ispf.server.ai.context.ContextPackService;
 import com.ispf.server.ai.context.PlatformBriefingService;
@@ -364,10 +365,10 @@ public class TreeFirstAgentService {
             Map<String, Object> finishResult = Map.of();
             String finalStatus = AgentTurnStatus.ERROR;
 
-            while (steps.size() < maxStepsTotal) {
+            while (actionStepCount(steps) < maxStepsTotal) {
                 if (cancellationRegistry.isCancelled(session.sessionId())) {
                     finalStatus = AgentTurnStatus.CANCELLED;
-                    finishSummary = AgentStepHumanizer.cancelledByUser(uiLocale, steps.size());
+                    finishSummary = AgentStepHumanizer.cancelledByUser(uiLocale, actionStepCount(steps));
                     break;
                 }
 
@@ -417,6 +418,16 @@ public class TreeFirstAgentService {
                         response,
                         profile
                 );
+                Map<String, Object> llmStep = buildLlmRoundStep(
+                        stepNumber,
+                        uiLocale,
+                        parsed,
+                        response
+                );
+                steps.add(llmStep);
+                publishStep(session.sessionId(), llmStep);
+                // LLM row consumed this step index; tools/errors get the next free number.
+                stepNumber = steps.size() + 1;
                 if (parsed.failed() || parsed.action() == null) {
                     boolean truncated = response != null
                             && (response.truncatedByLength()
@@ -1172,7 +1183,7 @@ public class TreeFirstAgentService {
 
             if (finishSummary == null && !AgentTurnStatus.CANCELLED.equals(finalStatus)) {
                 finalStatus = AgentTurnStatus.OK;
-                int completed = steps.size();
+                int completed = actionStepCount(steps);
                 finishSummary = AgentStepHumanizer.isRussian(uiLocale)
                         ? ("В этом turn выполнено " + completed + " шаг(ов) — достигнут мягкий лимит "
                         + maxStepsTotal + ". План и сессия сохранены; отправьте «Продолжай» для следующей порции.")
@@ -1381,7 +1392,7 @@ public class TreeFirstAgentService {
         );
         session.addTurn(turn);
         sessionStore.persistAfterTurn(session, turn);
-        agentMetrics.recordTurnCompleted(steps != null ? steps.size() : 0);
+        agentMetrics.recordTurnCompleted(actionStepCount(steps));
         if (profile == AgentProfile.OPERATOR
                 && session.runState().operatorAppId() != null
                 && AgentTurnStatus.OK.equals(finalStatus)) {
@@ -1401,11 +1412,27 @@ public class TreeFirstAgentService {
                 steps,
                 finishResult,
                 turn.turnId(),
-                steps.size(),
+                actionStepCount(steps),
                 aiProperties.getAgentMaxSteps(),
                 profile,
                 attachments
         );
+    }
+
+    /** Tool / finish / guard / error rows — exclude live LLM dialogue from the step budget. */
+    private static int actionStepCount(List<Map<String, Object>> steps) {
+        if (steps == null || steps.isEmpty()) {
+            return 0;
+        }
+        int count = 0;
+        for (Map<String, Object> step : steps) {
+            String type = step != null ? String.valueOf(step.get("type")) : "";
+            if ("llm".equals(type) || "status".equals(type)) {
+                continue;
+            }
+            count++;
+        }
+        return count;
     }
 
     public Map<String, Object> runOperatorTurn(
@@ -1621,11 +1648,99 @@ public class TreeFirstAgentService {
     }
 
     private static String preview(String content) {
+        return preview(content, 240);
+    }
+
+    private static String preview(String content, int maxChars) {
         if (content == null) {
             return "";
         }
         String trimmed = content.trim();
-        return trimmed.length() <= 240 ? trimmed : trimmed.substring(0, 237) + "...";
+        int limit = Math.max(80, maxChars);
+        return trimmed.length() <= limit ? trimmed : trimmed.substring(0, limit - 3) + "...";
+    }
+
+    /**
+     * Live progress row for one model round so the UI shows LLM dialogue, not only tool calls.
+     */
+    private static Map<String, Object> buildLlmRoundStep(
+            int stepNumber,
+            String uiLocale,
+            AgentLlmActionResolver.ParseAttempt parsed,
+            LlmResponse response
+    ) {
+        AgentJsonProtocol.AgentAction action = parsed != null ? parsed.action() : null;
+        String actionType = action != null ? action.type() : (parsed != null && parsed.failed() ? "error" : "");
+        String toolName = action != null ? action.toolName() : null;
+        Map<String, Object> redactedArgs = action != null && action.arguments() != null && !action.arguments().isEmpty()
+                ? AgentAuditRedactor.redactArguments(action.arguments())
+                : Map.of();
+        Map<String, Object> step = new LinkedHashMap<>();
+        step.put("step", stepNumber);
+        step.put("type", "llm");
+        step.put("label", AgentStepHumanizer.llmRoundLabel(uiLocale, actionType, toolName));
+        if (toolName != null && !toolName.isBlank()) {
+            step.put("tool", toolName);
+        }
+        if (!redactedArgs.isEmpty()) {
+            step.put("arguments", redactedArgs);
+        }
+        String content = llmDialoguePreview(response != null ? response.content() : null, action, toolName, redactedArgs);
+        step.put("rawPreview", preview(content, 1_200));
+        if (parsed != null && parsed.llmLatencyMs() > 0) {
+            step.put("latencyMs", parsed.llmLatencyMs());
+        }
+        if (response != null && response.usage() != null) {
+            if (response.usage().promptTokens() != null) {
+                step.put("promptTokens", response.usage().promptTokens());
+            }
+            if (response.usage().completionTokens() != null) {
+                step.put("completionTokens", response.usage().completionTokens());
+            }
+        }
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("status", parsed != null && parsed.failed() ? "ERROR" : "OK");
+        result.put("phase", "llm");
+        if (actionType != null && !actionType.isBlank()) {
+            result.put("actionType", actionType);
+        }
+        if (parsed != null && parsed.error() != null && !parsed.error().isBlank()) {
+            result.put("error", parsed.error());
+            step.put("error", parsed.error());
+        }
+        step.put("result", result);
+        return step;
+    }
+
+    /**
+     * Prefer human-readable dialogue over raw JSON protocol envelopes; never leak secrets.
+     */
+    private static String llmDialoguePreview(
+            String rawContent,
+            AgentJsonProtocol.AgentAction action,
+            String toolName,
+            Map<String, Object> redactedArgs
+    ) {
+        String content = rawContent != null ? rawContent.trim() : "";
+        boolean fencedJson = content.startsWith("```");
+        boolean looksLikeJsonEnvelope = (content.startsWith("{") || fencedJson)
+                && (content.contains("\"type\"") || content.contains("\"toolName\"") || content.contains("\"summary\""));
+        boolean argsWereRedacted = action != null
+                && action.arguments() != null
+                && !action.arguments().isEmpty()
+                && !redactedArgs.equals(action.arguments());
+        if (!content.isBlank() && !looksLikeJsonEnvelope && !argsWereRedacted) {
+            return content;
+        }
+        if (action != null && action.summary() != null && !action.summary().isBlank()) {
+            return action.summary();
+        }
+        if (action != null && "tool".equals(action.type()) && toolName != null) {
+            return redactedArgs.isEmpty()
+                    ? "tool " + toolName
+                    : "tool " + toolName + " " + redactedArgs;
+        }
+        return content;
     }
 
     private String writeJson(Object value) {

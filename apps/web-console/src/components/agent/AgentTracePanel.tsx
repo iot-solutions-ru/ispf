@@ -60,7 +60,7 @@ export default function AgentTracePanel({
           </tr>
         </thead>
         <tbody>
-          {traceSteps.map((step) => {
+          {traceSteps.map((step, idx) => {
             const traceStep = step as AiAgentStep & {
               latencyMs?: number;
               promptTokens?: number;
@@ -68,8 +68,8 @@ export default function AgentTracePanel({
               truncated?: boolean;
             };
             const status =
-              traceStep.type === "tool"
-                ? String(traceStep.result?.status ?? "")
+              traceStep.type === "tool" || traceStep.type === "llm"
+                ? String(traceStep.result?.status ?? (traceStep.type === "llm" ? "OK" : ""))
                 : traceStep.type === "error"
                   ? "ERROR"
                   : traceStep.type === "guard"
@@ -82,7 +82,7 @@ export default function AgentTracePanel({
                 ? `${formatTokens(traceStep.promptTokens)} / ${formatTokens(traceStep.completionTokens)}`
                 : "—";
             return (
-              <tr key={`${traceStep.step}-${traceStep.type}-${traceStep.tool ?? ""}`}>
+              <tr key={`${traceStep.step}-${traceStep.type}-${idx}`}>
                 <td>{traceStep.step}</td>
                 <td>{traceStep.type}</td>
                 <td>

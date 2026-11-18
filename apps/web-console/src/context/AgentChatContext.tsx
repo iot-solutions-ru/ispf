@@ -244,6 +244,9 @@ function agentTurnMutatesObjectTree(
     }
   }
   return (steps ?? []).some((step) => {
+    if (step.type !== "tool") {
+      return false;
+    }
     const tool = typeof step.tool === "string" ? step.tool : "";
     if (!TREE_MUTATING_TOOLS.has(tool)) {
       return false;

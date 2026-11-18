@@ -107,20 +107,30 @@ public class AgentTraceService {
         }
         for (Map<String, Object> audit : auditRows) {
             String toolName = String.valueOf(audit.get("toolName"));
-            if ("agent_llm_round".equals(toolName)) {
-                Map<String, Object> llmStep = new LinkedHashMap<>();
-                llmStep.put("step", audit.get("stepNo"));
-                llmStep.put("type", "llm");
-                llmStep.put("label", "LLM round");
-                copyMetrics(llmStep, audit);
-                traceSteps.add(llmStep);
+            if (!"agent_llm_round".equals(toolName)) {
+                continue;
             }
+            int stepNo = asInt(audit.get("stepNo"));
+            boolean alreadyPresent = traceSteps.stream()
+                    .anyMatch(s -> "llm".equals(String.valueOf(s.get("type"))) && asInt(s.get("step")) == stepNo);
+            if (alreadyPresent) {
+                continue;
+            }
+            Map<String, Object> llmStep = new LinkedHashMap<>();
+            llmStep.put("step", stepNo);
+            llmStep.put("type", "llm");
+            llmStep.put("label", "LLM round");
+            copyMetrics(llmStep, audit);
+            traceSteps.add(llmStep);
         }
         traceSteps.sort((a, b) -> Integer.compare(asInt(a.get("step")), asInt(b.get("step"))));
         return traceSteps;
     }
 
     private static boolean matchesAuditTool(String stepType, String toolName, String auditToolName) {
+        if ("llm".equals(stepType)) {
+            return "agent_llm_round".equals(auditToolName);
+        }
         if ("tool".equals(stepType) && toolName != null) {
             return auditToolName.equals("agent_tool_" + toolName);
         }
