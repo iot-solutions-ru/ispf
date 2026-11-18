@@ -61,7 +61,7 @@ public final class HistorianCelPreprocessor {
         }
         String name = trimmed.substring(0, open).trim().toLowerCase(Locale.ROOT);
         // Only historian builtins count as a single helper call; CEL wrappers like double(avg(...)) stay CEL.
-        if (!name.matches("avg|min|max|last|sum|live|totalizer")) {
+        if (!name.matches("avg|min|max|last|sum|live|totalizer|rateofchange|oee")) {
             return false;
         }
         int depth = 0;

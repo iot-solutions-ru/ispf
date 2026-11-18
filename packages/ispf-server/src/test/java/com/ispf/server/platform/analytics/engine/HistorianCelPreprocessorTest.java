@@ -90,6 +90,20 @@ class HistorianCelPreprocessorTest {
     }
 
     @Test
+    void loneRateOfChangeAndOeeRemainEntirelyOneCall() {
+        assertThat(HistorianCelPreprocessor.isEntirelyOneCall(
+                "rateOfChange(root.devices.a/temperature, 5m)")).isTrue();
+        assertThat(HistorianCelPreprocessor.isCelExpression(
+                "rateOfChange(root.devices.a/temperature, 5m)")).isFalse();
+        assertThat(HistorianCelPreprocessor.isEntirelyOneCall(
+                "oee(root.devices.a/availability, root.devices.a/performance, root.devices.a/quality, 1h)"))
+                .isTrue();
+        assertThat(HistorianCelPreprocessor.isCelExpression(
+                "oee(root.devices.a/availability, root.devices.a/performance, root.devices.a/quality, 1h)"))
+                .isFalse();
+    }
+
+    @Test
     void rejectsDotFormHistorianSource() {
         assertThatThrownBy(() -> HistorianCelPreprocessor.expand(
                 "avg(root.platform.devices.analytics-demo.chain-a.derived-a, 5m)",
