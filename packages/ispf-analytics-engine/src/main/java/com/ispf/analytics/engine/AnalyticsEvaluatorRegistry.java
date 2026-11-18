@@ -6,6 +6,7 @@ import com.ispf.analytics.engine.eval.MaxWindowEvaluator;
 import com.ispf.analytics.engine.eval.MinWindowEvaluator;
 import com.ispf.analytics.engine.eval.RateOfChangeEvaluator;
 import com.ispf.analytics.engine.eval.RollingAvgEvaluator;
+import com.ispf.analytics.engine.eval.SumEvaluator;
 import com.ispf.analytics.engine.eval.TotalizerEvaluator;
 
 import java.util.LinkedHashMap;
@@ -29,6 +30,7 @@ public final class AnalyticsEvaluatorRegistry {
         register(map, new RollingAvgEvaluator());
         register(map, new RateOfChangeEvaluator());
         register(map, new TotalizerEvaluator());
+        register(map, new SumEvaluator());
         register(map, new LastEvaluator());
         register(map, new LiveEvaluator());
         register(map, new MinWindowEvaluator());

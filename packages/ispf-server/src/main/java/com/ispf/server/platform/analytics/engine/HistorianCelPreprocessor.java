@@ -192,9 +192,8 @@ public final class HistorianCelPreprocessor {
             case "min" -> requireFinite(latestMetric(buckets, HistorianPort.HistorianBucket::min), function, objectPath, variable);
             case "max" -> requireFinite(latestMetric(buckets, HistorianPort.HistorianBucket::max), function, objectPath, variable);
             case "sum" -> buckets.stream()
-                    .map(HistorianPort.HistorianBucket::avg)
-                    .filter(value -> value != null && !value.isNaN())
-                    .mapToDouble(Double::doubleValue)
+                    .filter(bucket -> bucket.avg() != null && Double.isFinite(bucket.avg()))
+                    .mapToDouble(bucket -> bucket.avg() * Math.max(bucket.count(), 1))
                     .sum();
             default -> throw new IllegalArgumentException("Unsupported aggregate: " + function);
         };
