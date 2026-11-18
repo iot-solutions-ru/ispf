@@ -22,7 +22,13 @@ public final class TotalizerEvaluator extends WindowedHistorianEvaluator {
             LiveVariablePort live,
             AnalyticsEvaluationOptions options
     ) {
-        List<HistorianPort.HistorianBucket> buckets = loadBuckets(tag, historian, live, options);
+        List<HistorianPort.HistorianBucket> buckets = loadBuckets(
+                tag,
+                historian,
+                live,
+                options,
+                WindowBucketDurations.parse(tag.windowBucket())
+        );
         if (buckets.isEmpty()) {
             return AnalyticsEvaluationResult.skipped(tag.tagPath(), tag.helper(), "No buckets for totalizer");
         }

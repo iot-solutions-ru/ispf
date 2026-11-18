@@ -22,7 +22,13 @@ public final class MaxWindowEvaluator extends WindowedHistorianEvaluator {
             LiveVariablePort live,
             AnalyticsEvaluationOptions options
     ) {
-        List<HistorianPort.HistorianBucket> buckets = loadBuckets(tag, historian, live, options);
+        List<HistorianPort.HistorianBucket> buckets = loadBuckets(
+                tag,
+                historian,
+                live,
+                options,
+                WindowBucketDurations.parse(tag.windowBucket())
+        );
         Double value = buckets.stream()
                 .map(HistorianPort.HistorianBucket::max)
                 .filter(v -> v != null)
