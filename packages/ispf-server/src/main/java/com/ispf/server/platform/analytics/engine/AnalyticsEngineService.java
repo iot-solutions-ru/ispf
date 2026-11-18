@@ -125,8 +125,9 @@ public class AnalyticsEngineService {
             Instant observedAt
     ) {
         List<AnalyticsEvaluationResult> results = evaluateWithSession(tags, options);
-        applyEngineResults(results, observedAt);
-        metadataService.recordEvaluations(results, observedAt);
+        Instant recordedAt = observedAt != null ? observedAt : Instant.now();
+        applyEngineResults(results, recordedAt);
+        metadataService.recordEvaluations(results, recordedAt);
         return results;
     }
 
