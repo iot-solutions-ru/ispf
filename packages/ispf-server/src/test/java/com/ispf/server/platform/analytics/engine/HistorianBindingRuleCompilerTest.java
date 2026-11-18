@@ -33,6 +33,11 @@ class HistorianBindingRuleCompilerTest {
     }
 
     @Test
+    void compilesSumBuiltin() {
+        assertBuiltinCompiles("sum", "sum");
+    }
+
+    @Test
     void compilesMaxBuiltin() {
         assertBuiltinCompiles("max", "max");
     }
