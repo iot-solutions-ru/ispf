@@ -212,8 +212,9 @@ public class DataSourceMetadataService {
         String useSchema = schema == null || schema.isBlank() ? null : likeExact(meta, schema);
         List<TableNode> tables = new ArrayList<>();
         // Catalog/schema already META_NAME-validated; escape LIKE wildcards (_ / %).
-        // codeql[java/sql-injection]
-        try (ResultSet rs = meta.getTables(useCatalog, useSchema, "%", new String[]{"TABLE", "VIEW", "BASE TABLE"})) {
+        try (ResultSet rs =
+                // codeql[java/sql-injection]
+                meta.getTables(useCatalog, useSchema, "%", new String[]{"TABLE", "VIEW", "BASE TABLE"})) {
             while (rs.next()) {
                 String tableName = rs.getString("TABLE_NAME");
                 if (tableName == null || tableName.isBlank()) {
@@ -241,8 +242,9 @@ public class DataSourceMetadataService {
         String tablePattern = likeExact(meta, table);
         Set<String> primaryKeys = new LinkedHashSet<>();
         // Names validated by requireMetaName / IDENT; DatabaseMetaData is not concatenated SQL.
-        // codeql[java/sql-injection]
-        try (ResultSet rs = meta.getPrimaryKeys(useCatalog, schema, table)) {
+        try (ResultSet rs =
+                // codeql[java/sql-injection]
+                meta.getPrimaryKeys(useCatalog, schema, table)) {
             while (rs.next()) {
                 if (!table.equals(rs.getString("TABLE_NAME"))) {
                     continue;
@@ -254,8 +256,9 @@ public class DataSourceMetadataService {
             }
         }
         List<ColumnView> columns = new ArrayList<>();
-        // codeql[java/sql-injection]
-        try (ResultSet rs = meta.getColumns(useCatalog, schemaPattern, tablePattern, "%")) {
+        try (ResultSet rs =
+                // codeql[java/sql-injection]
+                meta.getColumns(useCatalog, schemaPattern, tablePattern, "%")) {
             while (rs.next()) {
                 if (!table.equals(rs.getString("TABLE_NAME"))) {
                     continue;
