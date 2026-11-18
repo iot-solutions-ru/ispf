@@ -77,6 +77,48 @@ class AgentLoopGuardTest {
     }
 
     @Test
+    void askBlocksSecondExportWithoutStoppingFirstOffense() {
+        Map<String, Object> args = Map.of("appId", "demo");
+        List<Map<String, Object>> once = List.of(okStep("export_application_bundle", args));
+        assertTrue(AgentLoopGuard.checkHardBlock("export_application_bundle", args, once).isEmpty());
+        assertTrue(AgentLoopGuard.checkHardBlock(
+                "export_application_bundle",
+                Map.of("appId", "mes-reference"),
+                once,
+                true
+        ).isEmpty());
+
+        var first = AgentLoopGuard.checkHardBlock("export_application_bundle", args, once, true);
+        assertTrue(first.isPresent());
+        assertTrue(first.get().blocked());
+        assertFalse(first.get().stopTurn());
+        assertTrue(first.get().hint().contains("Finish NOW"));
+
+        List<Map<String, Object>> afterGuard = List.of(
+                okStep("export_application_bundle", args),
+                Map.of(
+                        "type", "tool",
+                        "tool", "export_application_bundle",
+                        "arguments", args,
+                        "result", Map.of(
+                                "status", "ERROR",
+                                "loopGuardBlocked", true,
+                                "error", "Hard block"
+                        )
+                )
+        );
+        var second = AgentLoopGuard.checkHardBlock("export_application_bundle", args, afterGuard, true);
+        assertTrue(second.isPresent());
+        assertTrue(second.get().stopTurn());
+
+        AgentRunState ask = new AgentRunState();
+        ask.setInteractionMode(AgentInteractionMode.ASK);
+        String hint = AgentPlanGuard.askModeContinuationHint(ask, once, "export_application_bundle");
+        assertTrue(hint.contains("Finish NOW"));
+        assertTrue(hint.contains("export_application_bundle"));
+    }
+
+    @Test
     void listDriversFingerprintIncludesQueryAndMaturity() {
         String empty = AgentLoopGuard.discoveryArgFingerprint("list_drivers", Map.of());
         String filtered = AgentLoopGuard.discoveryArgFingerprint(

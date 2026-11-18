@@ -742,6 +742,16 @@ final class AgentPlanGuard {
         if (runState == null || runState.interactionMode() != AgentInteractionMode.ASK) {
             return null;
         }
+        if (lastTool != null
+                && Set.of(
+                        "export_application_bundle",
+                        "validate_bundle",
+                        "dry_run_deploy",
+                        "list_applications"
+                ).contains(lastTool)
+                && lastAskToolOk(steps)) {
+            return AgentLoopGuard.bundleHowToFinishHint(lastTool);
+        }
         if (lastStepBlockedInAskOrPlanning(steps) || (lastTool != null && !isReadOnlyTool(lastTool))) {
             return """
                     Ask mode (read-only): do NOT retry blocked or mutating tools. \
@@ -917,6 +927,21 @@ final class AgentPlanGuard {
         String error = String.valueOf(result.get("error"));
         return error.contains("blocked during planning")
                 || error.contains("blocked in Ask mode");
+    }
+
+    private static boolean lastAskToolOk(List<Map<String, Object>> steps) {
+        if (steps == null || steps.isEmpty()) {
+            return false;
+        }
+        Map<String, Object> last = steps.get(steps.size() - 1);
+        if (!"tool".equals(String.valueOf(last.get("type")))) {
+            return false;
+        }
+        Object resultRaw = last.get("result");
+        if (!(resultRaw instanceof Map<?, ?> result)) {
+            return false;
+        }
+        return "OK".equalsIgnoreCase(String.valueOf(result.get("status")));
     }
 
     private static String stringValue(Object raw) {

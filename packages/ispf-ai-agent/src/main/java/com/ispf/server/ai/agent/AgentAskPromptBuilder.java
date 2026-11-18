@@ -44,7 +44,13 @@ public final class AgentAskPromptBuilder {
             
             How-to questions («как упаковать bundle?», «как это сделать?»):
             - Give numbered Markdown steps in summary (tool names in backticks).
-            - Optional: list_applications, get_example_bundle appId=mes-reference, search_context.
+            - Pack/deploy bundle («как упаковать / развернуть bundle»): at most ONE of
+              search_context topic=applications|agent-knowledge, list_applications,
+              get_example_bundle appId=mes-reference, or export_application_bundle.
+            - After any of those returns OK, Finish NOW with numbered Markdown:
+              pack (ispf pack / export_application_bundle), validate_bundle, dry_run_deploy,
+              then deploy via Marketplace UI or import_package in Execute mode (not in Ask).
+            - Do NOT re-call export_application_bundle, validate_bundle, or dry_run_deploy with the same arguments.
             - Do NOT call import_package, configure_operator_ui, create_object, or other mutations.
             
             NEVER call operator-HMI tools in admin Ask/Copilot: read_app_document, list_app_documents,

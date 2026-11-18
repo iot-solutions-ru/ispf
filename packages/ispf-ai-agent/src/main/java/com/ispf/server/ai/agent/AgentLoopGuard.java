@@ -45,6 +45,17 @@ final class AgentLoopGuard {
     );
 
     /**
+     * Idempotent bundle how-to reads: one OK per fingerprint, then finish Markdown.
+     * Repeating export/validate/dry-run floods the Studio log (Ask «как упаковать bundle»).
+     */
+    private static final Set<String> BUNDLE_HOWTO_TOOLS = Set.of(
+            "export_application_bundle",
+            "validate_bundle",
+            "dry_run_deploy",
+            "list_applications"
+    );
+
+    /**
      * Catalog lookups keyed by {@code type} (fingerprint). Different widget types must be allowed
      * in one course turn; only repeating the same type is spam.
      */
@@ -297,6 +308,15 @@ final class AgentLoopGuard {
                 + "' is already above — stop repeating it; act on prior results or finish with Markdown.";
     }
 
+    static String bundleHowToFinishHint(String toolName) {
+        return """
+                Bundle how-to result is already above. Finish NOW with numbered Markdown \
+                (pack via ispf pack / export_application_bundle → validate_bundle → dry_run_deploy \
+                → Marketplace UI or import_package in Execute). \
+                Do NOT re-call """ + toolName + """
+                 with the same arguments.""";
+    }
+
     private static String driverInventoryHint() {
         return """
                 Driver list received — count and driverIds above are authoritative for this instance. \
@@ -473,13 +493,26 @@ final class AgentLoopGuard {
     }
 
     static Optional<BlockDecision> checkHardBlock(String toolName, List<Map<String, Object>> steps) {
-        return checkHardBlock(toolName, Map.of(), steps);
+        return checkHardBlock(toolName, Map.of(), steps, false);
     }
 
     static Optional<BlockDecision> checkHardBlock(
             String toolName,
             Map<String, Object> toolArgs,
             List<Map<String, Object>> steps
+    ) {
+        return checkHardBlock(toolName, toolArgs, steps, false);
+    }
+
+    /**
+     * @param askMode when true, bundle how-to tools stop after one OK so Ask can finish Markdown.
+     *                Execute may re-validate or re-export the same appId with a new manifest/version.
+     */
+    static Optional<BlockDecision> checkHardBlock(
+            String toolName,
+            Map<String, Object> toolArgs,
+            List<Map<String, Object>> steps,
+            boolean askMode
     ) {
         if (repeatGroundTruthError(toolName, steps) >= 2) {
             String parent = blockedParentPath(steps);
@@ -502,6 +535,20 @@ final class AgentLoopGuard {
             Optional<BlockDecision> inventoryDone = checkListDriversInventoryDone(steps, toolArgs);
             if (inventoryDone.isPresent()) {
                 return inventoryDone;
+            }
+        }
+        if (askMode && BUNDLE_HOWTO_TOOLS.contains(normalized)) {
+            String bundleFp = discoveryArgFingerprint(normalized, toolArgs);
+            long priorOk = okCountWithDiscoveryFingerprint(steps, normalized, bundleFp);
+            if (priorOk >= 1) {
+                boolean escalate = hasPriorBundleHowToGuardBlock(steps, normalized);
+                return Optional.of(new BlockDecision(
+                        "Hard block: '" + normalized + "' already succeeded this turn"
+                                + (bundleFp.isBlank() ? "" : " (" + bundleFp + ")")
+                                + " — stop looping",
+                        bundleHowToFinishHint(normalized),
+                        escalate
+                ));
             }
         }
         if (DISCOVERY_LOOP_TOOLS.contains(normalized)) {
@@ -623,7 +670,9 @@ final class AgentLoopGuard {
             case "search_context" -> keyArgs(args, "topic", "query");
             case "search_platform_recipes" -> keyArgs(args, "query");
             case "get_driver_help" -> keyArgs(args, "driverId", "driver", "name");
-            case "get_example_bundle" -> keyArgs(args, "appId", "exampleId", "sections");
+            case "get_example_bundle", "export_application_bundle", "validate_bundle", "dry_run_deploy"
+                    -> keyArgs(args, "appId", "exampleId", "sections", "path");
+            case "list_applications" -> keyArgs(args, "query");
             case "get_widget_catalog" -> keyArgs(args, "type", "widgetType");
             case "get_deploy_playbook" -> keyArgs(args, "playbook", "id", "name");
             case "list_examples" -> keyArgs(args, "query", "tag");
@@ -661,6 +710,47 @@ final class AgentLoopGuard {
             sb.append(key).append('=').append(value.toLowerCase(Locale.ROOT));
         }
         return sb.toString();
+    }
+
+    private static boolean hasPriorBundleHowToGuardBlock(List<Map<String, Object>> steps, String toolName) {
+        if (steps == null || toolName == null) {
+            return false;
+        }
+        String normalized = normalize(toolName);
+        for (Map<String, Object> step : steps) {
+            if (!"tool".equals(String.valueOf(step.get("type")))) {
+                continue;
+            }
+            if (!normalized.equals(normalize(String.valueOf(step.get("tool"))))) {
+                continue;
+            }
+            Map<String, Object> result = stepMap(step, "result");
+            if (Boolean.TRUE.equals(result.get("loopGuardBlocked"))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static long okCountWithDiscoveryFingerprint(
+            List<Map<String, Object>> steps,
+            String toolName,
+            String fingerprint
+    ) {
+        if (steps == null || toolName == null) {
+            return 0;
+        }
+        String normalized = normalize(toolName);
+        String want = fingerprint == null ? "" : fingerprint;
+        return steps.stream()
+                .filter(step -> "tool".equals(String.valueOf(step.get("type"))))
+                .filter(step -> normalized.equals(normalize(String.valueOf(step.get("tool")))))
+                .filter(step -> want.equals(discoveryArgFingerprint(normalized, stepMap(step, "arguments"))))
+                .filter(step -> {
+                    Map<String, Object> result = stepMap(step, "result");
+                    return "OK".equalsIgnoreCase(String.valueOf(result.get("status")));
+                })
+                .count();
     }
 
     private static long totalToolCountWithFingerprint(

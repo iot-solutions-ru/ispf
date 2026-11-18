@@ -973,7 +973,7 @@ public class TreeFirstAgentService {
                     }
                         } else {
                         Optional<AgentLoopGuard.BlockDecision> loopBlock =
-                                AgentLoopGuard.checkHardBlock(toolName, toolArgs, steps);
+                                AgentLoopGuard.checkHardBlock(toolName, toolArgs, steps, askMode);
                         if (loopBlock.isPresent() && loopBlock.get().blocked()) {
                             toolResult = new LinkedHashMap<>();
                             toolResult.put("status", "ERROR");
