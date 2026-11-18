@@ -14,6 +14,7 @@ class ObjectTreeTest {
 
         assertThat(tree.findByPath("root.pump1")).isPresent();
         assertThat(tree.childrenOf("root")).hasSize(1);
+        assertThat(tree.findByPath(null)).isEmpty();
     }
 
     @Test
