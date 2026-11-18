@@ -191,7 +191,10 @@ public class EventService implements WorkflowEventPublish {
      */
     @Transactional(readOnly = true)
     public List<ObjectEvent> list(String objectPath, int limit, String filterPath, String expression) {
-        int capped = Math.max(1, Math.min(limit, 200));
+        if (limit < 1) {
+            throw new IllegalArgumentException("Event limit must be positive");
+        }
+        int capped = Math.min(limit, 200);
         EventFilterDefinition filter = resolveFilter(filterPath);
         String expr = normalizeExpression(expression);
         // Over-fetch when filtering so pattern/severity/CEL cuts still return a full page.
