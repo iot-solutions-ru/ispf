@@ -189,7 +189,7 @@ public class AnalyticsEngineService {
                 derivedValueWriter.write(
                         objectPath,
                         entry.getKey(),
-                        AnalyticsLiveVariablePortAdapter.formatNumber(entry.getValue()),
+                        entry.getValue(),
                         observedAt
                 );
             }
