@@ -6,13 +6,14 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 /**
  * Enforces plan-before-execute workflow for the platform admin agent.
  * <p>
- * In planning phases only read-only discovery tools are allowed. Complex tasks in {@link AgentInteractionMode#AUTO}
- * enter planning automatically; {@link AgentInteractionMode#PLAN} always plans first;
- * {@link AgentInteractionMode#ASK} never mutates.
+ * In planning phases only read-only discovery tools are allowed. {@link AgentInteractionMode#AUTO}
+ * does not classify the message: the model decides whether to answer, act, or open a plan.
+ * {@link AgentInteractionMode#PLAN} plans first; {@link AgentInteractionMode#ASK} never mutates.
  */
 final class AgentPlanGuard {
 
@@ -53,7 +54,7 @@ final class AgentPlanGuard {
             "утверждаю", "утвердить", "подтверждаю", "начинай", "начинай выполнение",
             "approve", "go ahead", "start execution", "execute plan", "proceed", "да, начинай",
             "ок, начинай", "ok, start", "yes, start", "выполняй план", "приступай",
-            "начинаем", "да, начинаем", "yes, begin", "go", "lfg", "вперёд", "вперед"
+            "начинаем", "да, начинаем", "yes, begin", "вперёд", "вперед"
     };
 
     private static final String[] APPROVAL_VERBS = {
@@ -64,6 +65,22 @@ final class AgentPlanGuard {
             "измени план", "change plan", "другой scope", "переплан", "replan", "новый план",
             "отмени", "cancel plan", "другая фаза", "change scope", "переделай план"
     };
+
+    /** Read-only bundle checks whose result can report LOGIC_HOST_DEVICE. */
+    private static final Set<String> BUNDLE_CHECK_TOOLS = Set.of(
+            "validate_bundle",
+            "dry_run_deploy",
+            "export_application_bundle"
+    );
+
+    /** First-person announcement of a platform change; the AUTO prompt says a promise in text does nothing. */
+    private static final Pattern PROMISED_CHANGE = Pattern.compile(
+            "(?iU)\\b(?:создам|настрою|добавлю|подключу|разверну|импортирую|запущу|сделаю|построю|приступаю)\\b"
+                    + "|\\b(?:i'll|i will|let me|i'm going to|i am going to)\\s+(?:create|set up|configure|build|deploy|add)\\b"
+    );
+
+    /** Longer prose is an answer that may end with an offer, not a bare promise. */
+    private static final int PROMISE_ONLY_MAX_CHARS = 400;
 
     private AgentPlanGuard() {
     }
@@ -113,7 +130,7 @@ final class AgentPlanGuard {
             if (isApprovalMessage(userMessage, runState.planPhase())
                     && (runState.planPhase() == AgentPlanPhase.AWAITING_APPROVAL
                     || runState.planPhase() == AgentPlanPhase.PLANNING
-                    || !runState.storedPlan().isEmpty())) {
+                    || !runState.modelPlan().isEmpty())) {
                 runState.approvePlan(approverUsername);
                 return true;
             }
@@ -132,9 +149,9 @@ final class AgentPlanGuard {
             return false;
         }
         if (isApprovalMessage(userMessage, runState.planPhase())) {
+            // Approval needs a plan the model presented; a seeded template draft is not one.
             if (runState.planPhase() == AgentPlanPhase.AWAITING_APPROVAL
-                    || runState.planPhase() == AgentPlanPhase.PLANNING
-                    || !runState.storedPlan().isEmpty()) {
+                    || !runState.modelPlan().isEmpty()) {
                 runState.approvePlan(approverUsername);
                 return true;
             }
@@ -163,13 +180,10 @@ final class AgentPlanGuard {
             }
             return false;
         }
-        if (requiresPlanning(userMessage)) {
-            runState.setPlanPhase(AgentPlanPhase.PLANNING);
-        } else if (requireApprovalForMutate
-                && !runState.isPlanApproved()
-                && impliesPlatformMutation(userMessage)) {
-            runState.setPlanPhase(AgentPlanPhase.PLANNING);
-        }
+        // AUTO: keywords must not decide. A how-to that mentions a mimic is still a question,
+        // and only the model can tell. It answers, acts, or finishes with phase=plan.
+        // Mutation tools stay behind plan approval (AgentMutateApprovalGuard). A template hint
+        // is filled in only when a previous turn already opened planning and left the draft empty.
         AgentLitePlanBootstrap.seedDraftPlanIfNeeded(runState, userMessage, requireApprovalForMutate);
         return false;
     }
@@ -241,7 +255,8 @@ final class AgentPlanGuard {
                 }
                 return FinishOutcome.BLOCK_NEEDS_PLAN;
             }
-            if (looksLikePlanPayload(finishResult, runState)) {
+            // Only this finish counts here: a draft left in the session must not block every Execute answer.
+            if (finishPayloadLooksLikePlan(finishResult)) {
                 return FinishOutcome.BLOCK_NEEDS_PLAN;
             }
             return FinishOutcome.ALLOW_EXECUTION;
@@ -289,7 +304,7 @@ final class AgentPlanGuard {
             return FinishOutcome.ALLOW_PLAN;
         }
         if (requiresPlanning(userMessage)
-                && runState.interactionMode() != AgentInteractionMode.EXECUTE
+                && runState.interactionMode() == AgentInteractionMode.PLAN
                 && runState.planPhase() == AgentPlanPhase.NONE) {
             return FinishOutcome.BLOCK_NEEDS_PLAN;
         }
@@ -301,9 +316,17 @@ final class AgentPlanGuard {
             return;
         }
         Map<String, Object> incoming = extractPlanMap(finishResult.get("plan"));
-        Map<String, Object> merged = mergePlans(runState.storedPlan(), incoming);
-        merged = preserveNonEmptyFields(merged, runState.storedPlan());
+        // A seeded template is never merged in: the model's plan replaces it.
+        Map<String, Object> base = AgentLitePlanBootstrap.modelPlan(runState);
+        Map<String, Object> merged = mergePlans(base, incoming);
+        merged = preserveNonEmptyFields(merged, base);
         AgentAnalyticalIntake.mergeFinishIntakeIntoPlan(merged, finishResult);
+        if (!planHasContent(merged)) {
+            // Partial plan with nothing usable yet: keep planning, show no plan panel.
+            finishResult.put("phase", "plan");
+            finishResult.put("interactive", true);
+            return;
+        }
         runState.setStoredPlan(merged);
         finishResult.put("plan", merged);
         AgentAnalyticalIntake.enrichFinishFromPlan(finishResult, merged);
@@ -336,7 +359,7 @@ final class AgentPlanGuard {
                 && planHasContent(extractPlanMap(finishResult.get("plan")))) {
             return true;
         }
-        return !runState.storedPlan().isEmpty() && isInteractiveClarification(finishResult);
+        return !runState.modelPlan().isEmpty() && isInteractiveClarification(finishResult);
     }
 
     /**
@@ -346,7 +369,7 @@ final class AgentPlanGuard {
         if (finishPayloadLooksLikePlan(finishResult)) {
             return true;
         }
-        return runState != null && planHasContent(runState.storedPlan());
+        return planHasContent(AgentLitePlanBootstrap.modelPlan(runState));
     }
 
     /** Plan-shaped fields in the finish payload only (ignores session draft). */
@@ -445,10 +468,14 @@ final class AgentPlanGuard {
     }
 
     static boolean hasStructuredPlanContent(Map<String, Object> finishResult, AgentRunState runState) {
+        // Truncated / partial plan finishes are still a valid planning outcome — UI asks the user to continue.
+        if (finishResult != null && Boolean.TRUE.equals(finishResult.get("planPartial"))) {
+            return true;
+        }
         if (finishResult != null && planHasContent(extractPlanMap(finishResult.get("plan")))) {
             return true;
         }
-        return runState != null && planHasContent(runState.storedPlan());
+        return planHasContent(AgentLitePlanBootstrap.modelPlan(runState));
     }
 
     private static boolean planHasContent(Map<String, Object> plan) {
@@ -577,6 +604,70 @@ final class AgentPlanGuard {
         }
     }
 
+    /**
+     * AUTO turn that answered without changing the platform: no plan opened, no approval, and no
+     * mutating tool attempted (a refused one counts). Build checks for a mimic, alert or workflow
+     * must not reject a plain answer to a question that merely mentions them.
+     * <p>
+     * Still verified: a finish that names built paths, a turn with an unresolved tool error,
+     * a bundle check that reported LOGIC_HOST_DEVICE, and a short reply that only promises a change.
+     */
+    static boolean isAnswerOnlyAutoTurn(
+            AgentRunState runState,
+            Map<String, Object> finishResult,
+            String finishSummary,
+            List<Map<String, Object>> steps
+    ) {
+        if (runState == null || runState.interactionMode() != AgentInteractionMode.AUTO) {
+            return false;
+        }
+        if (runState.isPlanApproved() || runState.isPlanningActive() || runState.isMutationsUnlockedForTurn()) {
+            return false;
+        }
+        if (looksLikeExecutionResult(finishResult) || isPromiseOnlyProse(finishSummary)) {
+            return false;
+        }
+        if (steps == null) {
+            return true;
+        }
+        for (Map<String, Object> step : steps) {
+            Object tool = step != null ? step.get("tool") : null;
+            if (tool == null || String.valueOf(tool).isBlank()) {
+                continue;
+            }
+            String name = String.valueOf(tool).trim().toLowerCase(Locale.ROOT);
+            if (!isReadOnlyTool(name)) {
+                return false;
+            }
+            if (BUNDLE_CHECK_TOOLS.contains(name) && AcceptanceVerdict.containsLogicHostDevice(step.get("result"))) {
+                return false;
+            }
+        }
+        return !hasUnresolvedToolErrors(steps);
+    }
+
+    /** A short reply that announces a change («сейчас создам…», "I'll create…") instead of calling the tool. */
+    static boolean isPromiseOnlyProse(String summary) {
+        if (summary == null) {
+            return false;
+        }
+        String text = summary.strip().replace('\u2019', '\'');
+        if (text.isEmpty() || text.length() > PROMISE_ONLY_MAX_CHARS || text.indexOf('?') >= 0) {
+            return false;
+        }
+        return PROMISED_CHANGE.matcher(text).find();
+    }
+
+    /** A loop-guard refusal of a repeated read is not a failed step: its data is already above. */
+    private static boolean hasUnresolvedToolErrors(List<Map<String, Object>> steps) {
+        List<Map<String, Object>> withoutGuardRefusals = steps.stream()
+                .filter(step -> step != null
+                        && !(step.get("result") instanceof Map<?, ?> result
+                        && Boolean.TRUE.equals(result.get("loopGuardBlocked"))))
+                .toList();
+        return AgentTurnToolErrors.hasUnresolvedErrors(withoutGuardRefusals);
+    }
+
     static boolean restrictsMutations(AgentRunState runState) {
         if (runState == null) {
             return false;
@@ -642,7 +733,7 @@ final class AgentPlanGuard {
         if (runState == null) {
             return false;
         }
-        Map<String, Object> plan = runState.storedPlan();
+        Map<String, Object> plan = runState.modelPlan();
         if (plan == null || plan.isEmpty()) {
             return true;
         }
@@ -677,6 +768,11 @@ final class AgentPlanGuard {
             }
         }
         if (text.startsWith("утверждаю") || text.startsWith("approve")) {
+            return true;
+        }
+        // Short tokens only as the whole message: "go" inside "category" or "mongo" is not approval.
+        String bare = text.replaceAll("[!.\\s]+$", "");
+        if (bare.equals("go") || bare.equals("lfg")) {
             return true;
         }
         if (phase == AgentPlanPhase.AWAITING_APPROVAL && text.length() <= 40) {
@@ -737,6 +833,15 @@ final class AgentPlanGuard {
     ) {
         if (runState == null || runState.interactionMode() != AgentInteractionMode.ASK) {
             return null;
+        }
+        if (lastTool != null
+                && Set.of(
+                        "export_application_bundle",
+                        "validate_bundle",
+                        "dry_run_deploy"
+                ).contains(lastTool)
+                && lastAskToolOk(steps)) {
+            return AgentLoopGuard.bundleHowToFinishHint(lastTool);
         }
         if (lastStepBlockedInAskOrPlanning(steps) || (lastTool != null && !isReadOnlyTool(lastTool))) {
             return """
@@ -913,6 +1018,21 @@ final class AgentPlanGuard {
         String error = String.valueOf(result.get("error"));
         return error.contains("blocked during planning")
                 || error.contains("blocked in Ask mode");
+    }
+
+    private static boolean lastAskToolOk(List<Map<String, Object>> steps) {
+        if (steps == null || steps.isEmpty()) {
+            return false;
+        }
+        Map<String, Object> last = steps.get(steps.size() - 1);
+        if (!"tool".equals(String.valueOf(last.get("type")))) {
+            return false;
+        }
+        Object resultRaw = last.get("result");
+        if (!(resultRaw instanceof Map<?, ?> result)) {
+            return false;
+        }
+        return "OK".equalsIgnoreCase(String.valueOf(result.get("status")));
     }
 
     private static String stringValue(Object raw) {

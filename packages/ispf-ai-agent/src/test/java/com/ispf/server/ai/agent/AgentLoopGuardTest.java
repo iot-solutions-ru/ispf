@@ -77,6 +77,48 @@ class AgentLoopGuardTest {
     }
 
     @Test
+    void askBlocksSecondExportWithoutStoppingFirstOffense() {
+        Map<String, Object> args = Map.of("appId", "demo");
+        List<Map<String, Object>> once = List.of(okStep("export_application_bundle", args));
+        assertTrue(AgentLoopGuard.checkHardBlock("export_application_bundle", args, once).isEmpty());
+        assertTrue(AgentLoopGuard.checkHardBlock(
+                "export_application_bundle",
+                Map.of("appId", "mes-reference"),
+                once,
+                true
+        ).isEmpty());
+
+        var first = AgentLoopGuard.checkHardBlock("export_application_bundle", args, once, true);
+        assertTrue(first.isPresent());
+        assertTrue(first.get().blocked());
+        assertFalse(first.get().stopTurn());
+        assertTrue(first.get().hint().contains("Finish NOW"));
+
+        List<Map<String, Object>> afterGuard = List.of(
+                okStep("export_application_bundle", args),
+                Map.of(
+                        "type", "tool",
+                        "tool", "export_application_bundle",
+                        "arguments", args,
+                        "result", Map.of(
+                                "status", "ERROR",
+                                "loopGuardBlocked", true,
+                                "error", "Hard block"
+                        )
+                )
+        );
+        var second = AgentLoopGuard.checkHardBlock("export_application_bundle", args, afterGuard, true);
+        assertTrue(second.isPresent());
+        assertTrue(second.get().stopTurn());
+
+        AgentRunState ask = new AgentRunState();
+        ask.setInteractionMode(AgentInteractionMode.ASK);
+        String hint = AgentPlanGuard.askModeContinuationHint(ask, once, "export_application_bundle");
+        assertTrue(hint.contains("Finish NOW"));
+        assertTrue(hint.contains("export_application_bundle"));
+    }
+
+    @Test
     void listDriversFingerprintIncludesQueryAndMaturity() {
         String empty = AgentLoopGuard.discoveryArgFingerprint("list_drivers", Map.of());
         String filtered = AgentLoopGuard.discoveryArgFingerprint(
@@ -85,6 +127,156 @@ class AgentLoopGuardTest {
         );
         assertFalse(filtered.isBlank());
         assertTrue(!empty.equals(filtered));
+    }
+
+    @Test
+    void blocksFurtherListDriversAfterUnfilteredOkWithoutStoppingFirstOffense() {
+        List<Map<String, Object>> steps = List.of(okStep("list_drivers", Map.of()));
+        var first = AgentLoopGuard.checkHardBlock(
+                "list_drivers",
+                Map.of("query", "mqtt"),
+                steps
+        );
+        assertTrue(first.isPresent());
+        assertTrue(first.get().blocked());
+        assertFalse(first.get().stopTurn());
+        assertTrue(first.get().hint().toLowerCase(Locale.ROOT).contains("finish"));
+
+        List<Map<String, Object>> afterBlock = List.of(
+                okStep("list_drivers", Map.of()),
+                Map.of(
+                        "type", "tool",
+                        "tool", "list_drivers",
+                        "arguments", Map.of("query", "mqtt"),
+                        "result", Map.of(
+                                "status", "ERROR",
+                                "error", first.get().error(),
+                                "loopGuardBlocked", true
+                        )
+                )
+        );
+        var second = AgentLoopGuard.checkHardBlock(
+                "list_drivers",
+                Map.of("query", "<название протокола>"),
+                afterBlock
+        );
+        assertTrue(second.isPresent());
+        assertTrue(second.get().stopTurn());
+    }
+
+    @Test
+    void placeholderListDriversAfterUnfilteredOkSoftBlocksFirstOffense() {
+        List<Map<String, Object>> steps = List.of(okStep("list_drivers", Map.of()));
+        var decision = AgentLoopGuard.checkHardBlock(
+                "list_drivers",
+                Map.of("query", "<название протокола>"),
+                steps
+        );
+        assertTrue(decision.isPresent());
+        assertTrue(decision.get().blocked());
+        assertFalse(decision.get().stopTurn());
+        assertTrue(decision.get().error().contains("placeholder"));
+    }
+
+    @Test
+    void askRepeatListApplicationsGetsNeutralHintNotBundleHowTo() {
+        List<Map<String, Object>> once = List.of(okStep("list_applications", Map.of()));
+        var block = AgentLoopGuard.checkHardBlock("list_applications", Map.of(), once, true);
+        assertTrue(block.isPresent());
+        assertFalse(block.get().stopTurn());
+        assertTrue(block.get().hint().contains("Application list is already above"));
+        assertFalse(block.get().hint().contains("ispf pack"));
+    }
+
+    @Test
+    void llmRowsDoNotHideRepeatedGroundTruthErrors() {
+        String error = "Cannot create under hmi: parent path was not discovered in this turn: root.platform.mimics";
+        List<Map<String, Object>> steps = List.of(
+                llmStep("create_object"),
+                errorStep("create_object", error),
+                llmStep("list_objects"),
+                toolOnPath("list_objects", "root.platform"),
+                llmStep("create_object"),
+                errorStep("create_object", error),
+                llmStep("create_object")
+        );
+        var block = AgentLoopGuard.checkHardBlock(
+                "create_object",
+                Map.of("parentPath", "root.platform.mimics", "name", "hmi", "type", "MIMIC"),
+                steps
+        );
+        assertTrue(block.isPresent());
+        assertTrue(block.get().error().contains("same ground-truth error"));
+        assertTrue(block.get().hint().contains("list_objects parent=root.platform.mimics"));
+    }
+
+    @Test
+    void llmRowsDoNotHideRepeatedDiscoveryInTheRecentWindow() {
+        List<Map<String, Object>> steps = List.of(
+                llmStep("search_context"),
+                step("search_context", Map.of("query", "a")),
+                llmStep("list_objects"),
+                toolOnPath("list_objects", "root.platform"),
+                llmStep("search_context"),
+                step("search_context", Map.of("query", "b")),
+                llmStep("get_object"),
+                toolOnPath("get_object", "root.platform.devices"),
+                llmStep("search_context"),
+                step("search_context", Map.of("query", "c"))
+        );
+        String hint = AgentLoopGuard.continuationHint("search_context", steps, 96);
+        assertTrue(hint.contains("already above"), hint);
+    }
+
+    @Test
+    void llmRowsDoNotCountTowardTheStepBudgetHint() {
+        List<Map<String, Object>> steps = new ArrayList<>();
+        for (String tool : List.of(
+                "get_object", "list_variables", "describe_variables", "list_functions", "get_function", "set_variable"
+        )) {
+            steps.add(llmStep(tool));
+            steps.add(toolOnPath(tool, "root.platform.devices.demo"));
+        }
+        String hint = AgentLoopGuard.continuationHint("set_variable", steps, 20);
+        assertFalse(hint.contains("Step limit"), hint);
+        assertTrue(hint.startsWith("Continue"), hint);
+    }
+
+    @Test
+    void blocksAngleBracketListDriversQuery() {
+        var first = AgentLoopGuard.checkHardBlock(
+                "list_drivers",
+                Map.of("query", "<название протокола>"),
+                List.of()
+        );
+        assertTrue(first.isPresent());
+        assertFalse(first.get().stopTurn());
+        assertTrue(first.get().error().contains("placeholder"));
+        assertTrue(AgentLoopGuard.looksLikeAngleBracketPlaceholder("<название протокола>"));
+        assertFalse(AgentLoopGuard.looksLikeAngleBracketPlaceholder("mqtt"));
+    }
+
+    @Test
+    void allowsSecondListDriversWhenFirstWasFiltered() {
+        List<Map<String, Object>> steps = List.of(
+                okStep("list_drivers", Map.of("query", "bacnet"))
+        );
+        var block = AgentLoopGuard.checkHardBlock(
+                "list_drivers",
+                Map.of("query", "dnp3"),
+                steps
+        );
+        assertTrue(block.isEmpty());
+    }
+
+    @Test
+    void placeholderQueryDoesNotCreateDistinctListDriversFingerprint() {
+        String empty = AgentLoopGuard.discoveryArgFingerprint("list_drivers", Map.of());
+        String placeholder = AgentLoopGuard.discoveryArgFingerprint(
+                "list_drivers",
+                Map.of("query", "<название протокола>")
+        );
+        assertTrue(empty.equals(placeholder));
     }
 
     @Test
@@ -638,6 +830,23 @@ class AgentLoopGuardTest {
 
     private static Map<String, Object> step(String tool, Map<String, Object> arguments) {
         return Map.of("type", "tool", "tool", tool, "arguments", arguments);
+    }
+
+    private static Map<String, Object> llmStep(String proposedTool) {
+        return Map.of(
+                "type", "llm",
+                "tool", proposedTool,
+                "result", Map.of("status", "OK", "phase", "llm")
+        );
+    }
+
+    private static Map<String, Object> okStep(String tool, Map<String, Object> arguments) {
+        return Map.of(
+                "type", "tool",
+                "tool", tool,
+                "arguments", arguments,
+                "result", Map.of("status", "OK")
+        );
     }
 
     private static Map<String, Object> layoutStep(String path) {

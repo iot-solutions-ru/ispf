@@ -17,8 +17,37 @@ class AgentAskPromptBuilderTest {
         assertThat(prompt).doesNotContain("specIntakeGuide");
         assertThat(prompt).doesNotContain("Утвердить полный план");
         assertThat(prompt).contains("FINISH FROM BRIEFING");
+        assertThat(prompt).contains("Platform overview");
+        assertThat(prompt).contains("NEVER put angle-bracket placeholders");
+        assertThat(prompt).contains("switch to Execute");
         assertThat(prompt).contains("Knowledge index");
+        assertThat(prompt).contains("Do NOT re-call export_application_bundle");
+        assertThat(prompt).contains("Finish NOW");
+        assertThat(prompt).doesNotContain("query=<");
         assertThat(prompt).doesNotContain("## Reference playbooks");
+    }
+
+    @Test
+    void askWithPlaybooksFlagStillOptionalButDefaultPathIsCompact() {
+        String withBooks = AgentAskPromptBuilder.build(
+                "root",
+                sampleCatalog(),
+                "",
+                false,
+                "",
+                true
+        );
+        assertThat(withBooks).contains("## Reference playbooks");
+        String compact = AgentAskPromptBuilder.build(
+                "root",
+                sampleCatalog(),
+                "",
+                false,
+                "",
+                false
+        );
+        assertThat(compact).doesNotContain("## Reference playbooks");
+        assertThat(compact.length()).isLessThan(withBooks.length() / 2);
     }
 
     @Test

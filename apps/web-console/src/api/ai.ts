@@ -80,7 +80,7 @@ export interface AiAgentTool {
 
 export interface AiAgentStep {
   step: number;
-  type: "tool" | "finish" | "error" | "guard";
+  type: "tool" | "finish" | "error" | "guard" | "status" | "llm";
   tool?: string;
   label?: string;
   arguments?: Record<string, unknown>;
@@ -958,7 +958,7 @@ export function subscribeAgentRunProgress(
   };
 
   tick();
-  const timer = setInterval(tick, 500);
+  const timer = setInterval(tick, 250);
   return () => {
     cancelled = true;
     clearInterval(timer);

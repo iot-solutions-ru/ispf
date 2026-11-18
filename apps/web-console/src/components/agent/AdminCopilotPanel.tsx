@@ -190,7 +190,7 @@ export default function AdminCopilotPanel({ open, onClose }: AdminCopilotPanelPr
   const providerReady = provider?.available ?? false;
   const focus = focusRegistry?.focus ?? null;
   const chip = formatAdminFocusChip(focus, focusRegistry?.focusTrail);
-  const toolStepCount = liveSteps.filter((s) => s.type === "tool").length;
+  const toolStepCount = liveSteps.filter((s) => s.type === "tool" || s.type === "llm").length;
   const suggestionKeys = useMemo(() => suggestionKeysForFocus(focus), [focus]);
 
   const handleSend = useCallback(

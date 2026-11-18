@@ -16,15 +16,34 @@ public class AiProperties {
     private int timeoutSeconds = 600;
     private int maxTokens = 65536;
     /** Max completion tokens per agent turn (env can raise for huge sectional plans). */
-    private int agentMaxTokens = 16_384;
+    private int agentMaxTokens = 8_192;
+    /**
+     * Ask-mode completion cap. Lower than {@link #agentMaxTokens} so Q&amp;A cannot burn minutes
+     * generating up to the Execute ceiling (demostand saw 16k-token / 3+ minute rounds).
+     */
+    private int agentAskMaxTokens = 2_048;
     private double temperature = 0.0;
     private String contextPackClasspath = "classpath:ai/context-pack.json";
     private int agentMaxSteps = 256;
     private int agentSessionTtlHours = 24;
     private int agentMaxHistoryTurns = 24;
+    /** Ask keeps a shorter history window to cut prefill. */
+    private int agentAskMaxHistoryTurns = 6;
     private boolean agentDisableThinking = true;
     /** Native tool calling mode: auto, on, or off. */
     private String agentNativeTools = "auto";
+    /**
+     * Ask uses the JSON tool protocol in the system prompt; native OpenAI tools+schemas double the
+     * prefill (often +10–20k tokens). Default off for Ask regardless of {@link #agentNativeTools}.
+     */
+    private boolean agentAskNativeTools = false;
+    /** Live token preview in the agent progress panel. */
+    private boolean agentStreamTokens = true;
+    /**
+     * When rule checks would block finish without a hard failure, one model call sees the
+     * request, the proposed answer, and the steps, and may waive a false rework.
+     */
+    private boolean agentLlmJudge = true;
     private int agentParseRetries = 2;
     private int briefingMaxChars = 32_768;
     private boolean briefingEveryTurn = false;
@@ -117,6 +136,16 @@ public class AiProperties {
         this.agentMaxTokens = agentMaxTokens;
     }
 
+    public int getAgentAskMaxTokens() {
+        int ask = agentAskMaxTokens > 0 ? agentAskMaxTokens : 2_048;
+        int exec = getAgentMaxTokens();
+        return Math.min(ask, exec);
+    }
+
+    public void setAgentAskMaxTokens(int agentAskMaxTokens) {
+        this.agentAskMaxTokens = agentAskMaxTokens;
+    }
+
     public double getTemperature() {
         return temperature;
     }
@@ -157,6 +186,16 @@ public class AiProperties {
         this.agentMaxHistoryTurns = agentMaxHistoryTurns;
     }
 
+    public int getAgentAskMaxHistoryTurns() {
+        int ask = agentAskMaxHistoryTurns > 0 ? agentAskMaxHistoryTurns : 6;
+        int exec = Math.max(1, agentMaxHistoryTurns);
+        return Math.min(ask, exec);
+    }
+
+    public void setAgentAskMaxHistoryTurns(int agentAskMaxHistoryTurns) {
+        this.agentAskMaxHistoryTurns = agentAskMaxHistoryTurns;
+    }
+
     public boolean isAgentDisableThinking() {
         return agentDisableThinking;
     }
@@ -171,6 +210,30 @@ public class AiProperties {
 
     public void setAgentNativeTools(String agentNativeTools) {
         this.agentNativeTools = agentNativeTools;
+    }
+
+    public boolean isAgentAskNativeTools() {
+        return agentAskNativeTools;
+    }
+
+    public void setAgentAskNativeTools(boolean agentAskNativeTools) {
+        this.agentAskNativeTools = agentAskNativeTools;
+    }
+
+    public boolean isAgentStreamTokens() {
+        return agentStreamTokens;
+    }
+
+    public void setAgentStreamTokens(boolean agentStreamTokens) {
+        this.agentStreamTokens = agentStreamTokens;
+    }
+
+    public boolean isAgentLlmJudge() {
+        return agentLlmJudge;
+    }
+
+    public void setAgentLlmJudge(boolean agentLlmJudge) {
+        this.agentLlmJudge = agentLlmJudge;
     }
 
     public int getAgentParseRetries() {

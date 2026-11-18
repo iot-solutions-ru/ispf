@@ -1,6 +1,7 @@
 package com.ispf.server.ai.agent;
 
 import java.time.Instant;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,10 +35,24 @@ public final class AgentTurn {
         this.assistantSummary = assistantSummary;
         this.status = status;
         this.steps = steps != null ? List.copyOf(steps) : List.of();
-        this.result = result != null ? Map.copyOf(result) : Map.of();
+        this.result = withoutNullValues(result);
         this.attachments = attachments != null ? List.copyOf(attachments) : List.of();
         this.interactionMode = interactionMode;
         this.createdAt = createdAt != null ? createdAt : Instant.now();
+    }
+
+    /** Model output such as {@code "suggestions":null} must not make the turn unpersistable. */
+    private static Map<String, Object> withoutNullValues(Map<String, Object> result) {
+        if (result == null || result.isEmpty()) {
+            return Map.of();
+        }
+        Map<String, Object> copy = new LinkedHashMap<>();
+        result.forEach((key, value) -> {
+            if (key != null && value != null) {
+                copy.put(key, value);
+            }
+        });
+        return Collections.unmodifiableMap(copy);
     }
 
     public static AgentTurn create(

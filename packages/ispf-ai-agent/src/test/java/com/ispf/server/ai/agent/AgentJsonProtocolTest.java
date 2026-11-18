@@ -5,6 +5,7 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -28,6 +29,71 @@ class AgentJsonProtocolTest {
         assertEquals("tool", action.type());
         assertEquals("list_objects", action.toolName());
         assertEquals("root.platform.devices", action.arguments().get("parent"));
+    }
+
+    @Test
+    void runsTheFirstCanonicalToolWhenTheModelListsSeveral() throws Exception {
+        String content = """
+                {"type":"tool","name":"create_virtual_device","arguments":{"parentPath":"root.platform.devices","name":"audit-sensor-01"}}
+                {"type":"tool","name":"list_variables","arguments":{"path":"root.platform.devices.audit-sensor-01"}}
+                """;
+        AgentJsonProtocol.AgentAction action = AgentJsonProtocol.parse(objectMapper, content);
+        assertEquals("create_virtual_device", action.toolName());
+    }
+
+    @Test
+    void skipsAProseTemplateBeforeTheRealAction() throws Exception {
+        String content = """
+                Формат: {"type":"tool","name":"<tool>","arguments":{}}
+                {"type":"tool","name":"list_drivers","arguments":{}}
+                """;
+        AgentJsonProtocol.AgentAction action = AgentJsonProtocol.parse(objectMapper, content);
+        assertEquals("list_drivers", action.toolName());
+    }
+
+    @Test
+    void illustrativeJsonFenceInProseDoesNotHideTheTrailingFinish() throws Exception {
+        String content = "Пример настройки драйвера:\n```json\n{\"port\": 502}\n```\n"
+                + "{\"type\":\"finish\",\"summary\":\"Готово\"}";
+        AgentJsonProtocol.AgentAction action = AgentJsonProtocol.parse(objectMapper, content);
+        assertEquals("finish", action.type());
+        assertEquals("Готово", action.summary());
+    }
+
+    @Test
+    void jsonFenceInsideSummaryAfterPrefaceIsNotExtracted() throws Exception {
+        String content = "Ответ:\n{\"type\":\"finish\",\"summary\":\"Манифест:\\n```json\\n{\\\"appId\\\":\\\"mes\\\"}\\n```\"}";
+        AgentJsonProtocol.AgentAction action = AgentJsonProtocol.parse(objectMapper, content);
+        assertEquals("finish", action.type());
+        assertTrue(action.summary().contains("appId"));
+    }
+
+    @Test
+    void plainAnswerKeepsItsJsonExample() {
+        String content = "Создайте переменную так:\n\n```json\n{\"name\":\"temperature\",\"type\":\"DOUBLE\"}\n```\n\nЗатем привяжите её к виджету.";
+        Optional<AgentJsonProtocol.AgentAction> plain = AgentJsonProtocol.tryParsePlainTextFinish(content);
+        assertTrue(plain.isPresent());
+        assertEquals(content, plain.get().summary());
+        assertTrue(AgentJsonProtocol.tryParsePlainTextFinish(
+                "Проверю объекты.\n<tool_call>\n{\"name\":\"list_objects\",\"arguments\":{broken}\n</tool_call>").isEmpty());
+    }
+
+    @Test
+    void salvagedTruncatedFinishUnescapesNewlinesAndUnicode() {
+        String content = "{\"type\":\"finish\",\"summary\":\"Шаг 1\\nШаг 2 \\u041f\\u0443\\u043b\\u044c\\u0442 и ещё текст который обрез";
+        Optional<AgentJsonProtocol.AgentAction> salvaged =
+                AgentJsonProtocol.trySalvageTruncatedFinish(objectMapper, content, "ru");
+        assertTrue(salvaged.isPresent());
+        assertTrue(salvaged.get().summary().startsWith("Шаг 1\nШаг 2 Пульт"), salvaged.get().summary());
+    }
+
+    @Test
+    void proseBeforeActionKeepsTheStreamedAnswer() {
+        String content = "### Создание мнемосхемы\n\n1. Создайте объект MIMIC.\n2. Добавьте элементы.\n"
+                + "{\"type\":\"finish\",\"summary\":\"\"}";
+        assertEquals("### Создание мнемосхемы\n\n1. Создайте объект MIMIC.\n2. Добавьте элементы.",
+                AgentJsonProtocol.proseBeforeAction(content));
+        assertNull(AgentJsonProtocol.proseBeforeAction("{\"type\":\"finish\",\"summary\":\"\"}"));
     }
 
     @Test
@@ -89,6 +155,21 @@ class AgentJsonProtocolTest {
     }
 
     @Test
+    void finishToolKeepsTopLevelSummary() throws Exception {
+        String content = """
+                {"type":"tool","name":"finish","summary":"Создано устройство audit-exec-01.","result":{"devicePath":"root.platform.devices.audit-exec-01"}}
+                """;
+        AgentJsonProtocol.AgentAction action = AgentJsonProtocol.parse(objectMapper, content);
+        assertEquals("finish", action.type());
+        assertEquals("Создано устройство audit-exec-01.", action.summary());
+        assertEquals("root.platform.devices.audit-exec-01", action.result().get("devicePath"));
+
+        AgentJsonProtocol.AgentAction nested = AgentJsonProtocol.parse(objectMapper,
+                "{\"type\":\"tool\",\"name\":\"finish\",\"arguments\":{\"summary\":\"Готово, всё сделано.\"}}");
+        assertEquals("Готово, всё сделано.", nested.summary());
+    }
+
+    @Test
     void parsesFunctionStyleToolCall() throws Exception {
         String content = """
                 {"type":"function","name":"add_dashboard_widget","parameters":{"path":"root.platform.dashboards.snmp-host-monitoring","widget":{"id":"if-speed"}}}
@@ -106,6 +187,30 @@ class AgentJsonProtocolTest {
                 """;
         AgentJsonProtocol.AgentAction action = AgentJsonProtocol.parse(objectMapper, content);
         assertEquals("list_variables", action.toolName());
+    }
+
+    @Test
+    void parsesToolNameInTypeField() throws Exception {
+        String content = """
+                {"type":"search_context","arguments":{"query":"snmp agent monitoring","topic":"drivers"}}
+                """;
+        AgentJsonProtocol.AgentAction action = AgentJsonProtocol.parse(objectMapper, content);
+        assertEquals("tool", action.type());
+        assertEquals("search_context", action.toolName());
+        assertEquals("snmp agent monitoring", action.arguments().get("query"));
+        assertEquals("drivers", action.arguments().get("topic"));
+    }
+
+    @Test
+    void takesFirstToolWhenModelDumpsSeveralShorthandActions() throws Exception {
+        String content = """
+                {"type":"search_context","arguments":{"query":"snmp agent monitoring","topic":"drivers"}}
+                {"type":"list_objects","arguments":{"parentPath":"root.platform.devices","lite":true}}
+                """;
+        AgentJsonProtocol.AgentAction action = AgentJsonProtocol.parse(objectMapper, content);
+        assertEquals("tool", action.type());
+        assertEquals("search_context", action.toolName());
+        assertEquals("drivers", action.arguments().get("topic"));
     }
 
     @Test
@@ -227,6 +332,59 @@ class AgentJsonProtocolTest {
         AgentJsonProtocol.AgentAction action = AgentJsonProtocol.parse(objectMapper, content);
         assertEquals("list_objects", action.toolName());
         assertEquals("root.platform.devices", action.arguments().get("parent"));
+    }
+
+    @Test
+    void coercesToolShapedFinishIntoFinishAction() throws Exception {
+        String content = """
+                {"type":"tool","name":"finish","arguments":{"summary":"Готово","result":{"phase":"plan","interactive":true}}}
+                """;
+        AgentJsonProtocol.AgentAction action = AgentJsonProtocol.parse(objectMapper, content);
+        assertEquals("finish", action.type());
+        assertNull(action.toolName());
+        assertEquals("Готово", action.summary());
+        assertEquals("plan", action.result().get("phase"));
+    }
+
+    @Test
+    void normalizeActionRemapsFinishToolName() {
+        AgentJsonProtocol.AgentAction raw = new AgentJsonProtocol.AgentAction(
+                "tool",
+                "finish",
+                Map.of("summary", "Done", "result", Map.of("ok", true)),
+                null,
+                null
+        );
+        AgentJsonProtocol.AgentAction normalized = AgentJsonProtocol.normalizeAction(raw);
+        assertEquals("finish", normalized.type());
+        assertEquals("Done", normalized.summary());
+        assertEquals(true, normalized.result().get("ok"));
+    }
+
+    @Test
+    void salvagesTruncatedPlanWithoutTypeFinishWhenPhasePresent() {
+        String truncated = """
+                {"phase":"plan","interactive":true,"plan":{"goal":"SNMP dashboard","sections":[{"id":"ground_truth","title":"Discovery","summary":"list","steps":["list_objects parent=root.platform.dashboards"]},{"id":"build","title":"Build","summary":"create
+                """;
+        var salvaged = AgentJsonProtocol.trySalvageTruncatedFinish(objectMapper, truncated, "ru", true);
+        assertTrue(salvaged.isPresent());
+        assertEquals("finish", salvaged.get().type());
+        assertTrue(Boolean.TRUE.equals(salvaged.get().result().get("planPartial")));
+        @SuppressWarnings("unchecked")
+        Map<String, Object> plan = (Map<String, Object>) salvaged.get().result().get("plan");
+        assertEquals("SNMP dashboard", plan.get("goal"));
+    }
+
+    @Test
+    void doesNotStampPlanPhaseWhenSalvagingTruncatedExecutionFinish() {
+        String truncated = """
+                {"type":"finish","summary":"Dashboard updated on root.platform.dashboards.snmp-host-dashboard with
+                """;
+        var salvaged = AgentJsonProtocol.trySalvageTruncatedFinish(objectMapper, truncated, "en", false);
+        assertTrue(salvaged.isPresent());
+        assertEquals("finish", salvaged.get().type());
+        assertTrue(salvaged.get().result() == null || salvaged.get().result().isEmpty()
+                || !salvaged.get().result().containsKey("phase"));
     }
 
     @Test

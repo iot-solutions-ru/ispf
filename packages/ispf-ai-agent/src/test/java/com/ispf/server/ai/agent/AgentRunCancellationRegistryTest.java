@@ -35,6 +35,44 @@ class AgentRunCancellationRegistryTest {
     }
 
     @Test
+    void upsertStepReplacesTheRowWithTheSameStreamKey() {
+        AgentRunCancellationRegistry registry = new AgentRunCancellationRegistry();
+        String sessionId = "sess-stream";
+        var handle = registry.start(sessionId, "hello", Map.of());
+        registry.upsertStep(sessionId, "llm-1", Map.of(
+                "step", 1,
+                "type", "llm",
+                "rawPreview", "Hel",
+                "result", Map.of("status", "RUNNING")
+        ));
+        registry.upsertStep(sessionId, "llm-1", Map.of(
+                "step", 1,
+                "type", "llm",
+                "rawPreview", "Hello",
+                "result", Map.of("status", "RUNNING")
+        ));
+        @SuppressWarnings("unchecked")
+        var steps = (java.util.List<Map<String, Object>>) registry.progress(sessionId).get("steps");
+        assertThat(steps).hasSize(1);
+        assertThat(steps.get(0)).containsEntry("rawPreview", "Hello").containsEntry("streamKey", "llm-1");
+        handle.close();
+    }
+
+    @Test
+    void stepsCompletedCountsActionRowsNotLiveDialogue() {
+        AgentRunCancellationRegistry registry = new AgentRunCancellationRegistry();
+        String sessionId = "sess-budget";
+        var handle = registry.start(sessionId, "hello", Map.of());
+        registry.recordStep(sessionId, Map.of("step", 1, "type", "status", "label", "Waiting for the model"));
+        registry.upsertStep(sessionId, "llm-1", Map.of("step", 1, "type", "llm", "rawPreview", "tool list_objects"));
+        registry.recordStep(sessionId, Map.of("step", 2, "type", "tool", "tool", "list_objects"));
+        registry.recordStep(sessionId, Map.of("step", 3, "type", "guard", "error", "Finish blocked"));
+        assertThat(registry.progress(sessionId).get("stepsCompleted")).isEqualTo(2);
+        handle.close();
+        assertThat(registry.progress(sessionId).get("stepsCompleted")).isEqualTo(2);
+    }
+
+    @Test
     void closeRemovesOnlyOwnRunState() {
         AgentRunCancellationRegistry registry = new AgentRunCancellationRegistry();
         String sessionId = "sess-replace";

@@ -2581,6 +2581,37 @@
   padding: 0;
 }
 
+.ai-agent-step-llm {
+  margin-bottom: 0.55rem;
+}
+
+.ai-agent-step-status {
+  list-style: none;
+  margin-left: -1.1rem;
+}
+
+.ai-agent-llm-preview {
+  display: block;
+  margin: 0.35rem 0 0.15rem;
+  padding: 0.45rem 0.55rem;
+  max-height: 10rem;
+  overflow: auto;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  border-radius: 6px;
+  border: 1px solid var(--border-subtle, rgba(127, 127, 127, 0.25));
+  background: var(--panel-bg, rgba(0, 0, 0, 0.08));
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--text-muted, inherit);
+  font-style: italic;
+}
+
+.ai-agent-llm-live {
+  font-style: normal;
+  color: var(--text, inherit);
+}
+
 .ai-agent-diagnostic-list {
   margin: 0.5rem 0 0.75rem;
   padding: 0;

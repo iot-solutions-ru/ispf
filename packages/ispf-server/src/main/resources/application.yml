@@ -594,7 +594,8 @@ ispf:
     api-key-env: ${ISPF_AI_API_KEY_ENV:OPENAI_API_KEY}
     timeout-seconds: ${ISPF_AI_TIMEOUT_SECONDS:600}
     max-tokens: ${ISPF_AI_MAX_TOKENS:65536}
-    agent-max-tokens: ${ISPF_AI_AGENT_MAX_TOKENS:16384}
+    agent-max-tokens: ${ISPF_AI_AGENT_MAX_TOKENS:8192}
+    agent-ask-max-tokens: ${ISPF_AI_AGENT_ASK_MAX_TOKENS:2048}
     temperature: ${ISPF_AI_TEMPERATURE:0}
     context-pack-classpath: classpath:ai/context-pack.json
     agent-max-steps: ${ISPF_AI_AGENT_MAX_STEPS:256}
@@ -603,11 +604,15 @@ ispf:
     agent-max-attachment-bytes: ${ISPF_AI_AGENT_MAX_ATTACHMENT_BYTES:33554432}
     agent-session-ttl-hours: ${ISPF_AI_AGENT_SESSION_TTL_HOURS:24}
     agent-max-history-turns: ${ISPF_AI_AGENT_MAX_HISTORY_TURNS:24}
+    agent-ask-max-history-turns: ${ISPF_AI_AGENT_ASK_MAX_HISTORY_TURNS:6}
     agent-max-concurrent-turns-per-user: ${ISPF_AI_AGENT_MAX_CONCURRENT_TURNS:2}
     agent-max-turns-per-hour-per-user: ${ISPF_AI_AGENT_MAX_TURNS_PER_HOUR:120}
     agent-eviction-interval-ms: ${ISPF_AI_AGENT_EVICTION_INTERVAL_MS:3600000}
     agent-disable-thinking: ${ISPF_AI_AGENT_DISABLE_THINKING:true}
     agent-native-tools: ${ISPF_AI_AGENT_NATIVE_TOOLS:auto}
+    agent-ask-native-tools: ${ISPF_AI_AGENT_ASK_NATIVE_TOOLS:false}
+    agent-stream-tokens: ${ISPF_AI_AGENT_STREAM_TOKENS:true}
+    agent-llm-judge: ${ISPF_AI_AGENT_LLM_JUDGE:true}
     agent-require-approval-for-mutate: ${ISPF_AI_AGENT_REQUIRE_APPROVAL_FOR_MUTATE:true}
     briefing-every-turn: ${ISPF_AI_BRIEFING_EVERY_TURN:false}
   reports:

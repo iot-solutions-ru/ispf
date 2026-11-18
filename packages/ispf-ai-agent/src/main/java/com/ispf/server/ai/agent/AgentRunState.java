@@ -183,6 +183,12 @@ public final class AgentRunState {
         return storedPlan == null ? Map.of() : Map.copyOf(storedPlan);
     }
 
+    /** Plan the model wrote; a seeded template draft (draftSource=template) is only a prompt hint. */
+    public Map<String, Object> modelPlan() {
+        Map<String, Object> plan = storedPlan();
+        return "template".equals(plan.get("draftSource")) ? Map.of() : plan;
+    }
+
     public void setStoredPlan(Map<String, Object> plan) {
         this.storedPlan = plan == null || plan.isEmpty() ? Map.of() : Map.copyOf(plan);
     }
@@ -244,8 +250,9 @@ public final class AgentRunState {
         if (planApprovedBy != null && !planApprovedBy.isBlank()) {
             summary.put("planApprovedBy", planApprovedBy);
         }
-        if (storedPlan != null && !storedPlan.isEmpty()) {
-            summary.put("plan", Map.copyOf(storedPlan));
+        Map<String, Object> plan = modelPlan();
+        if (!plan.isEmpty()) {
+            summary.put("plan", plan);
         }
         if (handoffId != null) {
             summary.put("handoffId", handoffId);

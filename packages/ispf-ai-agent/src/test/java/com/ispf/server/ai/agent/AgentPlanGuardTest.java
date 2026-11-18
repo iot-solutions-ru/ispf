@@ -11,11 +11,31 @@ import static org.assertj.core.api.Assertions.assertThat;
 class AgentPlanGuardTest {
 
     @Test
-    void autoModeEntersPlanningForScadaRequest() {
+    void autoModeLeavesTheDecisionToTheModel() {
         AgentRunState state = new AgentRunState();
         state.setInteractionMode(AgentInteractionMode.AUTO);
-        AgentPlanGuard.beginTurn(state, "Создай SCADA мнемосхему насосной станции с дашбордом", AgentProfile.ADMIN);
-        assertThat(state.planPhase()).isEqualTo(AgentPlanPhase.PLANNING);
+        AgentPlanGuard.beginTurn(
+                state,
+                "Как создать мнемосхему на платформе? Объясни по шагам.",
+                AgentProfile.ADMIN,
+                true,
+                null
+        );
+        assertThat(state.planPhase()).isEqualTo(AgentPlanPhase.NONE);
+        assertThat(state.storedPlan()).isEmpty();
+
+        AgentPlanGuard.beginTurn(state, "Создай SCADA мнемосхему насосной станции с дашбордом", AgentProfile.ADMIN, true, null);
+        assertThat(state.planPhase()).isEqualTo(AgentPlanPhase.NONE);
+
+        Map<String, Object> answer = new java.util.LinkedHashMap<>();
+        answer.put("summary", "Мнемосхему собирают так.");
+        assertThat(AgentPlanGuard.evaluateFinish(
+                state, answer, List.of(), "Как создать мнемосхему на платформе? Объясни по шагам.", AgentProfile.ADMIN
+        )).isEqualTo(AgentPlanGuard.FinishOutcome.ALLOW_EXECUTION);
+
+        String prompt = AgentPlanPromptSection.forRunState(state);
+        assertThat(prompt).contains("you decide");
+        assertThat(prompt).contains("still a question");
     }
 
     @Test
@@ -49,6 +69,30 @@ class AgentPlanGuardTest {
         state.setPlanPhase(AgentPlanPhase.AWAITING_APPROVAL);
         AgentPlanGuard.beginTurn(state, "Утверждаю план, начинай выполнение", AgentProfile.ADMIN);
         assertThat(state.isPlanApproved()).isTrue();
+    }
+
+    @Test
+    void shortApprovalTokensCountOnlyAsTheWholeMessage() {
+        assertThat(AgentPlanGuard.isApprovalMessage("go")).isTrue();
+        assertThat(AgentPlanGuard.isApprovalMessage("Go!")).isTrue();
+        assertThat(AgentPlanGuard.isApprovalMessage("Какая category у драйвера mongo?")).isFalse();
+        assertThat(AgentPlanGuard.isApprovalMessage("Покажи algorithm в Django")).isFalse();
+        assertThat(AgentPlanGuard.isApprovalMessage("go ahead")).isTrue();
+    }
+
+    @Test
+    void executeFinishIsNotBlockedByAPlanLeftInTheSession() {
+        AgentRunState state = new AgentRunState();
+        state.setInteractionMode(AgentInteractionMode.EXECUTE);
+        state.setStoredPlan(Map.of("goal", "NPS SCADA", "steps", List.of(Map.of("title", "Создать насос"))));
+        var outcome = AgentPlanGuard.evaluateFinish(
+                state,
+                Map.of(),
+                List.of(toolStep("list_objects")),
+                "Покажи список устройств",
+                AgentProfile.ADMIN
+        );
+        assertThat(outcome).isEqualTo(AgentPlanGuard.FinishOutcome.ALLOW_EXECUTION);
     }
 
     @Test
@@ -199,6 +243,116 @@ class AgentPlanGuardTest {
                 state, finish, List.of(), "Какие устройства есть?", AgentProfile.ADMIN
         );
         assertThat(outcome).isEqualTo(AgentPlanGuard.FinishOutcome.ALLOW_EXECUTION);
+    }
+
+    @Test
+    void autoAnswerTurnWithoutMutationIsAnswerOnly() {
+        AgentRunState state = new AgentRunState();
+        state.setInteractionMode(AgentInteractionMode.AUTO);
+        AgentPlanGuard.beginTurn(state, "Почему не работает мнемосхема?", AgentProfile.ADMIN);
+        String answer = "Мнемосхема не обновляется: у элементов нет привязки к переменным.";
+        assertThat(AgentPlanGuard.isAnswerOnlyAutoTurn(state, Map.of(), answer, List.of(toolStep("list_objects"))))
+                .isTrue();
+        assertThat(AgentPlanGuard.isAnswerOnlyAutoTurn(state, Map.of(), answer, List.of(toolStep("create_object"))))
+                .isFalse();
+        assertThat(AgentPlanGuard.isAnswerOnlyAutoTurn(state, Map.of(), answer, List.of(toolStep("set_variable"))))
+                .isFalse();
+
+        state.setPlanPhase(AgentPlanPhase.PLANNING);
+        assertThat(AgentPlanGuard.isAnswerOnlyAutoTurn(state, Map.of(), answer, List.of())).isFalse();
+    }
+
+    @Test
+    void autoAnswerOnlyStillVerifiesClaimsErrorsLogicHostAndPromises() {
+        AgentRunState state = new AgentRunState();
+        state.setInteractionMode(AgentInteractionMode.AUTO);
+        AgentPlanGuard.beginTurn(state, "Создай виртуальное устройство demo", AgentProfile.ADMIN);
+        String answer = "Виртуальные устройства создают через create_virtual_device.";
+
+        assertThat(AgentPlanGuard.isAnswerOnlyAutoTurn(
+                state, Map.of("devicePath", "root.platform.devices.demo"), "Готово.", List.of()
+        )).isFalse();
+
+        Map<String, Object> failedRead = Map.of(
+                "type", "tool",
+                "tool", "get_object",
+                "arguments", Map.of("path", "root.platform.devices.demo"),
+                "result", Map.of("status", "ERROR", "error", "Object not found: root.platform.devices.demo")
+        );
+        assertThat(AgentPlanGuard.isAnswerOnlyAutoTurn(state, Map.of(), answer, List.of(failedRead))).isFalse();
+
+        Map<String, Object> deviceHostedLogic = Map.of(
+                "type", "tool",
+                "tool", "validate_bundle",
+                "arguments", Map.of("appId", "demo"),
+                "result", Map.of(
+                        "status", "OK",
+                        "issues", List.of(Map.of("code", "LOGIC_HOST_DEVICE", "severity", "WARNING"))
+                )
+        );
+        assertThat(AgentPlanGuard.isAnswerOnlyAutoTurn(state, Map.of(), answer, List.of(deviceHostedLogic)))
+                .isFalse();
+
+        assertThat(AgentPlanGuard.isAnswerOnlyAutoTurn(
+                state, Map.of(), "Хорошо, сейчас создам виртуальное устройство demo.", List.of()
+        )).isFalse();
+        assertThat(AgentPlanGuard.isAnswerOnlyAutoTurn(
+                state, Map.of(), "Sure, I’ll create the virtual device now.", List.of()
+        )).isFalse();
+    }
+
+    @Test
+    void autoAnswerOnlyKeepsQuestionsOffersAndLoopGuardRefusals() {
+        AgentRunState state = new AgentRunState();
+        state.setInteractionMode(AgentInteractionMode.AUTO);
+        AgentPlanGuard.beginTurn(state, "Какие драйверы есть?", AgentProfile.ADMIN);
+        Map<String, Object> inventory = Map.of(
+                "type", "tool",
+                "tool", "list_drivers",
+                "arguments", Map.of(),
+                "result", Map.of("status", "OK")
+        );
+        Map<String, Object> refusal = Map.of(
+                "type", "tool",
+                "tool", "list_drivers",
+                "arguments", Map.of("query", "<название протокола>"),
+                "result", Map.of(
+                        "status", "ERROR",
+                        "loopGuardBlocked", true,
+                        "error", "Hard block: list_drivers query looks like a prompt placeholder"
+                )
+        );
+        assertThat(AgentPlanGuard.isAnswerOnlyAutoTurn(
+                state, Map.of(), "Доступны драйверы: virtual, modbus, mqtt.", List.of(inventory, refusal)
+        )).isTrue();
+
+        assertThat(AgentPlanGuard.isAnswerOnlyAutoTurn(
+                state, Map.of(), "Мнемосхему собирают в SCADA-редакторе. Хотите, создам её?", List.of()
+        )).isTrue();
+        String howTo = "Мнемосхему создают так: откройте раздел SCADA, нажмите «Новая мнемосхема», "
+                + "перетащите символы насосов и резервуаров из палитры, затем привяжите каждый символ "
+                + "к переменной устройства через панель свойств: objectPath и variableName. "
+                + "Сохраните схему и добавьте на дашборд виджет scada-mimic с mimicPath этой схемы. "
+                + "Проверьте в режиме просмотра, что значения обновляются, а для тревог настройте "
+                + "configure_alert на ту же переменную. Если нужно, создам её.";
+        assertThat(howTo.length()).isGreaterThan(400);
+        assertThat(AgentPlanGuard.isAnswerOnlyAutoTurn(state, Map.of(), howTo, List.of())).isTrue();
+        assertThat(AgentPlanGuard.isPromiseOnlyProse("Нужно развернуть приложение через import_package.")).isFalse();
+    }
+
+    @Test
+    void askListApplicationsInventoryIsNotABundleHowTo() {
+        AgentRunState state = new AgentRunState();
+        state.setInteractionMode(AgentInteractionMode.ASK);
+        Map<String, Object> listed = Map.of(
+                "type", "tool",
+                "tool", "list_applications",
+                "arguments", Map.of(),
+                "result", Map.of("status", "OK")
+        );
+        String hint = AgentPlanGuard.askModeContinuationHint(state, List.of(listed), "list_applications");
+        assertThat(hint).contains("Ask mode");
+        assertThat(hint).doesNotContain("ispf pack");
     }
 
     @Test

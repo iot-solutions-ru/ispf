@@ -1,5 +1,6 @@
 package com.ispf.server.ai.agent;
 
+import com.ispf.ai.LlmException;
 import com.ispf.ai.LlmMessage;
 import com.ispf.ai.LlmProvider;
 import com.ispf.ai.LlmRequest;
@@ -33,6 +34,7 @@ import tools.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -98,6 +100,7 @@ class TreeFirstAgentServiceSessionTest {
         aiProperties.setModel("test-model");
         aiProperties.setAgentMaxSteps(96);
         aiProperties.setAgentMaxHistoryTurns(20);
+        aiProperties.setAgentStreamTokens(false);
         cancellationRegistry = new AgentRunCancellationRegistry();
 
         agentService = new TreeFirstAgentService(
@@ -207,11 +210,29 @@ class TreeFirstAgentServiceSessionTest {
                 ));
 
         AgentSession session = AgentSession.create("admin", "root");
+        session.runState().setInteractionMode(AgentInteractionMode.EXECUTE);
         var auth = new UsernamePasswordAuthenticationToken("admin", "secret");
         Map<String, Object> result = agentService.runTurn(session, "list devices", auth, "admin");
 
         assertEquals("OK", result.get("status"));
         verify(llmProviderRegistry, org.mockito.Mockito.times(2)).complete(any());
+    }
+
+    @Test
+    void autoProseReplyIsTheAnswerWithoutASecondCall() throws Exception {
+        when(llmProviderRegistry.complete(any())).thenReturn(new LlmResponse(
+                "Привет! Чем могу помочь?",
+                "test-model",
+                new LlmUsage(1, 1, 2)
+        ));
+
+        AgentSession session = AgentSession.create("admin", "root");
+        var auth = new UsernamePasswordAuthenticationToken("admin", "secret");
+        Map<String, Object> result = agentService.runTurn(session, "привет", auth, "admin");
+
+        assertEquals("OK", result.get("status"));
+        assertEquals("Привет! Чем могу помочь?", result.get("summary"));
+        verify(llmProviderRegistry, org.mockito.Mockito.times(1)).complete(any());
     }
 
     @Test
@@ -224,12 +245,38 @@ class TreeFirstAgentServiceSessionTest {
         ));
 
         AgentSession session = AgentSession.create("admin", "root");
+        session.runState().setInteractionMode(AgentInteractionMode.EXECUTE);
         session.runState().setUiLocale("ru");
         var auth = new UsernamePasswordAuthenticationToken("admin", "secret");
         Map<String, Object> result = agentService.runTurn(session, "do something", auth, "admin");
 
         assertEquals("ERROR", result.get("status"));
         assertTrue(String.valueOf(result.get("summary")).contains("разобрать ответ модели"));
+    }
+
+    @Test
+    void parseFailurePreviewsMaskSecretFields() throws Exception {
+        aiProperties.setAgentParseRetries(1);
+        when(llmProviderRegistry.complete(any())).thenReturn(new LlmResponse(
+                "Setting the broker login {\"mqttPassword\":\"hunter2\"} in plain language.",
+                "test-model",
+                new LlmUsage(1, 1, 2)
+        ));
+
+        AgentSession session = AgentSession.create("admin", "root");
+        session.runState().setInteractionMode(AgentInteractionMode.EXECUTE);
+        var auth = new UsernamePasswordAuthenticationToken("admin", "secret");
+        Map<String, Object> result = agentService.runTurn(session, "configure the broker", auth, "admin");
+
+        assertEquals("ERROR", result.get("status"));
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> steps = (List<Map<String, Object>>) result.get("steps");
+        assertThat(steps)
+                .filteredOn(step -> step.containsKey("rawPreview"))
+                .hasSizeGreaterThanOrEqualTo(2)
+                .allSatisfy(step -> assertThat(String.valueOf(step.get("rawPreview")))
+                        .doesNotContain("hunter2")
+                        .contains("\"mqttPassword\":\"***\""));
     }
 
     @Test
@@ -397,5 +444,52 @@ class TreeFirstAgentServiceSessionTest {
             assertEquals("call-1", message.toolCallId());
             assertThat(message.content()).contains("\"status\":\"OK\"");
         });
+    }
+
+    @Test
+    void streamsTokenPreviewIntoTheLiveStep() throws Exception {
+        aiProperties.setAgentStreamTokens(true);
+        AgentSession session = AgentSession.create("admin", "root");
+        when(llmProviderRegistry.completeStreaming(any(), any(), any())).thenAnswer(invocation -> {
+            Consumer<String> preview = invocation.getArgument(1);
+            preview.accept("token-hello");
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> live = (List<Map<String, Object>>) agentService.runProgress(session.sessionId()).get("steps");
+            assertThat(live).anySatisfy(step -> {
+                assertEquals("llm", step.get("type"));
+                assertEquals("RUNNING", ((Map<?, ?>) step.get("result")).get("status"));
+                assertEquals("token-hello", step.get("rawPreview"));
+            });
+            return new LlmResponse(
+                    "{\"type\":\"finish\",\"summary\":\"done\",\"result\":{}}",
+                    "test-model",
+                    new LlmUsage(1, 1, 2)
+            );
+        });
+
+        var auth = new UsernamePasswordAuthenticationToken("admin", "secret");
+        Map<String, Object> result = agentService.runTurn(session, "hello", auth, "admin");
+
+        assertEquals("OK", result.get("status"));
+        verify(llmProviderRegistry).completeStreaming(any(), any(), any());
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> steps = (List<Map<String, Object>>) result.get("steps");
+        assertThat(steps).filteredOn(step -> "llm".equals(step.get("type"))).hasSize(1);
+    }
+
+    @Test
+    void cancelDuringStreamIsNotAParseError() throws Exception {
+        aiProperties.setAgentStreamTokens(true);
+        when(llmProviderRegistry.completeStreaming(any(), any(), any()))
+                .thenThrow(new LlmException("Agent run cancelled"));
+
+        AgentSession session = AgentSession.create("admin", "root");
+        var auth = new UsernamePasswordAuthenticationToken("admin", "secret");
+        Map<String, Object> result = agentService.runTurn(session, "hello", auth, "admin");
+
+        assertEquals("CANCELLED", result.get("status"));
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> steps = (List<Map<String, Object>>) result.get("steps");
+        assertThat(steps).noneMatch(step -> "error".equals(step.get("type")));
     }
 }

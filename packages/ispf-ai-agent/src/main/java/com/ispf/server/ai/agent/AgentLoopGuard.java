@@ -45,6 +45,17 @@ final class AgentLoopGuard {
     );
 
     /**
+     * Idempotent bundle how-to reads (and the application list): one OK per fingerprint, then finish Markdown.
+     * Repeating export/validate/dry-run floods the Studio log (Ask «как упаковать bundle»).
+     */
+    private static final Set<String> BUNDLE_HOWTO_TOOLS = Set.of(
+            "export_application_bundle",
+            "validate_bundle",
+            "dry_run_deploy",
+            "list_applications"
+    );
+
+    /**
      * Catalog lookups keyed by {@code type} (fingerprint). Different widget types must be allowed
      * in one course turn; only repeating the same type is spam.
      */
@@ -297,19 +308,116 @@ final class AgentLoopGuard {
                 + "' is already above — stop repeating it; act on prior results or finish with Markdown.";
     }
 
+    static String bundleHowToFinishHint(String toolName) {
+        return """
+                Bundle how-to result is already above. Finish NOW with numbered Markdown \
+                (pack via ispf pack / export_application_bundle → validate_bundle → dry_run_deploy \
+                → Marketplace UI or import_package in Execute). \
+                Do NOT re-call """ + toolName + """
+                 with the same arguments.""";
+    }
+
+    private static String applicationListFinishHint() {
+        return """
+                Application list is already above (appId, active bundle version). \
+                Finish NOW with Markdown from that list, or inspect one application by its appId \
+                (application_data_status appId=… / export_application_bundle appId=…). \
+                Do NOT call list_applications again with the same arguments.""";
+    }
+
     private static String driverInventoryHint() {
         return """
                 Driver list received — count and driverIds above are authoritative for this instance. \
-                For inventory / «which protocols» questions: finish with Markdown from that list (do not invent a short list). \
-                To create a device: pick one driverId, enable_agent_tool_pack pack=devices, then create_object / configure_driver. \
+                Finish NOW with Markdown from that list / the Knowledge index. \
+                Do NOT call list_drivers again (no query= placeholders like <protocol name>). \
+                Platform overview questions: answer concepts from the Knowledge index / search_context topic=agent-knowledge. \
+                To create a device (Execute only): pick one real driverId, enable_agent_tool_pack pack=devices, then create_object. \
                 Only run an SNMP demo when the user asked for SNMP.""";
+    }
+
+    /**
+     * After an unfiltered inventory OK (or a placeholder query), block further list_drivers.
+     * First offense keeps {@code stopTurn=false} so Ask can finish from the hint; repeats escalate.
+     */
+    private static Optional<BlockDecision> checkListDriversInventoryDone(
+            List<Map<String, Object>> steps,
+            Map<String, Object> toolArgs
+    ) {
+        long anyCalls = totalToolCount(steps, "list_drivers");
+        boolean escalate = anyCalls >= DISCOVERY_HARD_BLOCK || hasPriorListDriversGuardBlock(steps);
+        String query = stringArg(toolArgs == null ? Map.of() : toolArgs, "query");
+        if (looksLikeAngleBracketPlaceholder(query)) {
+            return Optional.of(new BlockDecision(
+                    "Hard block: list_drivers query looks like a prompt placeholder (" + query + ") — not a real filter",
+                    "Do not copy angle-bracket placeholders into tool arguments. "
+                            + "Finish NOW from the Knowledge index / prior list_drivers result, "
+                            + "or (only if none yet) call list_drivers once with empty arguments or a real substring (mqtt).",
+                    escalate
+            ));
+        }
+        if (hasSuccessfulUnfilteredListDrivers(steps)) {
+            return Optional.of(new BlockDecision(
+                    "Hard block: unfiltered list_drivers already succeeded this turn — stop looping",
+                    driverInventoryHint(),
+                    escalate
+            ));
+        }
+        return Optional.empty();
+    }
+
+    private static boolean hasPriorListDriversGuardBlock(List<Map<String, Object>> steps) {
+        if (steps == null) {
+            return false;
+        }
+        String normalized = "list_drivers";
+        return steps.stream()
+                .filter(step -> "tool".equals(String.valueOf(step.get("type"))))
+                .filter(step -> normalized.equals(normalize(String.valueOf(step.get("tool")))))
+                .anyMatch(step -> {
+                    Map<String, Object> result = stepMap(step, "result");
+                    return Boolean.TRUE.equals(result.get("loopGuardBlocked"))
+                            || String.valueOf(result.get("error")).contains("Hard block");
+                });
+    }
+
+    private static boolean hasSuccessfulUnfilteredListDrivers(List<Map<String, Object>> steps) {
+        if (steps == null) {
+            return false;
+        }
+        for (Map<String, Object> step : steps) {
+            if (!"tool".equals(String.valueOf(step.get("type")))) {
+                continue;
+            }
+            if (!"list_drivers".equals(normalize(String.valueOf(step.get("tool"))))) {
+                continue;
+            }
+            Map<String, Object> result = stepMap(step, "result");
+            if (!"OK".equals(String.valueOf(result.get("status")))) {
+                continue;
+            }
+            Map<String, Object> args = stepMap(step, "arguments");
+            String query = stringArg(args, "query");
+            String maturity = stringArg(args, "maturity");
+            if ((query.isBlank() || looksLikeAngleBracketPlaceholder(query)) && maturity.isBlank()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    static boolean looksLikeAngleBracketPlaceholder(String value) {
+        if (value == null || value.isBlank()) {
+            return false;
+        }
+        String trimmed = value.trim();
+        return trimmed.indexOf('<') >= 0 && trimmed.indexOf('>') > trimmed.indexOf('<');
     }
 
     private static boolean lastExampleBundleRequestedSections(List<Map<String, Object>> steps) {
         if (steps == null || steps.isEmpty()) {
             return false;
         }
-        Map<String, Object> last = steps.get(steps.size() - 1);
+        Map<String, Object> last = lastToolStep(steps);
         Object args = last.get("arguments");
         if (!(args instanceof Map<?, ?>)) {
             args = last.get("args");
@@ -348,7 +456,7 @@ final class AgentLoopGuard {
         if (steps == null || steps.isEmpty()) {
             return false;
         }
-        Map<String, Object> last = steps.get(steps.size() - 1);
+        Map<String, Object> last = lastToolStep(steps);
         Object args = last.get("arguments");
         if (!(args instanceof Map<?, ?>)) {
             args = last.get("args");
@@ -380,7 +488,7 @@ final class AgentLoopGuard {
     }
 
     private static String defaultHint(List<Map<String, Object>> steps, int maxStepsTotal) {
-        int stepCount = steps != null ? steps.size() : 0;
+        int stepCount = AgentTurnPaceHints.actionStepCount(steps);
         int remainingTotal = Math.max(0, maxStepsTotal - stepCount);
         String pace = AgentTurnPaceHints.gentlePaceSuffix(steps, maxStepsTotal);
         if (remainingTotal <= 8) {
@@ -393,13 +501,26 @@ final class AgentLoopGuard {
     }
 
     static Optional<BlockDecision> checkHardBlock(String toolName, List<Map<String, Object>> steps) {
-        return checkHardBlock(toolName, Map.of(), steps);
+        return checkHardBlock(toolName, Map.of(), steps, false);
     }
 
     static Optional<BlockDecision> checkHardBlock(
             String toolName,
             Map<String, Object> toolArgs,
             List<Map<String, Object>> steps
+    ) {
+        return checkHardBlock(toolName, toolArgs, steps, false);
+    }
+
+    /**
+     * @param askMode when true, bundle how-to tools stop after one OK so Ask can finish Markdown.
+     *                Execute may re-validate or re-export the same appId with a new manifest/version.
+     */
+    static Optional<BlockDecision> checkHardBlock(
+            String toolName,
+            Map<String, Object> toolArgs,
+            List<Map<String, Object>> steps,
+            boolean askMode
     ) {
         if (repeatGroundTruthError(toolName, steps) >= 2) {
             String parent = blockedParentPath(steps);
@@ -418,19 +539,44 @@ final class AgentLoopGuard {
             return oscillation;
         }
         String normalized = normalize(toolName);
+        if ("list_drivers".equals(normalized)) {
+            Optional<BlockDecision> inventoryDone = checkListDriversInventoryDone(steps, toolArgs);
+            if (inventoryDone.isPresent()) {
+                return inventoryDone;
+            }
+        }
+        if (askMode && BUNDLE_HOWTO_TOOLS.contains(normalized)) {
+            String bundleFp = discoveryArgFingerprint(normalized, toolArgs);
+            long priorOk = okCountWithDiscoveryFingerprint(steps, normalized, bundleFp);
+            if (priorOk >= 1) {
+                boolean escalate = hasPriorBundleHowToGuardBlock(steps, normalized);
+                return Optional.of(new BlockDecision(
+                        "Hard block: '" + normalized + "' already succeeded this turn"
+                                + (bundleFp.isBlank() ? "" : " (" + bundleFp + ")")
+                                + " — stop looping",
+                        "list_applications".equals(normalized)
+                                ? applicationListFinishHint()
+                                : bundleHowToFinishHint(normalized),
+                        escalate
+                ));
+            }
+        }
         if (DISCOVERY_LOOP_TOOLS.contains(normalized)) {
             // Same tool with different args (e.g. get_automation_schema topic=dashboard vs workflow) is not a loop.
             String discoveryFp = discoveryArgFingerprint(normalized, toolArgs);
             long sameCallCount = totalToolCountWithFingerprint(steps, normalized, discoveryFp);
             if (sameCallCount >= DISCOVERY_HARD_BLOCK) {
                 String hint = discoveryHardBlockHint(normalized, steps, toolArgs);
+                boolean stopTurn = "list_drivers".equals(normalized)
+                        && (sameCallCount >= DISCOVERY_HARD_BLOCK + 1
+                        || hasPriorListDriversGuardBlock(steps));
                 return Optional.of(new BlockDecision(
                         "Hard block: discovery tool '" + normalized + "'"
                                 + (discoveryFp.isBlank() ? "" : " (" + discoveryFp + ")")
                                 + " called " + sameCallCount
                                 + " times this turn with the same arguments — stop looping",
                         hint,
-                        false
+                        stopTurn
                 ));
             }
         }
@@ -534,11 +680,13 @@ final class AgentLoopGuard {
             case "search_context" -> keyArgs(args, "topic", "query");
             case "search_platform_recipes" -> keyArgs(args, "query");
             case "get_driver_help" -> keyArgs(args, "driverId", "driver", "name");
-            case "get_example_bundle" -> keyArgs(args, "appId", "exampleId", "sections");
+            case "get_example_bundle", "export_application_bundle", "validate_bundle", "dry_run_deploy"
+                    -> keyArgs(args, "appId", "exampleId", "sections", "path");
+            case "list_applications" -> keyArgs(args, "query");
             case "get_widget_catalog" -> keyArgs(args, "type", "widgetType");
             case "get_deploy_playbook" -> keyArgs(args, "playbook", "id", "name");
             case "list_examples" -> keyArgs(args, "query", "tag");
-            case "list_drivers" -> keyArgs(args, "query", "maturity");
+            case "list_drivers" -> keyArgsIgnoringPlaceholders(args, "query", "maturity");
             default -> keyArgs(args, "topic", "query", "path", "name");
         };
     }
@@ -556,6 +704,63 @@ final class AgentLoopGuard {
             sb.append(key).append('=').append(value.toLowerCase(Locale.ROOT));
         }
         return sb.toString();
+    }
+
+    /** Angle-bracket prompt placeholders collapse to empty so they do not invent a new fingerprint. */
+    private static String keyArgsIgnoringPlaceholders(Map<String, Object> args, String... keys) {
+        StringBuilder sb = new StringBuilder();
+        for (String key : keys) {
+            String value = stringArg(args, key);
+            if (value.isBlank() || looksLikeAngleBracketPlaceholder(value)) {
+                continue;
+            }
+            if (!sb.isEmpty()) {
+                sb.append('|');
+            }
+            sb.append(key).append('=').append(value.toLowerCase(Locale.ROOT));
+        }
+        return sb.toString();
+    }
+
+    private static boolean hasPriorBundleHowToGuardBlock(List<Map<String, Object>> steps, String toolName) {
+        if (steps == null || toolName == null) {
+            return false;
+        }
+        String normalized = normalize(toolName);
+        for (Map<String, Object> step : steps) {
+            if (!"tool".equals(String.valueOf(step.get("type")))) {
+                continue;
+            }
+            if (!normalized.equals(normalize(String.valueOf(step.get("tool"))))) {
+                continue;
+            }
+            Map<String, Object> result = stepMap(step, "result");
+            if (Boolean.TRUE.equals(result.get("loopGuardBlocked"))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static long okCountWithDiscoveryFingerprint(
+            List<Map<String, Object>> steps,
+            String toolName,
+            String fingerprint
+    ) {
+        if (steps == null || toolName == null) {
+            return 0;
+        }
+        String normalized = normalize(toolName);
+        String want = fingerprint == null ? "" : fingerprint;
+        return steps.stream()
+                .filter(step -> "tool".equals(String.valueOf(step.get("type"))))
+                .filter(step -> normalized.equals(normalize(String.valueOf(step.get("tool")))))
+                .filter(step -> want.equals(discoveryArgFingerprint(normalized, stepMap(step, "arguments"))))
+                .filter(step -> {
+                    Map<String, Object> result = stepMap(step, "result");
+                    return "OK".equalsIgnoreCase(String.valueOf(result.get("status")));
+                })
+                .count();
     }
 
     private static long totalToolCountWithFingerprint(
@@ -873,6 +1078,26 @@ final class AgentLoopGuard {
         return names;
     }
 
+    /** Last {@code max} tool rows; the LLM row of the current round sits after the last tool call. */
+    private static List<Map<String, Object>> recentToolSteps(List<Map<String, Object>> steps, int max) {
+        if (steps == null || max <= 0) {
+            return List.of();
+        }
+        List<Map<String, Object>> tools = new ArrayList<>();
+        for (int i = steps.size() - 1; i >= 0 && tools.size() < max; i--) {
+            Map<String, Object> step = steps.get(i);
+            if (step != null && "tool".equals(String.valueOf(step.get("type")))) {
+                tools.add(0, step);
+            }
+        }
+        return tools;
+    }
+
+    private static Map<String, Object> lastToolStep(List<Map<String, Object>> steps) {
+        List<Map<String, Object>> last = recentToolSteps(steps, 1);
+        return last.isEmpty() ? Map.of() : last.get(0);
+    }
+
     private static boolean isStrictTwoToolAlternation(List<String> sequence) {
         if (sequence == null || sequence.size() < OSCILLATION_MIN_STEPS) {
             return false;
@@ -1072,12 +1297,7 @@ final class AgentLoopGuard {
             return 0;
         }
         int count = 0;
-        int start = Math.max(0, steps.size() - 4);
-        for (int i = start; i < steps.size(); i++) {
-            Map<String, Object> step = steps.get(i);
-            if (!"tool".equals(String.valueOf(step.get("type")))) {
-                continue;
-            }
+        for (Map<String, Object> step : recentToolSteps(steps, 4)) {
             if (!toolName.equalsIgnoreCase(String.valueOf(step.get("tool")))) {
                 continue;
             }
@@ -1100,10 +1320,7 @@ final class AgentLoopGuard {
             return 0;
         }
         String normalized = normalize(toolName);
-        int start = Math.max(0, steps.size() - RECENT_WINDOW);
-        return steps.stream()
-                .skip(start)
-                .filter(step -> "tool".equals(String.valueOf(step.get("type"))))
+        return recentToolSteps(steps, RECENT_WINDOW).stream()
                 .map(step -> step.get("tool"))
                 .filter(Objects::nonNull)
                 .map(tool -> normalize(String.valueOf(tool)))
@@ -1133,7 +1350,7 @@ final class AgentLoopGuard {
         if (steps.isEmpty()) {
             return false;
         }
-        Map<String, Object> last = steps.get(steps.size() - 1);
+        Map<String, Object> last = lastToolStep(steps);
         if (!"tool".equals(String.valueOf(last.get("type")))) {
             return false;
         }
@@ -1146,7 +1363,7 @@ final class AgentLoopGuard {
     }
 
     private static String blockedObjectPath(List<Map<String, Object>> steps) {
-        Map<String, Object> last = steps.get(steps.size() - 1);
+        Map<String, Object> last = lastToolStep(steps);
         String error = String.valueOf(stepMap(last, "result").get("error"));
         int marker = error.lastIndexOf(": ");
         if (marker >= 0 && marker + 2 < error.length()) {
@@ -1163,7 +1380,7 @@ final class AgentLoopGuard {
         if (!"create_object".equals(tool) && !"create_virtual_device".equals(tool)) {
             return null;
         }
-        Map<String, Object> last = steps.get(steps.size() - 1);
+        Map<String, Object> last = lastToolStep(steps);
         if (!tool.equals(normalize(String.valueOf(last.get("tool"))))) {
             return null;
         }
@@ -1227,7 +1444,7 @@ final class AgentLoopGuard {
         if (steps.isEmpty()) {
             return null;
         }
-        Map<String, Object> last = steps.get(steps.size() - 1);
+        Map<String, Object> last = lastToolStep(steps);
         if (!"create_object".equals(String.valueOf(last.get("tool")))) {
             return null;
         }
@@ -1269,7 +1486,7 @@ final class AgentLoopGuard {
     }
 
     private static String blockedParentPath(List<Map<String, Object>> steps) {
-        Map<String, Object> last = steps.get(steps.size() - 1);
+        Map<String, Object> last = lastToolStep(steps);
         String error = String.valueOf(stepMap(last, "result").get("error"));
         int marker = error.lastIndexOf(": ");
         if (marker >= 0 && marker + 2 < error.length()) {
@@ -1282,7 +1499,7 @@ final class AgentLoopGuard {
         if (steps.isEmpty()) {
             return false;
         }
-        Map<String, Object> last = steps.get(steps.size() - 1);
+        Map<String, Object> last = lastToolStep(steps);
         if (!"tool".equals(String.valueOf(last.get("type")))) {
             return false;
         }
@@ -1294,7 +1511,7 @@ final class AgentLoopGuard {
         if (steps.isEmpty()) {
             return false;
         }
-        Map<String, Object> last = steps.get(steps.size() - 1);
+        Map<String, Object> last = lastToolStep(steps);
         if (!"tool".equals(String.valueOf(last.get("type")))) {
             return false;
         }

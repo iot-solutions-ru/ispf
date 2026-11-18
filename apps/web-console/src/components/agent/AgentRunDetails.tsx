@@ -26,6 +26,62 @@ function dashboardLink(path: string | undefined): string | null {
   return `/?path=${encodeURIComponent(path)}`;
 }
 
+type TimelineRow =
+  | { kind: "tool"; key: string; step: AiAgentStep; count: number }
+  | { kind: "llm"; key: string; step: AiAgentStep }
+  | { kind: "status"; key: string; step: AiAgentStep };
+
+/**
+ * Chronological tool + LLM dialogue for the live “current steps” panel.
+ * Consecutive identical OK tools stay collapsed; LLM rounds stay expanded with reply text.
+ */
+function buildTimeline(steps: AiAgentStep[], isRunning: boolean): TimelineRow[] {
+  const rows: TimelineRow[] = [];
+  let i = 0;
+  while (i < steps.length) {
+    const step = steps[i];
+    if (step.type === "tool") {
+      const run: AiAgentStep[] = [];
+      let j = i;
+      while (j < steps.length && steps[j].type === "tool") {
+        run.push(steps[j]);
+        j += 1;
+      }
+      for (const collapsed of collapseConsecutiveToolSteps(run)) {
+        rows.push({
+          kind: "tool",
+          key: collapsed.key,
+          step: collapsed.step,
+          count: collapsed.count,
+        });
+      }
+      i = j;
+      continue;
+    }
+    if (step.type === "llm") {
+      rows.push({ kind: "llm", key: `llm-${step.step}-${i}`, step });
+      i += 1;
+      continue;
+    }
+    if (step.type === "status" && isRunning) {
+      // Keep only the latest waiting/status cue at the end (dedupe below).
+      rows.push({ kind: "status", key: `status-${step.step}-${i}`, step });
+      i += 1;
+      continue;
+    }
+    i += 1;
+  }
+  if (!isRunning) {
+    return rows.filter((row) => row.kind !== "status");
+  }
+  // Keep a waiting cue only when it is the trailing live row (not above completed LLM/tool rows).
+  const lastStatusIdx = rows.reduce((acc, row, idx) => (row.kind === "status" ? idx : acc), -1);
+  if (lastStatusIdx < 0 || lastStatusIdx !== rows.length - 1) {
+    return rows.filter((row) => row.kind !== "status");
+  }
+  return rows.filter((row, idx) => row.kind !== "status" || idx === lastStatusIdx);
+}
+
 export function AgentRunDetails({
   steps,
   status,
@@ -48,16 +104,18 @@ export function AgentRunDetails({
   const devicePath = typeof result?.devicePath === "string" ? result.devicePath : undefined;
   const dashboardPath =
     typeof result?.dashboardPath === "string" ? result.dashboardPath : undefined;
-  const { toolSteps, diagnosticSteps } = useMemo(() => ({
-    toolSteps: steps.filter((step) => step.type === "tool"),
-    diagnosticSteps: steps.filter((step) => step.type === "error" || step.type === "guard"),
-  }), [steps]);
-  const collapsedToolSteps = useMemo(
-    () => collapseConsecutiveToolSteps(toolSteps),
-    [toolSteps]
-  );
   const isRunning = status === "RUNNING";
-  const detailCount = toolSteps.length + diagnosticSteps.length;
+  const { diagnosticSteps, statusSteps } = useMemo(() => ({
+    diagnosticSteps: steps.filter((step) => step.type === "error" || step.type === "guard"),
+    statusSteps: steps.filter((step) => step.type === "status"),
+  }), [steps]);
+  const timeline = useMemo(() => buildTimeline(steps, isRunning), [steps, isRunning]);
+  const detailCount = timeline.filter((row) => row.kind === "tool" || row.kind === "llm").length
+    + diagnosticSteps.length;
+  const latestStatusLabel = statusSteps.length > 0
+    ? statusSteps[statusSteps.length - 1]?.label
+    : undefined;
+  const hasVisibleProgress = timeline.length > 0 || diagnosticSteps.length > 0;
 
   return (
     <details className="ai-agent-run-details" open={open || undefined}>
@@ -69,8 +127,10 @@ export function AgentRunDetails({
             : t("agent.details.error")}
         {detailCount > 0 ? ` (${detailCount})` : ""}
       </summary>
-      {placeholder && toolSteps.length === 0 && diagnosticSteps.length === 0 && (
-        <p className="op-muted ai-agent-step-placeholder">{t("agent.details.waiting")}</p>
+      {placeholder && !hasVisibleProgress && (
+        <p className="op-muted ai-agent-step-placeholder">
+          {latestStatusLabel || t("agent.details.waiting")}
+        </p>
       )}
       {steps.length > 0 && !isRunning && (
         <div className="ai-agent-details-tabs" role="tablist" aria-label={t("agent.trace.viewAria")}>
@@ -115,13 +175,13 @@ export function AgentRunDetails({
       )}
       {detailsView === "list" && diagnosticSteps.length > 0 && (
         <ul className="ai-agent-diagnostic-list">
-          {diagnosticSteps.map((step) => (
-            <li key={step.step} className="ai-agent-diagnostic-item">
+          {diagnosticSteps.map((step, index) => (
+            <li key={`diag-${step.step}-${index}`} className="ai-agent-diagnostic-item">
               <strong>
                 {step.label
                   ?? (step.type === "guard" ? t("agent.details.guard") : t("agent.details.parseError"))}
               </strong>
-              {step.truncated && (
+              {step.truncated && step.label !== t("agent.details.truncated") && (
                 <span className="badge danger"> {t("agent.details.truncated")}</span>
               )}
               {step.error && step.type !== "guard" && (
@@ -138,9 +198,47 @@ export function AgentRunDetails({
           ))}
         </ul>
       )}
-      {detailsView === "list" && collapsedToolSteps.length > 0 && (
+      {detailsView === "list" && timeline.some((row) => row.kind !== "status") && (
         <ol className="ai-agent-step-list">
-          {collapsedToolSteps.map((row) => {
+          {timeline.filter((row) => row.kind !== "status").map((row) => {
+            if (row.kind === "llm") {
+              const step = row.step;
+              const latency =
+                typeof step.latencyMs === "number" && step.latencyMs > 0
+                  ? ` · ${(step.latencyMs / 1000).toFixed(1)}s`
+                  : "";
+              return (
+                <li key={row.key} className="ai-agent-step-llm">
+                  <strong>{step.label || t("agent.details.llmRound")}</strong>
+                  {latency ? <span className="op-muted">{latency}</span> : null}
+                  {" "}
+                  {stepStatusBadge(
+                    step.result?.status === "ERROR"
+                      ? "ERROR"
+                      : step.result?.status === "OK"
+                        ? "OK"
+                        : isRunning
+                          ? "RUNNING"
+                          : undefined
+                  )}
+                  {step.error && (
+                    <p className="ai-agent-step-error">{step.error}</p>
+                  )}
+                  {(() => {
+                    const live = isRunning && step.result?.status === "RUNNING";
+                    if (!step.rawPreview && !live) {
+                      return null;
+                    }
+                    return (
+                      <pre className={live ? "ai-agent-llm-preview ai-agent-llm-live" : "ai-agent-llm-preview"}>
+                        {step.rawPreview || t("agent.details.streaming")}
+                        {live ? "▍" : ""}
+                      </pre>
+                    );
+                  })()}
+                </li>
+              );
+            }
             const step = row.step;
             return (
               <li key={row.key}>
@@ -173,6 +271,14 @@ export function AgentRunDetails({
             );
           })}
         </ol>
+      )}
+      {detailsView === "list" && timeline.some((row) => row.kind === "status") && (
+        <p className="op-muted ai-agent-step-placeholder">
+          {timeline.filter((row) => row.kind === "status").at(-1)?.step.label
+            || t("agent.details.waiting")}
+          {" "}
+          {stepStatusBadge("RUNNING")}
+        </p>
       )}
       {!isRunning && (
         <div className="ai-agent-run-links">

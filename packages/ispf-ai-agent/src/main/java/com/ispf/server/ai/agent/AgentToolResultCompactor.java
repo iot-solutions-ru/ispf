@@ -176,7 +176,8 @@ final class AgentToolResultCompactor {
             toolResult.put(
                     "llmHint",
                     "Showing " + compact.size() + " of " + total
-                            + " drivers — filter with query/maturity for the rest; count is authoritative."
+                            + " drivers — count is authoritative. For inventory Q&A finish from this list / Knowledge index; "
+                            + "for a named protocol not shown, use get_driver_help with that driverId (do not re-call list_drivers)."
             );
         }
     }

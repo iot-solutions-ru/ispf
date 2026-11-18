@@ -1,5 +1,6 @@
 package com.ispf.server.ai.agent;
 
+import com.ispf.ai.LlmException;
 import com.ispf.ai.LlmMessage;
 import com.ispf.ai.LlmRequest;
 import com.ispf.ai.LlmResponse;
@@ -8,16 +9,22 @@ import com.ispf.server.ai.llm.LlmProviderRegistry;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
  * Calls the LLM and parses a tool/finish action with bounded retries and JSON-only nudges.
  */
 final class AgentLlmActionResolver {
+
+    private static final java.util.regex.Pattern TOOL_NAME =
+            java.util.regex.Pattern.compile("[A-Za-z][A-Za-z0-9_.\\-]{0,63}");
 
     private static final String JSON_NUDGE = """
             Your last reply was not a valid agent action. Reply with ONLY one JSON object, no markdown and no explanation:
@@ -54,8 +61,21 @@ final class AgentLlmActionResolver {
             boolean executionTurn,
             boolean askTurn,
             AgentPhasedPlanIntake.Stage phasedStage,
-            String uiLocale
+            String uiLocale,
+            Consumer<String> previewSink,
+            BooleanSupplier cancelled
     ) {
+        ResolveContext(
+                boolean textAttachment,
+                boolean planningTurn,
+                boolean executionTurn,
+                boolean askTurn,
+                AgentPhasedPlanIntake.Stage phasedStage,
+                String uiLocale
+        ) {
+            this(textAttachment, planningTurn, executionTurn, askTurn, phasedStage, uiLocale, null, null);
+        }
+
         static ResolveContext none() {
             return new ResolveContext(
                     false, false, false, false, AgentPhasedPlanIntake.Stage.DISCOVERY, "");
@@ -133,24 +153,53 @@ final class AgentLlmActionResolver {
         ResolveContext ctx = context != null ? context : ResolveContext.none();
         for (int attempt = 0; attempt < attempts; attempt++) {
             long llmStart = System.nanoTime();
-            lastResponse = llmProviderRegistry.complete(requestFactory.apply(messages));
+            if (ctx.previewSink() != null) {
+                lastResponse = llmProviderRegistry.completeStreaming(
+                        requestFactory.apply(messages),
+                        ctx.previewSink(),
+                        ctx.cancelled()
+                );
+            } else {
+                lastResponse = llmProviderRegistry.complete(requestFactory.apply(messages));
+            }
             totalLlmLatencyMs += (System.nanoTime() - llmStart) / 1_000_000L;
+            if (isCancelled(ctx)) {
+                throw new LlmException("Agent run cancelled");
+            }
             try {
-                Optional<ParseAttempt> nativeAction = parseNativeToolCall(objectMapper, lastResponse, totalLlmLatencyMs);
+                Optional<ParseAttempt> nativeAction = parseNativeToolCall(
+                        objectMapper, lastResponse, totalLlmLatencyMs, ctx);
                 if (nativeAction.isPresent()) {
                     return nativeAction.get();
                 }
-                AgentJsonProtocol.AgentAction action = AgentJsonProtocol.parse(objectMapper, lastResponse.content());
+                AgentJsonProtocol.AgentAction action = AgentJsonProtocol.normalizeAction(
+                        AgentJsonProtocol.parse(objectMapper, lastResponse.content())
+                );
                 return new ParseAttempt(lastResponse, action, false, null, totalLlmLatencyMs);
             } catch (Exception ex) {
+                if (ex instanceof LlmException llmEx) {
+                    throw llmEx;
+                }
+                if (isCancelled(ctx)) {
+                    throw new LlmException("Agent run cancelled");
+                }
                 lastError = ex.getMessage();
+                Optional<AgentJsonProtocol.AgentAction> prose = allowPlainTextFinish
+                        ? plainAnswer(lastResponse)
+                        : Optional.empty();
+                if (prose.isPresent()) {
+                    // The user already watched this answer stream in; a JSON-only retry would replace it.
+                    return new ParseAttempt(lastResponse, prose.get(), false, null, totalLlmLatencyMs);
+                }
                 if (attempt < attempts - 1) {
-                    messages.add(new LlmMessage("assistant", lastResponse.content()));
+                    String assistantEcho = assistantEchoForRetry(lastResponse);
+                    messages.add(new LlmMessage("assistant", assistantEcho));
                     messages.add(new LlmMessage("user", nudgeForRetry(lastResponse, ctx, attempt)));
                 }
             }
         }
-        if (allowPlainTextFinish && lastResponse != null) {
+        if (allowPlainTextFinish && lastResponse != null
+                && (lastResponse.toolCalls() == null || lastResponse.toolCalls().isEmpty())) {
             Optional<AgentJsonProtocol.AgentAction> plain = AgentJsonProtocol.tryParsePlainTextFinish(
                     lastResponse.content()
             );
@@ -158,42 +207,65 @@ final class AgentLlmActionResolver {
                 return new ParseAttempt(lastResponse, plain.get(), false, null, totalLlmLatencyMs);
             }
         }
-        if (lastResponse != null && AgentJsonProtocol.looksLikeTruncatedContent(lastResponse.content())) {
-            Optional<AgentJsonProtocol.AgentAction> salvaged =
-                    AgentJsonProtocol.trySalvageTruncatedFinish(
-                            objectMapper, lastResponse.content(), ctx.uiLocale());
-            if (salvaged.isPresent()) {
-                return new ParseAttempt(lastResponse, salvaged.get(), false, null, totalLlmLatencyMs);
-            }
+        Optional<AgentJsonProtocol.AgentAction> salvaged = trySalvageAnyTruncatedFinish(
+                objectMapper, lastResponse, ctx);
+        if (salvaged.isPresent()) {
+            return new ParseAttempt(lastResponse, salvaged.get(), false, null, totalLlmLatencyMs);
+        }
+        if (lastResponse != null && ctx.planningTurn() && looksTruncated(lastResponse)) {
+            // Planning turns must not hard-fail on oversized plans — keep a continue-plan finish.
+            return new ParseAttempt(
+                    lastResponse,
+                    softTruncatedPlanFinish(ctx.uiLocale()),
+                    false,
+                    null,
+                    totalLlmLatencyMs
+            );
+        }
+        if (isCancelled(ctx)) {
+            throw new LlmException("Agent run cancelled");
         }
         return new ParseAttempt(lastResponse, null, true, lastError, totalLlmLatencyMs);
     }
 
-    @SuppressWarnings("unchecked")
+    private static Optional<AgentJsonProtocol.AgentAction> plainAnswer(LlmResponse response) {
+        if (response == null || response.truncatedByLength()
+                || (response.toolCalls() != null && !response.toolCalls().isEmpty())) {
+            return Optional.empty();
+        }
+        return AgentJsonProtocol.tryParsePlainTextFinish(response.content());
+    }
+
+    private static boolean isCancelled(ResolveContext ctx) {
+        return ctx != null && ctx.cancelled() != null && ctx.cancelled().getAsBoolean();
+    }
+
     private static Optional<ParseAttempt> parseNativeToolCall(
             ObjectMapper objectMapper,
             LlmResponse response,
-            long totalLlmLatencyMs
+            long totalLlmLatencyMs,
+            ResolveContext ctx
     ) throws Exception {
         if (response == null || response.toolCalls() == null || response.toolCalls().isEmpty()) {
             return Optional.empty();
         }
-        LlmToolCall call = response.toolCalls().get(0);
-        Map<String, Object> args = parseArguments(objectMapper, call.argumentsJson());
-        if ("finish".equals(call.name())) {
-            Object result = args.get("result");
-            Map<String, Object> resultMap = result instanceof Map<?, ?> map
-                    ? (Map<String, Object>) map
-                    : Map.of();
-            AgentJsonProtocol.AgentAction action = new AgentJsonProtocol.AgentAction(
-                    "finish",
-                    null,
-                    null,
-                    stringValue(args.get("summary")),
-                    resultMap
-            );
-            return Optional.of(new ParseAttempt(response, action, false, null, totalLlmLatencyMs, call.id()));
+        LlmToolCall call = repairNativeToolCall(objectMapper, response.toolCalls().get(0));
+        if (!call.equals(response.toolCalls().get(0)) || response.toolCalls().size() > 1) {
+            // The loop echoes these calls back to the provider; only the one we run may appear there.
+            response = new LlmResponse(
+                    response.content(), response.model(), response.usage(), response.finishReason(), List.of(call));
         }
+        if (AgentJsonProtocol.isFinishToolName(call.name())) {
+            Optional<Map<String, Object>> parsedArgs = tryParseArguments(objectMapper, call.argumentsJson());
+            if (parsedArgs.isPresent()) {
+                AgentJsonProtocol.AgentAction action =
+                        AgentJsonProtocol.finishActionFromToolArgs(parsedArgs.get());
+                return Optional.of(new ParseAttempt(response, action, false, null, totalLlmLatencyMs, call.id()));
+            }
+            // Let resolve() retry with compactFinishNudge before post-loop salvage.
+            throw new IllegalArgumentException("Native finish tool call has invalid/truncated arguments JSON");
+        }
+        Map<String, Object> args = parseArguments(objectMapper, call.argumentsJson());
         AgentJsonProtocol.AgentAction action = new AgentJsonProtocol.AgentAction(
                 "tool",
                 call.name(),
@@ -204,16 +276,173 @@ final class AgentLlmActionResolver {
         return Optional.of(new ParseAttempt(response, action, false, null, totalLlmLatencyMs, call.id()));
     }
 
+    /**
+     * vLLM tool parsers can turn malformed model JSON into a tool name such as
+     * {@code finish","arguments":{"summary":"..."}}. Recover the real name and arguments,
+     * or reject the call so the turn retries instead of running or auditing garbage.
+     */
+    static LlmToolCall repairNativeToolCall(ObjectMapper objectMapper, LlmToolCall call) {
+        String name = call.name() != null ? call.name().trim() : "";
+        if (TOOL_NAME.matcher(name).matches()) {
+            return call;
+        }
+        for (String candidate : new String[]{"{\"name\":\"" + name + "}", "{\"name\":\"" + name}) {
+            try {
+                JsonNode node = objectMapper.readTree(candidate);
+                String recovered = node.path("name").asString("").trim();
+                if (!TOOL_NAME.matcher(recovered).matches()) {
+                    continue;
+                }
+                JsonNode args = node.get("arguments");
+                String argumentsJson;
+                if (call.argumentsJson() != null && !call.argumentsJson().isBlank()
+                        && !"{}".equals(call.argumentsJson().trim())) {
+                    argumentsJson = call.argumentsJson();
+                } else if (args != null && args.isObject()) {
+                    argumentsJson = objectMapper.writeValueAsString(args);
+                } else if (args != null && args.isString()) {
+                    argumentsJson = args.asString();
+                } else {
+                    argumentsJson = "{}";
+                }
+                return new LlmToolCall(call.id(), recovered, argumentsJson);
+            } catch (Exception ignored) {
+                // try the next shape
+            }
+        }
+        throw new IllegalArgumentException("Native tool call has an invalid tool name");
+    }
+
+    private static Optional<AgentJsonProtocol.AgentAction> trySalvageAnyTruncatedFinish(
+            ObjectMapper objectMapper,
+            LlmResponse response,
+            ResolveContext ctx
+    ) {
+        if (response == null) {
+            return Optional.empty();
+        }
+        boolean planning = ctx != null && ctx.planningTurn();
+        String uiLocale = ctx != null ? ctx.uiLocale() : "";
+        if (AgentJsonProtocol.looksLikeTruncatedContent(response.content())
+                || (response.content() != null && looksLikeTruncatedArgs(response.content()))) {
+            Optional<AgentJsonProtocol.AgentAction> fromContent =
+                    AgentJsonProtocol.trySalvageTruncatedFinish(
+                            objectMapper, response.content(), uiLocale, planning);
+            if (fromContent.isPresent()) {
+                return fromContent;
+            }
+        }
+        if (response.toolCalls() != null && !response.toolCalls().isEmpty()) {
+            LlmToolCall call = response.toolCalls().get(0);
+            if (AgentJsonProtocol.isFinishToolName(call.name())) {
+                return salvageNativeFinishArgs(objectMapper, call.argumentsJson(), uiLocale, planning);
+            }
+        }
+        return Optional.empty();
+    }
+
+    private static Optional<AgentJsonProtocol.AgentAction> salvageNativeFinishArgs(
+            ObjectMapper objectMapper,
+            String argumentsJson,
+            String uiLocale,
+            boolean planningMode
+    ) {
+        if (argumentsJson == null || argumentsJson.isBlank()) {
+            return Optional.empty();
+        }
+        // Keep args truncated: strip only the leading '{', do not invent a closing brace.
+        String trimmed = argumentsJson.trim();
+        String wrapped = trimmed.startsWith("{")
+                ? "{\"type\":\"finish\"," + trimmed.substring(1)
+                : "{\"type\":\"finish\"," + trimmed;
+        return AgentJsonProtocol.trySalvageTruncatedFinish(objectMapper, wrapped, uiLocale, planningMode);
+    }
+
+    private static AgentJsonProtocol.AgentAction softTruncatedPlanFinish(String uiLocale) {
+        boolean ru = AgentStepHumanizer.isRussian(uiLocale);
+        // Omit synthetic goal — mergePlans must not overwrite a real stored goal with a placeholder.
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("phase", "plan");
+        result.put("interactive", true);
+        result.put("planPartial", true);
+        result.put("suggestions", List.of(
+                Map.of(
+                        "label", ru ? "Продолжи план" : "Continue plan",
+                        "message", ru ? "продолжи план" : "continue plan",
+                        "primary", true
+                ),
+                Map.of(
+                        "label", ru ? "Добавь следующие разделы" : "Add next sections",
+                        "message", ru ? "добавь следующие разделы" : "add the next sections"
+                )
+        ));
+        return new AgentJsonProtocol.AgentAction(
+                "finish",
+                null,
+                null,
+                AgentStepHumanizer.modelParseFailedSummary(uiLocale, true),
+                result
+        );
+    }
+
+    private static boolean looksTruncated(LlmResponse response) {
+        if (response == null) {
+            return false;
+        }
+        if (response.truncatedByLength() || AgentJsonProtocol.looksLikeTruncatedContent(response.content())) {
+            return true;
+        }
+        if (response.toolCalls() != null && !response.toolCalls().isEmpty()) {
+            return looksLikeTruncatedArgs(response.toolCalls().get(0).argumentsJson());
+        }
+        return false;
+    }
+
+    private static boolean looksLikeTruncatedArgs(String argumentsJson) {
+        if (argumentsJson == null || argumentsJson.isBlank()) {
+            return false;
+        }
+        return AgentJsonProtocol.looksLikeTruncatedContent(argumentsJson)
+                || (!argumentsJson.trim().endsWith("}") && argumentsJson.contains("{"));
+    }
+
+    private static String assistantEchoForRetry(LlmResponse response) {
+        if (response == null) {
+            return "";
+        }
+        if (response.content() != null && !response.content().isBlank()) {
+            return response.content();
+        }
+        if (response.toolCalls() != null && !response.toolCalls().isEmpty()) {
+            LlmToolCall call = response.toolCalls().get(0);
+            return "tool_call name=" + call.name() + " args=" + call.argumentsJson();
+        }
+        return "";
+    }
+
     @SuppressWarnings("unchecked")
     private static Map<String, Object> parseArguments(ObjectMapper objectMapper, String argumentsJson) throws Exception {
+        Optional<Map<String, Object>> parsed = tryParseArguments(objectMapper, argumentsJson);
+        if (parsed.isEmpty()) {
+            throw new IllegalArgumentException("Tool call arguments are not a JSON object");
+        }
+        return parsed.get();
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Optional<Map<String, Object>> tryParseArguments(ObjectMapper objectMapper, String argumentsJson) {
         if (argumentsJson == null || argumentsJson.isBlank()) {
-            return Map.of();
+            return Optional.of(Map.of());
         }
-        JsonNode node = objectMapper.readTree(argumentsJson);
-        if (!node.isObject()) {
-            return Map.of();
+        try {
+            JsonNode node = objectMapper.readTree(argumentsJson);
+            if (!node.isObject()) {
+                return Optional.empty();
+            }
+            return Optional.of(objectMapper.convertValue(node, Map.class));
+        } catch (Exception ex) {
+            return Optional.empty();
         }
-        return objectMapper.convertValue(node, Map.class);
     }
 
     private static String stringValue(Object value) {
@@ -224,11 +453,13 @@ final class AgentLlmActionResolver {
         AgentPhasedPlanIntake.Stage stage = context.phasedStage() != null
                 ? context.phasedStage()
                 : AgentPhasedPlanIntake.Stage.BOOTSTRAP;
-        if (response != null && (response.truncatedByLength() || AgentJsonProtocol.looksLikeTruncatedContent(response.content()))) {
-            if (context.planningTurn() || context.textAttachment()) {
+        if (response != null && looksTruncated(response)) {
+            if (context.planningTurn()) {
                 return AgentPhasedPlanIntake.compactFinishNudge(stage);
             }
-            if (context.executionTurn() || looksLikeHeavyToolPayload(response.content())) {
+            if (context.executionTurn()
+                    || looksLikeHeavyToolPayload(response.content())
+                    || looksLikeHeavyNativeTool(response)) {
                 return COMPACT_TOOL_NUDGE;
             }
             return AgentPhasedPlanIntake.compactFinishNudge(stage);
@@ -257,5 +488,18 @@ final class AgentLlmActionResolver {
                 || lower.contains("set_dashboard_layout")
                 || lower.contains("save_mimic_diagram")
                 || lower.contains("\"elements\"");
+    }
+
+    private static boolean looksLikeHeavyNativeTool(LlmResponse response) {
+        if (response == null || response.toolCalls() == null || response.toolCalls().isEmpty()) {
+            return false;
+        }
+        LlmToolCall call = response.toolCalls().get(0);
+        String name = call.name() != null ? call.name().toLowerCase(Locale.ROOT) : "";
+        String args = call.argumentsJson() != null ? call.argumentsJson().toLowerCase(Locale.ROOT) : "";
+        return name.contains("dashboard")
+                || name.contains("mimic")
+                || args.contains("layoutjson")
+                || args.contains("\"elements\"");
     }
 }

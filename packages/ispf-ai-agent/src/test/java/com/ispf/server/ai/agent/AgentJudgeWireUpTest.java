@@ -20,8 +20,24 @@ class AgentJudgeWireUpTest {
         String source = Files.readString(path, StandardCharsets.UTF_8);
         assertThat(source)
                 .contains("AgentJudgeService.evaluate(")
+                .contains("AgentLlmJudge.review(")
                 .contains("liveTreeSensors()")
                 .contains("Judge REWORK")
                 .contains("incrementReworkRound()");
+    }
+
+    @Test
+    void howToQuestionDoesNotInheritPlantSmokeGates() {
+        AgentRunState state = new AgentRunState();
+        state.setAssignmentType(AgentAssignmentType.INDUSTRIAL_FACILITY.id());
+        AgentJudgeService.JudgeResult result = AgentJudgeService.evaluate(
+                java.util.List.of(),
+                state,
+                java.util.Map.of(),
+                "Сможешь показать как создается устройство на платформе?"
+        );
+        assertThat(result.verdict()).isEqualTo(AgentJudgeService.Verdict.APPROVE);
+        assertThat(result.issues()).noneMatch(issue ->
+                issue.contains("elementCount") || issue.contains("widgetCount") || issue.contains("mimic"));
     }
 }

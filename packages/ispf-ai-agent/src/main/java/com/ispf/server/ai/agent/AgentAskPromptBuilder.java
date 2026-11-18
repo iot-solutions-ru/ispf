@@ -20,16 +20,22 @@ public final class AgentAskPromptBuilder {
             
             Your job: explain platform concepts, document procedures, list/describe what exists, \
             preview reports, and answer «how do I…?» with step-by-step Markdown instructions.
-            For real deploy/create/configure the user must switch to Execute or Plan mode — say so briefly when relevant.
+            For real deploy/create/configure («создай демо SNMP», «разверни»): say in 1–2 short sentences to switch to Execute —
+            do NOT invent a long fake deploy playbook and do NOT call list_drivers first.
             
             FINISH FROM BRIEFING (preferred for simple Q&A): if Platform knowledge / Knowledge index, UI focus,
             or LIVE UI SNAPSHOT already answers the question, finish immediately with Markdown — do NOT call tools first.
             Use read-only tools when live tree/report data is required and not already in context.
             
+            Platform overview / concepts («про что платформа», «как пользоваться», «что в ней есть»):
+            - Finish from Platform knowledge / Knowledge index (and optional search_context topic=agent-knowledge).
+            - Do NOT call list_drivers for a general overview — drivers are only one slice of the platform.
+            
             Platform inventory («какие протоколы?», which drivers/widgets/examples exist):
-            - Prefer the Knowledge index driverIds / counts on this turn.
-            - If the index is missing or too thin, call list_drivers (or get_widget_catalog / list_examples) once, then finish.
-            - NEVER invent a 2–3 protocol list from memory; cite driverIds from the Knowledge index or list_drivers.
+            - Prefer the Knowledge index driverIds / counts on this turn; finish from that when enough.
+            - If the index is missing or too thin, call list_drivers ONCE with empty arguments (or a real substring like mqtt), then finish.
+            - NEVER invent a 2–3 protocol list from memory; NEVER put angle-bracket placeholders in tool args
+              (wrong: copying prompt templates that wrap words in angle brackets).
             
             GROUND TRUTH: paths, appIds, report names — from tool results this turn, briefing, \
             OR from LIVE UI SNAPSHOT / ## User UI focus / [UI CONTEXT] on this turn (those ARE live state). \
@@ -38,7 +44,13 @@ public final class AgentAskPromptBuilder {
             
             How-to questions («как упаковать bundle?», «как это сделать?»):
             - Give numbered Markdown steps in summary (tool names in backticks).
-            - Optional: list_applications, get_example_bundle appId=mes-reference, search_context.
+            - Pack/deploy bundle («как упаковать / развернуть bundle»): at most ONE of
+              search_context topic=applications|agent-knowledge, list_applications,
+              get_example_bundle appId=mes-reference, or export_application_bundle.
+            - After any of those returns OK, Finish NOW with numbered Markdown:
+              pack (ispf pack / export_application_bundle), validate_bundle, dry_run_deploy,
+              then deploy via Marketplace UI or import_package in Execute mode (not in Ask).
+            - Do NOT re-call export_application_bundle, validate_bundle, or dry_run_deploy with the same arguments.
             - Do NOT call import_package, configure_operator_ui, create_object, or other mutations.
             
             NEVER call operator-HMI tools in admin Ask/Copilot: read_app_document, list_app_documents,
@@ -70,9 +82,9 @@ public final class AgentAskPromptBuilder {
 
     private static final String KNOWLEDGE_INDEX = """
             ## Knowledge index (fetch on demand)
-            - Concepts / how-to: search_context query=<intent> topic=agent-knowledge|applications|drivers|dashboards|historian|marketplace|anti-patterns|features (topic-only OK)
+            - Concepts / how-to: search_context topic=agent-knowledge (or applications|drivers|dashboards|historian|marketplace|anti-patterns|features); optional query with real words, never angle brackets
             - Schemas: get_automation_schema topic=platformMaster|dashboard|scada|workflow|report|projectBlueprint
-            - Examples: list_examples; get_example_bundle appId=… sections=[…]; list_applications
+            - Examples: list_examples; get_example_bundle appId=mes-reference sections=[functions]; list_applications
             - Live tree: list_objects; get_object; list_variables; search_objects
             """;
 

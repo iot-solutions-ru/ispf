@@ -11,8 +11,24 @@ final class AgentTurnPaceHints {
     private AgentTurnPaceHints() {
     }
 
+    /** Tool / finish / guard / error rows — the turn budget. Live LLM dialogue and status rows do not count. */
+    static int actionStepCount(List<Map<String, Object>> steps) {
+        if (steps == null || steps.isEmpty()) {
+            return 0;
+        }
+        int count = 0;
+        for (Map<String, Object> step : steps) {
+            String type = step != null ? String.valueOf(step.get("type")) : "";
+            if ("llm".equals(type) || "status".equals(type)) {
+                continue;
+            }
+            count++;
+        }
+        return count;
+    }
+
     static String gentlePaceSuffix(List<Map<String, Object>> steps, int maxStepsTotal) {
-        int stepCount = steps != null ? steps.size() : 0;
+        int stepCount = actionStepCount(steps);
         int remaining = Math.max(0, maxStepsTotal - stepCount);
         if (stepCount >= 40) {
             return " Шагов уже " + stepCount + " — если цель достигнута, лучше finish; иначе только нужный следующий инструмент.";

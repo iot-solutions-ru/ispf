@@ -86,6 +86,15 @@ class AgentStepHumanizerTest {
     }
 
     @Test
+    void llmRoundLabelFollowsLocaleAndAction() {
+        assertEquals("Model → call list_objects", AgentStepHumanizer.llmRoundLabel("en", "tool", "list_objects"));
+        assertEquals("Модель → вызов list_objects", AgentStepHumanizer.llmRoundLabel("ru", "tool", "list_objects"));
+        assertEquals("Model → finish answer", AgentStepHumanizer.llmRoundLabel("en", "finish", null));
+        assertEquals("Модель → готовый ответ", AgentStepHumanizer.llmRoundLabel("ru", "finish", null));
+        assertEquals("Model reply", AgentStepHumanizer.llmRoundLabel("en", "clarify", null));
+    }
+
+    @Test
     void listObjectsFollowsAllConsoleLocales() {
         assertEquals(
                 "Listing contents of \"root\"",

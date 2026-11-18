@@ -21,7 +21,8 @@ public final class AgentPlanFinishNormalizer {
         Map<String, Object> incomingPlan = finishResult.get("plan") instanceof Map<?, ?> m
                 ? new LinkedHashMap<>((Map<String, Object>) m)
                 : new LinkedHashMap<>();
-        Map<String, Object> previewMerged = AgentPlanGuard.mergePlans(runState.storedPlan(), incomingPlan);
+        Map<String, Object> previewMerged = AgentPlanGuard.mergePlans(
+                AgentLitePlanBootstrap.modelPlan(runState), incomingPlan);
         AgentAnalyticalIntake.mergeFinishIntakeIntoPlan(previewMerged, finishResult);
 
         if (!AgentPhasedPlanIntake.readyForApproval(previewMerged, finishResult)) {
@@ -50,7 +51,7 @@ public final class AgentPlanFinishNormalizer {
         for (Object item : list) {
             if (item instanceof Map<?, ?> map) {
                 Map<String, Object> copy = new LinkedHashMap<>((Map<String, Object>) map);
-                if (Boolean.TRUE.equals(copy.get("primary"))) {
+                if (Boolean.TRUE.equals(copy.get("primary")) && looksLikeApprovalSuggestion(copy)) {
                     continue;
                 }
                 filtered.add(copy);
@@ -61,5 +62,21 @@ public final class AgentPlanFinishNormalizer {
         } else {
             finishResult.put("suggestions", filtered);
         }
+    }
+
+    /** Keep primary recovery chips like «продолжи план»; drop premature «утвердить/начинай». */
+    private static boolean looksLikeApprovalSuggestion(Map<String, Object> suggestion) {
+        String label = suggestion.get("label") != null ? String.valueOf(suggestion.get("label")) : "";
+        String message = suggestion.get("message") != null ? String.valueOf(suggestion.get("message")) : "";
+        String combined = (label + " " + message).trim();
+        if (combined.isBlank()) {
+            return true;
+        }
+        String lower = combined.toLowerCase(java.util.Locale.ROOT);
+        if (lower.contains("продолж") || lower.contains("continue plan") || lower.contains("следующ")
+                || lower.contains("next section") || lower.contains("add the next")) {
+            return false;
+        }
+        return AgentPlanGuard.isApprovalMessage(combined);
     }
 }

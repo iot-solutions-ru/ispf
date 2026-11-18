@@ -281,6 +281,9 @@ final class OperatorAgentTurnGuard {
         }
         for (int i = steps.size() - 1; i >= 0; i--) {
             Map<String, Object> step = steps.get(i);
+            if (!"tool".equals(String.valueOf(step.get("type")))) {
+                continue;
+            }
             if (!"list_reports".equals(step.get("tool"))) {
                 continue;
             }
@@ -300,6 +303,9 @@ final class OperatorAgentTurnGuard {
         }
         for (int i = steps.size() - 1; i >= 0; i--) {
             Map<String, Object> step = steps.get(i);
+            if (!"tool".equals(String.valueOf(step.get("type")))) {
+                continue;
+            }
             if (!"list_reports".equals(step.get("tool"))) {
                 continue;
             }

@@ -273,6 +273,45 @@ public final class AgentStepHumanizer {
                 "正在准备请求…");
     }
 
+    public static String waitingForModel(String uiLocale) {
+        return t(uiLocale,
+                "Waiting for the model…",
+                "Ожидание ответа модели…",
+                "Warte auf das Modell…",
+                "等待模型回复…");
+    }
+
+    public static String modelResponding(String uiLocale) {
+        return t(uiLocale,
+                "Model is replying…",
+                "Модель отвечает…",
+                "Modell antwortet…",
+                "模型正在回复…");
+    }
+
+    public static String llmRoundLabel(String uiLocale, String actionType, String toolName) {
+        String type = actionType == null ? "" : actionType.trim().toLowerCase(Locale.ROOT);
+        if ("tool".equals(type) && toolName != null && !toolName.isBlank()) {
+            return t(uiLocale,
+                    "Model → call " + toolName,
+                    "Модель → вызов " + toolName,
+                    "Modell → Aufruf " + toolName,
+                    "模型 → 调用 " + toolName);
+        }
+        if ("finish".equals(type)) {
+            return t(uiLocale,
+                    "Model → finish answer",
+                    "Модель → готовый ответ",
+                    "Modell → Antwort fertig",
+                    "模型 → 完成回答");
+        }
+        return t(uiLocale,
+                "Model reply",
+                "Ответ модели",
+                "Modellantwort",
+                "模型回复");
+    }
+
     public static String parseErrorLabel(String uiLocale, boolean truncated) {
         if (truncated) {
             return t(uiLocale,
@@ -298,6 +337,49 @@ public final class AgentStepHumanizer {
                 "Проверка перед завершением",
                 "Prüfung vor Abschluss",
                 "完成前检查");
+    }
+
+    public static String finishWithoutAnswer(String uiLocale) {
+        return t(uiLocale,
+                "The model finished without a text answer. Rephrase the question or send \"Continue\".",
+                "Модель завершила ход без текстового ответа. Переформулируйте вопрос или отправьте «Продолжай».",
+                "Das Modell hat ohne Textantwort beendet. Frage umformulieren oder \"Weiter\" senden.",
+                "模型结束时没有文字回答。请换个说法或发送“继续”。");
+    }
+
+    /** Visible row for one LLM judge call. {@code honesty} = the failed-steps report check. */
+    public static String judgeLlmLabel(String uiLocale, boolean honesty, boolean approved, boolean answered) {
+        if (!answered) {
+            return t(uiLocale,
+                    "LLM judge: no usable answer, rule checks stand",
+                    "LLM-судья: ответа нет, действуют проверки по правилам",
+                    "LLM-Richter: keine verwertbare Antwort, Regelprüfungen gelten",
+                    "LLM 评审：无可用回答，按规则检查");
+        }
+        if (honesty) {
+            return approved
+                    ? t(uiLocale,
+                            "LLM judge: honest report of what failed — accepted",
+                            "LLM-судья: честный отчёт о сбое — принят",
+                            "LLM-Richter: ehrlicher Fehlerbericht — angenommen",
+                            "LLM 评审：如实报告失败 — 已接受")
+                    : t(uiLocale,
+                            "LLM judge: the answer hides or misstates failed steps",
+                            "LLM-судья: ответ скрывает или искажает сбойные шаги",
+                            "LLM-Richter: Antwort verschweigt fehlgeschlagene Schritte",
+                            "LLM 评审：回答隐瞒或误报失败步骤");
+        }
+        return approved
+                ? t(uiLocale,
+                        "LLM judge: matches the request",
+                        "LLM-судья: запрос закрыт",
+                        "LLM-Richter: entspricht der Anfrage",
+                        "LLM 评审：符合请求")
+                : t(uiLocale,
+                        "LLM judge: rule findings apply",
+                        "LLM-судья: замечания по правилам в силе",
+                        "LLM-Richter: Regelbefunde gelten",
+                        "LLM 评审：规则检查结论成立");
     }
 
     public static String judgeReworkLabel(String uiLocale) {
@@ -373,12 +455,25 @@ public final class AgentStepHumanizer {
         return t(uiLocale, "Plan required", "Требуется план", "Plan erforderlich", "需要计划");
     }
 
-    public static String litePlanReadySummary(String uiLocale) {
+    public static String planNotProducedSummary(String uiLocale, String modelText) {
+        String note = t(uiLocale,
+                "The model did not produce a plan for this change, so nothing was executed.",
+                "Модель не составила план для этого изменения, поэтому ничего не выполнялось.",
+                "Das Modell hat keinen Plan für diese Änderung erstellt; es wurde nichts ausgeführt.",
+                "模型没有为此更改制定计划，因此未执行任何操作。");
+        return modelText == null || modelText.isBlank() ? note : modelText.trim() + "\n\n" + note;
+    }
+
+    public static String askForPlanLabel(String uiLocale) {
+        return t(uiLocale, "Make a plan", "Составить план", "Plan erstellen", "制定计划");
+    }
+
+    public static String askForPlanMessage(String uiLocale) {
         return t(uiLocale,
-                "Reference LITE plan is ready — approve it to start execution.",
-                "Подготовлен эталонный LITE-план — утвердите и начнём выполнение.",
-                "Referenz-LITE-Plan ist bereit — genehmigen Sie ihn zum Start.",
-                "参考 LITE 计划已就绪 — 批准后开始执行。");
+                "Make a step-by-step plan for this task",
+                "Составь пошаговый план для этой задачи",
+                "Erstelle einen Schritt-für-Schritt-Plan für diese Aufgabe",
+                "为此任务制定分步计划");
     }
 
     public static String platformGuardStuckSummary(String uiLocale) {
