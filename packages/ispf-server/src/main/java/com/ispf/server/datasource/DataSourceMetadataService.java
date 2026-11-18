@@ -212,15 +212,16 @@ public class DataSourceMetadataService {
         String useSchema = schema == null || schema.isBlank() ? null : likeExact(meta, schema);
         List<TableNode> tables = new ArrayList<>();
         // Catalog/schema already META_NAME-validated; escape LIKE wildcards (_ / %).
-        try (ResultSet rs =
-                // codeql[java/sql-injection]
-                meta.getTables(useCatalog, useSchema, "%", new String[]{"TABLE", "VIEW", "BASE TABLE"})) {
-            while (rs.next()) {
-                String tableName = rs.getString("TABLE_NAME");
+        // DatabaseMetaData is not concatenated SQL — allowlisted names only.
+        ResultSet tablesRs = meta.getTables(
+                useCatalog, useSchema, "%", new String[]{"TABLE", "VIEW", "BASE TABLE"}); // codeql[java/sql-injection]
+        try (tablesRs) {
+            while (tablesRs.next()) {
+                String tableName = tablesRs.getString("TABLE_NAME");
                 if (tableName == null || tableName.isBlank()) {
                     continue;
                 }
-                String type = normalizeTableType(rs.getString("TABLE_TYPE"));
+                String type = normalizeTableType(tablesRs.getString("TABLE_TYPE"));
                 if (type == null) {
                     continue;
                 }
@@ -242,40 +243,39 @@ public class DataSourceMetadataService {
         String tablePattern = likeExact(meta, table);
         Set<String> primaryKeys = new LinkedHashSet<>();
         // Names validated by requireMetaName / IDENT; DatabaseMetaData is not concatenated SQL.
-        try (ResultSet rs =
-                // codeql[java/sql-injection]
-                meta.getPrimaryKeys(useCatalog, schema, table)) {
-            while (rs.next()) {
-                if (!table.equals(rs.getString("TABLE_NAME"))) {
+        ResultSet primaryKeysRs = meta.getPrimaryKeys(useCatalog, schema, table); // codeql[java/sql-injection]
+        try (primaryKeysRs) {
+            while (primaryKeysRs.next()) {
+                if (!table.equals(primaryKeysRs.getString("TABLE_NAME"))) {
                     continue;
                 }
-                String column = rs.getString("COLUMN_NAME");
+                String column = primaryKeysRs.getString("COLUMN_NAME");
                 if (column != null && !column.isBlank()) {
                     primaryKeys.add(column);
                 }
             }
         }
         List<ColumnView> columns = new ArrayList<>();
-        try (ResultSet rs =
-                // codeql[java/sql-injection]
-                meta.getColumns(useCatalog, schemaPattern, tablePattern, "%")) {
-            while (rs.next()) {
-                if (!table.equals(rs.getString("TABLE_NAME"))) {
+        ResultSet columnsRs = meta.getColumns(
+                useCatalog, schemaPattern, tablePattern, "%"); // codeql[java/sql-injection]
+        try (columnsRs) {
+            while (columnsRs.next()) {
+                if (!table.equals(columnsRs.getString("TABLE_NAME"))) {
                     continue;
                 }
-                String columnSchema = rs.getString("TABLE_SCHEM");
+                String columnSchema = columnsRs.getString("TABLE_SCHEM");
                 if (schema != null && columnSchema != null && !schema.equalsIgnoreCase(columnSchema)) {
                     continue;
                 }
-                String name = rs.getString("COLUMN_NAME");
+                String name = columnsRs.getString("COLUMN_NAME");
                 if (name == null || name.isBlank()) {
                     continue;
                 }
-                int size = rs.getInt("COLUMN_SIZE");
-                boolean nullable = rs.getInt("NULLABLE") != DatabaseMetaData.columnNoNulls;
+                int size = columnsRs.getInt("COLUMN_SIZE");
+                boolean nullable = columnsRs.getInt("NULLABLE") != DatabaseMetaData.columnNoNulls;
                 columns.add(new ColumnView(
                         name,
-                        rs.getString("TYPE_NAME"),
+                        columnsRs.getString("TYPE_NAME"),
                         size,
                         nullable && !primaryKeys.contains(name),
                         primaryKeys.contains(name)
