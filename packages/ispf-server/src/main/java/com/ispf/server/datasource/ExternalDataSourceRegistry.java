@@ -4,8 +4,11 @@ import com.ispf.server.security.JdbcUrlSafety;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 import org.springframework.stereotype.Component;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
@@ -50,11 +53,38 @@ public class ExternalDataSourceRegistry {
     }
 
     public <T> T callWithTemplate(String dataSourcePath, Function<JdbcTemplate, T> action) {
-        HikariDataSource pool = pools.computeIfAbsent(dataSourcePath, path -> {
+        return action.apply(new JdbcTemplate(poolFor(dataSourcePath)));
+    }
+
+    /**
+     * Runs {@code action} on one borrowed connection with {@code Connection.setReadOnly(true)},
+     * restoring the prior flag before returning the connection to the shared (writable) pool.
+     */
+    public <T> T callWithReadOnlyTemplate(String dataSourcePath, Function<JdbcTemplate, T> action) {
+        HikariDataSource pool = poolFor(dataSourcePath);
+        try (Connection connection = pool.getConnection()) {
+            boolean previous = connection.isReadOnly();
+            try {
+                connection.setReadOnly(true);
+                JdbcTemplate template = new JdbcTemplate(new SingleConnectionDataSource(connection, true));
+                return action.apply(template);
+            } finally {
+                try {
+                    connection.setReadOnly(previous);
+                } catch (SQLException ignored) {
+                    // Connection is closed by try-with-resources next.
+                }
+            }
+        } catch (SQLException ex) {
+            throw new IllegalStateException("Failed to open read-only external connection: " + dataSourcePath, ex);
+        }
+    }
+
+    private HikariDataSource poolFor(String dataSourcePath) {
+        return pools.computeIfAbsent(dataSourcePath, path -> {
             ExternalJdbcConfig config = connectionResolver.resolveExternalConfig(path);
             return createPool(path, config);
         });
-        return action.apply(new JdbcTemplate(pool));
     }
 
     private static String connectionErrorMessage(Throwable ex) {
@@ -93,7 +123,8 @@ public class ExternalDataSourceRegistry {
         hikari.setMaximumPoolSize(config.maximumPoolSize());
         hikari.setMinimumIdle(1);
         hikari.setConnectionTimeout(10_000);
-        hikari.setReadOnly(true);
+        // Pool stays writable for migrations / script / BFF exec. Browser metadata and
+        // console SELECT mark Connection.setReadOnly(true) per call (callWithReadOnlyTemplate).
         return new HikariDataSource(hikari);
     }
 }

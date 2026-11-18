@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button, Input, Modal, Select } from "antd";
@@ -36,14 +36,25 @@ function blankColumn(): DraftColumn {
   };
 }
 
+function initialColumns(): DraftColumn[] {
+  return [{ key: "col-id", name: "id", type: "INTEGER", length: 255, nullable: false, primaryKey: true }];
+}
+
 export default function DataSourceCreateTableDialog({ path, open, onClose }: DataSourceCreateTableDialogProps) {
   const { t } = useTranslation(["platform", "common"]);
   const queryClient = useQueryClient();
   const [table, setTable] = useState("");
-  const [columns, setColumns] = useState<DraftColumn[]>([
-    { key: "col-id", name: "id", type: "INTEGER", length: 255, nullable: false, primaryKey: true },
-  ]);
+  const [columns, setColumns] = useState<DraftColumn[]>(initialColumns);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    setTable("");
+    setColumns(initialColumns());
+    setError(null);
+  }, [open, path]);
 
   const mutation = useMutation({
     mutationFn: (payload: { table: string; columns: DataSourceColumnSpec[] }) =>
@@ -119,7 +130,7 @@ export default function DataSourceCreateTableDialog({ path, open, onClose }: Dat
               options={COLUMN_TYPES.map((type) => ({ value: type, label: type }))}
               onChange={(type: ColumnTypeName) => patch(column.key, { type })}
             />
-            {column.type === "VARCHAR" && (
+            {column.type === "VARCHAR" ? (
               <Input
                 type="number"
                 min={1}
@@ -128,6 +139,8 @@ export default function DataSourceCreateTableDialog({ path, open, onClose }: Dat
                 aria-label={t("platform:dataSource.columnLength")}
                 onChange={(event) => patch(column.key, { length: Number(event.target.value) })}
               />
+            ) : (
+              <span className="data-source-create-length-spacer" aria-hidden="true" />
             )}
             <label className="data-source-create-flag">
               <input

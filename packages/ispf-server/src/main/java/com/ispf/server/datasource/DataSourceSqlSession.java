@@ -72,6 +72,23 @@ public class DataSourceSqlSession {
         });
     }
 
+    /**
+     * Read-only metadata path: no {@code CREATE SCHEMA}, no object-tree mutation side effects,
+     * and external connections are marked read-only for the duration of {@code action}.
+     */
+    public <T> T callForMetadata(String dataSourcePath, Function<JdbcTemplate, T> action) {
+        tenantLocalDataAccessGuard.requireAllowedDataSourcePath(dataSourcePath);
+        if (connectionResolver.isExternal(dataSourcePath)) {
+            ExternalJdbcConfig config = connectionResolver.resolveExternalConfig(dataSourcePath);
+            tenantLocalDataAccessGuard.requireAllowedJdbcUrl(config.jdbcUrl());
+            return externalRegistry.callWithReadOnlyTemplate(dataSourcePath, action);
+        }
+        return schemaSession.callWithoutSchema(connection -> {
+            JdbcTemplate template = new JdbcTemplate(new SingleConnectionDataSource(connection, true));
+            return action.apply(template);
+        });
+    }
+
     public ConnectionTestResult testConnection(String dataSourcePath) {
         return testConnection(dataSourcePath, null);
     }

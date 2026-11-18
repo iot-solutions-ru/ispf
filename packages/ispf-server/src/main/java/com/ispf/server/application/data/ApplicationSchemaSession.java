@@ -115,6 +115,19 @@ public class ApplicationSchemaSession {
         }
     }
 
+    /**
+     * Borrows a pool connection without {@code CREATE SCHEMA} or {@code search_path} changes.
+     * Use for JDBC {@code DatabaseMetaData} that filters by explicit schema/catalog arguments.
+     */
+    public <T> T callWithoutSchema(Function<Connection, T> action) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        try {
+            return action.apply(connection);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
+        }
+    }
+
     public void runWithPlatformCatalog(Runnable action) {
         callWithPlatformCatalog(() -> {
             action.run();

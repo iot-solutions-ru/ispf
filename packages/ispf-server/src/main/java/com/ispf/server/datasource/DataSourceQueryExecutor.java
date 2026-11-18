@@ -35,6 +35,10 @@ public class DataSourceQueryExecutor {
         List<Object> bindParams = DataSourceSqlSupport.normalizeParams(params);
         int rowLimit = resolveMaxRows(maxRows);
 
+        if (connectionResolver.isExternal(dataSourcePath) && DataSourceSqlSupport.isReadQuery(query)) {
+            return dataSourceSqlSession.callForMetadata(dataSourcePath, template ->
+                    executeOnTemplate(template, query, bindParams, rowLimit));
+        }
         return dataSourceSqlSession.callWithDataSource(dataSourcePath, template ->
                 executeOnTemplate(template, query, bindParams, rowLimit));
     }

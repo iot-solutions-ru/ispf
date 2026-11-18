@@ -1,5 +1,8 @@
 package com.ispf.server.datasource;
 
+import com.ispf.core.object.ObjectType;
+import com.ispf.core.object.PlatformObject;
+import com.ispf.server.object.ObjectManager;
 import com.ispf.server.tenant.TenantLocalDataAccessGuard;
 import org.springframework.stereotype.Service;
 
@@ -39,6 +42,7 @@ public class DataSourceMetadataService {
     );
 
     private final DataSourceObjectService dataSourceObjectService;
+    private final ObjectManager objectManager;
     private final DataSourceSqlSession dataSourceSqlSession;
     private final DataSourceConnectionResolver connectionResolver;
     private final DataSourceQueryExecutor queryExecutor;
@@ -46,12 +50,14 @@ public class DataSourceMetadataService {
 
     public DataSourceMetadataService(
             DataSourceObjectService dataSourceObjectService,
+            ObjectManager objectManager,
             DataSourceSqlSession dataSourceSqlSession,
             DataSourceConnectionResolver connectionResolver,
             DataSourceQueryExecutor queryExecutor,
             TenantLocalDataAccessGuard tenantLocalDataAccessGuard
     ) {
         this.dataSourceObjectService = dataSourceObjectService;
+        this.objectManager = objectManager;
         this.dataSourceSqlSession = dataSourceSqlSession;
         this.connectionResolver = connectionResolver;
         this.queryExecutor = queryExecutor;
@@ -59,9 +65,9 @@ public class DataSourceMetadataService {
     }
 
     public DataSourceCatalog catalog(String path) {
-        requireDataSource(path);
+        requireDataSourceForRead(path);
         boolean external = connectionResolver.isExternal(path);
-        return dataSourceSqlSession.callWithDataSource(path, template -> template.execute((Connection connection) -> {
+        return dataSourceSqlSession.callForMetadata(path, template -> template.execute((Connection connection) -> {
             DatabaseMetaData meta = connection.getMetaData();
             if (!external) {
                 String schema = connectionResolver.resolveSchemaName(path);
@@ -80,7 +86,7 @@ public class DataSourceMetadataService {
     }
 
     public List<ColumnView> columns(String path, String catalog, String schema, String table) {
-        requireDataSource(path);
+        requireDataSourceForRead(path);
         String tableName = requireMetaName(table, "table");
         boolean external = connectionResolver.isExternal(path);
         String schemaName = blankToNull(schema);
@@ -103,12 +109,12 @@ public class DataSourceMetadataService {
         }
         String resolvedSchema = schemaName;
         String resolvedCatalog = catalogName;
-        return dataSourceSqlSession.callWithDataSource(path, template -> template.execute((Connection connection) ->
+        return dataSourceSqlSession.callForMetadata(path, template -> template.execute((Connection connection) ->
                 readColumns(connection.getMetaData(), resolvedCatalog, resolvedSchema, tableName)));
     }
 
     public CreatedTable createTable(String path, String table, List<ColumnSpec> columns) {
-        requireDataSource(path);
+        requireDataSourceForWrite(path);
         if (connectionResolver.isExternal(path)) {
             throw new IllegalArgumentException("DDL is not allowed on external data sources");
         }
@@ -125,7 +131,16 @@ public class DataSourceMetadataService {
         return new CreatedTable(schema, tableName);
     }
 
-    private void requireDataSource(String path) {
+    /** Metadata GETs must not mutate object structure or create missing PG schemas. */
+    private void requireDataSourceForRead(String path) {
+        PlatformObject node = objectManager.require(path);
+        if (node.type() != ObjectType.DATA_SOURCE) {
+            throw new IllegalArgumentException("Not a data source object: " + path);
+        }
+        tenantLocalDataAccessGuard.requireAllowedDataSourcePath(path);
+    }
+
+    private void requireDataSourceForWrite(String path) {
         dataSourceObjectService.ensureStructure(path);
         tenantLocalDataAccessGuard.requireAllowedDataSourcePath(path);
     }
@@ -339,7 +354,11 @@ public class DataSourceMetadataService {
             return null;
         }
         String escape = meta.getSearchStringEscape();
-        if (escape == null || escape.isBlank()) {
+        if (escape != null && escape.isEmpty()) {
+            // Driver has no LIKE escape; cannot safely escape wildcards — return as-is.
+            return value;
+        }
+        if (escape == null) {
             escape = "\\";
         }
         StringBuilder out = new StringBuilder(value.length() * 2);
