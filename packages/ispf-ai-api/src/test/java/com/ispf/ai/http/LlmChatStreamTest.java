@@ -5,12 +5,15 @@ import com.ispf.ai.LlmResponse;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class LlmChatStreamTest {
@@ -160,5 +163,25 @@ class LlmChatStreamTest {
         for (String preview : previews) {
             assertTrue(!preview.contains("AB"), preview);
         }
+    }
+
+    @Test
+    void newlineAndBackslashRunsInASecretValueMaskWithoutBacktracking() {
+        String newlines = "{\"token\":\"" + "\n".repeat(5_000);
+        String backslashes = "{\"secret\":\"" + "\\".repeat(5_001);
+        assertTimeoutPreemptively(Duration.ofSeconds(2), () -> {
+            assertEquals("{\"token\":\"***", LlmChatStream.redactedPreview(newlines));
+            assertEquals("{\"secret\":\"***", LlmChatStream.redactedPreview(backslashes));
+        });
+    }
+
+    @Test
+    void secretValueCutByTheVisibleTailStaysMasked() {
+        String text = "x".repeat(20_000) + "{\"apiKey\":\"" + "S".repeat(3_000) + "\"}" + "y".repeat(2_000);
+        String preview = LlmChatStream.redactedPreview(text);
+        assertTrue(preview.startsWith("…"));
+        assertTrue(preview.length() <= 4_000);
+        assertTrue(preview.contains("***\"}"));
+        assertFalse(preview.contains("SSS"));
     }
 }

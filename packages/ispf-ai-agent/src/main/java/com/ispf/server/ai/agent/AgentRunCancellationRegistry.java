@@ -199,8 +199,9 @@ public class AgentRunCancellationRegistry {
             map.put("running", true);
             map.put("sessionId", sessionId);
             map.put("userMessage", state.userMessage);
-            map.put("steps", snapshotSteps(state));
-            map.put("stepsCompleted", state.steps.size());
+            List<Map<String, Object>> steps = snapshotSteps(state);
+            map.put("steps", steps);
+            map.put("stepsCompleted", AgentTurnPaceHints.actionStepCount(steps));
             if (state.planState != null && !state.planState.isEmpty()) {
                 map.put("planState", state.planState);
             }
@@ -232,8 +233,9 @@ public class AgentRunCancellationRegistry {
         snap.put("completed", true);
         snap.put("sessionId", sessionId);
         snap.put("userMessage", state.userMessage);
-        snap.put("steps", snapshotSteps(state));
-        snap.put("stepsCompleted", state.steps.size());
+        List<Map<String, Object>> steps = snapshotSteps(state);
+        snap.put("steps", steps);
+        snap.put("stepsCompleted", AgentTurnPaceHints.actionStepCount(steps));
         if (state.planState != null && !state.planState.isEmpty()) {
             snap.put("planState", state.planState);
         }

@@ -59,6 +59,20 @@ class AgentRunCancellationRegistryTest {
     }
 
     @Test
+    void stepsCompletedCountsActionRowsNotLiveDialogue() {
+        AgentRunCancellationRegistry registry = new AgentRunCancellationRegistry();
+        String sessionId = "sess-budget";
+        var handle = registry.start(sessionId, "hello", Map.of());
+        registry.recordStep(sessionId, Map.of("step", 1, "type", "status", "label", "Waiting for the model"));
+        registry.upsertStep(sessionId, "llm-1", Map.of("step", 1, "type", "llm", "rawPreview", "tool list_objects"));
+        registry.recordStep(sessionId, Map.of("step", 2, "type", "tool", "tool", "list_objects"));
+        registry.recordStep(sessionId, Map.of("step", 3, "type", "guard", "error", "Finish blocked"));
+        assertThat(registry.progress(sessionId).get("stepsCompleted")).isEqualTo(2);
+        handle.close();
+        assertThat(registry.progress(sessionId).get("stepsCompleted")).isEqualTo(2);
+    }
+
+    @Test
     void closeRemovesOnlyOwnRunState() {
         AgentRunCancellationRegistry registry = new AgentRunCancellationRegistry();
         String sessionId = "sess-replace";

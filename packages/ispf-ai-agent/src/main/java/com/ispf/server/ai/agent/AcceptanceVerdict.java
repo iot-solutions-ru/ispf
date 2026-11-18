@@ -527,7 +527,7 @@ public final class AcceptanceVerdict {
         return "validate_bundle".equals(tool) || "dry_run_deploy".equals(tool);
     }
 
-    private static boolean containsLogicHostDevice(Object node) {
+    static boolean containsLogicHostDevice(Object node) {
         if (node instanceof Map<?, ?> map) {
             if ("LOGIC_HOST_DEVICE".equals(String.valueOf(map.get("code")))) {
                 return true;

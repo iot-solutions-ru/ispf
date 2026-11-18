@@ -29,8 +29,10 @@ public final class LlmChatStream {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final int PREVIEW_CHARS = 4_000;
+    /** Text before the visible tail that is still masked, so a secret value cut by the tail stays hidden. */
+    private static final int MASK_LOOKBACK_CHARS = 4_000;
     private static final Pattern SECRET_FIELD = Pattern.compile(
-            "(?i)(\"[^\"]*(?:password|passwd|secret|token|api[_-]?key|authorization|credential|private[_-]?key|client[_-]?secret)[^\"]*\"\\s*:\\s*\")((?:[^\"\\\\]|\\\\[\\s\\S]?|\\r?\\n)*)(\"|\\z)"
+            "(?i)(\"[^\"]*(?:password|passwd|secret|token|api[_-]?key|authorization|credential|private[_-]?key|client[_-]?secret)[^\"]*\"\\s*:\\s*\")((?:[^\"\\\\]|\\\\[\\s\\S])*+\\\\?)(\"|\\z)"
     );
 
     private LlmChatStream() {
@@ -335,12 +337,13 @@ public final class LlmChatStream {
         return tail(text == null ? "" : text);
     }
 
-    private static String tail(String text) {
-        String masked = maskSecrets(text);
-        if (masked.length() <= PREVIEW_CHARS) {
+    private static String tail(CharSequence text) {
+        int from = Math.max(0, text.length() - (PREVIEW_CHARS + MASK_LOOKBACK_CHARS));
+        String masked = maskSecrets(text.subSequence(from, text.length()).toString());
+        if (from == 0 && masked.length() <= PREVIEW_CHARS) {
             return masked;
         }
-        return "…" + masked.substring(masked.length() - (PREVIEW_CHARS - 1));
+        return "…" + masked.substring(Math.max(0, masked.length() - (PREVIEW_CHARS - 1)));
     }
 
     private static String maskSecrets(String text) {
@@ -410,7 +413,7 @@ public final class LlmChatStream {
 
         private String preview() {
             if (!content.isEmpty()) {
-                return tail(content.toString());
+                return tail(content);
             }
             if (tools.isEmpty()) {
                 return "";

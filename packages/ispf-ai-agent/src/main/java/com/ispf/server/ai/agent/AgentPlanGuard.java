@@ -6,6 +6,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 /**
  * Enforces plan-before-execute workflow for the platform admin agent.
@@ -64,6 +65,22 @@ final class AgentPlanGuard {
             "измени план", "change plan", "другой scope", "переплан", "replan", "новый план",
             "отмени", "cancel plan", "другая фаза", "change scope", "переделай план"
     };
+
+    /** Read-only bundle checks whose result can report LOGIC_HOST_DEVICE. */
+    private static final Set<String> BUNDLE_CHECK_TOOLS = Set.of(
+            "validate_bundle",
+            "dry_run_deploy",
+            "export_application_bundle"
+    );
+
+    /** First-person announcement of a platform change; the AUTO prompt says a promise in text does nothing. */
+    private static final Pattern PROMISED_CHANGE = Pattern.compile(
+            "(?iU)\\b(?:создам|настрою|добавлю|подключу|разверну|импортирую|запущу|сделаю|построю|приступаю)\\b"
+                    + "|\\b(?:i'll|i will|let me|i'm going to|i am going to)\\s+(?:create|set up|configure|build|deploy|add)\\b"
+    );
+
+    /** Longer prose is an answer that may end with an offer, not a bare promise. */
+    private static final int PROMISE_ONLY_MAX_CHARS = 400;
 
     private AgentPlanGuard() {
     }
@@ -591,12 +608,23 @@ final class AgentPlanGuard {
      * AUTO turn that answered without changing the platform: no plan opened, no approval, and no
      * mutating tool attempted (a refused one counts). Build checks for a mimic, alert or workflow
      * must not reject a plain answer to a question that merely mentions them.
+     * <p>
+     * Still verified: a finish that names built paths, a turn with an unresolved tool error,
+     * a bundle check that reported LOGIC_HOST_DEVICE, and a short reply that only promises a change.
      */
-    static boolean isAnswerOnlyAutoTurn(AgentRunState runState, List<Map<String, Object>> steps) {
+    static boolean isAnswerOnlyAutoTurn(
+            AgentRunState runState,
+            Map<String, Object> finishResult,
+            String finishSummary,
+            List<Map<String, Object>> steps
+    ) {
         if (runState == null || runState.interactionMode() != AgentInteractionMode.AUTO) {
             return false;
         }
         if (runState.isPlanApproved() || runState.isPlanningActive() || runState.isMutationsUnlockedForTurn()) {
+            return false;
+        }
+        if (looksLikeExecutionResult(finishResult) || isPromiseOnlyProse(finishSummary)) {
             return false;
         }
         if (steps == null) {
@@ -604,11 +632,40 @@ final class AgentPlanGuard {
         }
         for (Map<String, Object> step : steps) {
             Object tool = step != null ? step.get("tool") : null;
-            if (tool != null && !String.valueOf(tool).isBlank() && !isReadOnlyTool(String.valueOf(tool))) {
+            if (tool == null || String.valueOf(tool).isBlank()) {
+                continue;
+            }
+            String name = String.valueOf(tool).trim().toLowerCase(Locale.ROOT);
+            if (!isReadOnlyTool(name)) {
+                return false;
+            }
+            if (BUNDLE_CHECK_TOOLS.contains(name) && AcceptanceVerdict.containsLogicHostDevice(step.get("result"))) {
                 return false;
             }
         }
-        return true;
+        return !hasUnresolvedToolErrors(steps);
+    }
+
+    /** A short reply that announces a change («сейчас создам…», "I'll create…") instead of calling the tool. */
+    static boolean isPromiseOnlyProse(String summary) {
+        if (summary == null) {
+            return false;
+        }
+        String text = summary.strip().replace('\u2019', '\'');
+        if (text.isEmpty() || text.length() > PROMISE_ONLY_MAX_CHARS || text.indexOf('?') >= 0) {
+            return false;
+        }
+        return PROMISED_CHANGE.matcher(text).find();
+    }
+
+    /** A loop-guard refusal of a repeated read is not a failed step: its data is already above. */
+    private static boolean hasUnresolvedToolErrors(List<Map<String, Object>> steps) {
+        List<Map<String, Object>> withoutGuardRefusals = steps.stream()
+                .filter(step -> step != null
+                        && !(step.get("result") instanceof Map<?, ?> result
+                        && Boolean.TRUE.equals(result.get("loopGuardBlocked"))))
+                .toList();
+        return AgentTurnToolErrors.hasUnresolvedErrors(withoutGuardRefusals);
     }
 
     static boolean restrictsMutations(AgentRunState runState) {
@@ -781,8 +838,7 @@ final class AgentPlanGuard {
                 && Set.of(
                         "export_application_bundle",
                         "validate_bundle",
-                        "dry_run_deploy",
-                        "list_applications"
+                        "dry_run_deploy"
                 ).contains(lastTool)
                 && lastAskToolOk(steps)) {
             return AgentLoopGuard.bundleHowToFinishHint(lastTool);

@@ -4,6 +4,7 @@ import com.ispf.ai.LlmMessage;
 import com.ispf.ai.LlmRequest;
 import com.ispf.ai.LlmResponse;
 import com.ispf.ai.LlmToolSpec;
+import com.ispf.ai.http.LlmChatStream;
 import com.ispf.server.ai.audit.AgentAuditMetrics;
 import com.ispf.server.ai.audit.AgentAuditRedactor;
 import com.ispf.server.ai.audit.AiToolAuditService;
@@ -477,7 +478,7 @@ public class TreeFirstAgentService {
                     errorStep.put("type", "error");
                     errorStep.put("label", AgentStepHumanizer.parseErrorLabel(uiLocale, truncated));
                     errorStep.put("error", parsed.error() != null ? parsed.error() : "parse failed");
-                    errorStep.put("rawPreview", preview(response != null ? response.content() : null));
+                    errorStep.put("rawPreview", maskedPreview(response != null ? response.content() : null, 240));
                     if (truncated) {
                         errorStep.put("truncated", true);
                     }
@@ -604,7 +605,12 @@ public class TreeFirstAgentService {
                     }
                     AcceptanceVerdict.Result executionAcceptance = null;
                     final boolean answerOnlyAuto = profile != AgentProfile.OPERATOR
-                            && AgentPlanGuard.isAnswerOnlyAutoTurn(session.runState(), steps);
+                            && AgentPlanGuard.isAnswerOnlyAutoTurn(
+                                    session.runState(),
+                                    candidateResult,
+                                    agentAction.summary(),
+                                    steps
+                            );
                     String pictureSummary = null;
                     String honestSummary = null;
                     if (profile != AgentProfile.OPERATOR) {
@@ -1761,20 +1767,8 @@ public class TreeFirstAgentService {
         );
     }
 
-    /** Tool / finish / guard / error rows — exclude live LLM dialogue from the step budget. */
     private static int actionStepCount(List<Map<String, Object>> steps) {
-        if (steps == null || steps.isEmpty()) {
-            return 0;
-        }
-        int count = 0;
-        for (Map<String, Object> step : steps) {
-            String type = step != null ? String.valueOf(step.get("type")) : "";
-            if ("llm".equals(type) || "status".equals(type)) {
-                continue;
-            }
-            count++;
-        }
-        return count;
+        return AgentTurnPaceHints.actionStepCount(steps);
     }
 
     public Map<String, Object> runOperatorTurn(
@@ -1989,8 +1983,9 @@ public class TreeFirstAgentService {
         return error;
     }
 
-    private static String preview(String content) {
-        return preview(content, 240);
+    /** Raw model text reaches progress rows only through this: parse failures fall back to the unparsed reply. */
+    private static String maskedPreview(String content, int maxChars) {
+        return LlmChatStream.redactedPreview(preview(content, maxChars));
     }
 
     private static String preview(String content, int maxChars) {
@@ -2048,7 +2043,7 @@ public class TreeFirstAgentService {
             step.put("arguments", redactedArgs);
         }
         String content = llmDialoguePreview(response != null ? response.content() : null, action, toolName, redactedArgs);
-        step.put("rawPreview", preview(content, 1_200));
+        step.put("rawPreview", maskedPreview(content, 1_200));
         if (parsed != null && parsed.llmLatencyMs() > 0) {
             step.put("latencyMs", parsed.llmLatencyMs());
         }

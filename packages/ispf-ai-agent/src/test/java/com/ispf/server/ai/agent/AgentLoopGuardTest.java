@@ -165,6 +165,84 @@ class AgentLoopGuardTest {
     }
 
     @Test
+    void placeholderListDriversAfterUnfilteredOkSoftBlocksFirstOffense() {
+        List<Map<String, Object>> steps = List.of(okStep("list_drivers", Map.of()));
+        var decision = AgentLoopGuard.checkHardBlock(
+                "list_drivers",
+                Map.of("query", "<название протокола>"),
+                steps
+        );
+        assertTrue(decision.isPresent());
+        assertTrue(decision.get().blocked());
+        assertFalse(decision.get().stopTurn());
+        assertTrue(decision.get().error().contains("placeholder"));
+    }
+
+    @Test
+    void askRepeatListApplicationsGetsNeutralHintNotBundleHowTo() {
+        List<Map<String, Object>> once = List.of(okStep("list_applications", Map.of()));
+        var block = AgentLoopGuard.checkHardBlock("list_applications", Map.of(), once, true);
+        assertTrue(block.isPresent());
+        assertFalse(block.get().stopTurn());
+        assertTrue(block.get().hint().contains("Application list is already above"));
+        assertFalse(block.get().hint().contains("ispf pack"));
+    }
+
+    @Test
+    void llmRowsDoNotHideRepeatedGroundTruthErrors() {
+        String error = "Cannot create under hmi: parent path was not discovered in this turn: root.platform.mimics";
+        List<Map<String, Object>> steps = List.of(
+                llmStep("create_object"),
+                errorStep("create_object", error),
+                llmStep("list_objects"),
+                toolOnPath("list_objects", "root.platform"),
+                llmStep("create_object"),
+                errorStep("create_object", error),
+                llmStep("create_object")
+        );
+        var block = AgentLoopGuard.checkHardBlock(
+                "create_object",
+                Map.of("parentPath", "root.platform.mimics", "name", "hmi", "type", "MIMIC"),
+                steps
+        );
+        assertTrue(block.isPresent());
+        assertTrue(block.get().error().contains("same ground-truth error"));
+        assertTrue(block.get().hint().contains("list_objects parent=root.platform.mimics"));
+    }
+
+    @Test
+    void llmRowsDoNotHideRepeatedDiscoveryInTheRecentWindow() {
+        List<Map<String, Object>> steps = List.of(
+                llmStep("search_context"),
+                step("search_context", Map.of("query", "a")),
+                llmStep("list_objects"),
+                toolOnPath("list_objects", "root.platform"),
+                llmStep("search_context"),
+                step("search_context", Map.of("query", "b")),
+                llmStep("get_object"),
+                toolOnPath("get_object", "root.platform.devices"),
+                llmStep("search_context"),
+                step("search_context", Map.of("query", "c"))
+        );
+        String hint = AgentLoopGuard.continuationHint("search_context", steps, 96);
+        assertTrue(hint.contains("already above"), hint);
+    }
+
+    @Test
+    void llmRowsDoNotCountTowardTheStepBudgetHint() {
+        List<Map<String, Object>> steps = new ArrayList<>();
+        for (String tool : List.of(
+                "get_object", "list_variables", "describe_variables", "list_functions", "get_function", "set_variable"
+        )) {
+            steps.add(llmStep(tool));
+            steps.add(toolOnPath(tool, "root.platform.devices.demo"));
+        }
+        String hint = AgentLoopGuard.continuationHint("set_variable", steps, 20);
+        assertFalse(hint.contains("Step limit"), hint);
+        assertTrue(hint.startsWith("Continue"), hint);
+    }
+
+    @Test
     void blocksAngleBracketListDriversQuery() {
         var first = AgentLoopGuard.checkHardBlock(
                 "list_drivers",
@@ -752,6 +830,14 @@ class AgentLoopGuardTest {
 
     private static Map<String, Object> step(String tool, Map<String, Object> arguments) {
         return Map.of("type", "tool", "tool", tool, "arguments", arguments);
+    }
+
+    private static Map<String, Object> llmStep(String proposedTool) {
+        return Map.of(
+                "type", "llm",
+                "tool", proposedTool,
+                "result", Map.of("status", "OK", "phase", "llm")
+        );
     }
 
     private static Map<String, Object> okStep(String tool, Map<String, Object> arguments) {

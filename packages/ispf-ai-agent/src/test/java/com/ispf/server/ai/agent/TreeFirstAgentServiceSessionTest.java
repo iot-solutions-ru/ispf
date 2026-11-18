@@ -255,6 +255,31 @@ class TreeFirstAgentServiceSessionTest {
     }
 
     @Test
+    void parseFailurePreviewsMaskSecretFields() throws Exception {
+        aiProperties.setAgentParseRetries(1);
+        when(llmProviderRegistry.complete(any())).thenReturn(new LlmResponse(
+                "Setting the broker login {\"mqttPassword\":\"hunter2\"} in plain language.",
+                "test-model",
+                new LlmUsage(1, 1, 2)
+        ));
+
+        AgentSession session = AgentSession.create("admin", "root");
+        session.runState().setInteractionMode(AgentInteractionMode.EXECUTE);
+        var auth = new UsernamePasswordAuthenticationToken("admin", "secret");
+        Map<String, Object> result = agentService.runTurn(session, "configure the broker", auth, "admin");
+
+        assertEquals("ERROR", result.get("status"));
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> steps = (List<Map<String, Object>>) result.get("steps");
+        assertThat(steps)
+                .filteredOn(step -> step.containsKey("rawPreview"))
+                .hasSizeGreaterThanOrEqualTo(2)
+                .allSatisfy(step -> assertThat(String.valueOf(step.get("rawPreview")))
+                        .doesNotContain("hunter2")
+                        .contains("\"mqttPassword\":\"***\""));
+    }
+
+    @Test
     void runsManyToolStepsWithoutPausing() throws Exception {
         AtomicInteger calls = new AtomicInteger();
         when(llmProviderRegistry.complete(any())).thenAnswer(invocation -> {

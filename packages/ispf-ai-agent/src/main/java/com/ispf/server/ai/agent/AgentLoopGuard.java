@@ -45,7 +45,7 @@ final class AgentLoopGuard {
     );
 
     /**
-     * Idempotent bundle how-to reads: one OK per fingerprint, then finish Markdown.
+     * Idempotent bundle how-to reads (and the application list): one OK per fingerprint, then finish Markdown.
      * Repeating export/validate/dry-run floods the Studio log (Ask «как упаковать bundle»).
      */
     private static final Set<String> BUNDLE_HOWTO_TOOLS = Set.of(
@@ -317,6 +317,14 @@ final class AgentLoopGuard {
                  with the same arguments.""";
     }
 
+    private static String applicationListFinishHint() {
+        return """
+                Application list is already above (appId, active bundle version). \
+                Finish NOW with Markdown from that list, or inspect one application by its appId \
+                (application_data_status appId=… / export_application_bundle appId=…). \
+                Do NOT call list_applications again with the same arguments.""";
+    }
+
     private static String driverInventoryHint() {
         return """
                 Driver list received — count and driverIds above are authoritative for this instance. \
@@ -344,7 +352,7 @@ final class AgentLoopGuard {
                     "Do not copy angle-bracket placeholders into tool arguments. "
                             + "Finish NOW from the Knowledge index / prior list_drivers result, "
                             + "or (only if none yet) call list_drivers once with empty arguments or a real substring (mqtt).",
-                    escalate || anyCalls >= 1
+                    escalate
             ));
         }
         if (hasSuccessfulUnfilteredListDrivers(steps)) {
@@ -409,7 +417,7 @@ final class AgentLoopGuard {
         if (steps == null || steps.isEmpty()) {
             return false;
         }
-        Map<String, Object> last = steps.get(steps.size() - 1);
+        Map<String, Object> last = lastToolStep(steps);
         Object args = last.get("arguments");
         if (!(args instanceof Map<?, ?>)) {
             args = last.get("args");
@@ -448,7 +456,7 @@ final class AgentLoopGuard {
         if (steps == null || steps.isEmpty()) {
             return false;
         }
-        Map<String, Object> last = steps.get(steps.size() - 1);
+        Map<String, Object> last = lastToolStep(steps);
         Object args = last.get("arguments");
         if (!(args instanceof Map<?, ?>)) {
             args = last.get("args");
@@ -480,7 +488,7 @@ final class AgentLoopGuard {
     }
 
     private static String defaultHint(List<Map<String, Object>> steps, int maxStepsTotal) {
-        int stepCount = steps != null ? steps.size() : 0;
+        int stepCount = AgentTurnPaceHints.actionStepCount(steps);
         int remainingTotal = Math.max(0, maxStepsTotal - stepCount);
         String pace = AgentTurnPaceHints.gentlePaceSuffix(steps, maxStepsTotal);
         if (remainingTotal <= 8) {
@@ -546,7 +554,9 @@ final class AgentLoopGuard {
                         "Hard block: '" + normalized + "' already succeeded this turn"
                                 + (bundleFp.isBlank() ? "" : " (" + bundleFp + ")")
                                 + " — stop looping",
-                        bundleHowToFinishHint(normalized),
+                        "list_applications".equals(normalized)
+                                ? applicationListFinishHint()
+                                : bundleHowToFinishHint(normalized),
                         escalate
                 ));
             }
@@ -1068,6 +1078,26 @@ final class AgentLoopGuard {
         return names;
     }
 
+    /** Last {@code max} tool rows; the LLM row of the current round sits after the last tool call. */
+    private static List<Map<String, Object>> recentToolSteps(List<Map<String, Object>> steps, int max) {
+        if (steps == null || max <= 0) {
+            return List.of();
+        }
+        List<Map<String, Object>> tools = new ArrayList<>();
+        for (int i = steps.size() - 1; i >= 0 && tools.size() < max; i--) {
+            Map<String, Object> step = steps.get(i);
+            if (step != null && "tool".equals(String.valueOf(step.get("type")))) {
+                tools.add(0, step);
+            }
+        }
+        return tools;
+    }
+
+    private static Map<String, Object> lastToolStep(List<Map<String, Object>> steps) {
+        List<Map<String, Object>> last = recentToolSteps(steps, 1);
+        return last.isEmpty() ? Map.of() : last.get(0);
+    }
+
     private static boolean isStrictTwoToolAlternation(List<String> sequence) {
         if (sequence == null || sequence.size() < OSCILLATION_MIN_STEPS) {
             return false;
@@ -1267,12 +1297,7 @@ final class AgentLoopGuard {
             return 0;
         }
         int count = 0;
-        int start = Math.max(0, steps.size() - 4);
-        for (int i = start; i < steps.size(); i++) {
-            Map<String, Object> step = steps.get(i);
-            if (!"tool".equals(String.valueOf(step.get("type")))) {
-                continue;
-            }
+        for (Map<String, Object> step : recentToolSteps(steps, 4)) {
             if (!toolName.equalsIgnoreCase(String.valueOf(step.get("tool")))) {
                 continue;
             }
@@ -1295,10 +1320,7 @@ final class AgentLoopGuard {
             return 0;
         }
         String normalized = normalize(toolName);
-        int start = Math.max(0, steps.size() - RECENT_WINDOW);
-        return steps.stream()
-                .skip(start)
-                .filter(step -> "tool".equals(String.valueOf(step.get("type"))))
+        return recentToolSteps(steps, RECENT_WINDOW).stream()
                 .map(step -> step.get("tool"))
                 .filter(Objects::nonNull)
                 .map(tool -> normalize(String.valueOf(tool)))
@@ -1328,7 +1350,7 @@ final class AgentLoopGuard {
         if (steps.isEmpty()) {
             return false;
         }
-        Map<String, Object> last = steps.get(steps.size() - 1);
+        Map<String, Object> last = lastToolStep(steps);
         if (!"tool".equals(String.valueOf(last.get("type")))) {
             return false;
         }
@@ -1341,7 +1363,7 @@ final class AgentLoopGuard {
     }
 
     private static String blockedObjectPath(List<Map<String, Object>> steps) {
-        Map<String, Object> last = steps.get(steps.size() - 1);
+        Map<String, Object> last = lastToolStep(steps);
         String error = String.valueOf(stepMap(last, "result").get("error"));
         int marker = error.lastIndexOf(": ");
         if (marker >= 0 && marker + 2 < error.length()) {
@@ -1358,7 +1380,7 @@ final class AgentLoopGuard {
         if (!"create_object".equals(tool) && !"create_virtual_device".equals(tool)) {
             return null;
         }
-        Map<String, Object> last = steps.get(steps.size() - 1);
+        Map<String, Object> last = lastToolStep(steps);
         if (!tool.equals(normalize(String.valueOf(last.get("tool"))))) {
             return null;
         }
@@ -1422,7 +1444,7 @@ final class AgentLoopGuard {
         if (steps.isEmpty()) {
             return null;
         }
-        Map<String, Object> last = steps.get(steps.size() - 1);
+        Map<String, Object> last = lastToolStep(steps);
         if (!"create_object".equals(String.valueOf(last.get("tool")))) {
             return null;
         }
@@ -1464,7 +1486,7 @@ final class AgentLoopGuard {
     }
 
     private static String blockedParentPath(List<Map<String, Object>> steps) {
-        Map<String, Object> last = steps.get(steps.size() - 1);
+        Map<String, Object> last = lastToolStep(steps);
         String error = String.valueOf(stepMap(last, "result").get("error"));
         int marker = error.lastIndexOf(": ");
         if (marker >= 0 && marker + 2 < error.length()) {
@@ -1477,7 +1499,7 @@ final class AgentLoopGuard {
         if (steps.isEmpty()) {
             return false;
         }
-        Map<String, Object> last = steps.get(steps.size() - 1);
+        Map<String, Object> last = lastToolStep(steps);
         if (!"tool".equals(String.valueOf(last.get("type")))) {
             return false;
         }
@@ -1489,7 +1511,7 @@ final class AgentLoopGuard {
         if (steps.isEmpty()) {
             return false;
         }
-        Map<String, Object> last = steps.get(steps.size() - 1);
+        Map<String, Object> last = lastToolStep(steps);
         if (!"tool".equals(String.valueOf(last.get("type")))) {
             return false;
         }
