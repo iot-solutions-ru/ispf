@@ -162,7 +162,10 @@ final class AgentPromptAssembler {
         boolean copilotHereAndNow = "copilot".equalsIgnoreCase(session.runState().clientChannel());
         if (!copilotHereAndNow) {
             List<AgentTurn> history = session.turns();
-            int maxTurns = Math.max(1, aiProperties.getAgentMaxHistoryTurns());
+            int maxTurns = Math.max(
+                    1,
+                    askMode ? aiProperties.getAgentAskMaxHistoryTurns() : aiProperties.getAgentMaxHistoryTurns()
+            );
             int start = Math.max(0, history.size() - maxTurns);
             if (start > 0) {
                 String rolledSummary = summarizeOlderHistory(

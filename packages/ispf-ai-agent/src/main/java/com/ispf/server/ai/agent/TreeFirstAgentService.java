@@ -385,7 +385,12 @@ public class TreeFirstAgentService {
                         objectMapper,
                         llmProviderRegistry,
                         messages,
-                        requestMessages -> buildAgentLlmRequest(requestMessages, session.runState(), profile),
+                        requestMessages -> buildAgentLlmRequest(
+                                requestMessages,
+                                session.runState(),
+                                profile,
+                                askMode
+                        ),
                         aiProperties.getAgentParseRetries(),
                         profile == AgentProfile.OPERATOR,
                         new AgentLlmActionResolver.ResolveContext(
@@ -1485,24 +1490,31 @@ public class TreeFirstAgentService {
     private LlmRequest buildAgentLlmRequest(
             List<LlmMessage> messages,
             AgentRunState runState,
-            AgentProfile profile
+            AgentProfile profile,
+            boolean askMode
     ) {
         Map<String, Object> providerOptions = aiProperties.isAgentDisableThinking()
                 ? Map.of("chat_template_kwargs", Map.of("enable_thinking", false))
                 : Map.of();
-        List<LlmToolSpec> tools = nativeToolCallingEnabled()
+        boolean useNativeTools = askMode
+                ? aiProperties.isAgentAskNativeTools() && nativeToolCallingEnabled()
+                : nativeToolCallingEnabled();
+        List<LlmToolSpec> tools = useNativeTools
                 ? nativeToolSpecs(
                         AgentToolSurface.filterCatalog(
                                 toolRegistry.toolCatalog(profile),
                                 runState,
-                                false
+                                askMode
                         )
                 )
                 : List.of();
+        int maxTokens = askMode
+                ? aiProperties.getAgentAskMaxTokens()
+                : aiProperties.getAgentMaxTokens();
         return new LlmRequest(
                 aiProperties.getModel(),
                 messages,
-                aiProperties.getAgentMaxTokens(),
+                maxTokens,
                 aiProperties.getTemperature(),
                 providerOptions,
                 tools,
