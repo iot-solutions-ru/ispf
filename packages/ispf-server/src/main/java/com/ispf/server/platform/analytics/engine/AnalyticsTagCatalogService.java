@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -340,22 +341,36 @@ public class AnalyticsTagCatalogService {
             return quality;
         }
         AnalyticsDagBuilder.AnalyticsTagAdjacency adjacency = AnalyticsDagBuilder.adjacency(definitions);
-        for (String upstream : adjacency.upstreamByTag().getOrDefault(definition.tagPath(), Set.of())) {
+        if (hasBadUpstream(definition.tagPath(), definitions, adjacency, new HashSet<>())) {
+            return HistorianRuleMetaService.QUALITY_UNCERTAIN;
+        }
+        return quality;
+    }
+
+    /** Transitively treat disabled / error ancestors as uncertain for catalog display. */
+    private static boolean hasBadUpstream(
+            String tagPath,
+            List<AnalyticsTagDefinition> definitions,
+            AnalyticsDagBuilder.AnalyticsTagAdjacency adjacency,
+            Set<String> visiting
+    ) {
+        if (!visiting.add(tagPath)) {
+            return false;
+        }
+        for (String upstream : adjacency.upstreamByTag().getOrDefault(tagPath, Set.of())) {
             Optional<AnalyticsTagDefinition> upstreamTag = definitions.stream()
                     .filter(tag -> tag.tagPath().equals(upstream))
                     .findFirst();
             if (upstreamTag.isEmpty()) {
                 continue;
             }
-            String upstreamQuality = !upstreamTag.get().enabled()
-                    ? HistorianRuleMetaService.QUALITY_DISABLED
-                    : HistorianRuleMetaService.QUALITY_OK;
-            if (HistorianRuleMetaService.QUALITY_UNCERTAIN.equals(upstreamQuality)
-                    || HistorianRuleMetaService.QUALITY_ERROR.equals(upstreamQuality)
-                    || HistorianRuleMetaService.QUALITY_DISABLED.equals(upstreamQuality)) {
-                return HistorianRuleMetaService.QUALITY_UNCERTAIN;
+            if (!upstreamTag.get().enabled()) {
+                return true;
+            }
+            if (hasBadUpstream(upstream, definitions, adjacency, visiting)) {
+                return true;
             }
         }
-        return quality;
+        return false;
     }
 }
