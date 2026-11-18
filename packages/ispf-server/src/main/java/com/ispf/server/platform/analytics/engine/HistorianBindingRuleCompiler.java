@@ -101,19 +101,24 @@ public final class HistorianBindingRuleCompiler {
             );
         }
         if (HistorianCelPreprocessor.isCelExpression(expression)) {
-            List<AnalyticsSourceRef> sources = HistorianCelPreprocessor.extractSources(expression);
-            return Optional.of(new AnalyticsTagDefinition(
-                    tagPath,
-                    "cel",
-                    sources,
-                    windowBucket,
-                    rollupBuckets,
-                    periodicMs,
-                    onChange,
-                    rule.enabled(),
-                    outputVariable,
-                    expression
-            ));
+            try {
+                List<AnalyticsSourceRef> sources = HistorianCelPreprocessor.extractSources(expression);
+                return Optional.of(new AnalyticsTagDefinition(
+                        tagPath,
+                        "cel",
+                        sources,
+                        windowBucket,
+                        rollupBuckets,
+                        periodicMs,
+                        onChange,
+                        rule.enabled(),
+                        outputVariable,
+                        expression
+                ));
+            } catch (RuntimeException ignored) {
+                // Malformed helper args (e.g. dangling quote) must not break catalog compile.
+                return Optional.empty();
+            }
         }
         return Optional.empty();
     }
