@@ -165,18 +165,16 @@ final class AgentLitePlanBootstrap {
         return plan;
     }
 
+    private static boolean asksForSnmp(String text) {
+        return containsAny(text, "snmp", "oid", "mib", "localhost:161");
+    }
+
     private static String monitoringLabGoal(String text) {
-        if (containsAny(text, "virtual", "насос", "pump", "lab-pump")) {
-            return "Virtual lab device with telemetry";
-        }
-        return "SNMP monitoring per user request";
+        return asksForSnmp(text) ? "SNMP monitoring per user request" : "Virtual lab device with telemetry";
     }
 
     private static List<String> monitoringLabSteps(String text) {
-        if (containsAny(text, "virtual", "насос", "pump", "lab-pump", "давлен")) {
-            return virtualPumpSteps();
-        }
-        return snmpLocalhostSteps();
+        return asksForSnmp(text) ? snmpLocalhostSteps() : virtualPumpSteps();
     }
 
     private static List<String> automationSteps(String text) {

@@ -66,7 +66,10 @@ public final class AgentAssignmentClassifier {
                 "machine learning", "оператор", "ролевая модель")) {
             return new Classification(AgentAssignmentType.INDUSTRIAL_FACILITY, 0.75, false, "industrial_oil_gas");
         }
-        if (text.length() < 48) {
+        // A device or variable request must not fall through to the plant default, whose judge
+        // demands a mimic, a dashboard, and alerts the user never asked for.
+        if (text.length() < 48 || matchesAny(text, "устройств", "датчик", "переменн", "device", "sensor",
+                "variable")) {
             return new Classification(AgentAssignmentType.MONITORING_LAB, 0.6, true, "snmp_lab");
         }
         return new Classification(AgentAssignmentType.INDUSTRIAL_FACILITY, 0.55, false, "industrial_oil_gas");

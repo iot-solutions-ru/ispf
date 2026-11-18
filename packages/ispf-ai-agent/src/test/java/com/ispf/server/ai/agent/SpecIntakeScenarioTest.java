@@ -29,6 +29,17 @@ class SpecIntakeScenarioTest {
     }
 
     @Test
+    void plainDeviceRequestIsNotAPlant() {
+        var classification = AgentAssignmentClassifier.classify(
+                "Создай виртуальное устройство audit-exec-01 с переменной pressure");
+        assertThat(classification.type()).isEqualTo(AgentAssignmentType.MONITORING_LAB);
+        assertThat(AgentConformanceCatalog.requiresSmokeCases(classification.type())).isFalse();
+        assertThat(AgentAssignmentClassifier.classify(
+                "Создай насосную станцию с тремя датчиками давления и мнемосхемой").type())
+                .isEqualTo(AgentAssignmentType.INDUSTRIAL_FACILITY);
+    }
+
+    @Test
     void mesBundleClassifiesAsApplicationBundle() {
         var classification = AgentAssignmentClassifier.classify(SpecIntakeFixtures.MES_BUNDLE_PROMPT);
         assertThat(classification.type()).isEqualTo(AgentAssignmentType.APPLICATION_BUNDLE);

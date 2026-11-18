@@ -32,6 +32,13 @@ class AgentLitePlanBootstrapTest {
     }
 
     @Test
+    void plainVirtualDeviceDraftDoesNotSuggestSnmp() {
+        var plan = AgentLitePlanBootstrap.resolveDraftPlan(
+                "Создай виртуальное устройство audit-01 с переменной temperature", AgentPlanDepth.LITE);
+        plan.ifPresent(draft -> assertThat(draft.toString()).doesNotContainIgnoringCase("snmp"));
+    }
+
+    @Test
     void resolvesWorkflowPlan() {
         var plan = AgentLitePlanBootstrap.resolveDraftPlan(
                 "Создай workflow для симуляции гидроудара",
