@@ -42,6 +42,7 @@ public class VariableHistoryListener implements ObjectChangeAsyncHandler {
             );
             return;
         }
+        // History policy / config revision with no measurement payload — do not sample.
         if (event.revision() != null) {
             return;
         }
