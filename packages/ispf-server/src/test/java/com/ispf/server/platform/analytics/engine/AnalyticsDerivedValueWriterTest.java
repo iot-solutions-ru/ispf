@@ -1,5 +1,7 @@
 package com.ispf.server.platform.analytics.engine;
 
+import com.ispf.core.model.DataRecord;
+import com.ispf.core.model.FieldType;
 import com.ispf.server.object.ObjectManager;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,13 +27,16 @@ class AnalyticsDerivedValueWriterTest {
 
         writer.write("root.platform.devices.tag-a", "derivedValue", "42", observedAt);
 
+        ArgumentCaptor<DataRecord> recordCaptor = ArgumentCaptor.forClass(DataRecord.class);
         ArgumentCaptor<Instant> observedCaptor = ArgumentCaptor.forClass(Instant.class);
         verify(objectManager).setVariableValue(
                 org.mockito.ArgumentMatchers.eq("root.platform.devices.tag-a"),
                 org.mockito.ArgumentMatchers.eq("derivedValue"),
-                org.mockito.ArgumentMatchers.any(),
+                recordCaptor.capture(),
                 observedCaptor.capture()
         );
         assertThat(observedCaptor.getValue()).isEqualTo(observedAt);
+        assertThat(recordCaptor.getValue().schema().field("value").orElseThrow().type()).isEqualTo(FieldType.DOUBLE);
+        assertThat(recordCaptor.getValue().firstRow().get("value")).isEqualTo(42.0);
     }
 }
