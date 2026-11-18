@@ -77,10 +77,15 @@ public class HistorianRuleMetaService {
         }
         PlatformObject node = objectManager.require(objectPath);
         Map<String, Map<String, String>> all = readAll(node);
-        Map<String, String> entry = new LinkedHashMap<>();
-        entry.put("lastEvalAt", observedAt != null ? observedAt.toString() : "");
+        Map<String, String> entry = new LinkedHashMap<>(all.getOrDefault(ruleId, Map.of()));
+        Instant at = observedAt != null ? observedAt : Instant.now();
+        entry.put("lastEvalAt", at.toString());
         entry.put("lastEvalStatus", status != null ? status : "");
-        entry.put("quality", qualityForStatus(status));
+        // Do not clobber DISABLED set by propagateQuality when an on-change tick re-records lastEval*.
+        String existingQuality = entry.get("quality");
+        if (!QUALITY_DISABLED.equals(existingQuality)) {
+            entry.put("quality", qualityForStatus(status));
+        }
         all.put(ruleId, entry);
         writeAll(objectPath, all);
     }
