@@ -55,23 +55,45 @@ class JdbcVariableHistoryQueryStore implements VariableHistoryQueryStore {
         List<VariableSampleEntity> rows;
         if (from != null && to != null) {
             // Newest cappedLimit within range (DESC + reverse) — avoid loading the full range into memory.
-            rows = new ArrayList<>(sampleRepository.findByEffectiveTimestampBetweenOrderByEffectiveTimestampDesc(
-                    objectPath,
-                    variableName,
-                    fieldName,
-                    from,
-                    to,
-                    PageRequest.of(0, cappedLimit)
-            ));
-            rows = rows.reversed();
+            rows = newestWithin(
+                    sampleRepository.findByEffectiveTimestampBetweenOrderByEffectiveTimestampDesc(
+                            objectPath,
+                            variableName,
+                            fieldName,
+                            from,
+                            to,
+                            PageRequest.of(0, cappedLimit)
+                    )
+            );
+        } else if (from != null) {
+            rows = newestWithin(
+                    sampleRepository.findByEffectiveTimestampFromOrderByEffectiveTimestampDesc(
+                            objectPath,
+                            variableName,
+                            fieldName,
+                            from,
+                            PageRequest.of(0, cappedLimit)
+                    )
+            );
+        } else if (to != null) {
+            rows = newestWithin(
+                    sampleRepository.findByEffectiveTimestampUntilOrderByEffectiveTimestampDesc(
+                            objectPath,
+                            variableName,
+                            fieldName,
+                            to,
+                            PageRequest.of(0, cappedLimit)
+                    )
+            );
         } else {
-            rows = new ArrayList<>(sampleRepository.findByObjectPathAndVariableNameAndFieldNameOrderByEffectiveTimestampDesc(
-                    objectPath,
-                    variableName,
-                    fieldName,
-                    PageRequest.of(0, cappedLimit)
-            ));
-            rows = rows.reversed();
+            rows = newestWithin(
+                    sampleRepository.findByObjectPathAndVariableNameAndFieldNameOrderByEffectiveTimestampDesc(
+                            objectPath,
+                            variableName,
+                            fieldName,
+                            PageRequest.of(0, cappedLimit)
+                    )
+            );
         }
 
         return rows.stream()
@@ -83,6 +105,10 @@ class JdbcVariableHistoryQueryStore implements VariableHistoryQueryStore {
                         VariableHistoryWriteRecord.normalizeQuality(row.getQuality())
                 ))
                 .toList();
+    }
+
+    private static List<VariableSampleEntity> newestWithin(List<VariableSampleEntity> rows) {
+        return new ArrayList<>(rows).reversed();
     }
 
     @Override
