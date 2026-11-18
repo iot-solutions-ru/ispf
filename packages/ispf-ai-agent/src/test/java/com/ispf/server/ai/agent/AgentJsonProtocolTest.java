@@ -109,6 +109,30 @@ class AgentJsonProtocolTest {
     }
 
     @Test
+    void parsesToolNameInTypeField() throws Exception {
+        String content = """
+                {"type":"search_context","arguments":{"query":"snmp agent monitoring","topic":"drivers"}}
+                """;
+        AgentJsonProtocol.AgentAction action = AgentJsonProtocol.parse(objectMapper, content);
+        assertEquals("tool", action.type());
+        assertEquals("search_context", action.toolName());
+        assertEquals("snmp agent monitoring", action.arguments().get("query"));
+        assertEquals("drivers", action.arguments().get("topic"));
+    }
+
+    @Test
+    void takesFirstToolWhenModelDumpsSeveralShorthandActions() throws Exception {
+        String content = """
+                {"type":"search_context","arguments":{"query":"snmp agent monitoring","topic":"drivers"}}
+                {"type":"list_objects","arguments":{"parentPath":"root.platform.devices","lite":true}}
+                """;
+        AgentJsonProtocol.AgentAction action = AgentJsonProtocol.parse(objectMapper, content);
+        assertEquals("tool", action.type());
+        assertEquals("search_context", action.toolName());
+        assertEquals("drivers", action.arguments().get("topic"));
+    }
+
+    @Test
     void parsesNestedFunctionObject() throws Exception {
         String content = """
                 {"type":"tool","function":{"name":"set_variable","arguments":{"path":"x","name":"layout","value":"{}"}}}

@@ -342,6 +342,15 @@ public final class AgentJsonProtocol {
                     null
             );
         }
+        // Models often emit {"type":"search_context","arguments":{...}} instead of type=tool + name=.
+        if (looksLikeToolNameShorthand(type, node)) {
+            return toolAction(
+                    objectMapper,
+                    type,
+                    node.get("arguments"),
+                    node.get("parameters")
+            );
+        }
         if ("message".equalsIgnoreCase(type) || "text".equalsIgnoreCase(type) || "assistant".equalsIgnoreCase(type)) {
             String embedded = textOrNull(node, "content", "text", "message");
             if (embedded != null && embedded.contains("{")) {
@@ -496,6 +505,42 @@ public final class AgentJsonProtocol {
         };
     }
 
+    /**
+     * True when {@code type} is a tool name (snake_case) and the object carries tool args —
+     * the common shorthand {@code {"type":"list_objects","arguments":{...}}}.
+     */
+    private static boolean looksLikeToolNameShorthand(String type, JsonNode node) {
+        if (type == null || type.isBlank() || isAgentActionType(type) || !isLikelyToolName(type)) {
+            return false;
+        }
+        if (node == null) {
+            return false;
+        }
+        JsonNode args = node.get("arguments");
+        if (args != null && !args.isNull() && args.isObject()) {
+            return true;
+        }
+        JsonNode params = node.get("parameters");
+        return params != null && !params.isNull() && params.isObject();
+    }
+
+    private static boolean isLikelyToolName(String type) {
+        if (type == null || type.length() < 2 || type.length() > 64) {
+            return false;
+        }
+        char first = type.charAt(0);
+        if (first < 'a' || first > 'z') {
+            return false;
+        }
+        for (int i = 1; i < type.length(); i++) {
+            char ch = type.charAt(i);
+            if ((ch < 'a' || ch > 'z') && (ch < '0' || ch > '9') && ch != '_') {
+                return false;
+            }
+        }
+        return true;
+    }
+
     private static String normalizeModelContent(String content) {
         String trimmed = content != null ? content.trim() : "";
         if (trimmed.isEmpty()) {
@@ -626,12 +671,16 @@ public final class AgentJsonProtocol {
                     continue;
                 }
                 String type = node.path("type").asString("").trim();
-                if (!type.isEmpty() && !isAgentActionType(type)) {
+                boolean toolNameShorthand = looksLikeToolNameShorthand(type, node);
+                if (!type.isEmpty() && !isAgentActionType(type) && !toolNameShorthand) {
                     continue;
                 }
                 int score = node.size();
                 if (isAgentActionType(type)) {
                     score += 100;
+                }
+                if (toolNameShorthand) {
+                    score += 95;
                 }
                 if (type.isEmpty() && (node.has("name") || node.has("tool"))
                         && (node.has("arguments") || node.has("parameters"))) {
@@ -643,7 +692,8 @@ public final class AgentJsonProtocol {
                 if (node.has("name") || node.has("tool")) {
                     score += 10;
                 }
-                if (score > bestScore || (score == bestScore && start > bestStart)) {
+                // Prefer the first valid action when the model dumps several tool objects in one reply.
+                if (score > bestScore || (score == bestScore && (bestStart < 0 || start < bestStart))) {
                     bestScore = score;
                     bestStart = start;
                     best = candidate;
@@ -671,6 +721,7 @@ public final class AgentJsonProtocol {
             }
             String type = node.path("type").asString("").trim();
             if (isAgentActionType(type)
+                    || looksLikeToolNameShorthand(type, node)
                     || (type.isEmpty() && (node.has("name") || node.has("tool")))
                     || (type.isEmpty() && looksLikeBareFinishResult(node))) {
                 return candidate;
