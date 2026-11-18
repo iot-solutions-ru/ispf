@@ -462,7 +462,7 @@ public class TreeFirstAgentService {
                     break;
                 }
 
-                AgentJsonProtocol.AgentAction agentAction = parsed.action();
+                AgentJsonProtocol.AgentAction agentAction = AgentJsonProtocol.normalizeAction(parsed.action());
                 if ("finish".equals(agentAction.type())) {
                     Map<String, Object> candidateResult = agentAction.result() != null
                             ? new LinkedHashMap<>(agentAction.result())

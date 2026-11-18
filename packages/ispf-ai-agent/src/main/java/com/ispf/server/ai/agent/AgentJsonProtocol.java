@@ -60,13 +60,22 @@ public final class AgentJsonProtocol {
      */
     @SuppressWarnings("unchecked")
     public static Optional<AgentAction> trySalvageTruncatedFinish(ObjectMapper objectMapper, String content) {
-        return trySalvageTruncatedFinish(objectMapper, content, "");
+        return trySalvageTruncatedFinish(objectMapper, content, "", false);
     }
 
     public static Optional<AgentAction> trySalvageTruncatedFinish(
             ObjectMapper objectMapper,
             String content,
             String uiLocale
+    ) {
+        return trySalvageTruncatedFinish(objectMapper, content, uiLocale, false);
+    }
+
+    public static Optional<AgentAction> trySalvageTruncatedFinish(
+            ObjectMapper objectMapper,
+            String content,
+            String uiLocale,
+            boolean planningMode
     ) {
         if (!looksLikeTruncatedContent(content)) {
             return Optional.empty();
@@ -76,15 +85,21 @@ public final class AgentJsonProtocol {
             return Optional.empty();
         }
         String lower = normalized.toLowerCase(Locale.ROOT);
-        if (!lower.contains("\"type\":\"finish\"") && !lower.contains("\"type\": \"finish\"")) {
+        boolean looksLikeFinishEnvelope = lower.contains("\"type\":\"finish\"")
+                || lower.contains("\"type\": \"finish\"")
+                || lower.contains("\"type\":\"done\"")
+                || lower.contains("\"type\": \"done\"")
+                || lower.contains("\"type\":\"complete\"")
+                || lower.contains("\"name\":\"finish\"")
+                || lower.contains("\"name\": \"finish\"");
+        boolean looksLikePlanPayload = lower.contains("\"phase\":\"plan\"")
+                || lower.contains("\"phase\": \"plan\"")
+                || lower.contains("\"planpartial\"")
+                || (lower.contains("\"plan\"") && lower.contains("\"sections\""));
+        if (!looksLikeFinishEnvelope && !looksLikePlanPayload) {
             return Optional.empty();
         }
         String summary = extractJsonStringField(normalized, "summary");
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("phase", "plan");
-        result.put("interactive", true);
-        result.put("planPartial", true);
-
         Map<String, Object> plan = new LinkedHashMap<>();
         String goal = extractNestedJsonStringField(normalized, "plan", "goal");
         if (goal == null) {
@@ -97,10 +112,22 @@ public final class AgentJsonProtocol {
         if (!sections.isEmpty()) {
             plan.put("sections", sections);
         }
+        List<Map<String, Object>> questions = extractCompleteJsonObjectsInArray(objectMapper, normalized, "questions");
+        boolean treatAsPlan = planningMode || looksLikePlanPayload || !plan.isEmpty() || !questions.isEmpty();
+        if (!treatAsPlan) {
+            if (summary == null || summary.isBlank()) {
+                return Optional.empty();
+            }
+            // Truncated execution/answer finish — keep summary only, do not invent phase=plan.
+            return Optional.of(new AgentAction("finish", null, null, summary, Map.of()));
+        }
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("phase", "plan");
+        result.put("interactive", true);
+        result.put("planPartial", true);
         if (!plan.isEmpty()) {
             result.put("plan", plan);
         }
-        List<Map<String, Object>> questions = extractCompleteJsonObjectsInArray(objectMapper, normalized, "questions");
         if (!questions.isEmpty()) {
             result.put("questions", questions);
         }
@@ -109,9 +136,7 @@ public final class AgentJsonProtocol {
         }
         String effectiveSummary = summary != null && !summary.isBlank()
                 ? summary
-                : (AgentStepHumanizer.isRussian(uiLocale)
-                ? "Частичный план сохранён (ответ модели был обрезан). Продолжите расширение плана на следующем сообщении."
-                : "Partial plan saved (model response was truncated). Continue expanding the plan in the next message.");
+                : AgentStepHumanizer.modelParseFailedSummary(uiLocale, true);
         return Optional.of(new AgentAction("finish", null, null, effectiveSummary, result));
     }
 
@@ -365,7 +390,78 @@ public final class AgentJsonProtocol {
         Map<String, Object> args = argsNode != null && !argsNode.isNull()
                 ? objectMapper.convertValue(argsNode, Map.class)
                 : Map.of();
+        // Models often emit finish as a native/tool-shaped call: {"type":"tool","name":"finish",...}.
+        if (isFinishToolName(toolName)) {
+            return finishActionFromToolArgs(args);
+        }
         return new AgentAction("tool", toolName, args, null, null);
+    }
+
+    /** True when the model used finish/done/complete as a tool name instead of type=finish. */
+    public static boolean isFinishToolName(String toolName) {
+        if (toolName == null || toolName.isBlank()) {
+            return false;
+        }
+        String normalized = toolName.trim().toLowerCase(Locale.ROOT);
+        return "finish".equals(normalized)
+                || "done".equals(normalized)
+                || "complete".equals(normalized)
+                || "finish_turn".equals(normalized)
+                || "end".equals(normalized);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static AgentAction finishActionFromToolArgs(Map<String, Object> args) {
+        Map<String, Object> safeArgs = args != null ? args : Map.of();
+        Object result = safeArgs.get("result");
+        Map<String, Object> resultMap;
+        if (result instanceof Map<?, ?> map) {
+            resultMap = new LinkedHashMap<>((Map<String, Object>) map);
+        } else {
+            // Flat finish args: {"summary":"...","phase":"plan","plan":{...}} without nested result.
+            resultMap = new LinkedHashMap<>();
+            for (Map.Entry<String, Object> entry : safeArgs.entrySet()) {
+                String key = entry.getKey();
+                if (key == null) {
+                    continue;
+                }
+                String normalized = key.trim().toLowerCase(Locale.ROOT);
+                if ("summary".equals(normalized)
+                        || "message".equals(normalized)
+                        || "text".equals(normalized)
+                        || "result".equals(normalized)) {
+                    continue;
+                }
+                resultMap.put(entry.getKey(), entry.getValue());
+            }
+        }
+        Object summary = safeArgs.get("summary");
+        if (summary == null) {
+            summary = safeArgs.get("message");
+        }
+        if (summary == null) {
+            summary = safeArgs.get("text");
+        }
+        return new AgentAction(
+                "finish",
+                null,
+                null,
+                summary != null ? String.valueOf(summary) : null,
+                resultMap
+        );
+    }
+
+    /**
+     * Normalize mistaken tool-shaped finish actions after parse (defense in depth).
+     */
+    public static AgentAction normalizeAction(AgentAction action) {
+        if (action == null) {
+            return null;
+        }
+        if ("tool".equals(action.type()) && isFinishToolName(action.toolName())) {
+            return finishActionFromToolArgs(action.arguments());
+        }
+        return action;
     }
 
     private static AgentAction finishAction(ObjectMapper objectMapper, JsonNode node) {

@@ -445,6 +445,10 @@ final class AgentPlanGuard {
     }
 
     static boolean hasStructuredPlanContent(Map<String, Object> finishResult, AgentRunState runState) {
+        // Truncated / partial plan finishes are still a valid planning outcome — UI asks the user to continue.
+        if (finishResult != null && Boolean.TRUE.equals(finishResult.get("planPartial"))) {
+            return true;
+        }
         if (finishResult != null && planHasContent(extractPlanMap(finishResult.get("plan")))) {
             return true;
         }

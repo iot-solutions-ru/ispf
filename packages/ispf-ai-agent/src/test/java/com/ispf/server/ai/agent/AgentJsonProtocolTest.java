@@ -230,6 +230,59 @@ class AgentJsonProtocolTest {
     }
 
     @Test
+    void coercesToolShapedFinishIntoFinishAction() throws Exception {
+        String content = """
+                {"type":"tool","name":"finish","arguments":{"summary":"Готово","result":{"phase":"plan","interactive":true}}}
+                """;
+        AgentJsonProtocol.AgentAction action = AgentJsonProtocol.parse(objectMapper, content);
+        assertEquals("finish", action.type());
+        assertNull(action.toolName());
+        assertEquals("Готово", action.summary());
+        assertEquals("plan", action.result().get("phase"));
+    }
+
+    @Test
+    void normalizeActionRemapsFinishToolName() {
+        AgentJsonProtocol.AgentAction raw = new AgentJsonProtocol.AgentAction(
+                "tool",
+                "finish",
+                Map.of("summary", "Done", "result", Map.of("ok", true)),
+                null,
+                null
+        );
+        AgentJsonProtocol.AgentAction normalized = AgentJsonProtocol.normalizeAction(raw);
+        assertEquals("finish", normalized.type());
+        assertEquals("Done", normalized.summary());
+        assertEquals(true, normalized.result().get("ok"));
+    }
+
+    @Test
+    void salvagesTruncatedPlanWithoutTypeFinishWhenPhasePresent() {
+        String truncated = """
+                {"phase":"plan","interactive":true,"plan":{"goal":"SNMP dashboard","sections":[{"id":"ground_truth","title":"Discovery","summary":"list","steps":["list_objects parent=root.platform.dashboards"]},{"id":"build","title":"Build","summary":"create
+                """;
+        var salvaged = AgentJsonProtocol.trySalvageTruncatedFinish(objectMapper, truncated, "ru", true);
+        assertTrue(salvaged.isPresent());
+        assertEquals("finish", salvaged.get().type());
+        assertTrue(Boolean.TRUE.equals(salvaged.get().result().get("planPartial")));
+        @SuppressWarnings("unchecked")
+        Map<String, Object> plan = (Map<String, Object>) salvaged.get().result().get("plan");
+        assertEquals("SNMP dashboard", plan.get("goal"));
+    }
+
+    @Test
+    void doesNotStampPlanPhaseWhenSalvagingTruncatedExecutionFinish() {
+        String truncated = """
+                {"type":"finish","summary":"Dashboard updated on root.platform.dashboards.snmp-host-dashboard with
+                """;
+        var salvaged = AgentJsonProtocol.trySalvageTruncatedFinish(objectMapper, truncated, "en", false);
+        assertTrue(salvaged.isPresent());
+        assertEquals("finish", salvaged.get().type());
+        assertTrue(salvaged.get().result() == null || salvaged.get().result().isEmpty()
+                || !salvaged.get().result().containsKey("phase"));
+    }
+
+    @Test
     void coercesBarePlanPayloadToFinish() throws Exception {
         String content = """
                 {

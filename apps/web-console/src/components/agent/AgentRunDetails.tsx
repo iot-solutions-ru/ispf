@@ -181,7 +181,7 @@ export function AgentRunDetails({
                 {step.label
                   ?? (step.type === "guard" ? t("agent.details.guard") : t("agent.details.parseError"))}
               </strong>
-              {step.truncated && (
+              {step.truncated && step.label !== t("agent.details.truncated") && (
                 <span className="badge danger"> {t("agent.details.truncated")}</span>
               )}
               {step.error && step.type !== "guard" && (
