@@ -221,12 +221,13 @@ public class DataSourceMetadataService {
             String table
     ) throws SQLException {
         String useCatalog = schema == null ? catalog : null;
+        // getTables/getColumns take LIKE patterns; getPrimaryKeys takes exact table/schema names.
         String schemaPattern = schema == null ? null : likeExact(meta, schema);
         String tablePattern = likeExact(meta, table);
         Set<String> primaryKeys = new LinkedHashSet<>();
         // Names validated by requireMetaName / IDENT; DatabaseMetaData is not concatenated SQL.
         // codeql[java/sql-injection]
-        try (ResultSet rs = meta.getPrimaryKeys(useCatalog, schemaPattern, tablePattern)) {
+        try (ResultSet rs = meta.getPrimaryKeys(useCatalog, schema, table)) {
             while (rs.next()) {
                 if (!table.equals(rs.getString("TABLE_NAME"))) {
                     continue;
