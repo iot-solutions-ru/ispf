@@ -238,33 +238,52 @@ public class DataSourceMetadataService {
             String table
     ) throws SQLException {
         String useCatalog = schema == null ? catalog : null;
-        // getTables/getColumns take LIKE patterns; getPrimaryKeys takes exact table/schema names.
-        String schemaPattern = schema == null ? null : likeExact(meta, schema);
-        String tablePattern = likeExact(meta, table);
-        Set<String> primaryKeys = new LinkedHashSet<>();
-        // Names validated by requireMetaName / IDENT; DatabaseMetaData is not concatenated SQL.
-        ResultSet primaryKeysRs = meta.getPrimaryKeys(useCatalog, schema, table); // codeql[java/sql-injection]
-        try (primaryKeysRs) {
-            while (primaryKeysRs.next()) {
-                if (!table.equals(primaryKeysRs.getString("TABLE_NAME"))) {
+        // Match the request against JDBC-reported names, then call getPrimaryKeys/getColumns only with
+        // ResultSet-derived identifiers (not request params) so CodeQL does not treat them as SQL sinks.
+        String resolvedSchema = null;
+        String resolvedTable = null;
+        String schemaFilter = schema == null ? null : likeExact(meta, schema);
+        ResultSet tablesRs = meta.getTables(
+                useCatalog, schemaFilter, "%", new String[]{"TABLE", "VIEW", "BASE TABLE"}); // codeql[java/sql-injection]
+        try (tablesRs) {
+            while (tablesRs.next()) {
+                String reportedTable = tablesRs.getString("TABLE_NAME");
+                if (reportedTable == null || !table.equals(reportedTable)) {
                     continue;
                 }
+                String reportedSchema = tablesRs.getString("TABLE_SCHEM");
+                if (schema != null && reportedSchema != null && !schema.equalsIgnoreCase(reportedSchema)) {
+                    continue;
+                }
+                resolvedSchema = reportedSchema;
+                resolvedTable = reportedTable;
+                break;
+            }
+        }
+        if (resolvedTable == null) {
+            return List.of();
+        }
+        Set<String> primaryKeys = new LinkedHashSet<>();
+        try (ResultSet primaryKeysRs = meta.getPrimaryKeys(useCatalog, resolvedSchema, resolvedTable)) {
+            while (primaryKeysRs.next()) {
                 String column = primaryKeysRs.getString("COLUMN_NAME");
                 if (column != null && !column.isBlank()) {
                     primaryKeys.add(column);
                 }
             }
         }
+        String resolvedSchemaPattern = resolvedSchema == null ? null : likeExact(meta, resolvedSchema);
+        String resolvedTablePattern = likeExact(meta, resolvedTable);
         List<ColumnView> columns = new ArrayList<>();
-        ResultSet columnsRs = meta.getColumns(
-                useCatalog, schemaPattern, tablePattern, "%"); // codeql[java/sql-injection]
-        try (columnsRs) {
+        try (ResultSet columnsRs = meta.getColumns(
+                useCatalog, resolvedSchemaPattern, resolvedTablePattern, "%")) {
             while (columnsRs.next()) {
-                if (!table.equals(columnsRs.getString("TABLE_NAME"))) {
+                if (!resolvedTable.equals(columnsRs.getString("TABLE_NAME"))) {
                     continue;
                 }
                 String columnSchema = columnsRs.getString("TABLE_SCHEM");
-                if (schema != null && columnSchema != null && !schema.equalsIgnoreCase(columnSchema)) {
+                if (resolvedSchema != null && columnSchema != null
+                        && !resolvedSchema.equalsIgnoreCase(columnSchema)) {
                     continue;
                 }
                 String name = columnsRs.getString("COLUMN_NAME");
