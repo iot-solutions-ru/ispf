@@ -61,6 +61,7 @@ public class EventController {
         if (canonicalObject != null) {
             tenantScopeService.requirePathInScope(canonicalObject, authentication);
             objectAccessService.requireRead(canonicalObject, authentication);
+            objectManager.require(canonicalObject);
         }
         if (canonicalFilter != null) {
             tenantScopeService.requirePathInScope(canonicalFilter, authentication);
