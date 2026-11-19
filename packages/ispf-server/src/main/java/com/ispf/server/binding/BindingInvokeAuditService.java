@@ -175,7 +175,13 @@ public class BindingInvokeAuditService {
             Boolean changed,
             int limit
     ) {
-        int cappedLimit = Math.max(1, Math.min(limit, 200));
+        if (limit < 0) {
+            throw new IllegalArgumentException("Binding invocation limit must not be negative");
+        }
+        if (limit == 0) {
+            return List.of();
+        }
+        int cappedLimit = Math.min(limit, 200);
         StringBuilder sql = new StringBuilder("""
                 SELECT id, binding_kind, object_path, rule_id, rule_name, trigger_kind,
                        target_variable, success, changed, error_message, duration_ms, detail_json, invoked_at
