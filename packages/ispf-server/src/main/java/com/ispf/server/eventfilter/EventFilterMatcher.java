@@ -53,7 +53,9 @@ public class EventFilterMatcher {
     }
 
     /**
-     * Compiles a payload-scoped CEL expression. Throws if the syntax is invalid.
+     * Compiles an event-filter CEL expression with the same metadata bindings used at evaluation:
+     * {@code eventName}, {@code objectPath}, {@code level}, {@code severity}, {@code timestamp},
+     * also available as fields of {@code payload}. Throws if the syntax is invalid.
      */
     public void validateExpression(String expression) {
         if (expression == null || expression.isBlank()) {
@@ -63,9 +65,9 @@ public class EventFilterMatcher {
     }
 
     /**
-     * Evaluates ad-hoc CEL against an event. Bindings live on {@code payload}
-     * ({@code eventName}, {@code objectPath}, {@code level}, {@code severity}, {@code timestamp},
-     * plus first-row payload fields).
+     * Evaluates ad-hoc CEL against an event. Metadata is available both as a top-level name and on
+     * {@code payload} ({@code eventName}, {@code objectPath}, {@code level}, {@code severity},
+     * {@code timestamp}, plus first-row payload fields).
      * Uncomputable expressions fail the filter application — they are not treated as a miss.
      */
     public boolean matchesExpression(String expression, ObjectEvent event) {

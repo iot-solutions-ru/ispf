@@ -135,6 +135,36 @@ class EventFilterMatcherTest {
     }
 
     @Test
+    void metadataFieldsPassValidationAndMatch() {
+        ObjectEvent warning = ObjectEvent.of(
+                "root.platform.devices.room-a",
+                "doorOpen",
+                EventLevel.WARNING,
+                DataRecord.empty(DataSchema.builder("payload").build())
+        );
+        ObjectEvent info = ObjectEvent.of(
+                "root.platform.devices.room-b",
+                "tick",
+                EventLevel.INFO,
+                DataRecord.empty(DataSchema.builder("payload").build())
+        );
+
+        matcher.validateExpression("eventName == 'doorOpen'");
+        matcher.validateExpression("severity >= 50");
+        matcher.validateExpression("level == 'WARNING'");
+        matcher.validateExpression("objectPath == 'root.platform.devices.room-a'");
+
+        assertThat(matcher.matchesExpression("eventName == 'doorOpen'", warning)).isTrue();
+        assertThat(matcher.matchesExpression("eventName == 'doorOpen'", info)).isFalse();
+        assertThat(matcher.matchesExpression("severity >= 50", warning)).isTrue();
+        assertThat(matcher.matchesExpression("severity >= 50", info)).isFalse();
+        assertThat(matcher.matchesExpression("level == 'WARNING'", warning)).isTrue();
+        assertThat(matcher.matchesExpression("level == 'WARNING'", info)).isFalse();
+        assertThat(matcher.matchesExpression("objectPath == 'root.platform.devices.room-a'", warning)).isTrue();
+        assertThat(matcher.matchesExpression("payload.eventName == 'doorOpen'", warning)).isTrue();
+    }
+
+    @Test
     void invalidExpressionFailsValidation() {
         assertThatThrownBy(() -> matcher.validateExpression("payload."))
                 .isInstanceOf(ExpressionException.class);
