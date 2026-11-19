@@ -41,7 +41,7 @@ Ui-packs are served under `/apps/<appId>/` on the console origin ([0054](0054-ho
 `HostedUiPackFilter` sets these headers on every `GET`/`HEAD` `/apps/<appId>/` response, including 404 and redirects:
 
 ```
-Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'
+Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'
 Cross-Origin-Opener-Policy: same-origin
 Cross-Origin-Resource-Policy: same-origin
 X-Content-Type-Options: nosniff

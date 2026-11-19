@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class HostedUiPackCspTest {
 
     private static final String EXPECTED =
-            "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
+            "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; "
                     + "img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'";
 
     @TempDir
@@ -46,8 +46,9 @@ class HostedUiPackCspTest {
     @Test
     void policyMatchesAdr0073() {
         assertEquals(EXPECTED, HostedUiPackFilter.CONTENT_SECURITY_POLICY);
-        assertFalse(HostedUiPackFilter.CONTENT_SECURITY_POLICY.contains("unsafe-eval"));
-        assertTrue(HostedUiPackFilter.CONTENT_SECURITY_POLICY.contains("script-src 'self'"));
+        assertFalse(HostedUiPackFilter.CONTENT_SECURITY_POLICY.contains("'unsafe-eval'"));
+        assertTrue(HostedUiPackFilter.CONTENT_SECURITY_POLICY.contains("'wasm-unsafe-eval'"));
+        assertTrue(HostedUiPackFilter.CONTENT_SECURITY_POLICY.contains("script-src 'self' 'wasm-unsafe-eval'"));
     }
 
     @Test

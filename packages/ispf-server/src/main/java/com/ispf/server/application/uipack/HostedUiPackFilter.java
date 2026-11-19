@@ -27,9 +27,10 @@ public class HostedUiPackFilter extends OncePerRequestFilter {
     /**
      * Conservative same-origin policy. {@code style-src} keeps {@code 'unsafe-inline'} because
      * hosted packs ship inline styles; scripts do not get {@code 'unsafe-inline'} or {@code 'unsafe-eval'}.
+     * {@code 'wasm-unsafe-eval'} is required for WebAssembly.instantiate (e.g. Freedoom ui-pack).
      */
     public static final String CONTENT_SECURITY_POLICY =
-            "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
+            "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; "
                     + "img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'";
 
     private final DropInUiPackLoader uiPackLoader;
@@ -165,6 +166,9 @@ public class HostedUiPackFilter extends OncePerRequestFilter {
         }
         if (name.endsWith(".woff2")) {
             return "font/woff2";
+        }
+        if (name.endsWith(".wasm")) {
+            return "application/wasm";
         }
         return MediaType.APPLICATION_OCTET_STREAM_VALUE;
     }
