@@ -75,7 +75,24 @@ class TenantRlsHikariDataSourceTest {
         var inOrder = org.mockito.Mockito.inOrder(raw);
         inOrder.verify(raw).rollback();
         inOrder.verify(raw, atLeastOnce()).prepareStatement("SELECT set_config(?, ?, false)");
+        inOrder.verify(raw).commit();
         inOrder.verify(raw).close();
+        verify(pool, never()).evictConnection(raw);
+    }
+
+    @Test
+    void secondCloseIsIdempotentAndDoesNotEvict() throws Exception {
+        TenantRlsHikariDataSource pool = spy(new TenantRlsHikariDataSource());
+        Connection raw = mock(Connection.class);
+        PreparedStatement applyPs = mock(PreparedStatement.class);
+        when(raw.prepareStatement(anyString())).thenReturn(applyPs);
+        when(raw.getAutoCommit()).thenReturn(true);
+
+        Connection wrapped = pool.wrapForTests(raw);
+        wrapped.close();
+        wrapped.close();
+
+        verify(raw).close();
         verify(pool, never()).evictConnection(raw);
     }
 
@@ -113,6 +130,5 @@ class TenantRlsHikariDataSourceTest {
 
         verify(ps, atLeastOnce()).setString(1, "app.site_bypass");
         verify(ps, atLeastOnce()).setString(2, "on");
-        assertThat(true).isTrue();
     }
 }

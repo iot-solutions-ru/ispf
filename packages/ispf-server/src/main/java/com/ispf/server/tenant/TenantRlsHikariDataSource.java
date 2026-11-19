@@ -57,6 +57,7 @@ public class TenantRlsHikariDataSource extends HikariDataSource {
         private final HikariDataSource pool;
         private final Connection delegate;
         private final Set<String> scriptGucs = new LinkedHashSet<>();
+        private boolean closed;
 
         private RlsConnectionHandler(HikariDataSource pool, Connection delegate) {
             this.pool = pool;
@@ -67,6 +68,10 @@ public class TenantRlsHikariDataSource extends HikariDataSource {
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
             String name = method.getName();
             if ("close".equals(name)) {
+                if (closed) {
+                    return null;
+                }
+                closed = true;
                 return closeAndClear();
             }
             if ("unwrap".equals(name)) {
@@ -101,9 +106,16 @@ public class TenantRlsHikariDataSource extends HikariDataSource {
         private Object closeAndClear() throws Throwable {
             boolean cleared = false;
             try {
-                // Session-scoped set_config issued inside an open/aborted transaction is undone by
-                // Hikari's close-time rollback. End the transaction first so clear() sticks.
-                if (!delegate.getAutoCommit()) {
+                // Session-scoped set_config inside an open/aborted transaction is undone by Hikari's
+                // close-time rollback. End the caller transaction first, clear GUCs, then commit so
+                // the reset survives ProxyConnection.close().
+                boolean autoCommit = true;
+                try {
+                    autoCommit = delegate.getAutoCommit();
+                } catch (SQLException ignored) {
+                    // treat as auto-commit and still attempt clear
+                }
+                if (!autoCommit) {
                     try {
                         delegate.rollback();
                     } catch (SQLException ignored) {
@@ -111,6 +123,9 @@ public class TenantRlsHikariDataSource extends HikariDataSource {
                     }
                 }
                 TenantRlsSession.clear(delegate, scriptGucs);
+                if (!autoCommit) {
+                    delegate.commit();
+                }
                 cleared = true;
             } catch (SQLException clearFailed) {
                 try {
