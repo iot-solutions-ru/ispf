@@ -4,8 +4,10 @@ import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.server.security.acl.ObjectAccessService;
 import com.ispf.server.tenant.TenantScopeService;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -125,7 +127,7 @@ public class ObjectSearchService {
         try {
             return ObjectType.valueOf(type.trim().toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException ignored) {
-            return null;
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown object type: " + type);
         }
     }
 
