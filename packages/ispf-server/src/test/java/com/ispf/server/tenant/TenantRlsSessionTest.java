@@ -5,6 +5,9 @@ import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -61,6 +64,33 @@ class TenantRlsSessionTest {
 
         verify(ps).setString(2, "on");
         verify(ps).setString(2, "");
+    }
+
+    @Test
+    void clearRestoresAllowForScriptGucs() throws Exception {
+        Connection connection = mock(Connection.class);
+        PreparedStatement ps = mock(PreparedStatement.class);
+        when(connection.prepareStatement(anyString())).thenReturn(ps);
+
+        TenantRlsSession.clear(connection, List.of("app.site_bypass", "app.site_id", "app.bad-name"));
+
+        verify(ps).setString(1, "app.site_bypass");
+        verify(ps).setString(1, "app.site_id");
+        verify(ps, times(2)).setString(2, "on");
+        verify(ps, times(2)).setString(2, "");
+    }
+
+    @Test
+    void collectReadsCustomGucsFromScriptSql() {
+        Set<String> names = new LinkedHashSet<>();
+        TenantRlsSession.collectCustomGucs(
+                "SELECT set_config('app.site_bypass', 'off', true); SELECT set_config('app.site_id', 'site-a', true)",
+                names
+        );
+        TenantRlsSession.collectCustomGucs("SET LOCAL app.site_region = 'eu'", names);
+        TenantRlsSession.collectCustomGucs("SELECT set_config('app.tenant_bypass', 'off', true)", names);
+
+        assertThat(names).containsExactly("app.site_bypass", "app.site_id", "app.site_region");
     }
 
     @Test
