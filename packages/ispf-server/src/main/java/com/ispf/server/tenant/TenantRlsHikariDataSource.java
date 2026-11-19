@@ -5,8 +5,13 @@ import com.zaxxer.hikari.HikariDataSource;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.sql.CallableStatement;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  * HikariDataSource that applies PostgreSQL RLS GUCs from {@link TenantRlsContext}
@@ -35,6 +40,7 @@ public class TenantRlsHikariDataSource extends HikariDataSource {
 
     private static final class RlsConnectionHandler implements InvocationHandler {
         private final Connection delegate;
+        private final Set<String> scriptGucs = new LinkedHashSet<>();
 
         private RlsConnectionHandler(Connection delegate) {
             this.delegate = delegate;
@@ -45,7 +51,7 @@ public class TenantRlsHikariDataSource extends HikariDataSource {
             String name = method.getName();
             if ("close".equals(name)) {
                 try {
-                    TenantRlsSession.clear(delegate);
+                    TenantRlsSession.clear(delegate, scriptGucs);
                 } catch (SQLException ignored) {
                     // still return connection to pool
                 }
@@ -70,7 +76,35 @@ public class TenantRlsHikariDataSource extends HikariDataSource {
             if ("hashCode".equals(name)) {
                 return System.identityHashCode(proxy);
             }
-            return method.invoke(delegate, args);
+            if (args != null && args.length > 0 && args[0] instanceof String sql && isPreparedSql(name)) {
+                TenantRlsSession.collectCustomGucs(sql, scriptGucs);
+            }
+            Object result = method.invoke(delegate, args);
+            if (result instanceof Statement statement && name.startsWith("create")) {
+                return wrapStatement(statement);
+            }
+            return result;
+        }
+
+        private Statement wrapStatement(Statement statement) {
+            Class<?> iface = statement instanceof CallableStatement
+                    ? CallableStatement.class
+                    : statement instanceof PreparedStatement ? PreparedStatement.class : Statement.class;
+            return (Statement) Proxy.newProxyInstance(
+                    iface.getClassLoader(),
+                    new Class<?>[]{iface},
+                    (proxy, method, args) -> {
+                        if (args != null && args.length > 0 && args[0] instanceof String sql
+                                && method.getName().startsWith("execute")) {
+                            TenantRlsSession.collectCustomGucs(sql, scriptGucs);
+                        }
+                        return method.invoke(statement, args);
+                    }
+            );
+        }
+
+        private static boolean isPreparedSql(String name) {
+            return "prepareStatement".equals(name) || "prepareCall".equals(name);
         }
     }
 }
