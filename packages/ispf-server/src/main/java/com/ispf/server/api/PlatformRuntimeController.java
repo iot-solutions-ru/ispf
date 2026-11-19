@@ -4,28 +4,32 @@ import com.ispf.server.application.function.FunctionInvokeAuditEntry;
 import com.ispf.server.application.function.FunctionInvokeAuditService;
 import com.ispf.server.binding.BindingInvokeAuditEntry;
 import com.ispf.server.binding.BindingInvokeAuditService;
+import com.ispf.server.object.ObjectManager;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
-import java.util.Locale;
 @RestController
 @RequestMapping("/api/v1/platform")
 public class PlatformRuntimeController {
 
     private final FunctionInvokeAuditService functionAuditService;
     private final BindingInvokeAuditService bindingAuditService;
+    private final ObjectManager objectManager;
 
     public PlatformRuntimeController(
             FunctionInvokeAuditService functionAuditService,
-            BindingInvokeAuditService bindingAuditService
+            BindingInvokeAuditService bindingAuditService,
+            ObjectManager objectManager
     ) {
         this.functionAuditService = functionAuditService;
         this.bindingAuditService = bindingAuditService;
+        this.objectManager = objectManager;
     }
 
     @GetMapping("/function-invocations")
@@ -54,6 +58,7 @@ public class PlatformRuntimeController {
     public Map<String, Object> functionAuditStatus(
             @RequestParam(required = false) String objectPath
     ) {
+        requireObjectIfPresent(objectPath);
         boolean masterEnabled = functionAuditService.isMasterEnabled();
         boolean objectEnabled = objectPath != null && !objectPath.isBlank()
                 && functionAuditService.isObjectAuditEnabled(objectPath.trim());
@@ -71,6 +76,7 @@ public class PlatformRuntimeController {
     public Map<String, Object> bindingAuditStatus(
             @RequestParam(required = false) String objectPath
     ) {
+        requireObjectIfPresent(objectPath);
         boolean masterEnabled = bindingAuditService.isMasterEnabled();
         boolean objectEnabled = objectPath != null && !objectPath.isBlank()
                 && bindingAuditService.isObjectAuditEnabled(objectPath.trim());
@@ -81,5 +87,11 @@ public class PlatformRuntimeController {
                         ? objectEnabled
                         : masterEnabled
         );
+    }
+
+    private void requireObjectIfPresent(String objectPath) {
+        if (objectPath != null && !objectPath.isBlank()) {
+            objectManager.require(objectPath.trim());
+        }
     }
 }
