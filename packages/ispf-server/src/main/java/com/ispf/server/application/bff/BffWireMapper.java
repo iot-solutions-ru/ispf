@@ -25,15 +25,16 @@ public final class BffWireMapper {
         if (IspfOperatorWireProfile.matches(wireProfile)) {
             return toIspfOperatorWire(errorCode, errorMessage, row, outputSchema, IspfOperatorWireProfile.ID);
         }
+        if (!IspfOperatorWireProfile.isSupported(wireProfile)) {
+            throw new IllegalArgumentException("Unsupported wireProfile: " + wireProfile);
+        }
 
+        // Remaining supported profiles are absent/blank — default wire without a profile stamp.
         Map<String, Object> wire = new LinkedHashMap<>();
         wire.put("error_code", errorCode);
         wire.put("error_message", errorMessage);
         if ("OK".equals(errorCode)) {
             wire.put("result", row);
-        }
-        if (wireProfile != null && !wireProfile.isBlank()) {
-            wire.put("wireProfile", wireProfile);
         }
         return wire;
     }

@@ -49,6 +49,12 @@ public class BffController {
                 || request.functionName().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "objectPath and functionName are required");
         }
+        if (!IspfOperatorWireProfile.isSupported(request.wireProfile())) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Unsupported wireProfile: " + request.wireProfile()
+            );
+        }
         invokeAccessService.requireDirectInvoke(request.objectPath(), request.functionName(), authentication);
         requireUiPackOwnsFunction(request.objectPath(), request.functionName(), authentication);
         DataRecord output = VariableAclRequestContext.callAsMember(
