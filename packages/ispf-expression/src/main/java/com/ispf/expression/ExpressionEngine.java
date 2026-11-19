@@ -53,9 +53,25 @@ public class ExpressionEngine {
             .addVar("input", SimpleType.DYN)
             .build();
 
+    /**
+     * Event-filter metadata placed on the payload map and also exposed as top-level CEL names.
+     */
+    private static final String[] PAYLOAD_METADATA_BINDINGS = {
+            "eventName",
+            "objectPath",
+            "level",
+            "severity",
+            "timestamp"
+    };
+
     private final CelCompiler payloadCompiler = CelCompilerFactory.standardCelCompilerBuilder()
             .setOptions(CEL_OPTIONS)
             .addVar("payload", SimpleType.DYN)
+            .addVar("eventName", SimpleType.DYN)
+            .addVar("objectPath", SimpleType.DYN)
+            .addVar("level", SimpleType.DYN)
+            .addVar("severity", SimpleType.DYN)
+            .addVar("timestamp", SimpleType.DYN)
             .build();
 
     private final CelRuntime runtime = CelRuntimeFactory.legacyCelRuntimeBuilder()
@@ -367,8 +383,14 @@ public class ExpressionEngine {
         Object evaluate(Map<String, Object> payload) {
             try {
                 CelRuntime.Program program = program();
+                Map<String, Object> row = payload != null ? payload : Map.of();
                 Map<String, Object> bindings = new HashMap<>();
-                bindings.put("payload", payload != null ? payload : Map.of());
+                bindings.put("payload", row);
+                for (String name : PAYLOAD_METADATA_BINDINGS) {
+                    if (row.containsKey(name)) {
+                        bindings.put(name, row.get(name));
+                    }
+                }
                 return program.eval(bindings);
             } catch (Exception e) {
                 throw new ExpressionException("Evaluation failed: " + source, e);
