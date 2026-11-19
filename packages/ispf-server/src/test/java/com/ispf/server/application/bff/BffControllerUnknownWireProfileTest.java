@@ -3,6 +3,7 @@ package com.ispf.server.application.bff;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
+import com.ispf.server.api.dto.DataRecordPayloadRequest;
 import com.ispf.server.application.function.ApplicationFunctionStore;
 import com.ispf.server.function.FunctionInvokeAccessService;
 import com.ispf.server.function.FunctionService;
@@ -15,9 +16,10 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -50,7 +52,7 @@ class BffControllerUnknownWireProfileTest {
     @Test
     void nullAndBlankWireProfilesAreAccepted() {
         DataRecord output = DataRecord.single(DataSchema.builder("out").field("ok", FieldType.BOOLEAN).build(), Map.of("ok", true));
-        when(functionService.invoke(eq(HUB), eq("ping"), any())).thenReturn(output);
+        when(functionService.invoke(eq(HUB), eq("ping"), isNull(DataRecordPayloadRequest.class))).thenReturn(output);
 
         Map<String, Object> nullProfile = controller.invoke(
                 new BffController.BffInvokeRequest(HUB, "ping", null, null),
@@ -63,13 +65,13 @@ class BffControllerUnknownWireProfileTest {
 
         assertThat(nullProfile).containsEntry("error_code", "OK");
         assertThat(blankProfile).containsEntry("error_code", "OK");
-        verify(invokeAccessService).requireDirectInvoke(HUB, "ping", null);
+        verify(invokeAccessService, times(2)).requireDirectInvoke(HUB, "ping", null);
     }
 
     @Test
     void operatorWireProfileIsAccepted() {
         DataRecord output = DataRecord.single(DataSchema.builder("out").field("ok", FieldType.BOOLEAN).build(), Map.of("ok", true));
-        when(functionService.invoke(eq(HUB), eq("ping"), any())).thenReturn(output);
+        when(functionService.invoke(eq(HUB), eq("ping"), isNull(DataRecordPayloadRequest.class))).thenReturn(output);
 
         Map<String, Object> wire = controller.invoke(
                 new BffController.BffInvokeRequest(HUB, "ping", null, IspfOperatorWireProfile.ID),
