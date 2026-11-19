@@ -1,5 +1,6 @@
 package com.ispf.server.federation;
 
+import com.ispf.server.relational.RelationalDialect;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -13,9 +14,11 @@ import java.util.UUID;
 public class FederationTunnelSessionStore {
 
     private final JdbcTemplate jdbcTemplate;
+    private final RelationalDialect relationalDialect;
 
-    public FederationTunnelSessionStore(JdbcTemplate jdbcTemplate) {
+    public FederationTunnelSessionStore(JdbcTemplate jdbcTemplate, RelationalDialect relationalDialect) {
         this.jdbcTemplate = jdbcTemplate;
+        this.relationalDialect = relationalDialect;
     }
 
     public void upsert(
@@ -81,10 +84,10 @@ public class FederationTunnelSessionStore {
                 FROM federation_tunnel_sessions
                 WHERE peer_id = ? AND disconnected_at IS NULL
                 ORDER BY connected_at DESC
-                LIMIT 1
-                """,
+                """ + relationalDialect.limitClause(),
                 (rs, rowNum) -> mapRow(rs),
-                peerId
+                peerId,
+                1
         ).stream().findFirst();
     }
 

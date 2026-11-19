@@ -1,7 +1,7 @@
 package com.ispf.server.audit;
 
 import com.ispf.server.persistence.entity.AuditEventEntity;
-import com.ispf.server.relational.H2Dialect;
+import com.ispf.server.relational.RelationalDialect;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,7 +13,6 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
-import java.util.Locale;
 import java.util.zip.CRC32;
 
 @Service
@@ -23,13 +22,15 @@ public class AuditChainStore {
     private static final long CHAIN_ADVISORY_LOCK_ID = 0x415544314C12L;
 
     private final JdbcTemplate jdbcTemplate;
+    private final RelationalDialect relationalDialect;
 
-    public AuditChainStore(JdbcTemplate jdbcTemplate) {
+    public AuditChainStore(JdbcTemplate jdbcTemplate, RelationalDialect relationalDialect) {
         this.jdbcTemplate = jdbcTemplate;
+        this.relationalDialect = relationalDialect;
     }
 
     /**
-     * Idempotent DDL for unit tests and profiles without Flyway. Production schema is V98.
+     * Idempotent DDL for unit tests and profiles without Flyway. Production schema is V98 / mssql V1.
      */
     public void ensureTable() {
         jdbcTemplate.execute("""
@@ -42,7 +43,10 @@ public class AuditChainStore {
                 )
                 """);
         jdbcTemplate.execute((Connection connection) -> {
-            String locksTable = platformScriptLocksTable(connection);
+            String locksTable = relationalDialect.platformSchemaPrefix() + "platform_script_locks";
+            if (relationalDialect.kind().name().equals("H2")) {
+                locksTable = "PUBLIC.platform_script_locks";
+            }
             try (PreparedStatement ddl = connection.prepareStatement("""
                     CREATE TABLE IF NOT EXISTS %s (
                         lock_key VARCHAR(200) PRIMARY KEY
@@ -57,7 +61,7 @@ public class AuditChainStore {
     @Transactional
     public void append(AuditEventEntity event) {
         jdbcTemplate.execute((Connection connection) -> {
-            acquireAppendLock(connection);
+            relationalDialect.acquireTransactionLock(connection, CHAIN_HEAD_LOCK_KEY, CHAIN_ADVISORY_LOCK_ID);
             String previous = readHeadChainHash(connection);
             Instant occurredAt = AuditChain.normalizeOccurredAt(
                     event.getOccurredAt() == null ? Instant.now() : event.getOccurredAt()
@@ -126,39 +130,15 @@ public class AuditChainStore {
         return AuditChain.normalizeOccurredAt(stamp.toInstant());
     }
 
-    private static String readHeadChainHash(Connection connection) throws SQLException {
-        try (PreparedStatement head = connection.prepareStatement("""
-                SELECT chain_hash
-                FROM audit_event_chain
-                ORDER BY seq DESC
-                LIMIT 1
-                FOR UPDATE
-                """)) {
-            try (ResultSet rs = head.executeQuery()) {
-                return rs.next() ? rs.getString(1) : null;
-            }
+    private String readHeadChainHash(Connection connection) throws SQLException {
+        String sql = relationalDialect.selectTopOneForUpdate("chain_hash", "audit_event_chain", "seq DESC");
+        try (PreparedStatement head = connection.prepareStatement(sql);
+             ResultSet rs = head.executeQuery()) {
+            return rs.next() ? rs.getString(1) : null;
         }
     }
 
-    private static void acquireAppendLock(Connection connection) throws SQLException {
-        String product = connection.getMetaData().getDatabaseProductName().toLowerCase(Locale.ROOT);
-        if (product.contains("postgresql")) {
-            try (PreparedStatement lock = connection.prepareStatement("SELECT pg_advisory_xact_lock(?)")) {
-                lock.setLong(1, CHAIN_ADVISORY_LOCK_ID);
-                lock.execute();
-            }
-            return;
-        }
-        String locksTable = platformScriptLocksTable(connection);
-        ensureLockRow(connection, CHAIN_HEAD_LOCK_KEY, locksTable);
-        try (PreparedStatement rowLock = connection.prepareStatement(
-                "SELECT lock_key FROM " + locksTable + " WHERE lock_key = ? FOR UPDATE"
-        )) {
-            rowLock.setString(1, CHAIN_HEAD_LOCK_KEY);
-            rowLock.executeQuery();
-        }
-    }
-
+    /** Prefer dialect {@code acquireTransactionLock} / {@code isUniqueViolation} when a dialect is available. */
     public static void ensureLockRow(Connection connection, String lockKey) throws SQLException {
         ensureLockRow(connection, lockKey, platformScriptLocksTable(connection));
     }
@@ -172,16 +152,21 @@ public class AuditChainStore {
             insert.setString(2, lockKey);
             insert.executeUpdate();
         } catch (SQLException ex) {
-            if (!"23505".equals(ex.getSQLState())) {
+            if (!"23505".equals(ex.getSQLState())
+                    && ex.getErrorCode() != 2627
+                    && ex.getErrorCode() != 2601) {
                 throw ex;
             }
         }
     }
 
     public static String platformScriptLocksTable(Connection connection) throws SQLException {
-        String product = connection.getMetaData().getDatabaseProductName().toLowerCase(Locale.ROOT);
+        String product = connection.getMetaData().getDatabaseProductName().toLowerCase(java.util.Locale.ROOT);
         if (product.contains("h2")) {
-            return new H2Dialect().platformSchemaPrefix() + "platform_script_locks";
+            return "PUBLIC.platform_script_locks";
+        }
+        if (product.contains("microsoft") || product.contains("sql server")) {
+            return "dbo.platform_script_locks";
         }
         return "platform_script_locks";
     }

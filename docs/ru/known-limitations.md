@@ -18,6 +18,9 @@
 | Встроенный AI-агент видит **загруженные** драйверы (и пишет об этом, если в pack каталог больше) | Ответ, который выдумывает полный список 160+ на ноутбуке без этих пакетов |
 | Локальный профиль: встроенный H2 и учётные записи `admin` / `admin`, `developer` / `developer`, `operator` / `operator` | Эти пароли на сервере `prod` или с OIDC. Смените их до того, как машина станет доступна в сети |
 | История на ноутбуке — эта локальная база | Кластер ClickHouse, который создаёт ISPF, или вторая копия буфера историка на другом узле ISPF |
+| Relational core на PostgreSQL (или H2 local) | Прод `ISPF_DB` на MS SQL — [0078](decisions/0078-mssql-metadata-certification.md) **lab-green B1** (Flyway/TCK/boot fences); **prod-ban** до named non-Developer SKU. MySQL/Oracle — boot refuse до сертификации ([0079](decisions/0079-mysql-metadata-certification.md)/[0080](decisions/0080-oracle-metadata-certification.md)). Внешний JDBC `DATA_SOURCE` — ок |
+| App SQL-схемы / `search_path` на PostgreSQL | Переключение per-app schema на MSSQL (`ApplicationSchemaSession`) — **не поддерживается**, fail-closed ([0078](decisions/0078-mssql-metadata-certification.md)) |
+| PG-скрипты solution `exec` / `ON CONFLICT` против `ISPF_DB` | Те же скрипты на MSSQL metadata — **не поддерживаются**; внешний `DATA_SOURCE` или dialect-safe SQL |
 | Дисковый буфер перед единственным хранилищем ClickHouse есть и выключен | Буфер сам не включается и не работает для JDBC и двойной записи |
 | `ispf validate` предупреждает, если логика лежит на `DEVICE` | `--strict` и каталог marketplace такой бандл не примут |
 | Одноразовые коды TOTP для входа можно включить | WebAuthn и ключи доступа как способ входа |

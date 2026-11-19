@@ -2,6 +2,7 @@ package com.ispf.server.platform.analytics.frames;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ispf.server.relational.RelationalDialect;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
@@ -22,9 +23,11 @@ public class EventFrameStore {
     };
 
     private final JdbcTemplate jdbcTemplate;
+    private final RelationalDialect relationalDialect;
 
-    public EventFrameStore(JdbcTemplate jdbcTemplate) {
+    public EventFrameStore(JdbcTemplate jdbcTemplate, RelationalDialect relationalDialect) {
         this.jdbcTemplate = jdbcTemplate;
+        this.relationalDialect = relationalDialect;
     }
 
     void insert(EventFrame frame) {
@@ -100,11 +103,11 @@ public class EventFrameStore {
                         SELECT * FROM platform_event_frames
                         WHERE scope_path = ? AND frame_type = ? AND ended_at IS NULL
                         ORDER BY started_at DESC
-                        LIMIT 1
-                        """,
+                        """ + relationalDialect.limitClause(),
                 mapper(),
                 scopePath,
-                type.externalName()
+                type.externalName(),
+                1
         );
         return rows.isEmpty() ? Optional.empty() : Optional.of(rows.getFirst());
     }

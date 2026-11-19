@@ -50,9 +50,10 @@ public class AnalyticsScheduleRegistry {
         Integer count = jdbcTemplate.queryForObject(
                 """
                         SELECT COUNT(*) FROM platform_analytics_schedules
-                        WHERE enabled = TRUE AND periodic_ms > 0
+                        WHERE enabled = ? AND periodic_ms > 0
                         """,
-                Integer.class
+                Integer.class,
+                true
         );
         return count != null ? count : 0;
     }
@@ -61,9 +62,10 @@ public class AnalyticsScheduleRegistry {
         return jdbcTemplate.query(
                 """
                         SELECT MIN(next_run_at) FROM platform_analytics_schedules
-                        WHERE enabled = TRUE AND periodic_ms > 0
+                        WHERE enabled = ? AND periodic_ms > 0
                         """,
-                rs -> rs.next() ? toInstant(rs.getTimestamp(1)) : null
+                rs -> rs.next() ? toInstant(rs.getTimestamp(1)) : null,
+                true
         );
     }
 
@@ -71,12 +73,13 @@ public class AnalyticsScheduleRegistry {
         return jdbcTemplate.queryForList(
                 """
                         SELECT tag_path FROM platform_analytics_schedules
-                        WHERE enabled = TRUE
+                        WHERE enabled = ?
                           AND periodic_ms > 0
                           AND next_run_at <= ?
                         ORDER BY next_run_at, tag_path
                         """,
                 String.class,
+                true,
                 Timestamp.from(now)
         );
     }

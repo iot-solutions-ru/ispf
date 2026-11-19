@@ -61,6 +61,6 @@ class ObjectConfigAuditServiceLimitTest {
     }
 
     private ObjectConfigAuditService service() {
-        return new ObjectConfigAuditService(jdbcTemplate);
+        return new ObjectConfigAuditService(jdbcTemplate, new com.ispf.server.relational.H2Dialect());
     }
 }

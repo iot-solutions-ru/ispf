@@ -1,5 +1,9 @@
 package com.ispf.server.relational;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+
 public class PostgreSqlDialect extends AbstractRelationalDialect {
 
     @Override
@@ -21,6 +25,11 @@ public class PostgreSqlDialect extends AbstractRelationalDialect {
     public boolean requiresSchemaDdlBeforeSwitch() {
         // SET search_path TO <missing> succeeds, but CREATE TABLE then fails with
         // SQLSTATE 3F000 "no schema has been selected to create in".
+        return true;
+    }
+
+    @Override
+    public boolean supportsTenantDbRowIsolation() {
         return true;
     }
 
@@ -66,5 +75,14 @@ public class PostgreSqlDialect extends AbstractRelationalDialect {
     @Override
     public String[] flywayLocations() {
         return new String[]{"classpath:db/migration/postgresql"};
+    }
+
+    @Override
+    public void acquireTransactionLock(Connection connection, String lockKey, long advisoryLockId)
+            throws SQLException {
+        try (PreparedStatement lock = connection.prepareStatement("SELECT pg_advisory_xact_lock(?)")) {
+            lock.setLong(1, advisoryLockId);
+            lock.execute();
+        }
     }
 }

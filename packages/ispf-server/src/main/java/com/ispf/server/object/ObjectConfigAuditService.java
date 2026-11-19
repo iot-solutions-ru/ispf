@@ -1,5 +1,6 @@
 package com.ispf.server.object;
 
+import com.ispf.server.relational.RelationalDialect;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
@@ -12,9 +13,11 @@ import java.util.UUID;
 public class ObjectConfigAuditService {
 
     private final JdbcTemplate jdbcTemplate;
+    private final RelationalDialect relationalDialect;
 
-    public ObjectConfigAuditService(JdbcTemplate jdbcTemplate) {
+    public ObjectConfigAuditService(JdbcTemplate jdbcTemplate, RelationalDialect relationalDialect) {
         this.jdbcTemplate = jdbcTemplate;
+        this.relationalDialect = relationalDialect;
     }
 
     public void record(
@@ -55,8 +58,7 @@ public class ObjectConfigAuditService {
                 FROM object_config_audit
                 WHERE object_path = ?
                 ORDER BY occurred_at DESC, id DESC
-                LIMIT ?
-                """,
+                """ + relationalDialect.limitClause(),
                 (rs, rowNum) -> new AuditEntry(
                         rs.getString("id"),
                         rs.getString("object_path"),

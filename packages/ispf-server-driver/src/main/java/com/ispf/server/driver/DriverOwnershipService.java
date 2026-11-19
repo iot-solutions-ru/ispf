@@ -2,9 +2,12 @@ package com.ispf.server.driver;
 
 import com.ispf.server.config.ClusterProperties;
 import com.ispf.server.config.NatsProperties;
+import com.ispf.server.spi.JdbcExpirySql;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
+import javax.sql.DataSource;
+import java.sql.Connection;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
@@ -12,7 +15,7 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * JDBC-based exclusive driver ownership across cluster replicas (ADR-0028).
+ * JDBC-based exclusive driver ownership across cluster replicas (ADR-0028 / ADR-0078).
  */
 @Service
 public class DriverOwnershipService {
@@ -20,6 +23,7 @@ public class DriverOwnershipService {
     private final JdbcTemplate jdbcTemplate;
     private final ClusterProperties clusterProperties;
     private final String instanceId;
+    private final String nowPlusSecondsExpression;
 
     public DriverOwnershipService(
             JdbcTemplate jdbcTemplate,
@@ -29,6 +33,21 @@ public class DriverOwnershipService {
         this.jdbcTemplate = jdbcTemplate;
         this.clusterProperties = clusterProperties;
         this.instanceId = natsProperties.replicaId();
+        this.nowPlusSecondsExpression = resolveNowPlusSeconds(jdbcTemplate);
+    }
+
+    private static String resolveNowPlusSeconds(JdbcTemplate jdbcTemplate) {
+        DataSource dataSource = jdbcTemplate.getDataSource();
+        if (dataSource == null) {
+            return JdbcExpirySql.POSTGRES_STYLE;
+        }
+        try (Connection connection = dataSource.getConnection()) {
+            return JdbcExpirySql.nowPlusSecondsExpression(
+                    connection.getMetaData().getDatabaseProductName()
+            );
+        } catch (Exception ex) {
+            return JdbcExpirySql.POSTGRES_STYLE;
+        }
     }
 
     public boolean isEnabled() {
@@ -60,10 +79,10 @@ public class DriverOwnershipService {
                 """
                         UPDATE platform_driver_locks
                         SET holder_id = ?,
-                            expires_at = CURRENT_TIMESTAMP + (CAST(? AS BIGINT) * INTERVAL '1' SECOND),
+                            expires_at = %s,
                             fencing_epoch = fencing_epoch + 1
                         WHERE device_path = ? AND expires_at <= CURRENT_TIMESTAMP
-                        """,
+                        """.formatted(nowPlusSecondsExpression),
                 instanceId,
                 ttlSeconds,
                 devicePath
@@ -75,8 +94,8 @@ public class DriverOwnershipService {
             jdbcTemplate.update(
                     """
                             INSERT INTO platform_driver_locks (device_path, holder_id, expires_at, fencing_epoch)
-                            VALUES (?, ?, CURRENT_TIMESTAMP + (CAST(? AS BIGINT) * INTERVAL '1' SECOND), 1)
-                            """,
+                            VALUES (?, ?, %s, 1)
+                            """.formatted(nowPlusSecondsExpression),
                     devicePath,
                     instanceId,
                     ttlSeconds
@@ -99,10 +118,10 @@ public class DriverOwnershipService {
         int updated = jdbcTemplate.update(
                 """
                         UPDATE platform_driver_locks
-                        SET expires_at = CURRENT_TIMESTAMP + (CAST(? AS BIGINT) * INTERVAL '1' SECOND),
+                        SET expires_at = %s,
                             fencing_epoch = CASE WHEN fencing_epoch < 1 THEN 1 ELSE fencing_epoch END
                         WHERE device_path = ? AND holder_id = ? AND expires_at > CURRENT_TIMESTAMP
-                        """,
+                        """.formatted(nowPlusSecondsExpression),
                 ttlSeconds,
                 devicePath,
                 instanceId

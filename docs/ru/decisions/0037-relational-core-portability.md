@@ -32,7 +32,7 @@ ISPF хранит конфигурацию платформы (дерево об
 ```
 db/migration/postgresql/   — V1__baseline.sql + инкрементальные V71+ (prod-путь)
 db/migration/h2/           — только README; по умолчанию H2 использует postgresql pack в MODE=PostgreSQL
-db/migration/mssql/        — только README, пока нет сертифицированного greenfield baseline
+db/migration/mssql/        — generated greenfield baseline проходит lab-сертификацию; prod запрещён
 db/migration/mysql/        — только README (план)
 db/migration/oracle/       — только README (план)
 ```
@@ -49,7 +49,8 @@ db/migration/oracle/       — только README (план)
 | Обновление версии ISPF на том же PostgreSQL | Flyway применяет новые `Vnn__*.sql`, которых ещё нет в `flyway_schema_history` |
 | Смена `ISPF_METADATA_DB_KIND` | Новая пустая БД/схема; конфигурация через **бандлы** (`package import`) — **без** in-place смены движка |
 | Legacy DB всё ещё на истории V1–V70 до squash | Однократно `deploy/vps-flyway-repair.sh` — squash history до V1 + repair checksum, затем применить `V71+` |
-| MSSQL / MySQL / Oracle | **Не начато** — только README-заглушки; не ставить `ISPF_METADATA_DB_KIND` на эти движки в production |
+| MSSQL | **Lab green; production запрещён** до прохождения named-SKU gate. Scope и gate: [0078](0078-mssql-metadata-certification.md), эпик [mssql-certification-epic](../../en/mssql-certification-epic.md) |
+| MySQL / Oracle | **Запланированы после MSSQL** — charters [0079](0079-mysql-metadata-certification.md) и [0080](0080-oracle-metadata-certification.md). Boot запрещён для каждого движка до готовности его Flyway pack и certification gate |
 
 Конфигурация решения (объекты, приложения, мимики) живёт в **export/import бандлов**, не в «переносе» строк metadata между СУБД.
 
@@ -77,8 +78,8 @@ db/migration/oracle/       — только README (план)
 | 0 | PostgreSQL 16 + Timescale | Yes | `postgresql/V1` + `V71+` | Primary; реестр ПО |
 | 1 | PG-compatible (Yugabyte, Cockroach) | On request | `postgresql/` | Тестировать per vendor |
 | 2 | H2 (edge/dev) | Edge only | `postgresql/` + PG compat mode | `application-local.yml` |
-| 3 | MS SQL Server | Not started | только `mssql/README.md` | Первый enterprise target, когда появится baseline |
-| 4 | MySQL, Oracle | Not started | только README | После MSSQL |
+| 3 | MS SQL Server | **No — Lab green** | Generated greenfield baseline в процессе сертификации | Первый enterprise target — контракт [0078](0078-mssql-metadata-certification.md); production запрещён до named-SKU gate |
+| 4 | MySQL, Oracle | **No — Scheduled** | только README | После MSSQL: MySQL 8.x B1 [0079](0079-mysql-metadata-certification.md), затем Oracle B1 [0080](0080-oracle-metadata-certification.md); boot запрещён до готовности Flyway pack и certification gate |
 
 ## Последствия
 
@@ -96,4 +97,6 @@ Risks:
 - [deployment](../deployment.md) § Storage deployment modes
 - [0028-horizontal-active-active-cluster](0028-horizontal-active-active-cluster.md), [0016-clickhouse-event-journal](0016-clickhouse-event-journal.md)
 - [0064-release-compatibility-lts](0064-release-compatibility-lts.md) — expand/contract + LTS платформы
+- [0078-mssql-metadata-certification](0078-mssql-metadata-certification.md) — контракт сертификации MSSQL B1/B2
+- [0079-mysql-metadata-certification](0079-mysql-metadata-certification.md), [0080-oracle-metadata-certification](0080-oracle-metadata-certification.md) — запланированные B1 charters без production claim
 - [BLUEPRINTS](../BLUEPRINTS.md) — `data-source-v1`

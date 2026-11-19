@@ -5,6 +5,7 @@ import com.ispf.server.application.data.PlatformSqlCatalog;
 import com.ispf.server.concurrent.ElasticBatchQueueWriter;
 import com.ispf.server.config.BindingProperties;
 import com.ispf.server.object.ObjectManager;
+import com.ispf.server.relational.RelationalDialect;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
@@ -45,6 +46,7 @@ public class BindingInvokeAuditService {
     private final JdbcTemplate jdbcTemplate;
     private final BindingProperties properties;
     private final ObjectManager objectManager;
+    private final RelationalDialect relationalDialect;
     private final String auditTable;
 
     private ElasticBatchQueueWriter<PendingRecord> batchWriter;
@@ -69,11 +71,13 @@ public class BindingInvokeAuditService {
             JdbcTemplate jdbcTemplate,
             PlatformSqlCatalog platformSqlCatalog,
             BindingProperties properties,
-            ObjectManager objectManager
+            ObjectManager objectManager,
+            RelationalDialect relationalDialect
     ) {
         this.jdbcTemplate = jdbcTemplate;
         this.properties = properties;
         this.objectManager = objectManager;
+        this.relationalDialect = relationalDialect;
         this.auditTable = platformSqlCatalog.table("binding_invoke_audit");
     }
 
@@ -209,7 +213,7 @@ public class BindingInvokeAuditService {
             sql.append(" AND changed = ?");
             args.add(changed);
         }
-        sql.append(" ORDER BY invoked_at DESC, id DESC LIMIT ?");
+        sql.append(" ORDER BY invoked_at DESC, id DESC").append(relationalDialect.limitClause());
         args.add(cappedLimit);
         return jdbcTemplate.query(sql.toString(), ROW_MAPPER, args.toArray());
     }

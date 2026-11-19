@@ -1,7 +1,12 @@
 package com.ispf.server.relational;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+
 /**
- * MS SQL Server dialect (enterprise POC, ADR-0037). Migration pack under {@code db/migration/mssql/} is populated incrementally.
+ * MS SQL Server dialect (ADR-0037 / ADR-0078).
+ * Session schema switch is unsupported — do not emit {@code USE} for app schemas.
  */
 public class MssqlDialect extends AbstractRelationalDialect {
 
@@ -34,13 +39,26 @@ public class MssqlDialect extends AbstractRelationalDialect {
     }
 
     @Override
+    public boolean supportsSessionSchemaSwitch() {
+        return false;
+    }
+
+    @Override
+    public boolean supportsTenantDbRowIsolation() {
+        return false;
+    }
+
+    @Override
     public String activateSchemaSql(String quotedSchema) {
-        return "USE " + quotedSchema;
+        throw new UnsupportedOperationException(
+                "Session schema switch is unsupported on MSSQL (ADR-0078). Use external DATA_SOURCE."
+        );
     }
 
     @Override
     public String resetPlatformSchemaSql() {
-        return "USE dbo";
+        // No-op: connections stay on the ISPF database / dbo without USE (ADR-0078 §4).
+        return "SELECT 1";
     }
 
     @Override
@@ -101,5 +119,80 @@ public class MssqlDialect extends AbstractRelationalDialect {
     @Override
     public String[] flywayLocations() {
         return new String[]{"classpath:db/migration/mssql"};
+    }
+
+    @Override
+    public String limitClause() {
+        return " OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY";
+    }
+
+    @Override
+    protected String limitOneLiteral() {
+        return ""; // TOP (1) is inlined in selectTopOneForUpdate
+    }
+
+    @Override
+    public String forUpdateClause() {
+        return ""; // MSSQL uses table hints instead
+    }
+
+    @Override
+    public String selectTopOneForUpdate(String columns, String table, String orderBy) {
+        return "SELECT TOP (1) " + columns + " FROM " + table
+                + " WITH (UPDLOCK, ROWLOCK) ORDER BY " + orderBy;
+    }
+
+    @Override
+    public boolean isUniqueViolation(SQLException ex) {
+        if (ex == null) {
+            return false;
+        }
+        int code = ex.getErrorCode();
+        // 2627 unique constraint, 2601 duplicate key index — not bare SQLSTATE 23000 (FK/CHECK too).
+        return code == 2627 || code == 2601;
+    }
+
+    @Override
+    public void acquireTransactionLock(Connection connection, String lockKey, long advisoryLockId)
+            throws SQLException {
+        String locksTable = platformSchemaPrefix() + "platform_script_locks";
+        ensureLockRow(connection, lockKey, locksTable);
+        try (PreparedStatement rowLock = connection.prepareStatement(
+                "SELECT lock_key FROM " + locksTable + " WITH (UPDLOCK, ROWLOCK) WHERE lock_key = ?"
+        )) {
+            rowLock.setString(1, lockKey);
+            rowLock.executeQuery().close();
+        }
+    }
+
+    @Override
+    protected void ensureLockRow(Connection connection, String lockKey, String locksTable) throws SQLException {
+        try (PreparedStatement insert = connection.prepareStatement(
+                "IF NOT EXISTS (SELECT 1 FROM " + locksTable + " WITH (UPDLOCK, HOLDLOCK) WHERE lock_key = ?) "
+                        + "INSERT INTO " + locksTable + " (lock_key) VALUES (?)"
+        )) {
+            insert.setString(1, lockKey);
+            insert.setString(2, lockKey);
+            insert.executeUpdate();
+        } catch (SQLException ex) {
+            if (!isUniqueViolation(ex)) {
+                throw ex;
+            }
+        }
+    }
+
+    @Override
+    protected String platformScriptLocksTable(Connection connection) {
+        return platformSchemaPrefix() + "platform_script_locks";
+    }
+
+    @Override
+    public String nowPlusSecondsExpression() {
+        return com.ispf.server.spi.JdbcExpirySql.MSSQL_STYLE;
+    }
+
+    @Override
+    public String booleanLiteral(boolean value) {
+        return value ? "1" : "0";
     }
 }

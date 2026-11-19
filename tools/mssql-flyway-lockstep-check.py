@@ -1,0 +1,99 @@
+#!/usr/bin/env python3
+"""ADR-0078 Phase 4: PG Flyway Vnn must have an mssql twin or an ANSI exception.
+
+Usage (repo root):
+  python tools/mssql-flyway-lockstep-check.py
+  python tools/mssql-flyway-lockstep-check.py --exceptions docs/en/mssql-flyway-exceptions.txt
+
+Exit 0 when every postgresql/V*.sql either:
+  - has packages/ispf-server/src/main/resources/db/migration/mssql/V{n}__*.sql, or
+  - is listed in the exceptions file (one version number or Vnn per line; # comments OK).
+
+Baseline: postgresql may have V1 + many incremental; mssql currently ships a single
+generated V1__baseline.sql covering the PG pack. Until incremental mssql twins exist,
+list uncovered PG versions in the exceptions file (or regenerate baseline and clear).
+"""
+
+from __future__ import annotations
+
+import argparse
+import re
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+PG_DIR = ROOT / "packages/ispf-server/src/main/resources/db/migration/postgresql"
+MSSQL_DIR = ROOT / "packages/ispf-server/src/main/resources/db/migration/mssql"
+DEFAULT_EXCEPTIONS = ROOT / "docs/en/mssql-flyway-exceptions.txt"
+
+VERSION_RE = re.compile(r"^V(\d+)__", re.IGNORECASE)
+
+
+def versions_in(directory: Path) -> set[int]:
+    found: set[int] = set()
+    if not directory.is_dir():
+        return found
+    for path in directory.iterdir():
+        if not path.is_file() or not path.name.endswith(".sql"):
+            continue
+        match = VERSION_RE.match(path.name)
+        if match:
+            found.add(int(match.group(1)))
+    return found
+
+
+def load_exceptions(path: Path) -> set[int]:
+    if not path.is_file():
+        return set()
+    out: set[int] = set()
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        line = raw.split("#", 1)[0].strip()
+        if not line:
+            continue
+        if line.upper().startswith("V"):
+            line = line[1:]
+        if line.isdigit():
+            out.add(int(line))
+    return out
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--exceptions",
+        type=Path,
+        default=DEFAULT_EXCEPTIONS,
+        help="ANSI / deferred twin exception list",
+    )
+    args = parser.parse_args()
+
+    pg = versions_in(PG_DIR)
+    mssql = versions_in(MSSQL_DIR)
+    exceptions = load_exceptions(args.exceptions)
+
+    if not pg:
+        print(f"ERROR: no postgresql migrations under {PG_DIR}", file=sys.stderr)
+        return 2
+    if 1 not in mssql:
+        print(f"ERROR: mssql pack missing V1 under {MSSQL_DIR}", file=sys.stderr)
+        return 2
+
+    # V1 on mssql is the greenfield baseline (may subsume many PG versions).
+    missing = sorted(v for v in pg if v != 1 and v not in mssql and v not in exceptions)
+    if missing:
+        print("FAIL: postgresql versions without mssql twin or exception:")
+        for version in missing:
+            print(f"  V{version}")
+        print(f"Add mssql/V{{n}}__*.sql or list the version in {args.exceptions}")
+        return 1
+
+    covered = sorted(v for v in pg if v == 1 or v in mssql or v in exceptions)
+    print(
+        f"OK: lockstep check passed "
+        f"(postgresql={len(pg)} mssql={len(mssql)} exceptions={len(exceptions)} covered={len(covered)})"
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

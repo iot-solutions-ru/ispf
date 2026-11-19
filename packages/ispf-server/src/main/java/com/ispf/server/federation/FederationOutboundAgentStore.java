@@ -60,10 +60,11 @@ public class FederationOutboundAgentStore {
                 SELECT id, name, hub_base_url, registration_code_enc, session_token_enc, path_prefix,
                        enabled, tunnel_status, linked_peer_id, last_error, last_connected_at, created_at, updated_at
                 FROM federation_outbound_agents
-                WHERE enabled = TRUE
+                WHERE enabled = ?
                 ORDER BY name
                 """,
-                (rs, rowNum) -> mapRow(rs)
+                (rs, rowNum) -> mapRow(rs),
+                true
         );
     }
 

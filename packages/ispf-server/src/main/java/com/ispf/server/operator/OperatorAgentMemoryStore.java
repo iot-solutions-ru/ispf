@@ -1,6 +1,7 @@
 package com.ispf.server.operator;
 
 import com.ispf.server.application.data.PlatformSqlCatalog;
+import com.ispf.server.relational.RelationalDialect;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -15,10 +16,16 @@ import java.util.Locale;
 public class OperatorAgentMemoryStore {
 
     private final JdbcTemplate jdbcTemplate;
+    private final RelationalDialect relationalDialect;
     private final String table;
 
-    public OperatorAgentMemoryStore(JdbcTemplate jdbcTemplate, PlatformSqlCatalog platformSqlCatalog) {
+    public OperatorAgentMemoryStore(
+            JdbcTemplate jdbcTemplate,
+            PlatformSqlCatalog platformSqlCatalog,
+            RelationalDialect relationalDialect
+    ) {
         this.jdbcTemplate = jdbcTemplate;
+        this.relationalDialect = relationalDialect;
         this.table = platformSqlCatalog.table("operator_agent_memory");
     }
 
@@ -66,8 +73,7 @@ public class OperatorAgentMemoryStore {
                 FROM %s
                 WHERE app_id = ?
                 ORDER BY updated_at DESC
-                LIMIT ?
-                """.formatted(table),
+                """.formatted(table) + relationalDialect.limitClause(),
                 (rs, rowNum) -> mapRow(rs),
                 appId,
                 capped
@@ -87,8 +93,7 @@ public class OperatorAgentMemoryStore {
                     OR LOWER(content) LIKE ?
                   )
                 ORDER BY use_count DESC, updated_at DESC
-                LIMIT ?
-                """.formatted(table),
+                """.formatted(table) + relationalDialect.limitClause(),
                 (rs, rowNum) -> mapRow(rs),
                 appId,
                 pattern,

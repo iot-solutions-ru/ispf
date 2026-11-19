@@ -153,7 +153,8 @@ public class PlatformSchedulerService {
 
     private void tickLegacySchedules() {
         List<Map<String, Object>> schedules = jdbcTemplate.queryForList(
-                "SELECT * FROM platform_schedules WHERE enabled = TRUE"
+                "SELECT * FROM platform_schedules WHERE enabled = ?",
+                true
         );
         Instant now = Instant.now();
         for (Map<String, Object> schedule : schedules) {
@@ -283,8 +284,9 @@ public class PlatformSchedulerService {
 
     public int countEnabledSchedules() {
         Integer count = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM platform_schedules WHERE enabled = TRUE",
-                Integer.class
+                "SELECT COUNT(*) FROM platform_schedules WHERE enabled = ?",
+                Integer.class,
+                true
         );
         return count != null ? count : 0;
     }

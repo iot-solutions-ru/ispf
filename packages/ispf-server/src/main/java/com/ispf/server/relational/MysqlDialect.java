@@ -26,23 +26,33 @@ public class MysqlDialect extends AbstractRelationalDialect {
     }
 
     @Override
+    public boolean supportsSessionSchemaSwitch() {
+        return false;
+    }
+
+    @Override
     public boolean requiresSchemaDdlBeforeSwitch() {
-        return true;
+        return false;
     }
 
     @Override
     public String activateSchemaSql(String quotedSchema) {
-        return "USE " + quotedSchema;
+        throw new UnsupportedOperationException(
+                "MySQL per-application schema switching is not certified (ADR-0037). "
+                        + "External DATA_SOURCE remains the supported path."
+        );
     }
 
     @Override
     public String resetPlatformSchemaSql() {
-        return "USE ispf";
+        return null;
     }
 
     @Override
     public String createSchemaIfNotExistsSql(String quotedSchema) {
-        return "CREATE DATABASE IF NOT EXISTS " + quotedSchema;
+        throw new UnsupportedOperationException(
+                "MySQL schema/database create for app isolation is not certified (ADR-0037)."
+        );
     }
 
     @Override

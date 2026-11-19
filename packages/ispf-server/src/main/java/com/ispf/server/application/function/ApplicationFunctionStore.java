@@ -2,6 +2,7 @@ package com.ispf.server.application.function;
 
 import com.ispf.server.application.data.PlatformSqlCatalog;
 import com.ispf.server.application.script.FunctionScriptValidator;
+import com.ispf.server.relational.RelationalDialect;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -18,15 +19,18 @@ public class ApplicationFunctionStore {
 
     private final JdbcTemplate jdbcTemplate;
     private final FunctionScriptValidator scriptValidator;
+    private final RelationalDialect relationalDialect;
     private final String functionsTable;
 
     public ApplicationFunctionStore(
             JdbcTemplate jdbcTemplate,
             FunctionScriptValidator scriptValidator,
-            PlatformSqlCatalog platformSqlCatalog
+            PlatformSqlCatalog platformSqlCatalog,
+            RelationalDialect relationalDialect
     ) {
         this.jdbcTemplate = jdbcTemplate;
         this.scriptValidator = scriptValidator;
+        this.relationalDialect = relationalDialect;
         this.functionsTable = platformSqlCatalog.table("application_functions");
     }
 
@@ -191,11 +195,11 @@ public class ApplicationFunctionStore {
                 FROM %s
                 WHERE object_path = ? AND function_name = ?
                 ORDER BY deployed_at DESC
-                LIMIT 1
-                """.formatted(functionsTable),
+                """.formatted(functionsTable) + relationalDialect.limitClause(),
                 this::mapDeployedFunction,
                 objectPath,
-                functionName
+                functionName,
+                1
         );
         return rows.isEmpty() ? Optional.empty() : Optional.of(rows.get(0));
     }
@@ -211,11 +215,11 @@ public class ApplicationFunctionStore {
                 FROM %s
                 WHERE app_id = ? AND function_name = ?
                 ORDER BY deployed_at DESC
-                LIMIT 1
-                """.formatted(functionsTable),
+                """.formatted(functionsTable) + relationalDialect.limitClause(),
                 this::mapDeployedFunction,
                 ref.appId(),
-                ref.functionName()
+                ref.functionName(),
+                1
         );
         return rows.isEmpty() ? Optional.empty() : Optional.of(rows.get(0));
     }

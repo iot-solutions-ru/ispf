@@ -36,11 +36,12 @@ public class FederationPeerStore {
                 "SELECT " + SELECT_COLUMNS + """
                          FROM federation_peers
                         WHERE auth_mode = 'SERVICE_ACCOUNT'
-                          AND enabled = TRUE
+                          AND enabled = ?
                           AND connection_mode = 'HTTP_PULL'
                         ORDER BY name
                         """,
-                (rs, rowNum) -> mapRow(rs)
+                (rs, rowNum) -> mapRow(rs),
+                true
         );
     }
 
