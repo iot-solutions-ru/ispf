@@ -86,6 +86,7 @@ public class EventController {
         if (canonical != null) {
             tenantScopeService.requirePathInScope(canonical, authentication);
             objectAccessService.requireRead(canonical, authentication);
+            objectManager.require(canonical);
         }
         return eventService.journalStatus(canonical);
     }
