@@ -4,8 +4,10 @@ import com.ispf.server.security.IspfSecretCipher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -123,7 +125,8 @@ public class FederationPeerAuthService {
     }
 
     public FederationPeerAuthStatus authStatus(UUID peerId) {
-        FederationPeer peer = peerStore.findById(peerId).orElseThrow();
+        FederationPeer peer = peerStore.findById(peerId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Peer not found: " + peerId));
         return new FederationPeerAuthStatus(
                 peer.id(),
                 peer.authMode(),
