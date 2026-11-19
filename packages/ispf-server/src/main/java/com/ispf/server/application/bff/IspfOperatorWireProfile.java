@@ -29,6 +29,10 @@ final class IspfOperatorWireProfile {
         return ID.equals(wireProfile);
     }
 
+    static boolean isSupported(String wireProfile) {
+        return wireProfile == null || wireProfile.isBlank() || matches(wireProfile);
+    }
+
     static Map<String, String> defaultFieldLabels() {
         return DEFAULT_FIELD_LABELS;
     }
