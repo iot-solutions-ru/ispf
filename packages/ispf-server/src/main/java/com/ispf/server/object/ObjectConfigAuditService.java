@@ -45,7 +45,10 @@ public class ObjectConfigAuditService {
     }
 
     public List<AuditEntry> list(String objectPath, int limit) {
-        int capped = Math.min(Math.max(limit, 1), 200);
+        if (limit < 1) {
+            throw new IllegalArgumentException("Audit limit must be positive");
+        }
+        int capped = Math.min(limit, 200);
         return jdbcTemplate.query("""
                 SELECT id, object_path, change_type, field, actor,
                        occurred_at, revision_before, revision_after, summary_json
