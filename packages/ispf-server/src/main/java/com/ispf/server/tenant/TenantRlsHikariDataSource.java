@@ -3,6 +3,7 @@ package com.ispf.server.tenant;
 import com.zaxxer.hikari.HikariDataSource;
 
 import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.sql.CallableStatement;
@@ -29,20 +30,36 @@ public class TenantRlsHikariDataSource extends HikariDataSource {
         return wrap(super.getConnection(username, password));
     }
 
-    private static Connection wrap(Connection connection) throws SQLException {
+    private Connection wrap(Connection connection) throws SQLException {
         TenantRlsSession.apply(connection, TenantRlsContext.get());
         return (Connection) Proxy.newProxyInstance(
                 Connection.class.getClassLoader(),
                 new Class<?>[]{Connection.class},
-                new RlsConnectionHandler(connection)
+                new RlsConnectionHandler(this, connection)
         );
     }
 
+    /** Package-visible for unit tests that drive the proxy without a live pool. */
+    Connection wrapForTests(Connection connection) throws SQLException {
+        return wrap(connection);
+    }
+
+    static Object invokeUnwrapped(Object target, Method method, Object[] args) throws Throwable {
+        try {
+            return method.invoke(target, args);
+        } catch (InvocationTargetException ex) {
+            Throwable cause = ex.getTargetException();
+            throw cause != null ? cause : ex;
+        }
+    }
+
     private static final class RlsConnectionHandler implements InvocationHandler {
+        private final HikariDataSource pool;
         private final Connection delegate;
         private final Set<String> scriptGucs = new LinkedHashSet<>();
 
-        private RlsConnectionHandler(Connection delegate) {
+        private RlsConnectionHandler(HikariDataSource pool, Connection delegate) {
+            this.pool = pool;
             this.delegate = delegate;
         }
 
@@ -50,12 +67,7 @@ public class TenantRlsHikariDataSource extends HikariDataSource {
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
             String name = method.getName();
             if ("close".equals(name)) {
-                try {
-                    TenantRlsSession.clear(delegate, scriptGucs);
-                } catch (SQLException ignored) {
-                    // still return connection to pool
-                }
-                return method.invoke(delegate, args);
+                return closeAndClear();
             }
             if ("unwrap".equals(name)) {
                 Class<?> iface = (Class<?>) args[0];
@@ -79,11 +91,46 @@ public class TenantRlsHikariDataSource extends HikariDataSource {
             if (args != null && args.length > 0 && args[0] instanceof String sql && isPreparedSql(name)) {
                 TenantRlsSession.collectCustomGucs(sql, scriptGucs);
             }
-            Object result = method.invoke(delegate, args);
+            Object result = invokeUnwrapped(delegate, method, args);
             if (result instanceof Statement statement && name.startsWith("create")) {
                 return wrapStatement(statement);
             }
             return result;
+        }
+
+        private Object closeAndClear() throws Throwable {
+            boolean cleared = false;
+            try {
+                // Session-scoped set_config issued inside an open/aborted transaction is undone by
+                // Hikari's close-time rollback. End the transaction first so clear() sticks.
+                if (!delegate.getAutoCommit()) {
+                    try {
+                        delegate.rollback();
+                    } catch (SQLException ignored) {
+                        // still attempt clear / return
+                    }
+                }
+                TenantRlsSession.clear(delegate, scriptGucs);
+                cleared = true;
+            } catch (SQLException clearFailed) {
+                try {
+                    pool.evictConnection(delegate);
+                } catch (RuntimeException ignored) {
+                    // fall through to close
+                }
+            }
+            try {
+                return invokeUnwrapped(delegate, Connection.class.getMethod("close"), null);
+            } catch (Throwable closeFailed) {
+                if (!cleared) {
+                    try {
+                        pool.evictConnection(delegate);
+                    } catch (RuntimeException ignored) {
+                        // best effort
+                    }
+                }
+                throw closeFailed;
+            }
         }
 
         private Statement wrapStatement(Statement statement) {
@@ -98,7 +145,7 @@ public class TenantRlsHikariDataSource extends HikariDataSource {
                                 && method.getName().startsWith("execute")) {
                             TenantRlsSession.collectCustomGucs(sql, scriptGucs);
                         }
-                        return method.invoke(statement, args);
+                        return invokeUnwrapped(statement, method, args);
                     }
             );
         }
