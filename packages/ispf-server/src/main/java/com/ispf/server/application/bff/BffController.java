@@ -42,6 +42,12 @@ public class BffController {
 
     @PostMapping("/invoke")
     public Map<String, Object> invoke(@RequestBody BffInvokeRequest request, Authentication authentication) {
+        if (request != null && !IspfOperatorWireProfile.isSupported(request.wireProfile())) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Unsupported wireProfile: " + request.wireProfile()
+            );
+        }
         invokeAccessService.requireDirectInvoke(request.objectPath(), request.functionName(), authentication);
         requireUiPackOwnsFunction(request.objectPath(), request.functionName(), authentication);
         DataRecord output = VariableAclRequestContext.callAsMember(

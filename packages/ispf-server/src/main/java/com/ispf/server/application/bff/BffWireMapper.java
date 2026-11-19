@@ -25,6 +25,9 @@ public final class BffWireMapper {
         if (IspfOperatorWireProfile.matches(wireProfile)) {
             return toIspfOperatorWire(errorCode, errorMessage, row, outputSchema, IspfOperatorWireProfile.ID);
         }
+        if (!IspfOperatorWireProfile.isSupported(wireProfile)) {
+            throw new IllegalArgumentException("Unsupported wireProfile: " + wireProfile);
+        }
 
         Map<String, Object> wire = new LinkedHashMap<>();
         wire.put("error_code", errorCode);
