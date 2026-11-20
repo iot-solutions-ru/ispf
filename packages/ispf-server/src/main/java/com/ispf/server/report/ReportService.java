@@ -356,6 +356,19 @@ public class ReportService {
         return runDefinition(report, parameters);
     }
 
+    /**
+     * Rejects a SQL report whose declared parameters are not covered by defaults or the caller.
+     * Tree-variable reports have no SQL parameters. Used before an async job is queued.
+     */
+    @Transactional(readOnly = true)
+    public void validateRunParameters(String path, Map<String, Object> parameters) {
+        ReportView report = getReport(path);
+        if (REPORT_TYPE_TREE_VARIABLES.equals(report.reportType())) {
+            return;
+        }
+        boundSqlParameters(report, parameters);
+    }
+
     @Transactional(readOnly = true)
     public Map<String, Object> runByApp(String appId, String reportId, Map<String, Object> parameters) {
         String path = reportPath(reportId);
@@ -454,17 +467,20 @@ public class ReportService {
         return summaries;
     }
 
+    private List<Object> boundSqlParameters(ReportView report, Map<String, Object> parameters) {
+        Map<String, Object> effective = ReportSqlQuery.effectiveParameters(
+                report.defaultParameters(),
+                calendarParameterEnricher.enrich(parameters)
+        );
+        return ReportSqlQuery.bindQueryParameters(report.query(), report.parameters(), effective);
+    }
+
     private Map<String, Object> runDefinition(ReportView report, Map<String, Object> parameters) {
         if (REPORT_TYPE_TREE_VARIABLES.equals(report.reportType())) {
             return runTreeVariablesDefinition(report);
         }
 
-        Map<String, Object> effective = ReportSqlQuery.effectiveParameters(
-                report.parameters(),
-                report.defaultParameters(),
-                calendarParameterEnricher.enrich(parameters)
-        );
-        List<Object> paramValues = ReportSqlQuery.bindQueryParameters(report.query(), report.parameters(), effective);
+        List<Object> paramValues = boundSqlParameters(report, parameters);
 
         ReportSqlQuery.validateSelectQuery(report.query());
         validateDataSourcePath(report.dataSourcePath());
@@ -506,7 +522,6 @@ public class ReportService {
                 .orElseThrow(() -> new IllegalArgumentException("Report not found: " + reportId));
         List<String> paramNames = deserializeStringList(report.parametersJson());
         Map<String, Object> effective = ReportSqlQuery.effectiveParameters(
-                paramNames,
                 Map.of(),
                 calendarParameterEnricher.enrich(parameters)
         );

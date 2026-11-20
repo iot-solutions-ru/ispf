@@ -36,9 +36,11 @@ final class ReportSqlQuery {
         }
     }
 
-    /** defaults &lt; caller parameters; every declared parameter name is present (empty string if unset). */
+    /**
+     * Defaults, then caller parameters. A declared name with neither a default nor a caller value
+     * stays absent so binding can reject it. An empty string is not invented for a missing name.
+     */
     static Map<String, Object> effectiveParameters(
-            List<String> paramNames,
             Map<String, Object> defaultParameters,
             Map<String, Object> parameters
     ) {
@@ -48,11 +50,6 @@ final class ReportSqlQuery {
         }
         if (parameters != null) {
             merged.putAll(parameters);
-        }
-        if (paramNames != null) {
-            for (String name : paramNames) {
-                merged.putIfAbsent(name, "");
-            }
         }
         return merged;
     }
