@@ -80,26 +80,67 @@ public class JdbcVariableSampleRollupStore {
             Instant to,
             long bucketSeconds
     ) {
+        return queryBucketsRange(objectPath, variableName, fieldName, from, to, bucketSeconds, true, Integer.MAX_VALUE);
+    }
+
+    /**
+     * Closed ingest buckets with {@code bucket_start} in {@code [from, toExclusive)}.
+     * Used by the report-only ingest rollup API (cursor is the exclusive upper bound).
+     */
+    @Transactional(readOnly = true)
+    public List<VariableHistoryService.VariableHistoryBucket> queryBucketsBefore(
+            String objectPath,
+            String variableName,
+            String fieldName,
+            Instant from,
+            Instant toExclusive,
+            long bucketSeconds,
+            int limit
+    ) {
+        return queryBucketsRange(objectPath, variableName, fieldName, from, toExclusive, bucketSeconds, false, limit);
+    }
+
+    private List<VariableHistoryService.VariableHistoryBucket> queryBucketsRange(
+            String objectPath,
+            String variableName,
+            String fieldName,
+            Instant from,
+            Instant toBound,
+            long bucketSeconds,
+            boolean toInclusive,
+            int limit
+    ) {
+        if (limit <= 0) {
+            return List.of();
+        }
+        String toPredicate = toInclusive ? "AND bucket_start <= ?" : "AND bucket_start < ?";
+        // Newest-first TOP, then ASC — matches /history/aggregate truncation when limit binds.
         return jdbcTemplate.query(
                 connection -> {
                     java.sql.PreparedStatement statement = connection.prepareStatement(
                             """
                                     SELECT bucket_start, avg_val, min_val, max_val, sample_count
-                                    FROM variable_sample_rollups
-                                    WHERE object_path = ?
-                                      AND variable_name = ?
-                                      AND field_name = ?
-                                      AND bucket_seconds = ?
-                                      AND bucket_start >= ?
-                                      AND bucket_start <= ?
+                                    FROM (
+                                        SELECT TOP (?)
+                                            bucket_start, avg_val, min_val, max_val, sample_count
+                                        FROM variable_sample_rollups
+                                        WHERE object_path = ?
+                                          AND variable_name = ?
+                                          AND field_name = ?
+                                          AND bucket_seconds = ?
+                                          AND bucket_start >= ?
+                                          %s
+                                        ORDER BY bucket_start DESC
+                                    ) newest
                                     ORDER BY bucket_start ASC
-                                    """);
-                    statement.setString(1, objectPath);
-                    statement.setString(2, variableName);
-                    statement.setString(3, fieldName);
-                    statement.setInt(4, (int) bucketSeconds);
-                    JdbcUtcTimestamps.bind(statement, 5, from);
-                    JdbcUtcTimestamps.bind(statement, 6, to);
+                                    """.formatted(toPredicate));
+                    statement.setInt(1, limit);
+                    statement.setString(2, objectPath);
+                    statement.setString(3, variableName);
+                    statement.setString(4, fieldName);
+                    statement.setInt(5, (int) bucketSeconds);
+                    JdbcUtcTimestamps.bind(statement, 6, from);
+                    JdbcUtcTimestamps.bind(statement, 7, toBound);
                     return statement;
                 },
                 (rs, rowNum) -> new VariableHistoryService.VariableHistoryBucket(
