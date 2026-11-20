@@ -104,6 +104,7 @@ public class WorkflowController {
 
     @GetMapping("/by-path/runs")
     public List<Map<String, Object>> runs(@RequestParam String path) {
+        workflowService.getWorkflow(path);
         return workflowService.listRuns(path);
     }
 
@@ -112,6 +113,7 @@ public class WorkflowController {
             @RequestParam String path,
             @RequestParam(defaultValue = "true") boolean unresolvedOnly
     ) {
+        workflowService.getWorkflow(path);
         return workflowService.listDeadLetters(path, unresolvedOnly);
     }
 
