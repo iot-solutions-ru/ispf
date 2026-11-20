@@ -14,7 +14,7 @@ Make `ISPF_METADATA_DB_KIND=mssql` a **certified** production option for platfor
 - “Any JDBC URL” without a Flyway pack
 - Claiming PostgreSQL RLS equivalence via “app-layer checks”
 - Scheduling MySQL/Oracle certification
-- Selling B2 as a GxP EMS 10-year / 20 s plant-wide report path
+- Selling B2 as an unbounded 10-year / ≤20 s plant-wide raw-scan path (named fixtures only — [single-engine epic](mssql-single-engine-ems-epic.md))
 
 ## Site assumptions (fill per customer)
 
@@ -65,14 +65,18 @@ Make `ISPF_METADATA_DB_KIND=mssql` a **certified** production option for platfor
 - [x] CI rule: `tools/mssql-flyway-lockstep-check.py` in `.github/workflows/ci.yml` (grandfather list in `mssql-flyway-exceptions.txt` — regenerate baseline to shrink)
 - [x] Expand/contract discipline (0064) — process note in [0064](decisions/0064-release-compatibility-lts.md) pointing at lockstep script + exception file (grandfather ≠ dual-pack maturity / Prod Yes)
 
-### Phase 5 — B2 (optional, separate estimate)
+### Phase 5 — B2 (separate gates — see [single-engine epic](mssql-single-engine-ems-epic.md))
 
-- [ ] Event journal stores return rows (no hardcoded `LIMIT`-only path)
-- [ ] History write + bucket aggregate on MSSQL
-- [ ] Retention: schema-fork partitioning **or** capped retention + measured purge
-- [ ] Named report fixture (tag count, window, query text, p95) **or** keep ≤20 s as non-claim
+Do not quote B1 + B2-core + archive + spool as one delivery.
+
+- [x] Bucket SQL on MSSQL uses `DATE_BUCKET` and a SARGable `observed_at` predicate (no `DATEDIFF` int overflow, no `COALESCE` wrapper)
+- [x] Opt-in `mssql-single-engine` boot profile: JDBC journal/history allowed only when the flag is on; warm tier, cold archive, dual-write, cluster, and row isolation stay refused
+- [ ] Event journal deep pages use keyset pagination (recent page already uses dialect `FETCH NEXT`)
+- [ ] History write + bucket aggregate **TCK on MSSQL** (`history-bucket-mssql`)
+- [ ] Retention: schema-fork partitioning **before** any production B2, or a documented cap until then
+- [ ] Named report fixture filled in ADR-0078 §2b **or** keep ≤20 s as non-claim
 - [ ] Dedicated **instance** requirement enforced in deploy docs
-- [ ] 0037 cell **Prod Yes (B2)** only after gate
+- [ ] 0037 cell **Prod Yes (B2)** only after the archive gate — **not** this change
 
 ### Phase 6 — Cluster honesty
 
@@ -133,3 +137,4 @@ Keep [storage-portability-inventory](storage-portability-inventory.md) aligned w
 - [ADR-0078](decisions/0078-mssql-metadata-certification.md)
 - [ADR-0037](decisions/0037-relational-core-portability.md)
 - [known-limitations](known-limitations.md) — do not claim MSSQL prod until gate
+- [mssql-single-engine-ems-epic](mssql-single-engine-ems-epic.md) — opt-in JDBC journal/history; §2 non-claims stay

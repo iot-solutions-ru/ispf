@@ -21,7 +21,7 @@ The short IDs in the parked table (`P-OT`, `P-WEBAUTHN`, and the rest) are the l
 | Relational core on PostgreSQL (or H2 local) | Production `ISPF_DB` on MS SQL — [0078](decisions/0078-mssql-metadata-certification.md) **lab-green B1** (Flyway/TCK/boot fences); **prod ban remains** until named non-Developer SKU ([checklist](mssql-sku-promotion-checklist.md)). MySQL/Oracle boot **refused** until certified. External JDBC `DATA_SOURCE` for reports is fine |
 | App SQL schemas / `search_path` on PostgreSQL | Per-app schema switch on MSSQL (`ApplicationSchemaSession`) — **unsupported**, fail-closed ([0078](decisions/0078-mssql-metadata-certification.md)) |
 | PG-flavored solution `exec` / `ON CONFLICT` scripts against `ISPF_DB` | Same scripts on MSSQL metadata — **unsupported**; use external `DATA_SOURCE` or dialect-safe SQL only |
-| Disk spool in front of sole-store ClickHouse exists and is off | The spool turning itself on, or applying to JDBC / dual-write |
+| Disk spool in front of sole-store ClickHouse exists and is off | The ClickHouse spool turning itself on, applying to JDBC/dual-write, or a second copy of that buffer on another node. An opt-in MSSQL file buffer (`ISPF_MSSQL_JDBC_BUFFER`) is a different switch, off by default, and is not a backup |
 | `ispf validate` warns when logic sits on a `DEVICE` | `--strict` or the marketplace catalog accepting that bundle |
 | TOTP can be turned on for login | WebAuthn or passkeys as the login method |
 

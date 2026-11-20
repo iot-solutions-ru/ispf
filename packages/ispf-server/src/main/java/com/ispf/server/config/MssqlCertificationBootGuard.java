@@ -20,19 +20,28 @@ public class MssqlCertificationBootGuard {
     private final VariableHistoryProperties variableHistoryProperties;
     private final EventJournalProperties eventJournalProperties;
     private final ClusterProperties clusterProperties;
+    private final MssqlRelationalProperties mssqlRelationalProperties;
+    private final HistorianTierProperties historianTierProperties;
+    private final HistorianColdArchiveProperties coldArchiveProperties;
 
     public MssqlCertificationBootGuard(
             RelationalDialect relationalDialect,
             TenantIsolationProperties tenantIsolationProperties,
             VariableHistoryProperties variableHistoryProperties,
             EventJournalProperties eventJournalProperties,
-            ClusterProperties clusterProperties
+            ClusterProperties clusterProperties,
+            MssqlRelationalProperties mssqlRelationalProperties,
+            HistorianTierProperties historianTierProperties,
+            HistorianColdArchiveProperties coldArchiveProperties
     ) {
         this.relationalDialect = relationalDialect;
         this.tenantIsolationProperties = tenantIsolationProperties;
         this.variableHistoryProperties = variableHistoryProperties;
         this.eventJournalProperties = eventJournalProperties;
         this.clusterProperties = clusterProperties;
+        this.mssqlRelationalProperties = mssqlRelationalProperties;
+        this.historianTierProperties = historianTierProperties;
+        this.coldArchiveProperties = coldArchiveProperties;
     }
 
     @EventListener(ContextRefreshedEvent.class)
@@ -42,7 +51,10 @@ public class MssqlCertificationBootGuard {
                 tenantIsolationProperties,
                 variableHistoryProperties,
                 eventJournalProperties,
-                clusterProperties
+                clusterProperties,
+                mssqlRelationalProperties.isSingleEngine(),
+                historianTierProperties.warmTier().isEnabled(),
+                coldArchiveProperties.enabled()
         );
     }
 }

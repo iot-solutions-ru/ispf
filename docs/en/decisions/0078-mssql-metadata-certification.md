@@ -41,6 +41,24 @@ On MSSQL there is **no** Timescale. Native partitioning of `variable_samples` re
 | Long archive / plant-wide year reports | External MSSQL archive via `DATA_SOURCE`, and/or ClickHouse/Parquet **if the site allows non-Microsoft engines**; otherwise external warehouse / report tool — **site assumption, named in the epic** |
 | Retention purge on large rowstore | Prefer partition `SWITCH`/`TRUNCATE` **after** schema fork; until then cap retention and measure log/lock impact of `DELETE` under leader lease |
 
+#### 2b. Allowed claims (do not erase §2)
+
+The two non-claims above stay in force for **unbounded** wording (any plant-wide raw scan, any 10-year rowstore query, “≤ 20 s” without a fixture). A later gate may add a filled row here only with dated evidence. Empty template — **not filled by this ADR**:
+
+| Field | Value |
+|-------|--------|
+| Fixture id | *(unset)* |
+| Edition / CU | *(unset — one named non-Developer SKU)* |
+| Tags × sample period × window | *(unset)* |
+| Query text | *(unset)* |
+| p95 and concurrency | *(unset)* |
+| Primary vs replica | *(unset)* |
+| Evidence path | `docs/evidence/` *(none yet)* |
+
+Marketing may quote a row only after it is filled. Delivery board: [mssql-single-engine-ems-epic](../mssql-single-engine-ems-epic.md).
+
+**Topology for that epic:** one ISPF JVM plus a SQL Server availability-group listener. ISPF active-active stays refused. Partition grain target is **monthly**. Historian DDL on MSSQL is a **named divergence**, not a Timescale twin. JDBC disk buffer in front of MSSQL is opt-in resilience, excluded from the “bytes are only in SQL” sentence, and is not a second-node copy.
+
 Cutover remains **greenfield + bundle import** (0037/0064). Bundles restore **solution configuration**, not `variable_samples`, `event_history`, users/MFA, in-flight workflows, or audit chains from a prior PostgreSQL site.
 
 ### 3. Tenancy / RLS

@@ -1,6 +1,8 @@
 package com.ispf.server.event;
 
 import com.ispf.server.history.TimescaleHypertableInitializer;
+import com.ispf.server.relational.JdbcUtcTimestamps;
+import com.ispf.server.relational.RelationalDbKind;
 import com.ispf.server.relational.RelationalDialect;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -67,15 +69,7 @@ public class JdbcEventJournalStore implements EventJournalStore {
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void appendOne(EventJournalRecord record) {
-        jdbcTemplate.update(
-                INSERT_SQL,
-                record.id(),
-                record.objectPath(),
-                record.eventName(),
-                record.level(),
-                record.payloadJson(),
-                Timestamp.from(record.occurredAt())
-        );
+        jdbcTemplate.update(INSERT_SQL, statement -> bindInsert(statement, record));
         recordCounter.recordPersisted(1);
     }
 
@@ -143,6 +137,9 @@ public class JdbcEventJournalStore implements EventJournalStore {
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public long deleteOlderThan(Instant cutoff, String objectPath) {
+        if (relationalDialect.kind() == RelationalDbKind.MSSQL) {
+            return deleteOlderThanMssql(cutoff, objectPath);
+        }
         int deleted;
         if (objectPath == null || objectPath.isBlank()) {
             deleted = jdbcTemplate.update(
@@ -165,18 +162,56 @@ public class JdbcEventJournalStore implements EventJournalStore {
         return deleted;
     }
 
+    /** Bounded batches so a multi-year purge does not hold one giant transaction lock. */
+    private long deleteOlderThanMssql(Instant cutoff, String objectPath) {
+        long total = 0;
+        int deleted;
+        boolean global = objectPath == null || objectPath.isBlank();
+        do {
+            if (global) {
+                deleted = jdbcTemplate.update(connection -> {
+                    java.sql.PreparedStatement statement = connection.prepareStatement(
+                            "DELETE TOP (5000) FROM event_history WHERE occurred_at < ?");
+                    JdbcUtcTimestamps.bind(statement, 1, cutoff);
+                    return statement;
+                });
+            } else {
+                String path = objectPath;
+                deleted = jdbcTemplate.update(connection -> {
+                    java.sql.PreparedStatement statement = connection.prepareStatement(
+                            """
+                                    DELETE TOP (5000) FROM event_history
+                                    WHERE occurred_at < ?
+                                      AND (object_path = ? OR object_path LIKE ?)
+                                    """);
+                    JdbcUtcTimestamps.bind(statement, 1, cutoff);
+                    statement.setString(2, path);
+                    statement.setString(3, path + ".%");
+                    return statement;
+                });
+            }
+            total += deleted;
+        } while (deleted == 5000);
+        recordCounter.recordDeleted(total);
+        return total;
+    }
+
     @Override
     public boolean supportsApplicationRetentionPurge() {
         return !timescaleHypertableInitializer.isEventHistoryTimescaleActive();
     }
 
-    private static void bindInsert(java.sql.PreparedStatement statement, EventJournalRecord record)
+    private void bindInsert(java.sql.PreparedStatement statement, EventJournalRecord record)
             throws java.sql.SQLException {
         statement.setString(1, record.id());
         statement.setString(2, record.objectPath());
         statement.setString(3, record.eventName());
         statement.setString(4, record.level());
         statement.setString(5, record.payloadJson());
-        statement.setTimestamp(6, Timestamp.from(record.occurredAt()));
+        if (relationalDialect.kind() == RelationalDbKind.MSSQL) {
+            JdbcUtcTimestamps.bind(statement, 6, record.occurredAt());
+        } else {
+            statement.setTimestamp(6, Timestamp.from(record.occurredAt()));
+        }
     }
 }

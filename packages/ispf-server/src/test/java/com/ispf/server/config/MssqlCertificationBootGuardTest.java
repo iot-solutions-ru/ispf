@@ -82,12 +82,43 @@ class MssqlCertificationBootGuardTest {
         EventJournalProperties journal = new EventJournalProperties();
         ClusterProperties cluster = mock(ClusterProperties.class);
         when(cluster.enabled()).thenReturn(true);
+        MssqlRelationalProperties mssql = new MssqlRelationalProperties();
+        HistorianTierProperties tiers = new HistorianTierProperties();
+        HistorianColdArchiveProperties cold = new HistorianColdArchiveProperties(false, "", 200, 10000);
         assertThatCode(() -> new MssqlCertificationBootGuard(
-                new PostgreSqlDialect(), props, history, journal, cluster
+                new PostgreSqlDialect(), props, history, journal, cluster, mssql, tiers, cold
         ).refuseUnsupportedMssqlModes()).doesNotThrowAnyException();
         assertThatCode(() -> new MssqlCertificationBootGuard(
-                new H2Dialect(), props, history, journal, cluster
+                new H2Dialect(), props, history, journal, cluster, mssql, tiers, cold
         ).refuseUnsupportedMssqlModes()).doesNotThrowAnyException();
+    }
+
+    @Test
+    void singleEngineAllowsJdbcHistoryAndJournal() {
+        MssqlCertificationBootGuard guard = newGuard(
+                false, TenantIsolationProperties.IsolationMode.LOGICAL, true, "jdbc", false, true, "jdbc", false,
+                true, false, false);
+        assertThatCode(guard::refuseUnsupportedMssqlModes).doesNotThrowAnyException();
+    }
+
+    @Test
+    void singleEngineRefusesWarmTier() {
+        MssqlCertificationBootGuard guard = newGuard(
+                false, TenantIsolationProperties.IsolationMode.LOGICAL, true, "jdbc", false, true, "jdbc", false,
+                true, true, false);
+        assertThatThrownBy(guard::refuseUnsupportedMssqlModes)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("warm-tier");
+    }
+
+    @Test
+    void b1StillRefusesJdbcHistory() {
+        MssqlCertificationBootGuard guard = newGuard(
+                false, TenantIsolationProperties.IsolationMode.LOGICAL, true, "jdbc", false, false, "jdbc", false,
+                false, false, false);
+        assertThatThrownBy(guard::refuseUnsupportedMssqlModes)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("variable-history");
     }
 
     private static MssqlCertificationBootGuard newGuard(
@@ -99,6 +130,24 @@ class MssqlCertificationBootGuardTest {
             boolean journalEnabled,
             String journalStore,
             boolean clusterEnabled
+    ) {
+        return newGuard(
+                rowIsolation, isolationMode, historyEnabled, historyStore, dualWrite,
+                journalEnabled, journalStore, clusterEnabled, false, false, false);
+    }
+
+    private static MssqlCertificationBootGuard newGuard(
+            boolean rowIsolation,
+            TenantIsolationProperties.IsolationMode isolationMode,
+            boolean historyEnabled,
+            String historyStore,
+            boolean dualWrite,
+            boolean journalEnabled,
+            String journalStore,
+            boolean clusterEnabled,
+            boolean singleEngine,
+            boolean warmEnabled,
+            boolean coldArchive
     ) {
         TenantIsolationProperties props = new TenantIsolationProperties();
         props.setDbRowIsolation(rowIsolation);
@@ -112,12 +161,20 @@ class MssqlCertificationBootGuardTest {
         journal.setStore(journalStore);
         ClusterProperties cluster = mock(ClusterProperties.class);
         when(cluster.enabled()).thenReturn(clusterEnabled);
+        MssqlRelationalProperties mssql = new MssqlRelationalProperties();
+        mssql.setSingleEngine(singleEngine);
+        HistorianTierProperties tiers = new HistorianTierProperties();
+        tiers.warmTier().setEnabled(warmEnabled);
+        HistorianColdArchiveProperties cold = new HistorianColdArchiveProperties(coldArchive, "", 200, 10000);
         return new MssqlCertificationBootGuard(
                 new MssqlDialect(),
                 props,
                 history,
                 journal,
-                cluster
+                cluster,
+                mssql,
+                tiers,
+                cold
         );
     }
 }

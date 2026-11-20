@@ -91,8 +91,7 @@ public class MssqlDialect extends AbstractRelationalDialect {
                 SELECT *
                 FROM (
                     SELECT TOP (?)
-                        DATEADD(SECOND, (DATEDIFF(SECOND, '1970-01-01', COALESCE(observed_at, sampled_at)) / ?) * ?, '1970-01-01')
-                            AS bucket_start,
+                        DATE_BUCKET(SECOND, ?, observed_at) AS bucket_start,
                         AVG(value_double) AS avg_val,
                         MIN(value_double) AS min_val,
                         MAX(value_double) AS max_val,
@@ -101,10 +100,10 @@ public class MssqlDialect extends AbstractRelationalDialect {
                     WHERE object_path = ?
                       AND variable_name = ?
                       AND field_name = ?
-                      AND COALESCE(observed_at, sampled_at) >= ?
-                      AND COALESCE(observed_at, sampled_at) <= ?
+                      AND observed_at >= ?
+                      AND observed_at <= ?
                       AND value_double IS NOT NULL
-                    GROUP BY DATEADD(SECOND, (DATEDIFF(SECOND, '1970-01-01', COALESCE(observed_at, sampled_at)) / ?) * ?, '1970-01-01')
+                    GROUP BY DATE_BUCKET(SECOND, ?, observed_at)
                     ORDER BY bucket_start DESC
                 ) recent_buckets
                 ORDER BY bucket_start ASC
