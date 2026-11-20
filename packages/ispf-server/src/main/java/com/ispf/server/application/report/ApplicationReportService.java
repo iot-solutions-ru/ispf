@@ -1,5 +1,6 @@
 package com.ispf.server.application.report;
 
+import com.ispf.core.object.ObjectNotFoundException;
 import com.ispf.server.application.data.ApplicationDataStore;
 import com.ispf.server.application.data.ApplicationSchemaSupport;
 import com.ispf.server.datasource.DataSourceObjectService;
@@ -81,19 +82,29 @@ public class ApplicationReportService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> run(String appId, String reportId, Map<String, Object> parameters) {
+        requireKnownApplication(appId);
         return reportService.runByApp(appId, reportId, parameters);
     }
 
     @Transactional(readOnly = true)
     public byte[] exportCsv(String appId, String reportId, Map<String, Object> parameters) {
+        requireKnownApplication(appId);
         return reportService.exportCsvByApp(appId, reportId, parameters);
     }
 
     @Transactional(readOnly = true)
     public ExportedReport export(String appId, String reportId, ReportExportFormat format, Map<String, Object> parameters) {
+        requireKnownApplication(appId);
+        reportService.requireApplicationReport(appId, reportId);
         String path = ReportService.reportPath(reportId);
         ReportExportService.ExportedFile exported = reportExportService.export(path, format, parameters);
         return new ExportedReport(exported.content(), exported.filename(), exported.contentType());
+    }
+
+    private void requireKnownApplication(String appId) {
+        if (appId == null || appId.isBlank() || applicationDataStore.findApp(appId.trim()).isEmpty()) {
+            throw new ObjectNotFoundException("applications." + (appId == null ? "" : appId.trim()));
+        }
     }
 
     private String inferSchema(String appId) {
