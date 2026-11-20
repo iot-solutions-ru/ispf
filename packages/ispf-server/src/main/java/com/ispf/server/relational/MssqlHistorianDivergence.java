@@ -24,6 +24,14 @@ public final class MssqlHistorianDivergence {
     public static final String STATUS_APPLIED = "APPLIED";
     public static final String STATUS_SKIPPED_NONEMPTY = "SKIPPED_NONEMPTY";
 
+    /**
+     * Gate C2: JDBC materializer into {@code variable_sample_rollups} (sampled_at 1h/1d) with
+     * {@code mssql_historian_rollup_cursor}. Default off. Not a SWITCH seal; charts still use raw
+     * {@code observed_at} scans; app DELETE retention stays.
+     */
+    public static final String V101_3_ROLLUP_CURSOR =
+            "mssql_historian_rollup_cursor + JDBC sampled_at rollup materializer (opt-in)";
+
     private MssqlHistorianDivergence() {
     }
 

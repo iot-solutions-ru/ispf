@@ -54,12 +54,14 @@ Partition/PK rewrite is not applied to `V1`. In-place rewrite of `variable_sampl
 
 **V101.2 Gate C1 (migrated, empty DB only):** rebuilds `variable_samples` to `PRIMARY KEY (sampled_at, id)` on monthly `RANGE RIGHT` partitions (`pf`/`ps_variable_samples_month`, `PRIMARY` filegroup, `LOCK_ESCALATION = AUTO`). Durable status in `mssql_historian_partition_status`: `APPLIED` or `SKIPPED_NONEMPTY`. Nonempty databases keep the IDENTITY PK and the 90-day `DELETE` retention path. Operator horizon extend: `tools/mssql-b1-lab/split-variable-samples-horizon.sql` (SPLIT only — no SWITCH). TCK: `MssqlVariableSamplesPartitionTckTest`. See `MssqlHistorianDivergence.V101_2_PARTITIONS`.
 
-Still open (Gate C2 / later — not Prod Yes B2 yet):
+**V101.3 Gate C2 (materializer writes only):** opt-in JDBC job (`ISPF_MSSQL_ROLLUP_MATERIALIZER`, default off) MERGEs `history_enabled` numeric series into `variable_sample_rollups` on **`sampled_at`** buckets `1h` / `1d`, walking a contiguous cursor in `mssql_historian_rollup_cursor` (oldest-first; not `MAX(bucket_start)`). Separate from the ClickHouse analytics materializer. Charts / `MssqlDialect` bucket SQL still scan raw rows by **`observed_at`**. App `DELETE` + `max-retention-days` stay the retention path. The cursor is **not** a SWITCH seal. TCK: `MssqlJdbcRollupMaterializerTckTest`. See `MssqlHistorianDivergence.V101_3_ROLLUP_CURSOR`.
 
-- Monthly `SWITCH` / `TRUNCATE` retention by a maintenance login after a rollup watermark (runtime login stays without `ALTER`).
+Still open (later — not Prod Yes B2 yet):
+
+- Monthly `SWITCH` / `TRUNCATE` retention by a maintenance login (runtime login stays without `ALTER`). Requires a later read-path cutover; C2 cursor alone does not authorize drops.
 - Per-variable retention vs a dropped month: single-engine mode keeps one global floor (`max-retention-days`, default 90) until that cutover, because `SWITCH` drops a time slice for every variable.
 - `event_history` partition retention (batched `DELETE TOP` is already in place).
-- A scheduled JDBC rollup materializer so multi-year reports do not scan raw `variable_samples`. The ClickHouse rollup services are not that table.
+- Wiring chart / query path onto `variable_sample_rollups` (or `observed_at` rollups).
 - Automatic replay that relies on the V101.1 unique key (replay is still manual / off).
 - Scale evidence on the named SKU under `FULL` recovery, filed under `docs/evidence/`. ADR-0078 §2b stays empty until that file exists.
 

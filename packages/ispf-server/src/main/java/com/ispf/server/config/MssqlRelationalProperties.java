@@ -13,10 +13,19 @@ public class MssqlRelationalProperties {
     private String jdbcBufferDirectory = "data/mssql-jdbc-buffer";
     private long jdbcBufferMaxBytes = 268_435_456L;
     /**
-     * Hard ceiling while monthly partitions are not applied (Gate C).
+     * Hard ceiling while monthly SWITCH retention is not cut over (Gate C2).
      * Clamp every variable retention to this many days when single-engine is on.
      */
     private int maxRetentionDays = 90;
+    /**
+     * Gate C2 JDBC rollup materializer into {@code variable_sample_rollups}. Default off.
+     * Not the ClickHouse analytics materializer. Not a SWITCH seal.
+     */
+    private boolean rollupMaterializerEnabled = false;
+    /** Fixed delay between materializer ticks (ms). */
+    private long rollupMaterializerTickMs = 60_000L;
+    /** Catch-up chunk width in hours (walks oldest-first from the coverage cursor). */
+    private int rollupMaterializerChunkHours = 24;
 
     public boolean isSingleEngine() {
         return singleEngine;
@@ -56,5 +65,29 @@ public class MssqlRelationalProperties {
 
     public void setMaxRetentionDays(int maxRetentionDays) {
         this.maxRetentionDays = Math.max(1, maxRetentionDays);
+    }
+
+    public boolean isRollupMaterializerEnabled() {
+        return rollupMaterializerEnabled;
+    }
+
+    public void setRollupMaterializerEnabled(boolean rollupMaterializerEnabled) {
+        this.rollupMaterializerEnabled = rollupMaterializerEnabled;
+    }
+
+    public long getRollupMaterializerTickMs() {
+        return rollupMaterializerTickMs;
+    }
+
+    public void setRollupMaterializerTickMs(long rollupMaterializerTickMs) {
+        this.rollupMaterializerTickMs = Math.max(1_000L, rollupMaterializerTickMs);
+    }
+
+    public int getRollupMaterializerChunkHours() {
+        return rollupMaterializerChunkHours;
+    }
+
+    public void setRollupMaterializerChunkHours(int rollupMaterializerChunkHours) {
+        this.rollupMaterializerChunkHours = Math.max(1, Math.min(168, rollupMaterializerChunkHours));
     }
 }

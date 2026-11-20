@@ -79,7 +79,8 @@ Do not quote B1 + B2-core + archive + spool as one delivery. B1 boot fences stay
 - [x] Dedicated **instance** requirement in [examples/mssql-single-engine](../../examples/mssql-single-engine/README.md) + Gate B evidence (lab container has no co-tenant OLTP)
 - [ ] 0037 cell **Prod Yes (B2)** only after the archive gate — **not** this change
 - [x] Gate C1: empty-DB monthly partitions + PK `(sampled_at, id)` + status `APPLIED`/`SKIPPED_NONEMPTY` (`V101.2`, operator SPLIT script) — **not** SWITCH retention
-- [ ] Gate C2: rollup materializer + SWITCH/TRUNCATE retention cutover (still required before 0037 **Prod Yes (B2)**)
+- [x] Gate C2 materializer: opt-in JDBC `sampled_at` rollups + cursor (`V101.3`, default off) — charts still raw `observed_at`; **not** SWITCH
+- [ ] Gate C2+/C3: read-path cutover + SWITCH/TRUNCATE retention (still required before 0037 **Prod Yes (B2)**)
 
 ### Phase 6 — Cluster honesty
 
