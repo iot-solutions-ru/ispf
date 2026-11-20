@@ -440,6 +440,15 @@ public class WorkflowService {
 
     @Transactional(readOnly = true)
     public List<Map<String, Object>> listSteps(String instanceId) {
+        try {
+            instanceStore.load(instanceId);
+        } catch (WorkflowException exception) {
+            if (exception.getMessage() != null
+                    && exception.getMessage().startsWith("Workflow instance not found:")) {
+                throw new ObjectNotFoundException(instanceId);
+            }
+            throw new IllegalArgumentException(exception.getMessage(), exception);
+        }
         return instanceStore.listSteps(instanceId).stream().map(step -> {
             Map<String, Object> row = new HashMap<>();
             row.put("id", step.getId());
