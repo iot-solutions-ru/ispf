@@ -37,6 +37,9 @@ public class DriverOwnershipService {
     }
 
     private static String resolveNowPlusSeconds(JdbcTemplate jdbcTemplate) {
+        if (jdbcTemplate == null) {
+            return JdbcExpirySql.POSTGRES_STYLE;
+        }
         DataSource dataSource = jdbcTemplate.getDataSource();
         if (dataSource == null) {
             return JdbcExpirySql.POSTGRES_STYLE;

@@ -145,6 +145,7 @@ class BindingPeriodicScheduleRegistryConsecutiveFailureTest {
         when(jdbcTemplate.query(
                 anyString(),
                 any(RowMapper.class),
+                eq(true),
                 eq(Timestamp.from(NOW))
         )).thenAnswer(invocation -> {
             RowMapper<?> mapper = invocation.getArgument(1);

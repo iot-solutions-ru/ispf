@@ -101,7 +101,7 @@ class PlatformSchedulerServiceGateTest {
                 null
         );
         when(scheduleObjectService.listEnabled()).thenReturn(List.of(schedule));
-        when(jdbcTemplate.queryForList("SELECT * FROM platform_schedules WHERE enabled = TRUE"))
+        when(jdbcTemplate.queryForList("SELECT * FROM platform_schedules WHERE enabled = ?", true))
                 .thenReturn(List.of());
         when(functionService.invoke(anyString(), anyString(), any(DataRecordPayloadRequest.class)))
                 .thenThrow(new IllegalStateException("boom"));
@@ -127,7 +127,7 @@ class PlatformSchedulerServiceGateTest {
                 null
         );
         when(scheduleObjectService.listEnabled()).thenReturn(List.of(schedule));
-        when(jdbcTemplate.queryForList("SELECT * FROM platform_schedules WHERE enabled = TRUE"))
+        when(jdbcTemplate.queryForList("SELECT * FROM platform_schedules WHERE enabled = ?", true))
                 .thenReturn(List.of());
 
         scheduler.tickSchedules();
@@ -160,7 +160,7 @@ class PlatformSchedulerServiceGateTest {
                 null
         );
         when(scheduleObjectService.listEnabled()).thenReturn(List.of(schedule));
-        when(jdbcTemplate.queryForList("SELECT * FROM platform_schedules WHERE enabled = TRUE"))
+        when(jdbcTemplate.queryForList("SELECT * FROM platform_schedules WHERE enabled = ?", true))
                 .thenReturn(List.of());
 
         scheduler.tickSchedules();
@@ -186,7 +186,7 @@ class PlatformSchedulerServiceGateTest {
         row.put("last_tick_at", Timestamp.from(Instant.now().minusSeconds(3600)));
         row.put("action_type", "invoke_function");
         row.put("action_json", "{\"objectPath\":\"objects.a\",\"functionName\":\"run\",\"input\":{\"k\":\"v\"}}");
-        when(jdbcTemplate.queryForList("SELECT * FROM platform_schedules WHERE enabled = TRUE"))
+        when(jdbcTemplate.queryForList("SELECT * FROM platform_schedules WHERE enabled = ?", true))
                 .thenReturn(List.of(row));
         when(functionService.invoke(anyString(), anyString(), any(DataRecordPayloadRequest.class)))
                 .thenThrow(new IllegalStateException("boom"));
@@ -210,7 +210,7 @@ class PlatformSchedulerServiceGateTest {
         row.put("last_tick_at", Timestamp.from(Instant.now().minusSeconds(3600)));
         row.put("action_type", "invoke_function");
         row.put("action_json", "{\"objectPath\":\"objects.a\",\"functionName\":\"run\"}");
-        when(jdbcTemplate.queryForList("SELECT * FROM platform_schedules WHERE enabled = TRUE"))
+        when(jdbcTemplate.queryForList("SELECT * FROM platform_schedules WHERE enabled = ?", true))
                 .thenReturn(List.of(row));
         objectTree.register(new PlatformObject(
                 "fleet-tick",

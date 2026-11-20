@@ -35,15 +35,18 @@ class ApplicationSqlBindingStoreDisableSubtreeTest {
 
     @Test
     void disableForObjectSubtreeUpdatesExactAndDescendantPaths() {
-        when(jdbcTemplate.update(anyString(), eq("root.devices.a"), eq("root.devices.a.%"))).thenReturn(2);
+        when(jdbcTemplate.update(anyString(), eq(false), eq(true), eq("root.devices.a"), eq("root.devices.a.%")))
+                .thenReturn(2);
 
         int disabled = store.disableForObjectSubtree("root.devices.a");
 
         assertThat(disabled).isEqualTo(2);
         ArgumentCaptor<String> sqlCaptor = ArgumentCaptor.forClass(String.class);
-        verify(jdbcTemplate).update(sqlCaptor.capture(), eq("root.devices.a"), eq("root.devices.a.%"));
+        verify(jdbcTemplate).update(
+                sqlCaptor.capture(), eq(false), eq(true), eq("root.devices.a"), eq("root.devices.a.%"));
         String sql = sqlCaptor.getValue().replaceAll("\\s+", " ").toLowerCase();
-        assertThat(sql).contains("set enabled = false");
+        assertThat(sql).contains("set enabled = ?");
+        assertThat(sql).contains("where enabled = ?");
         assertThat(sql).contains("object_path = ? or object_path like ?");
     }
 
@@ -51,6 +54,6 @@ class ApplicationSqlBindingStoreDisableSubtreeTest {
     void disableForObjectSubtreeIgnoresBlankPath() {
         assertThat(store.disableForObjectSubtree(" ")).isZero();
         assertThat(store.disableForObjectSubtree(null)).isZero();
-        verify(jdbcTemplate, never()).update(anyString(), any(), any());
+        verify(jdbcTemplate, never()).update(anyString(), any(), any(), any(), any());
     }
 }
