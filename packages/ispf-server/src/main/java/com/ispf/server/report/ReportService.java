@@ -357,8 +357,8 @@ public class ReportService {
     }
 
     /**
-     * Rejects a SQL report whose declared parameters are not covered by defaults or the caller.
-     * Tree-variable reports have no SQL parameters. Used before an async job is queued.
+     * Rejects missing or non-bindable SQL parameters before an async job is queued.
+     * Tree-variable reports have no SQL parameters.
      */
     @Transactional(readOnly = true)
     public void validateRunParameters(String path, Map<String, Object> parameters) {
