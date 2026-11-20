@@ -95,8 +95,12 @@ ispf:
       jdbc-buffer-enabled: ${ISPF_MSSQL_JDBC_BUFFER:false}
       jdbc-buffer-directory: ${ISPF_MSSQL_JDBC_BUFFER_DIR:data/mssql-jdbc-buffer}
       jdbc-buffer-max-bytes: ${ISPF_MSSQL_JDBC_BUFFER_MAX_BYTES:268435456}
-      # Until Gate C partitions: clamp historian retention (days) in single-engine mode.
+      # Until SWITCH retention cutover: clamp historian retention (days) in single-engine mode.
       max-retention-days: ${ISPF_MSSQL_MAX_RETENTION_DAYS:90}
+      # Gate C2: JDBC MERGE into variable_sample_rollups (sampled_at buckets). Default off.
+      rollup-materializer-enabled: ${ISPF_MSSQL_ROLLUP_MATERIALIZER:false}
+      rollup-materializer-tick-ms: ${ISPF_MSSQL_ROLLUP_MATERIALIZER_TICK_MS:60000}
+      rollup-materializer-chunk-hours: ${ISPF_MSSQL_ROLLUP_MATERIALIZER_CHUNK_HOURS:24}
   datasource:
     external:
       default-pool-size: ${ISPF_DATASOURCE_EXTERNAL_POOL_SIZE:5}
