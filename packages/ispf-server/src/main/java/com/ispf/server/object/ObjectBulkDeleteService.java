@@ -26,17 +26,20 @@ public class ObjectBulkDeleteService {
     private final PlatformUserService platformUserService;
     private final PlatformRoleService platformRoleService;
     private final AutomationTreeService automationTreeService;
+    private final TreeCrudService treeCrudService;
 
     public ObjectBulkDeleteService(
             ObjectManager objectManager,
             PlatformUserService platformUserService,
             PlatformRoleService platformRoleService,
-            AutomationTreeService automationTreeService
+            AutomationTreeService automationTreeService,
+            TreeCrudService treeCrudService
     ) {
         this.objectManager = objectManager;
         this.platformUserService = platformUserService;
         this.platformRoleService = platformRoleService;
         this.automationTreeService = automationTreeService;
+        this.treeCrudService = treeCrudService;
     }
 
     public boolean isProtectedPath(String path) {
@@ -93,7 +96,9 @@ public class ObjectBulkDeleteService {
             automationTreeService.deleteCorrelator(path);
             return;
         }
-        objectManager.delete(path);
+        // ObjectManager.delete joins this transaction and would mark it rollback-only
+        // when the path is missing. TreeCrudService.delete does not roll back for that.
+        treeCrudService.delete(path);
     }
 
     private static boolean isProtectedCatalogFolder(PlatformObject node) {
