@@ -48,21 +48,23 @@ Opt-in `ISPF_MSSQL_SINGLE_ENGINE=true` plus `ISPF_HISTORIAN_DEPLOY_PROFILE=mssql
 
 ### Gate C — B2-archive (before any Prod Yes B2)
 
-Not applied to `V1`. In-place rewrite of `variable_samples` after a production B2 install is forbidden (ADR-0064).
+Partition/PK rewrite is not applied to `V1`. In-place rewrite of `variable_samples` after a production B2 install is forbidden (ADR-0064).
 
-Target, specified in `MssqlHistorianDivergence` and **not migrated**:
+**V101.1 foundation (migrated on the mssql pack):** unique series+time index `uq_variable_samples_series_time`, table `variable_sample_rollups`, table `historian_spool_batches`. See `MssqlHistorianDivergence.V101_1_FOUNDATION`. Automatic buffer replay and a JDBC rollup materializer job are still open.
 
-- Partition key (`sampled_at`) in every unique index and the primary key.
+Still open (sketched in `MssqlHistorianDivergence`, not migrated):
+
+- Partition key (`sampled_at`) in the **primary key** (IDENTITY PK remains until a greenfield fork).
 - Monthly `SPLIT` ahead of the clock; `SWITCH` / `TRUNCATE` by a maintenance login. The runtime login does not mutate raw rows.
-- Per-variable retention vs a dropped month: single-engine mode uses one global floor (the maximum retention), documented, because `SWITCH` drops a time slice for every variable.
-- `event_history` gets the same class of retention (batched delete now; partition later).
-- JDBC rollup table so multi-year reports do not scan raw `variable_samples`. The ClickHouse rollup services are not that table.
-- Unique key including variable + `sampled_at` **before** any automatic replay.
+- Per-variable retention vs a dropped month: single-engine mode uses one global floor (`max-retention-days`, default 90) until `SWITCH` exists, because `SWITCH` drops a time slice for every variable.
+- `event_history` partition retention (batched `DELETE TOP` is already in place).
+- A scheduled JDBC rollup materializer so multi-year reports do not scan raw `variable_samples`. The ClickHouse rollup services are not that table.
+- Automatic replay that relies on the V101.1 unique key (replay is still manual / off).
 - Scale evidence on the named SKU under `FULL` recovery, filed under `docs/evidence/`. ADR-0078 §2b stays empty until that file exists.
 
 ### Gate D — JDBC buffer (resilience, not the first claim)
 
-`ISPF_MSSQL_JDBC_BUFFER=true` writes failed **connectivity** batches to a local directory and rethrows. It does not acknowledge a sample as stored in SQL. Quota fail-closed. Replay is **not** automatic: without the Gate C unique key, replay can duplicate rows. Bytes on disk are outside backup. A dead node disk loses them. No cross-node copy.
+`ISPF_MSSQL_JDBC_BUFFER=true` writes failed **connectivity** batches to a local directory and rethrows. It does not acknowledge a sample as stored in SQL. Quota fail-closed. Replay is **not** automatic even though V101.1 adds a unique series+time key — wiring that key into safe replay is still open. Bytes on disk are outside backup. A dead node disk loses them. No cross-node copy.
 
 ### Gate E — Packaging and DR honesty
 

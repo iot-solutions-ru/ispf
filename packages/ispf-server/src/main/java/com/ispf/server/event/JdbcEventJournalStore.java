@@ -11,7 +11,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -31,7 +30,7 @@ public class JdbcEventJournalStore implements EventJournalStore {
             rs.getString("event_name"),
             rs.getString("level"),
             rs.getString("payload_json"),
-            rs.getTimestamp("occurred_at").toInstant()
+            JdbcUtcTimestamps.read(rs, "occurred_at")
     );
 
     private final JdbcTemplate jdbcTemplate;
@@ -83,7 +82,7 @@ public class JdbcEventJournalStore implements EventJournalStore {
                     """
                             SELECT id, object_path, event_name, level, payload_json, occurred_at
                             FROM event_history
-                            ORDER BY occurred_at DESC
+                            ORDER BY occurred_at DESC, id DESC
                             """ + limitSql,
                     ROW_MAPPER,
                     capped
@@ -94,11 +93,65 @@ public class JdbcEventJournalStore implements EventJournalStore {
                         SELECT id, object_path, event_name, level, payload_json, occurred_at
                         FROM event_history
                         WHERE object_path = ?
-                        ORDER BY occurred_at DESC
+                        ORDER BY occurred_at DESC, id DESC
                         """ + limitSql,
                 ROW_MAPPER,
                 objectPath,
                 capped
+        );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<EventJournalRecord> queryRecentBefore(
+            String objectPath,
+            Instant beforeOccurredAt,
+            String beforeId,
+            int limit
+    ) {
+        if (beforeOccurredAt == null) {
+            return queryRecent(objectPath, limit);
+        }
+        int capped = Math.max(1, Math.min(limit, 200));
+        String tie = beforeId == null ? "" : beforeId;
+        if (objectPath == null || objectPath.isBlank()) {
+            return jdbcTemplate.query(
+                    connection -> {
+                        java.sql.PreparedStatement statement = connection.prepareStatement(
+                                """
+                                        SELECT id, object_path, event_name, level, payload_json, occurred_at
+                                        FROM event_history
+                                        WHERE occurred_at < ?
+                                           OR (occurred_at = ? AND id < ?)
+                                        ORDER BY occurred_at DESC, id DESC
+                                        """ + relationalDialect.limitClause());
+                        JdbcUtcTimestamps.bind(statement, 1, beforeOccurredAt);
+                        JdbcUtcTimestamps.bind(statement, 2, beforeOccurredAt);
+                        statement.setString(3, tie);
+                        statement.setInt(4, capped);
+                        return statement;
+                    },
+                    ROW_MAPPER
+            );
+        }
+        return jdbcTemplate.query(
+                connection -> {
+                    java.sql.PreparedStatement statement = connection.prepareStatement(
+                            """
+                                    SELECT id, object_path, event_name, level, payload_json, occurred_at
+                                    FROM event_history
+                                    WHERE object_path = ?
+                                      AND (occurred_at < ? OR (occurred_at = ? AND id < ?))
+                                    ORDER BY occurred_at DESC, id DESC
+                                    """ + relationalDialect.limitClause());
+                    statement.setString(1, objectPath);
+                    JdbcUtcTimestamps.bind(statement, 2, beforeOccurredAt);
+                    JdbcUtcTimestamps.bind(statement, 3, beforeOccurredAt);
+                    statement.setString(4, tie);
+                    statement.setInt(5, capped);
+                    return statement;
+                },
+                ROW_MAPPER
         );
     }
 
@@ -140,23 +193,28 @@ public class JdbcEventJournalStore implements EventJournalStore {
         if (relationalDialect.kind() == RelationalDbKind.MSSQL) {
             return deleteOlderThanMssql(cutoff, objectPath);
         }
-        int deleted;
+        long deleted;
         if (objectPath == null || objectPath.isBlank()) {
-            deleted = jdbcTemplate.update(
-                    "DELETE FROM event_history WHERE occurred_at < ?",
-                    Timestamp.from(cutoff)
-            );
+            deleted = jdbcTemplate.update(connection -> {
+                java.sql.PreparedStatement statement = connection.prepareStatement(
+                        "DELETE FROM event_history WHERE occurred_at < ?");
+                JdbcUtcTimestamps.bind(statement, 1, cutoff);
+                return statement;
+            });
         } else {
-            deleted = jdbcTemplate.update(
-                    """
-                            DELETE FROM event_history
-                            WHERE occurred_at < ?
-                              AND (object_path = ? OR object_path LIKE ?)
-                            """,
-                    Timestamp.from(cutoff),
-                    objectPath,
-                    objectPath + ".%"
-            );
+            String path = objectPath;
+            deleted = jdbcTemplate.update(connection -> {
+                java.sql.PreparedStatement statement = connection.prepareStatement(
+                        """
+                                DELETE FROM event_history
+                                WHERE occurred_at < ?
+                                  AND (object_path = ? OR object_path LIKE ?)
+                                """);
+                JdbcUtcTimestamps.bind(statement, 1, cutoff);
+                statement.setString(2, path);
+                statement.setString(3, path + ".%");
+                return statement;
+            });
         }
         recordCounter.recordDeleted(deleted);
         return deleted;
@@ -208,10 +266,6 @@ public class JdbcEventJournalStore implements EventJournalStore {
         statement.setString(3, record.eventName());
         statement.setString(4, record.level());
         statement.setString(5, record.payloadJson());
-        if (relationalDialect.kind() == RelationalDbKind.MSSQL) {
-            JdbcUtcTimestamps.bind(statement, 6, record.occurredAt());
-        } else {
-            statement.setTimestamp(6, Timestamp.from(record.occurredAt()));
-        }
+        JdbcUtcTimestamps.bind(statement, 6, record.occurredAt());
     }
 }

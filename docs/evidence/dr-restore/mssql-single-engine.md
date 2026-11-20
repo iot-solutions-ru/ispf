@@ -10,7 +10,7 @@ Metadata, event journal, and JDBC variable history **if** they live in that data
 ## What it does not cover
 
 - Secrets-key material (T4) — restore the key from escrow or sign-in secrets stay unreadable.
-- Local JDBC buffer files (`ISPF_MSSQL_JDBC_BUFFER`) — they can be ahead of or behind the backup. Do not replay them into a restored database until Gate C has a unique key; otherwise rows duplicate.
+- Local JDBC buffer files (`ISPF_MSSQL_JDBC_BUFFER`) — they can be ahead of or behind the backup. V101.1 adds a unique series+time key, but automatic replay is not wired; do not hand-replay buffer files into a restored database unless you accept conflict handling yourself.
 - A second ISPF node. Active-active on MSSQL is refused.
 
 ## Drill checklist (when someone runs it)

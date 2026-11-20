@@ -1,18 +1,24 @@
 package com.ispf.server.relational;
 
 /**
- * Greenfield target for MSSQL history. Not applied to {@code V1__baseline.sql}.
- * An in-place rewrite after production B2 would break ADR-0064.
+ * Greenfield target for MSSQL history. Partition/PK rewrite is not applied to {@code V1__baseline.sql}.
+ * Foundation objects (unique series+time key, rollup table, spool batch tokens) land in
+ * {@code V101.1__single_engine_historian_divergence.sql}. An in-place PK rewrite after production B2
+ * would break ADR-0064.
  */
 public final class MssqlHistorianDivergence {
 
     public static final String NOT_APPLIED =
-            "Not applied to V1. Monthly partitions. Partition column sampled_at must sit in the primary key.";
+            "Partition/PK rewrite not applied to V1. Monthly partitions. Partition column sampled_at must sit in the primary key.";
+
+    /** Applied by Flyway V101.1 on the mssql pack (not a Timescale twin; avoids squatting shared V102). */
+    public static final String V101_1_FOUNDATION =
+            "uq_variable_samples_series_time + variable_sample_rollups + historian_spool_batches";
 
     private MssqlHistorianDivergence() {
     }
 
-    /** Sketch only — Flyway does not run this. */
+    /** Sketch only — Flyway does not rewrite the IDENTITY PK yet. */
     public static String greenfieldPrimaryKeySketch() {
         return "PRIMARY KEY (sampled_at, id)";
     }
