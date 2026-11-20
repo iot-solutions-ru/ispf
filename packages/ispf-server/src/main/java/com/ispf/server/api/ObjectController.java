@@ -216,6 +216,7 @@ public class ObjectController {
         path = canonicalPath(path, authentication);
         tenantScopeService.requirePathInScope(path, authentication);
         objectAccessService.requireRead(path, authentication);
+        objectManager.require(path);
         return objectManager.configAudit(path, limit).stream()
                 .map(entry -> Map.<String, Object>of(
                         "id", entry.id(),
