@@ -4,6 +4,7 @@ import com.ispf.core.object.ObjectNotFoundException;
 import com.ispf.core.ref.PlatformRefParseException;
 import com.ispf.expression.ExpressionException;
 import com.ispf.plugin.workflow.WorkflowException;
+import com.ispf.server.workflow.WorkflowInstanceNotFoundException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -26,6 +27,13 @@ public class ApiExceptionHandler {
     public ProblemDetail handleObjectNotFound(ObjectNotFoundException exception) {
         ProblemDetail detail = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, exception.getMessage());
         detail.setTitle("Object not found");
+        return detail;
+    }
+
+    @ExceptionHandler(WorkflowInstanceNotFoundException.class)
+    public ProblemDetail handleWorkflowInstanceNotFound(WorkflowInstanceNotFoundException exception) {
+        ProblemDetail detail = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, exception.getMessage());
+        detail.setTitle("Workflow instance not found");
         return detail;
     }
 

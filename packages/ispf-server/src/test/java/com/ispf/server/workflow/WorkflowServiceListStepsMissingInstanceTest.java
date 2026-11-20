@@ -1,8 +1,6 @@
 package com.ispf.server.workflow;
 
-import com.ispf.core.object.ObjectNotFoundException;
 import com.ispf.plugin.workflow.WorkflowEngine;
-import com.ispf.plugin.workflow.WorkflowException;
 import com.ispf.server.persistence.WorkflowInstanceRepository;
 import com.ispf.server.spi.WorkflowConditionCheck;
 import com.ispf.server.spi.WorkflowMetrics;
@@ -15,7 +13,6 @@ import org.springframework.beans.factory.ObjectProvider;
 import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -60,27 +57,26 @@ class WorkflowServiceListStepsMissingInstanceTest {
     private WorkflowConditionCheck formalVerificationService;
 
     @Test
-    void missingInstanceIsRejectedBeforeReadingSteps() throws WorkflowException {
-        when(instanceStore.load("no-such-instance-716"))
-                .thenThrow(new WorkflowException("Workflow instance not found: no-such-instance-716"));
+    void missingInstanceIsRejectedBeforeReadingSteps() {
+        when(instanceStore.exists("no-such-instance-716")).thenReturn(false);
 
-        ObjectNotFoundException exception = assertThrows(
-                ObjectNotFoundException.class,
+        WorkflowInstanceNotFoundException exception = assertThrows(
+                WorkflowInstanceNotFoundException.class,
                 () -> service().listSteps("no-such-instance-716")
         );
 
-        assertEquals("Object not found: no-such-instance-716", exception.getMessage());
+        assertEquals("Workflow instance not found: no-such-instance-716", exception.getMessage());
         verify(instanceStore, never()).listSteps("no-such-instance-716");
+        verify(instanceStore, never()).load("no-such-instance-716");
     }
 
     @Test
-    void existingInstanceWithoutStepsReturnsEmpty() throws WorkflowException {
-        when(instanceStore.load("present")).thenReturn(
-                new WorkflowInstanceStore.StoredWorkflowInstance(null, null, Map.of())
-        );
+    void existingInstanceWithoutStepsReturnsEmpty() {
+        when(instanceStore.exists("present")).thenReturn(true);
         when(instanceStore.listSteps("present")).thenReturn(List.of());
 
         assertEquals(List.of(), service().listSteps("present"));
+        verify(instanceStore, never()).load("present");
     }
 
     private WorkflowService service() {

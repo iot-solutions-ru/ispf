@@ -1,14 +1,12 @@
 package com.ispf.server.api;
 
-import com.ispf.core.object.ObjectNotFoundException;
 import com.ispf.server.workflow.WorkflowInstanceCancelService;
+import com.ispf.server.workflow.WorkflowInstanceNotFoundException;
 import com.ispf.server.workflow.WorkflowService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -27,15 +25,14 @@ class WorkflowInstanceControllerStepsMissingInstanceTest {
     @Test
     void missingInstanceIsNotFound() {
         when(workflowService.listSteps("no-such-instance-716"))
-                .thenThrow(new ObjectNotFoundException("no-such-instance-716"));
+                .thenThrow(new WorkflowInstanceNotFoundException("no-such-instance-716"));
 
-        ResponseStatusException exception = assertThrows(
-                ResponseStatusException.class,
+        WorkflowInstanceNotFoundException exception = assertThrows(
+                WorkflowInstanceNotFoundException.class,
                 () -> controller().steps("no-such-instance-716")
         );
 
-        assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
-        assertEquals("Workflow instance not found: no-such-instance-716", exception.getReason());
+        assertEquals("Workflow instance not found: no-such-instance-716", exception.getMessage());
     }
 
     @Test

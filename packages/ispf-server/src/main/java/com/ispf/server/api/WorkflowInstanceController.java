@@ -1,17 +1,14 @@
 package com.ispf.server.api;
 
-import com.ispf.core.object.ObjectNotFoundException;
 import com.ispf.server.workflow.WorkflowInstanceCancelService;
 import com.ispf.server.workflow.WorkflowService;
 import com.ispf.plugin.workflow.WorkflowException;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Map;
@@ -70,14 +67,7 @@ public class WorkflowInstanceController {
 
     @GetMapping("/{instanceId}/steps")
     public List<Map<String, Object>> steps(@PathVariable String instanceId) {
-        try {
-            return workflowService.listSteps(instanceId);
-        } catch (ObjectNotFoundException exception) {
-            throw new ResponseStatusException(
-                    HttpStatus.NOT_FOUND,
-                    "Workflow instance not found: " + instanceId
-            );
-        }
+        return workflowService.listSteps(instanceId);
     }
 
     public record CancelWorkflowRequest(String reason, String detailJson, String cancelledBy) {
