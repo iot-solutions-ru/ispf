@@ -58,9 +58,11 @@ Partition/PK rewrite is not applied to `V1`. In-place rewrite of `variable_sampl
 
 **Ingest rollup report (after C2):** `GET /api/v1/objects/by-path/variables/history/ingest-rollups` serves closed `1h`/`1d` buckets from `variable_sample_rollups` (axis `sampled_at`, before the coverage cursor). Unsupported grains or missing cursor fall back to raw `observed_at` aggregate. This is **not** a chart cutover and **not** a SWITCH seal.
 
+**SWITCH retention design (locked, not shipped):** [ADR-0081](decisions/0081-mssql-historian-switch-retention.md) accepts the maintenance-login monthly `SWITCH` / staging-`TRUNCATE` rules. Retention **in force** remains app `DELETE` + `max-retention-days`. No ops script, migration, or JVM job is authorized by that ADR. Prod Yes B2 stays closed.
+
 Still open (later — not Prod Yes B2 yet):
 
-- Monthly `SWITCH` / `TRUNCATE` retention by a maintenance login (runtime login stays without `ALTER`). Report/cursor alone does not authorize drops.
+- Implementing the ADR-0081 maintenance path (executable `SWITCH` / staging `TRUNCATE`) — design only today; report/cursor alone still does not authorize drops.
 - Per-variable retention vs a dropped month: single-engine mode keeps one global floor (`max-retention-days`, default 90) until that cutover, because `SWITCH` drops a time slice for every variable.
 - `event_history` partition retention (batched `DELETE TOP` is already in place).
 - Moving operator charts off raw `observed_at` onto rollups (or rebuilding rollups on `observed_at`).
