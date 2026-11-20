@@ -29,6 +29,17 @@ Promote `ISPF_METADATA_DB_KIND=mssql` to a production claim only after signing *
 6. App schema switch fail-closed  
 7. Boot refuse for jdbc history / dual-write / jdbc journal / cluster on MSSQL  
 
+### Lab rehearsal (not a SKU signature)
+
+| Evidence | Where |
+|----------|--------|
+| CI TCK / boot fences | PR matrix + `Mssql*` tests |
+| AMD64 SQL Server 2022 stand | [`tools/mssql-b1-lab/stand-local.ps1`](../../tools/mssql-b1-lab/stand-local.ps1) |
+| aarch64 Edge stand + fence | [`tools/mssql-b1-lab/run.sh`](../../tools/mssql-b1-lab/run.sh) |
+| Metadata load numbers | [mssql-certification-epic](mssql-certification-epic.md) Phase 3 + [`loadtest.py`](../../tools/mssql-b1-lab/loadtest.py) |
+
+Re-run the same seven gates on the **named** Standard / Enterprise / Azure SQL cell before signing.
+
 Signer / date: __________________
 
-Related: [0078](decisions/0078-mssql-metadata-certification.md), [mssql-certification-epic](mssql-certification-epic.md).
+Related: [0078](decisions/0078-mssql-metadata-certification.md), [mssql-certification-epic](mssql-certification-epic.md), [tools/mssql-b1-lab](../../tools/mssql-b1-lab/README.md).

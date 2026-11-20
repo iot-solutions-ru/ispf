@@ -8,15 +8,14 @@ NAME_APP=${NAME_APP:-ispf-mssql-b1-app}
 NET=${NET:-ispf-mssql-b1-net}
 : "${MSSQL_SA_PASSWORD:?set MSSQL_SA_PASSWORD (lab throwaway)}"
 JAR=${JAR:-/home/iot-solutions/ispf-mssql-b1/ispf-server.jar}
-WORKDIR=${WORKDIR:-/home/iot-solutions/ispf-mssql-b1}
 ISPF_PORT=${ISPF_PORT:-18080}
+BIND_HOST=${BIND_HOST:-127.0.0.1}
 IMAGE_SQL=${IMAGE_SQL:-mcr.microsoft.com/azure-sql-edge:latest}
 IMAGE_JRE=${IMAGE_JRE:-eclipse-temurin:25-jre-jammy}
 BUNDLE=${BUNDLE:-"$SCRIPT_DIR/mssql-b1-cert-bundle.json"}
 ROUNDS=${ROUNDS:-15}
 CONCURRENCY=${CONCURRENCY:-4}
 
-mkdir -p "$WORKDIR"
 docker network create "$NET" 2>/dev/null || true
 docker rm -f "$NAME_SQL" "$NAME_APP" 2>/dev/null || true
 
@@ -27,7 +26,7 @@ docker run -d --name "$NAME_SQL" --hostname "$NAME_SQL" --network "$NET" \
   -e "MSSQL_SA_PASSWORD=$MSSQL_SA_PASSWORD" \
   -e MSSQL_PID=Developer \
   -e MSSQL_MEMORY_LIMIT_MB=2048 \
-  -p 14333:1433 \
+  -p "${BIND_HOST}:14333:1433" \
   "$IMAGE_SQL"
 
 sql() {
@@ -65,7 +64,7 @@ sql "SELECT name, collation_name, is_read_committed_snapshot_on FROM sys.databas
 JDBC="jdbc:sqlserver://${NAME_SQL}:1433;databaseName=ispf;encrypt=false;trustServerCertificate=true"
 echo "== start ISPF =="
 docker run -d --name "$NAME_APP" --network "$NET" \
-  -p "${ISPF_PORT}:8080" \
+  -p "${BIND_HOST}:${ISPF_PORT}:8080" \
   -v "$JAR:/app/ispf-server.jar:ro" \
   -e SPRING_PROFILES_ACTIVE=local \
   -e ISPF_METADATA_DB_KIND=mssql \

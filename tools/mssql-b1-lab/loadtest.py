@@ -182,19 +182,20 @@ def run_phase(
     duration_s: float,
     workers: int,
     work: Callable[[str, Stats], None],
-    token_factory: Callable[[], str],
+    token_get: Callable[[], str],
+    token_refresh: Callable[[], str],
     base: str,
 ) -> dict:
     stats = Stats(name)
     stop_at = time.time() + duration_s
 
     def worker() -> None:
-        token = token_factory()
+        token = token_get()
         n = 0
         while time.time() < stop_at:
             n += 1
             if n % 200 == 0:
-                token = token_factory()
+                token = token_refresh()
             try:
                 work(token, stats)
             except Exception as ex:  # noqa: BLE001
@@ -219,7 +220,10 @@ def main() -> int:
     ap.add_argument("--base", default=os.environ.get("BASE", "http://127.0.0.1:18080"))
     ap.add_argument("--bundle", default=os.environ.get("BUNDLE", str(DEFAULT_BUNDLE)))
     ap.add_argument("--engine", default=os.environ.get("ENGINE", "mssql-b1"))
-    ap.add_argument("--out", default=os.environ.get("OUT", str(SCRIPT_DIR / "loadtest-result.json")))
+    ap.add_argument(
+        "--out",
+        default=os.environ.get("OUT", "/tmp/mssql-b1-loadtest-result.json"),
+    )
     ap.add_argument("--user", default=os.environ.get("ISPF_USER", "admin"))
     ap.add_argument("--password", default=os.environ.get("ISPF_PASSWORD", "admin"))
     ap.add_argument("--read-workers", type=int, default=20)
@@ -247,14 +251,13 @@ def main() -> int:
     token_box = {"t": token0}
     token_lock = threading.Lock()
 
-    def token_factory() -> str:
-        with token_lock:
-            token_box["t"] = login(base, args.user, args.password)
-            return token_box["t"]
-
-    # cheap factory: reuse until rotation in worker
     def token_reuse() -> str:
         with token_lock:
+            return token_box["t"]
+
+    def token_refresh() -> str:
+        with token_lock:
+            token_box["t"] = login(base, args.user, args.password)
             return token_box["t"]
 
     bundle_bytes = bundle.read_bytes()
@@ -296,21 +299,51 @@ def main() -> int:
     reports: list[dict] = []
     print("\n== phase read ==", flush=True)
     reports.append(
-        run_phase("read", args.read_seconds, args.read_workers, do_read_one, token_reuse, base)
+        run_phase(
+            "read",
+            args.read_seconds,
+            args.read_workers,
+            do_read_one,
+            token_reuse,
+            token_refresh,
+            base,
+        )
     )
     print("\n== phase import ==", flush=True)
     reports.append(
         run_phase(
-            "import", args.import_seconds, args.import_workers, do_import, token_reuse, base
+            "import",
+            args.import_seconds,
+            args.import_workers,
+            do_import,
+            token_reuse,
+            token_refresh,
+            base,
         )
     )
     print("\n== phase write ==", flush=True)
     reports.append(
-        run_phase("write", args.write_seconds, args.write_workers, do_write, token_reuse, base)
+        run_phase(
+            "write",
+            args.write_seconds,
+            args.write_workers,
+            do_write,
+            token_reuse,
+            token_refresh,
+            base,
+        )
     )
     print("\n== phase mixed ==", flush=True)
     reports.append(
-        run_phase("mixed", args.mixed_seconds, args.mixed_workers, do_mixed, token_reuse, base)
+        run_phase(
+            "mixed",
+            args.mixed_seconds,
+            args.mixed_workers,
+            do_mixed,
+            token_reuse,
+            token_refresh,
+            base,
+        )
     )
 
     tok = login(base, args.user, args.password)

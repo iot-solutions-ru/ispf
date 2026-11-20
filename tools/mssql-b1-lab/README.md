@@ -25,3 +25,5 @@ Set `MSSQL_SA_PASSWORD` (lab throwaway). Scripts refuse to start if unset.
 
 - Official `mcr.microsoft.com/mssql/server` is **amd64**; under QEMU on `ispf-lab` aarch64 it segfaults — use Azure SQL Edge there.
 - Keep package **import serial** on Edge (concurrent import saturates Hikari pool=30).
+- Ports bind to `127.0.0.1` by default (`BIND_HOST` to override).
+- `mssql-b1-cert-bundle.json` mirrors `packages/ispf-server/src/test/resources/mssql-b1-cert-bundle.json` — keep them in sync.

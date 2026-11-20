@@ -4,7 +4,7 @@ set -euo pipefail
 export PYTHONUNBUFFERED=1
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BASE=${BASE:-http://127.0.0.1:18080}
-OUT=${OUT:-"$SCRIPT_DIR/loadtest-result.json"}
+OUT=${OUT:-/tmp/mssql-b1-loadtest-result.json}
 ENGINE=${ENGINE:-mssql-b1}
 
 echo "== health =="

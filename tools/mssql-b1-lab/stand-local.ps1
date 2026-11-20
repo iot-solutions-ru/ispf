@@ -4,7 +4,8 @@ param(
     [string]$SaPassword = $env:MSSQL_SA_PASSWORD,
     [string]$Net = "ispf-mssql-b1-net",
     [string]$NameSql = "ispf-mssql-b1-stand",
-    [string]$NameApp = "ispf-mssql-b1-app"
+    [string]$NameApp = "ispf-mssql-b1-app",
+    [string]$BindHost = $(if ($env:BIND_HOST) { $env:BIND_HOST } else { "127.0.0.1" })
 )
 
 $ErrorActionPreference = "Stop"
@@ -38,7 +39,7 @@ if (-not $running) {
         -e "ACCEPT_EULA=Y" `
         -e "MSSQL_SA_PASSWORD=$SaPassword" `
         -e "MSSQL_PID=Developer" `
-        -p "14333:1433" `
+        -p "${BindHost}:14333:1433" `
         $ImageSql
     if (-not $cid) { throw "failed to start MSSQL container" }
     Write-Host "mssql_cid=$cid"
@@ -73,7 +74,7 @@ $Jdbc = "jdbc:sqlserver://${NameSql}:1433;databaseName=ispf;encrypt=false;trustS
 docker rm -f $NameApp 2>$null | Out-Null
 Write-Host "== start ISPF =="
 docker run -d --name $NameApp --network $Net `
-    -p "18080:8080" `
+    -p "${BindHost}:18080:8080" `
     -v "${Jar}:/app/ispf-server.jar:ro" `
     -e "SPRING_PROFILES_ACTIVE=local" `
     -e "ISPF_METADATA_DB_KIND=mssql" `
