@@ -20,4 +20,4 @@ Before boot the DBA must:
 
 **Partitions (Gate C1):** Flyway `V101.2` rebuilds `variable_samples` only when the table is empty (`mssql_historian_partition_status.status = APPLIED`). A database that already has samples records `SKIPPED_NONEMPTY` and keeps the 90-day DELETE retention path — create a new empty database if you need monthly partitions. Extend the empty horizon with `tools/mssql-b1-lab/split-variable-samples-horizon.sql` (SPLIT only; no SWITCH).
 
-**Rollups (Gate C2):** set `ISPF_MSSQL_ROLLUP_MATERIALIZER=true` to MERGE ingest-time (`sampled_at`) hour/day buckets into `variable_sample_rollups`. Charts still query raw `observed_at`. The coverage cursor is not permission to SWITCH/TRUNCATE a month.
+**Rollups (Gate C2):** set `ISPF_MSSQL_ROLLUP_MATERIALIZER=true` to MERGE ingest-time (`sampled_at`) hour/day buckets into `variable_sample_rollups`. Charts still query raw `observed_at` via `/history/aggregate`. Report-only ingest buckets: `GET /api/v1/objects/by-path/variables/history/ingest-rollups?bucket=1h|1d` (closed buckets before the coverage cursor). The cursor is not permission to SWITCH/TRUNCATE a month.

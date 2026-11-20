@@ -3,6 +3,7 @@ package com.ispf.server.history;
 import com.ispf.server.config.ClusterProperties;
 import com.ispf.server.config.MssqlRelationalProperties;
 import com.ispf.server.config.VariableHistoryProperties;
+import com.ispf.server.object.ObjectManager;
 import com.ispf.server.platform.PlatformLeaderLockService;
 import com.ispf.server.relational.RelationalDialect;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -54,6 +55,26 @@ public class JdbcVariableSampleRollupConfiguration {
                 leaderLockService,
                 clusterProperties,
                 mssqlRelationalProperties
+        );
+    }
+
+    @Bean
+    @ConditionalOnProperty(prefix = "ispf.relational.mssql", name = "single-engine", havingValue = "true")
+    public JdbcMssqlIngestRollupReportService jdbcMssqlIngestRollupReportService(
+            JdbcVariableSampleRollupStore rollupStore,
+            JdbcMssqlHistorianRollupMaterializer materializer,
+            VariableHistoryService variableHistoryService,
+            MssqlRelationalProperties mssqlRelationalProperties,
+            RelationalDialect relationalDialect,
+            ObjectManager objectManager
+    ) {
+        return new JdbcMssqlIngestRollupReportService(
+                rollupStore,
+                materializer,
+                variableHistoryService,
+                mssqlRelationalProperties,
+                relationalDialect,
+                objectManager
         );
     }
 }

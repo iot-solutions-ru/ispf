@@ -5,11 +5,13 @@ import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
 import com.ispf.server.federation.FederationProxyService;
 import com.ispf.server.history.HistoryParquetExportGateway;
+import com.ispf.server.history.JdbcMssqlIngestRollupReportService;
 import com.ispf.server.history.VariableHistoryService;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.platform.time.PlatformCalendarRangeService;
 import com.ispf.server.security.acl.ObjectAccessService;
 import com.ispf.server.tenant.TenantScopeService;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -38,6 +40,7 @@ public class VariableHistoryController {
     private final ObjectManager objectManager;
     private final ObjectAccessService objectAccessService;
     private final TenantScopeService tenantScopeService;
+    private final ObjectProvider<JdbcMssqlIngestRollupReportService> ingestRollupReportService;
 
     public VariableHistoryController(
             VariableHistoryService variableHistoryService,
@@ -46,7 +49,8 @@ public class VariableHistoryController {
             ObjectMapper objectMapper,
             ObjectManager objectManager,
             ObjectAccessService objectAccessService,
-            TenantScopeService tenantScopeService
+            TenantScopeService tenantScopeService,
+            ObjectProvider<JdbcMssqlIngestRollupReportService> ingestRollupReportService
     ) {
         this.variableHistoryService = variableHistoryService;
         this.federationProxyService = federationProxyService;
@@ -55,6 +59,7 @@ public class VariableHistoryController {
         this.objectManager = objectManager;
         this.objectAccessService = objectAccessService;
         this.tenantScopeService = tenantScopeService;
+        this.ingestRollupReportService = ingestRollupReportService;
     }
 
     @GetMapping("/history")
@@ -113,6 +118,40 @@ public class VariableHistoryController {
                     .orElseGet(() -> variableHistoryService.aggregate(
                             canonical, name, field, range.from(), range.to(), bucket, limit
                     ));
+        } catch (IllegalArgumentException e) {
+            throw mapIllegalArgument(e);
+        }
+    }
+
+    /**
+     * Report-only ingest ({@code sampled_at}) rollups for MSSQL single-engine.
+     * Not a chart cutover — {@code /history/aggregate} stays on raw {@code observed_at}.
+     * Bucket must be {@code 1h} or {@code 1d}; closed buckets only (before the coverage cursor).
+     */
+    @GetMapping("/history/ingest-rollups")
+    public JdbcMssqlIngestRollupReportService.IngestRollupReportResponse ingestRollups(
+            @RequestParam String path,
+            @RequestParam String name,
+            @RequestParam String bucket,
+            @RequestParam(required = false, defaultValue = "value") String field,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
+            @RequestParam(required = false) String calendarRange,
+            @RequestParam(required = false) String timeZone,
+            @RequestParam(required = false, defaultValue = "500") int limit,
+            Authentication authentication
+    ) {
+        JdbcMssqlIngestRollupReportService report = ingestRollupReportService.getIfAvailable();
+        if (report == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_IMPLEMENTED,
+                    "Ingest rollup report requires MSSQL single-engine JDBC history"
+            );
+        }
+        final String canonical = requireVariableHistoryRead(path, name, authentication);
+        try {
+            InstantRange range = resolveRange(from, to, calendarRange, timeZone);
+            return report.report(canonical, name, field, range.from(), range.to(), bucket, limit);
         } catch (IllegalArgumentException e) {
             throw mapIllegalArgument(e);
         }
