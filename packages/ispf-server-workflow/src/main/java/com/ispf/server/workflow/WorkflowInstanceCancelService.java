@@ -22,6 +22,7 @@ public class WorkflowInstanceCancelService {
     private final JdbcTemplate jdbcTemplate;
     private final WorkflowPlatformSql platformSql;
     private final String cancelJournalTable;
+    private final String userTaskTable;
     private final ObjectProvider<WorkflowInstanceCancelService> self;
 
     public WorkflowInstanceCancelService(
@@ -34,6 +35,7 @@ public class WorkflowInstanceCancelService {
         this.jdbcTemplate = jdbcTemplate;
         this.platformSql = platformSql;
         this.cancelJournalTable = platformSql.table("workflow_cancel_journal");
+        this.userTaskTable = platformSql.table("workflow_user_tasks");
         this.self = self;
     }
 
@@ -55,6 +57,14 @@ public class WorkflowInstanceCancelService {
         entity.setStatus(InstanceStatus.FAILED.name());
         entity.setUpdatedAt(Instant.now());
         instanceRepository.save(entity);
+        jdbcTemplate.update("""
+                UPDATE %s
+                SET status = 'COMPLETED', completed_at = ?
+                WHERE instance_id = ? AND status IN ('OPEN', 'CLAIMED')
+                """.formatted(userTaskTable),
+                Timestamp.from(Instant.now()),
+                instanceId
+        );
 
         jdbcTemplate.update("""
                 INSERT INTO %s (
