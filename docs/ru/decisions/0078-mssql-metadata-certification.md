@@ -23,7 +23,7 @@
 ## Решение (кратко)
 
 1. **Два скоупа:** **B1** — только метаданные на MSSQL; journal/history — другой store или вне claim. **B2** — single-DB jdbc journal+history — **отдельный** gate после B1.
-2. **История:** 10 лет сырого архива в rowstore MSSQL и multi-year raw scan ≤ 20 с — **non-claim**. Длинный архив — внешний MSSQL / ClickHouse/Parquet **если площадка разрешает** / склад отчётов.
+2. **История:** 10 лет сырого архива в rowstore MSSQL и multi-year raw scan ≤ 20 с — **non-claim** (без границ). §2b в EN — пустой шаблон allowed claims; заполняется только после evidence. Доска: [mssql-single-engine-ems-epic](../../en/mssql-single-engine-ems-epic.md).
 3. **RLS:** пока нет native security policy — boot **refuse** при `db-row-isolation=true` на MSSQL; single-tenant EMS с isolation off без RLS-claim; multi-tenant SaaS на MSSQL — out of scope.
 4. **App schemas / `search_path`:** на MSSQL **unsupported** до отдельного механизма; текущий `USE` / `USE dbo` в диалекте некорректен.
 5. **Кластер:** N JVM → один writable primary (AG listener); RCSI обязателен; dedicated DB (B1), dedicated instance (B2).

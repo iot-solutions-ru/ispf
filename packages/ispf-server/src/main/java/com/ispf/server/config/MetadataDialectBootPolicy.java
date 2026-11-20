@@ -29,7 +29,10 @@ public final class MetadataDialectBootPolicy {
             TenantIsolationProperties tenantIsolationProperties,
             VariableHistoryProperties variableHistoryProperties,
             EventJournalProperties eventJournalProperties,
-            ClusterProperties clusterProperties
+            ClusterProperties clusterProperties,
+            boolean singleEngine,
+            boolean warmEnabled,
+            boolean coldArchiveEnabled
     ) {
         if (dialect.kind() != RelationalDbKind.MSSQL) {
             return;
@@ -47,30 +50,74 @@ public final class MetadataDialectBootPolicy {
                             + "Per-tenant schemas require PostgreSQL search_path."
             );
         }
+        if (variableHistoryProperties.isDualWriteEnabled()) {
+            throw new IllegalStateException(
+                    "ispf.variable-history.dual-write-enabled=true is refused on MSSQL (ADR-0078). "
+                            + "Single-engine mode keeps one JDBC store. Disable dual-write."
+            );
+        }
+        if (clusterProperties.enabled()) {
+            throw new IllegalStateException(
+                    "ispf.cluster.enabled=true is not certified on MSSQL (ADR-0078 Phase 6). "
+                            + "Run a single JVM, or use PostgreSQL for active-active until an MSSQL soak passes."
+            );
+        }
+        if (singleEngine) {
+            assertSingleEngineStores(variableHistoryProperties, eventJournalProperties, warmEnabled, coldArchiveEnabled);
+            return;
+        }
         if (variableHistoryProperties.isEnabled() && !variableHistoryProperties.isExternalTimeSeriesStore()) {
             throw new IllegalStateException(
                     "ispf.variable-history store falls back to ISPF_DB JDBC on MSSQL (B2, ADR-0078). "
                             + "Set ISPF_VARIABLE_HISTORY_STORE=clickhouse (or cassandra/scylla), "
-                            + "or ISPF_VARIABLE_HISTORY_ENABLED=false for B1 metadata-only."
-            );
-        }
-        if (variableHistoryProperties.isDualWriteEnabled()) {
-            throw new IllegalStateException(
-                    "ispf.variable-history.dual-write-enabled=true on MSSQL is B2 (ADR-0078) "
-                            + "because the jdbc primary would land in ISPF_DB. Disable dual-write for B1."
+                            + "ISPF_VARIABLE_HISTORY_ENABLED=false for B1, "
+                            + "or ISPF_MSSQL_SINGLE_ENGINE=true for the opt-in JDBC profile."
             );
         }
         if (eventJournalProperties.isEnabled() && eventJournalProperties.isJdbcStore()) {
             throw new IllegalStateException(
                     "ispf.event-journal store falls back to ISPF_DB JDBC on MSSQL (B2, ADR-0078). "
                             + "Set ISPF_EVENT_JOURNAL_STORE=clickhouse (or cassandra/scylla), "
-                            + "or ISPF_EVENT_JOURNAL_ENABLED=false for B1 metadata-only."
+                            + "ISPF_EVENT_JOURNAL_ENABLED=false for B1, "
+                            + "or ISPF_MSSQL_SINGLE_ENGINE=true for the opt-in JDBC profile."
             );
         }
-        if (clusterProperties.enabled()) {
+    }
+
+    private static void assertSingleEngineStores(
+            VariableHistoryProperties variableHistoryProperties,
+            EventJournalProperties eventJournalProperties,
+            boolean warmEnabled,
+            boolean coldArchiveEnabled
+    ) {
+        if (warmEnabled) {
             throw new IllegalStateException(
-                    "ispf.cluster.enabled=true is not certified on MSSQL (ADR-0078 Phase 6). "
-                            + "Run a single node, or use PostgreSQL for active-active until an MSSQL soak passes."
+                    "MSSQL single-engine refuses ClickHouse warm-tier routing. "
+                            + "Set ISPF_HISTORIAN_DEPLOY_PROFILE=mssql-single-engine "
+                            + "and ISPF_HISTORIAN_TIER_WARM_ENABLED=false."
+            );
+        }
+        if (coldArchiveEnabled) {
+            throw new IllegalStateException(
+                    "MSSQL single-engine refuses cold Parquet archive. "
+                            + "Set ISPF_HISTORIAN_COLD_ARCHIVE_ENABLED=false."
+            );
+        }
+        if (variableHistoryProperties.getSpool() != null && variableHistoryProperties.getSpool().isEnabled()) {
+            throw new IllegalStateException(
+                    "ISPF_VARIABLE_HISTORY_SPOOL_ENABLED is the ClickHouse spool. "
+                            + "On MSSQL set it false. The JDBC file buffer is ISPF_MSSQL_JDBC_BUFFER."
+            );
+        }
+        if (variableHistoryProperties.isEnabled() && variableHistoryProperties.isExternalTimeSeriesStore()) {
+            throw new IllegalStateException(
+                    "MSSQL single-engine requires ISPF_VARIABLE_HISTORY_STORE=jdbc "
+                            + "(ClickHouse/Cassandra stores are refused)."
+            );
+        }
+        if (eventJournalProperties.isEnabled() && !eventJournalProperties.isJdbcStore()) {
+            throw new IllegalStateException(
+                    "MSSQL single-engine requires ISPF_EVENT_JOURNAL_STORE=jdbc."
             );
         }
     }

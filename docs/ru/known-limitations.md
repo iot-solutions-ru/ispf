@@ -42,7 +42,7 @@
 | Утверждение | Статус |
 |-------------|--------|
 | JDBC, догонка двойной записи и единственное хранилище ClickHouse | **Отгружено** — [история переменных](variable-history.md), [ADR-0035](decisions/0035-historian-dual-write.md) |
-| Локальный дисковый буфер перед единственным ClickHouse (`ispf.variable-history.spool`) | **Отгружено**, **выключен по умолчанию** — [история переменных](variable-history.md) § Disk spool |
+| Локальный дисковый буфер перед единственным ClickHouse (`ispf.variable-history.spool`) | **Отгружено**, **выключен по умолчанию** — [история переменных](variable-history.md) § Disk spool. Это не файловый буфер MSSQL (`ISPF_MSSQL_JDBC_BUFFER`, тоже выключен) |
 | Датчики догонки двойной записи и лабораторные правила Prometheus | **Отгружено** — `…catchup.ranges` / `.oldest_age_ms` (возраст незакрытого диапазона по часам сэмпла) / `.wal_bytes`. Это не ряд отставания ClickHouse от PostgreSQL ([ADR-0035](decisions/0035-historian-dual-write.md)) |
 | Настоящая метрика отставания ClickHouse от основной базы | **Открыта** — не читать `oldest_age_ms` как отставание ClickHouse |
 | Вторая копия буфера историка на другом узле ISPF до приёма | **Отложено** — не делать без явной просьбы |

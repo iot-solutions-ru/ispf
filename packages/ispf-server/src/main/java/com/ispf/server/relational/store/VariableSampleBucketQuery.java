@@ -1,6 +1,7 @@
 package com.ispf.server.relational.store;
 
 import com.ispf.server.persistence.VariableSampleBucketAggregate;
+import com.ispf.server.relational.JdbcUtcTimestamps;
 import com.ispf.server.relational.RelationalDialect;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -35,23 +36,23 @@ public class VariableSampleBucketQuery {
         if (dialect.kind() == com.ispf.server.relational.RelationalDbKind.MSSQL) {
             return jdbcTemplate.query(
                     dialect.variableSampleBucketAggregateSql(),
+                    (org.springframework.jdbc.core.PreparedStatementSetter) ps -> {
+                        ps.setInt(1, maxBuckets);
+                        ps.setLong(2, bucketSeconds);
+                        ps.setString(3, objectPath);
+                        ps.setString(4, variableName);
+                        ps.setString(5, fieldName);
+                        JdbcUtcTimestamps.bind(ps, 6, from);
+                        JdbcUtcTimestamps.bind(ps, 7, to);
+                        ps.setLong(8, bucketSeconds);
+                    },
                     (rs, rowNum) -> new SimpleVariableSampleBucketAggregate(
                             rs.getTimestamp("bucket_start").toInstant(),
                             rs.getDouble("avg_val"),
                             rs.getDouble("min_val"),
                             rs.getDouble("max_val"),
                             rs.getLong("sample_count")
-                    ),
-                    maxBuckets,
-                    bucketSeconds,
-                    bucketSeconds,
-                    objectPath,
-                    variableName,
-                    fieldName,
-                    Timestamp.from(from),
-                    Timestamp.from(to),
-                    bucketSeconds,
-                    bucketSeconds
+                    )
             );
         }
         return jdbcTemplate.query(

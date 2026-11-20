@@ -2,7 +2,10 @@ package com.ispf.server.relational;
 
 import com.ispf.server.config.ClusterProperties;
 import com.ispf.server.config.EventJournalProperties;
+import com.ispf.server.config.HistorianColdArchiveProperties;
+import com.ispf.server.config.HistorianTierProperties;
 import com.ispf.server.config.MetadataDialectBootPolicy;
+import com.ispf.server.config.MssqlRelationalProperties;
 import com.ispf.server.config.TenantIsolationProperties;
 import com.ispf.server.config.VariableHistoryProperties;
 import org.springframework.boot.flyway.autoconfigure.FlywayConfigurationCustomizer;
@@ -23,7 +26,10 @@ public class FlywayDialectConfiguration {
             TenantIsolationProperties tenantIsolationProperties,
             VariableHistoryProperties variableHistoryProperties,
             EventJournalProperties eventJournalProperties,
-            ClusterProperties clusterProperties
+            ClusterProperties clusterProperties,
+            MssqlRelationalProperties mssqlRelationalProperties,
+            HistorianTierProperties historianTierProperties,
+            HistorianColdArchiveProperties coldArchiveProperties
     ) {
         return configuration -> {
             RelationalDialect dialect = relationalDialectDetector.resolve(dataSource);
@@ -34,7 +40,10 @@ public class FlywayDialectConfiguration {
                     tenantIsolationProperties,
                     variableHistoryProperties,
                     eventJournalProperties,
-                    clusterProperties
+                    clusterProperties,
+                    mssqlRelationalProperties.isSingleEngine(),
+                    historianTierProperties.warmTier().isEnabled(),
+                    coldArchiveProperties.enabled()
             );
             configuration.locations(dialect.flywayLocations());
             // PostgreSQL-only bodies (V86 RLS, V89 random_uuid, …): H2 also loads the
