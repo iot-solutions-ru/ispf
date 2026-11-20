@@ -2,7 +2,7 @@
 
 > **Language:** Canonical English. Russian: [ru/mysql-certification-epic.md](../ru/mysql-certification-epic.md) (if present).  
 > **Status:** Charter — delivery board for [ADR-0079](decisions/0079-mysql-metadata-certification.md).  
-> **Policy:** Starts **after** MSSQL named-SKU gate ([0078](decisions/0078-mssql-metadata-certification.md)). MariaDB is **not** this epic.
+> **Policy:** Starts **after** MSSQL named-SKU gate ([0078](decisions/0078-mssql-metadata-certification.md)). An MSSQL B1 **policy waiver** is not that gate. MariaDB is **not** this epic.
 
 ## Already landed (this train)
 

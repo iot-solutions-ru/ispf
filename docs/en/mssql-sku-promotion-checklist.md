@@ -1,7 +1,8 @@
 # MSSQL B1 SKU promotion checklist (ADR-0078 §8)
 
 > **Language:** Canonical English.  
-> **Status:** Operator checklist — **not** a pass by itself. Testcontainers Developer edition is a **lab** signal only.
+> **Status:** Operator checklist — **not** a pass by itself. Testcontainers Developer edition is a **lab** signal only.  
+> **Policy note:** Absolute forbid of `ISPF_METADATA_DB_KIND=mssql` is waived for the unsigned B1 envelope in [0037](decisions/0037-relational-core-portability.md). That waiver is **not** this checklist signed and **not** Prod Yes.
 
 Promote `ISPF_METADATA_DB_KIND=mssql` to a production claim only after signing **one** named cell below (do not batch Standard + Azure + Enterprise into one signature).
 

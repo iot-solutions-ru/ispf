@@ -31,7 +31,7 @@ Package `com.ispf.server.relational`:
 ```
 db/migration/postgresql/   — V1__baseline.sql + incremental V71+ (prod path)
 db/migration/h2/           — README only; default H2 uses postgresql pack in MODE=PostgreSQL
-db/migration/mssql/        — generated greenfield baseline under lab certification; prod banned
+db/migration/mssql/        — generated greenfield baseline; B1 operator-risk envelope (not Prod Yes)
 db/migration/mysql/        — README only (planned)
 db/migration/oracle/       — README only (planned)
 ```
@@ -48,7 +48,7 @@ Legacy increments **V1–V70 were squashed** into `V1__baseline.sql` (2026-07-07
 | ISPF version upgrade on same PostgreSQL | Flyway applies new `Vnn__*.sql` not yet in `flyway_schema_history` |
 | Change `ISPF_METADATA_DB_KIND` | New empty DB/schema; configuration via **bundles** (`package import`) — **no** in-place engine migration |
 | Legacy DB still on pre-squash V1–V70 history | One-time `deploy/vps-flyway-repair.sh` — squash history to V1 + repair checksum, then apply `V71+` |
-| MSSQL | **Lab green; production banned** until the named-SKU gate passes. Scope and gate: [0078](0078-mssql-metadata-certification.md), epic [mssql-certification-epic](../mssql-certification-epic.md) |
+| MSSQL | **Lab green; absolute prod forbid waived** for the B1 envelope below — **not** Prod Yes until named-SKU §8. Scope: [0078](0078-mssql-metadata-certification.md), epic [mssql-certification-epic](../mssql-certification-epic.md) |
 | MySQL / Oracle | **Scheduled after MSSQL** — charters [0079](0079-mysql-metadata-certification.md) and [0080](0080-oracle-metadata-certification.md). Boot refuses each engine until its Flyway pack and certification gate are complete |
 
 Solution configuration (objects, applications, mimics) lives in **bundle export/import**, not in «moving» metadata rows between DBMS engines.
@@ -77,7 +77,7 @@ Default mode: `ISPF_EVENT_JOURNAL_STORE=jdbc`, `ISPF_VARIABLE_HISTORY_STORE=jdbc
 | 0 | PostgreSQL 16 + Timescale | Yes | `postgresql/V1` + `V71+` | Primary; software registry |
 | 1 | PG-compatible (Yugabyte, Cockroach) | On request | `postgresql/` | Test per vendor |
 | 2 | H2 (edge/dev) | Edge only | `postgresql/` + PG compat mode | `application-local.yml` |
-| 3 | MS SQL Server | **No — Lab green** | Generated greenfield baseline under certification | First enterprise target — contract [0078](0078-mssql-metadata-certification.md); production remains banned until its named-SKU gate passes |
+| 3 | MS SQL Server | **No — not certified.** Lab green (B1). Absolute forbid waived for the B1 envelope | Generated greenfield `mssql/V1` | An operator may set `ISPF_METADATA_DB_KIND=mssql` on SQL Server **Standard / Enterprise** or **Azure SQL DB / MI** only inside the B1 envelope: dedicated DB, CS collation, RCSI on (operator-verified); `ISPF_TENANT_DB_ROW_ISOLATION=false`, history/journal non-JDBC or off, dual-write off, `ISPF_CLUSTER_ENABLED=false` (**boot-enforced**); greenfield + bundle import. **Not** a support or GxP claim. §8 checklist unsigned. Developer / Express / Edge = lab/CI only. Contract [0078](0078-mssql-metadata-certification.md) |
 | 4 | MySQL, Oracle | **No — Scheduled** | README only | After MSSQL: MySQL 8.x B1 [0079](0079-mysql-metadata-certification.md), then Oracle B1 [0080](0080-oracle-metadata-certification.md); boot refuses each engine until its Flyway pack and certification gate are complete |
 
 ## Consequences
