@@ -187,6 +187,7 @@ final class WorkflowInstanceControl {
         if (signalName == null || signalName.isBlank()) {
             throw new WorkflowException("Signal name is required");
         }
+        objects.require(workflowPath);
         List<WorkflowInstanceEntity> waiting = instanceRepository.findByWorkflowPathAndStatus(
                 workflowPath,
                 InstanceStatus.WAITING.name()
