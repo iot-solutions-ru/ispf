@@ -2,6 +2,7 @@ package com.ispf.server.report;
 
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
+import com.ispf.core.object.ObjectNotFoundException;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
@@ -376,7 +377,49 @@ public class ReportService {
             return runLegacy(appId, reportId, parameters);
         }
         ReportView report = getReport(path);
+        if (!reportBelongsToApplication(
+                appId,
+                report.dataSourcePath(),
+                report.legacyAppId(),
+                dataSourceObjectService.pathForNodeName(appId)
+        )) {
+            throw new ObjectNotFoundException("applications." + appId + ".reports." + reportId);
+        }
         return runDefinition(report, parameters);
+    }
+
+    /** Tree report is visible to an application route only when that application owns it. */
+    static boolean reportBelongsToApplication(
+            String appId,
+            String dataSourcePath,
+            String legacyAppId,
+            String applicationDataSourcePath
+    ) {
+        if (appId == null || appId.isBlank()) {
+            return false;
+        }
+        if (appId.equals(legacyAppId)) {
+            return true;
+        }
+        return applicationDataSourcePath != null
+                && !applicationDataSourcePath.isBlank()
+                && applicationDataSourcePath.equals(dataSourcePath);
+    }
+
+    public void requireApplicationReport(String appId, String reportId) {
+        String path = reportPath(reportId);
+        if (objectManager.tree().findByPath(path).isEmpty()) {
+            return;
+        }
+        ReportView report = getReport(path);
+        if (!reportBelongsToApplication(
+                appId,
+                report.dataSourcePath(),
+                report.legacyAppId(),
+                dataSourceObjectService.pathForNodeName(appId)
+        )) {
+            throw new ObjectNotFoundException("applications." + appId + ".reports." + reportId);
+        }
     }
 
     @Transactional(readOnly = true)

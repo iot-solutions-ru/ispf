@@ -106,6 +106,28 @@ class ReportServiceValidationTest {
     }
 
     @Test
+    void reportBelongsOnlyToItsApplicationDataSource() {
+        assertEquals(true, ReportService.reportBelongsToApplication(
+                "coldchain-control",
+                "root.platform.data-sources.coldchain-control",
+                "",
+                "root.platform.data-sources.coldchain-control"
+        ));
+        assertEquals(false, ReportService.reportBelongsToApplication(
+                "no-such-app",
+                "root.platform.data-sources.coldchain-control",
+                "",
+                "root.platform.data-sources.no-such-app"
+        ));
+        assertEquals(true, ReportService.reportBelongsToApplication(
+                "coldchain-control",
+                "root.platform.data-sources.other",
+                "coldchain-control",
+                "root.platform.data-sources.coldchain-control"
+        ));
+    }
+
+    @Test
     void bindQueryParametersRepeatsSingleNamedParamForMultiplePlaceholders() {
         String query = "SELECT 1 WHERE (? = '' OR item_code = ?)";
         List<Object> bound = ReportSqlQuery.bindQueryParameters(
