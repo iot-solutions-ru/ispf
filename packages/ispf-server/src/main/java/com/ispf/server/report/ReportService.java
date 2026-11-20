@@ -290,6 +290,8 @@ public class ReportService {
         ReportView current = toView(resolved, node);
         String dataSourcePath = resolveDataSourcePathForSave(request, current);
         validateDataSourcePath(dataSourcePath);
+        int maxRows = request.maxRows() != null ? request.maxRows() : current.maxRows();
+        requirePositiveMaxRows(maxRows);
         ReportDefinition definition = new ReportDefinition(
                 request.title() != null ? request.title() : current.title(),
                 dataSourcePath,
@@ -297,7 +299,7 @@ public class ReportService {
                 request.parameters() != null ? request.parameters() : current.parameters(),
                 request.columns() != null ? request.columns() : current.columns(),
                 request.defaultParameters() != null ? request.defaultParameters() : current.defaultParameters(),
-                request.maxRows() != null ? request.maxRows() : current.maxRows(),
+                maxRows,
                 request.refreshIntervalMs() != null ? request.refreshIntervalMs() : current.refreshIntervalMs(),
                 request.layout() != null ? request.layout() : current.layout()
         );
@@ -330,13 +332,15 @@ public class ReportService {
         List<ReportColumn> columns = request.columns() != null && !request.columns().isEmpty()
                 ? request.columns()
                 : current.columns();
+        int maxRows = request.maxRows() != null ? request.maxRows() : current.maxRows();
+        requirePositiveMaxRows(maxRows);
         saveTreeVariablesDefinitionInternal(
                 resolved,
                 request.title() != null ? request.title() : current.title(),
                 devicePathPattern,
                 variableName,
                 columns,
-                request.maxRows() != null ? request.maxRows() : current.maxRows(),
+                maxRows,
                 request.refreshIntervalMs() != null ? request.refreshIntervalMs() : current.refreshIntervalMs(),
                 current.layout()
         );
@@ -349,6 +353,13 @@ public class ReportService {
         getReport(resolved);
         setString(resolved, "layout", layoutJson != null ? layoutJson : "");
         return getReport(resolved);
+    }
+
+    /** A stored row limit is a positive page size. Zero and negative values are rejected. */
+    static void requirePositiveMaxRows(int maxRows) {
+        if (maxRows < 1) {
+            throw new IllegalArgumentException("Report maxRows must be at least 1");
+        }
     }
 
     @Transactional(readOnly = true)
@@ -543,6 +554,7 @@ public class ReportService {
         }
 
         List<Map<String, Object>> rows = result[0];
+        requirePositiveMaxRows(report.maxRows());
         boolean truncated = rows.size() > report.maxRows();
         if (truncated) {
             rows = new ArrayList<>(rows.subList(0, report.maxRows()));
@@ -578,6 +590,7 @@ public class ReportService {
         );
 
         List<Map<String, Object>> rows = result[0];
+        requirePositiveMaxRows(report.maxRows());
         boolean truncated = rows.size() > report.maxRows();
         if (truncated) {
             rows = new ArrayList<>(rows.subList(0, report.maxRows()));
@@ -596,6 +609,7 @@ public class ReportService {
 
     private Map<String, Object> runTreeVariablesDefinition(ReportView report) {
         List<Map<String, Object>> rows = treeVariablesReportRows.collect(report.devicePathPattern(), report.variableName());
+        requirePositiveMaxRows(report.maxRows());
         boolean truncated = rows.size() > report.maxRows();
         if (truncated) {
             rows = new ArrayList<>(rows.subList(0, report.maxRows()));

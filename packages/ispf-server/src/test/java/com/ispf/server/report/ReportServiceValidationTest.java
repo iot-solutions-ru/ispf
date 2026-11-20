@@ -128,6 +128,15 @@ class ReportServiceValidationTest {
     }
 
     @Test
+    void rejectsNonPositiveMaxRows() {
+        IllegalArgumentException rejected = assertThrows(IllegalArgumentException.class, () ->
+                ReportService.requirePositiveMaxRows(-1));
+        assertEquals("Report maxRows must be at least 1", rejected.getMessage());
+        assertThrows(IllegalArgumentException.class, () -> ReportService.requirePositiveMaxRows(0));
+        ReportService.requirePositiveMaxRows(1);
+    }
+
+    @Test
     void bindQueryParametersRepeatsSingleNamedParamForMultiplePlaceholders() {
         String query = "SELECT 1 WHERE (? = '' OR item_code = ?)";
         List<Object> bound = ReportSqlQuery.bindQueryParameters(
