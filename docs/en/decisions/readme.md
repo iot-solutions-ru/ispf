@@ -128,7 +128,7 @@ Regressions: [`strip-neuro-slang.py`](../../../tools/docs-audit/strip-neuro-slan
 | [0075-observability-slo-otel](0075-observability-slo-otel.md) | First-party metrics + OTel taxonomy / SLO honesty — **Accepted** |
 | [0076-external-secrets-providers](0076-external-secrets-providers.md) | External KMS/HSM/Vault/GOST non-claims (amends 0065) — **Accepted** |
 | [0077-contextpack-hybrid-retrieval](0077-contextpack-hybrid-retrieval.md) | ContextPack hybrid lexical+embedding `search_context` — **Accepted** |
-| [0078-mssql-metadata-certification](0078-mssql-metadata-certification.md) | MS SQL Server metadata certification B1/B2 (amends 0037) — **Accepted** (impl In progress / lab-green) |
+| [0078-mssql-metadata-certification](0078-mssql-metadata-certification.md) | MS SQL Server metadata certification B1/B2 (amends 0037) — **Accepted** (B1 Prod Yes on Evaluation; B2/A-A boot-refused, not Prod Yes) |
 | [0079-mysql-metadata-certification](0079-mysql-metadata-certification.md) | MySQL 8.x B1 metadata certification charter (amends 0037) — **Accepted** (impl Not started) |
 | [0080-oracle-metadata-certification](0080-oracle-metadata-certification.md) | Oracle B1 metadata certification charter (amends 0037) — **Accepted** (impl Not started) |
 

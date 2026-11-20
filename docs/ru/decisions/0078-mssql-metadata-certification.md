@@ -2,7 +2,7 @@
 
 ## Статус
 
-**Accepted** (2026-11-19) — контракт политики и сертификации. Реализация **Not started**.
+**Accepted** (2026-11-19) — контракт политики и сертификации. **Prod Yes (B1)** подписан 2026-11-20 на SQL Server 2022 Enterprise Evaluation `16.0.4325.4` ([checklist](../../en/mssql-sku-promotion-checklist.md), issue #814). Evaluation — 180-дневный trial класса Enterprise, не бессрочная лицензия. B1 boot fences по-прежнему отказывают JDBC history/journal, dual-write и `ispf.cluster.enabled=true`. Prod Yes для B2/A-A нет.
 
 Дополняет [0037-relational-core-portability](0037-relational-core-portability.md) и [0064-release-compatibility-lts](0064-release-compatibility-lts.md): MS SQL Server — **первый** non-PG целевой движок для продакшена. ADR фиксирует смысл «certified», явные **non-claims** и gate, без которого нельзя ставить `ISPF_METADATA_DB_KIND=mssql` в проде.
 
@@ -15,7 +15,7 @@
 Площадки (в т.ч. GxP EMS) часто требуют Microsoft SQL Server для DBA/бэкапов/политики. Сейчас ISPF:
 
 - Relational core — **PostgreSQL 16 (+ Timescale)** или **H2** (local/edge).
-- Есть `MssqlDialect` и `db/migration/mssql/README.md` — **нет** Flyway baseline.
+- Есть `MssqlDialect`, Flyway `mssql/V1` и fail-closed B1 fences — **Prod Yes (B1)** на подписанной ячейке Evaluation.
 - Корпоративный MSSQL уже доступен как **внешний** `DATA_SOURCE` / JDBC для отчётов — это **не** хостинг `ISPF_DB` на MSSQL.
 
 Формулировка «через JDBC работает с любой БД» не означает «метаданные платформы поднимаются на любом JDBC URL».
@@ -28,12 +28,12 @@
 4. **App schemas / `search_path`:** на MSSQL **unsupported** до отдельного механизма; текущий `USE` / `USE dbo` в диалекте некорректен.
 5. **Кластер:** N JVM → один writable primary (AG listener); RCSI обязателен; dedicated DB (B1), dedicated instance (B2).
 6. **Flyway:** greenfield `mssql/V1`; далее lockstep twin к каждому PG `Vnn` или явный ANSI exception в CI.
-7. **Снятие бана** только после gate из EN ADR §8 (boot, bundle, lease failover, audit concurrency, RLS refuse, schema fail-closed; B2 — отдельно). Testcontainers Developer ≠ заявленный SKU; A-A без chaos/soak на MSSQL — «not certified».
+7. **Бан B1 снят** gate из EN ADR §8 на Enterprise Evaluation `16.0.4325.4` (2026-11-20). Developer и Azure SQL Edge — не эта подпись. Boot-refuse для jdbc history/journal/dual-write/cluster **остаётся**. Prod Yes B2 и A-A — не подписаны.
 8. **RLS default:** `ISPF_TENANT_DB_ROW_ISOLATION` по умолчанию **true** → на MSSQL boot refuse; single-tenant B1 явно ставит `false`.
 
 ## Последствия
 
-- Для GxP EMS сегодня: отчёты на **внешнем** MSSQL; убрать PG из метаданных — только после B1 gate.
+- B1: метаданные на MSSQL можно ставить на движке класса подписанной ячейки; хосту всё ещё нужна лицензия Standard/Enterprise или Azure SQL DB/MI. B2/A-A boot отказывает; Prod Yes для них — нет.
 - Оценка «недели DDL» ≠ полный B1; B2 и 10y SLO — отдельные проекты.
 
 ## Связанные

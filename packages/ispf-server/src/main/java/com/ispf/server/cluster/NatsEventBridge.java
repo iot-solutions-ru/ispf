@@ -269,7 +269,7 @@ public class NatsEventBridge implements WorkflowMessageBus {
         try {
             Options options = new Options.Builder()
                     .server(properties.url())
-                    .connectionName("ispf-server-" + properties.replicaId().substring(0, 8))
+                    .connectionName("ispf-server-" + properties.replicaId().substring(0, Math.min(8, properties.replicaId().length())))
                     .connectionTimeout(Duration.ofSeconds(2))
                     .maxReconnects(properties.maxReconnects())
                     .errorListener(new RateLimitedNatsErrorListener(properties.slowConsumerLogIntervalSeconds()))

@@ -5,9 +5,11 @@ Enterprise certification target. **Greenfield only.**
 | Artifact | Status |
 |----------|--------|
 | `V1__baseline.sql` | Present (generated from PG pack; regenerate with `python tools/mssql-baseline-generate.py`) |
-| Production claim | **Not certified** until the [0078](../../../../../../../../docs/en/decisions/0078-mssql-metadata-certification.md) gate |
+| Production claim | **Prod Yes (B1)** — Enterprise Evaluation `16.0.4325.4` ([checklist](../../../../../../../../docs/en/mssql-sku-promotion-checklist.md)). B2 and A-A not certified |
 
-Do **not** set `ISPF_METADATA_DB_KIND=mssql` in production until the named-SKU §8 gate passes ([sku checklist](../../../../../../../../docs/en/mssql-sku-promotion-checklist.md)). Lab/B1 boot fences (refuse otherwise):
+`ISPF_METADATA_DB_KIND=mssql` is **Prod Yes (B1)** on the signed Enterprise Evaluation cell ([sku checklist](../../../../../../../../docs/en/mssql-sku-promotion-checklist.md)). A production host still needs a licensed Standard/Enterprise or Azure SQL DB/MI. Evaluation proves the SQL Server 2022 **Enterprise** engine class; signing Standard or Azure SQL DB/MI still requires re-running the checklist on that SKU.
+
+Lab/B1 boot fences (refuse otherwise):
 
 - `ISPF_TENANT_DB_ROW_ISOLATION=false`
 - `ISPF_VARIABLE_HISTORY_ENABLED=false` **or** non-JDBC store (`clickhouse` / `cassandra` / `scylla`); dual-write off

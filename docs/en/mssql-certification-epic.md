@@ -58,7 +58,7 @@ Make `ISPF_METADATA_DB_KIND=mssql` a **certified** production option for platfor
 - [x] Concurrent audit-chain append + verify (`AuditChainConcurrentAppendTest` H2 always-on; live MSSQL path in `MssqlFlywayBaselineTckTest` when Docker available)
 - [x] Unsupported app-schema paths fail closed (`ApplicationSchemaSession.ensureSchemaExists` / `callInSchema` + `MssqlDialect`; `ApplicationSchemaSessionMssqlTest`)
 - [x] Solution SQL policy: documented **unsupported** for in-DB function `exec` / PG-only scripts against `ISPF_DB` on MSSQL (`db/migration/mssql/README.md`, [known-limitations](known-limitations.md)); dialect-safe cert bundle still optional later
-- [ ] Update 0037 tier 3 → **Prod Yes (B1)** + lift README ban (EN+RU) — **blocked** until named non-Developer SKU ([mssql-sku-promotion-checklist](mssql-sku-promotion-checklist.md)); lab-green + boot fences landed
+- [x] Update 0037 tier 3 → **Prod Yes (B1)** + lift `mssql/README.md` + inventory/known-limitations ban (EN+RU) — signed 2026-11-20 on SQL Server 2022 Enterprise Evaluation `16.0.4325.4` ([mssql-sku-promotion-checklist](mssql-sku-promotion-checklist.md), issue #814). Evaluation is not a perpetual license. B1 boot fences for JDBC history/journal/dual-write/cluster stay fail-closed
 
 ### Phase 4 — Lockstep tax (ongoing while certified)
 
@@ -67,12 +67,12 @@ Make `ISPF_METADATA_DB_KIND=mssql` a **certified** production option for platfor
 
 ### Phase 5 — B2 (optional, separate estimate)
 
-- [ ] Event journal stores return rows (no hardcoded `LIMIT`-only path)
-- [ ] History write + bucket aggregate on MSSQL
-- [ ] Retention: schema-fork partitioning **or** capped retention + measured purge
+- [ ] Event journal deep pages / JDBC journal on MSSQL (boot still refuses; see single-engine epic / PR #816)
+- [ ] History write + bucket aggregate **TCK** on MSSQL (`history-bucket-mssql`)
+- [ ] Retention: schema-fork partitioning **or** documented cap + measured purge
 - [ ] Named report fixture (tag count, window, query text, p95) **or** keep ≤20 s as non-claim
 - [ ] Dedicated **instance** requirement enforced in deploy docs
-- [ ] 0037 cell **Prod Yes (B2)** only after gate
+- [ ] 0037 cell **Prod Yes (B2)** only after the archive gate
 
 ### Phase 6 — Cluster honesty
 
@@ -132,4 +132,4 @@ Keep [storage-portability-inventory](storage-portability-inventory.md) aligned w
 
 - [ADR-0078](decisions/0078-mssql-metadata-certification.md)
 - [ADR-0037](decisions/0037-relational-core-portability.md)
-- [known-limitations](known-limitations.md) — do not claim MSSQL prod until gate
+- [known-limitations](known-limitations.md) — B1 Prod Yes is the signed Evaluation cell only; B2 and A-A stay refused at boot / non-claims

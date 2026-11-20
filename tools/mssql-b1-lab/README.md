@@ -6,6 +6,7 @@ Operator scripts for a **single-node** B1 metadata stand. Not a production deplo
 |--------|------|
 | `run.sh` | aarch64 lab: Azure SQL Edge + branch `bootJar` + soak + cluster fence |
 | `stand-local.ps1` | AMD64: SQL Server 2022 + `bootJar` (Docker Desktop) |
+| `gate-evidence.sh` | §8 evidence collector (`MSSQL_SA_PASSWORD` required). Signed B1 run: `gate-evidence-local-evaluation.json` |
 | `load.sh` | Cert-bundle import + concurrent `by-path` soak |
 | `loadtest.py` / `loadtest-run.sh` | Metadata RPS/latency (read / serial import / write / mixed) |
 
@@ -16,6 +17,8 @@ Operator scripts for a **single-node** B1 metadata stand. Not a production deplo
 - `ISPF_VARIABLE_HISTORY_ENABLED=false` (or non-JDBC store)
 - `ISPF_EVENT_JOURNAL_ENABLED=false` (or non-JDBC store)
 - `ISPF_CLUSTER_ENABLED=false`
+
+Boot also refuses dual-write on MSSQL. JDBC history/journal and active-active stay **uncertified**; opt-in single-engine work is tracked separately (PR #816).
 
 ## Secrets
 

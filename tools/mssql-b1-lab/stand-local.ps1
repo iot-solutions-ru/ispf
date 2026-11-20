@@ -5,10 +5,14 @@ param(
     [string]$Net = "ispf-mssql-b1-net",
     [string]$NameSql = "ispf-mssql-b1-stand",
     [string]$NameApp = "ispf-mssql-b1-app",
-    [string]$BindHost = $(if ($env:BIND_HOST) { $env:BIND_HOST } else { "127.0.0.1" })
+    [string]$BindHost = $(if ($env:BIND_HOST) { $env:BIND_HOST } else { "127.0.0.1" }),
+    [string]$MssqlPid = $(if ($env:MSSQL_PID) { $env:MSSQL_PID } else { "Evaluation" })
 )
 
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Continue"
+if (Get-Variable -Name PSNativeCommandUseErrorActionPreference -ErrorAction SilentlyContinue) {
+    $PSNativeCommandUseErrorActionPreference = $false
+}
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RepoRoot = Resolve-Path (Join-Path $ScriptDir "..\..")
 
@@ -30,7 +34,11 @@ Write-Host "jar=$Jar"
 $ImageSql = "mcr.microsoft.com/mssql/server:2022-latest"
 $ImageJre = "eclipse-temurin:25-jre-jammy"
 
-docker network create $Net 2>$null | Out-Null
+docker network inspect $Net 2>$null | Out-Null
+if ($LASTEXITCODE -ne 0) {
+    docker network create $Net | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "failed to create docker network $Net" }
+}
 
 $running = docker ps --format "{{.Names}}" | Select-String -Pattern "^$NameSql$"
 if (-not $running) {
@@ -38,7 +46,7 @@ if (-not $running) {
     $cid = docker run -d --name $NameSql --hostname $NameSql --network $Net `
         -e "ACCEPT_EULA=Y" `
         -e "MSSQL_SA_PASSWORD=$SaPassword" `
-        -e "MSSQL_PID=Developer" `
+        -e "MSSQL_PID=$MssqlPid" `
         -p "${BindHost}:14333:1433" `
         $ImageSql
     if (-not $cid) { throw "failed to start MSSQL container" }
@@ -68,6 +76,8 @@ Invoke-Sql "IF DB_ID(N'ispf') IS NULL CREATE DATABASE [ispf] COLLATE Latin1_Gene
 Invoke-Sql "ALTER DATABASE [ispf] SET ALLOW_SNAPSHOT_ISOLATION ON"
 Invoke-Sql "ALTER DATABASE [ispf] SET READ_COMMITTED_SNAPSHOT ON WITH ROLLBACK IMMEDIATE"
 Invoke-Sql "SELECT name, collation_name, is_read_committed_snapshot_on FROM sys.databases WHERE name=N'ispf'"
+Write-Host "== edition =="
+Invoke-Sql "SELECT CAST(SERVERPROPERTY('Edition') AS nvarchar(128)) AS edition, CAST(SERVERPROPERTY('ProductVersion') AS nvarchar(64)) AS product_version, CAST(SERVERPROPERTY('ProductLevel') AS nvarchar(64)) AS product_level"
 
 $Jdbc = "jdbc:sqlserver://${NameSql}:1433;databaseName=ispf;encrypt=false;trustServerCertificate=true"
 

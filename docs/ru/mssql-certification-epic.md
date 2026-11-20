@@ -18,7 +18,7 @@
 
 ### Фаза 6 — честность кластерного режима
 
-- [x] A-A на MSSQL отмечен как **не сертифицированный**; при `ispf.cluster.enabled=true` загрузка блокируется.
+- [x] Active-active на MSSQL **не сертифицирован** — boot отказывает `ispf.cluster.enabled=true` (`MssqlCertificationBootGuard`).
 - [x] AG listener / RCSI / выделенная БД документированы в checklist продвижения SKU и README миграций MSSQL.
 
-Снятие запрета и статус **Prod Yes (B1)** остаются заблокированы до проверки на именованном SKU, отличном от Developer ([checklist](../en/mssql-sku-promotion-checklist.md)).
+**Prod Yes (B1)** подписан 2026-11-20 на SQL Server 2022 Enterprise Evaluation `16.0.4325.4` ([checklist](../en/mssql-sku-promotion-checklist.md), issue #814). Это 180-дневный trial класса Enterprise, не бессрочная лицензия. B1 fences для JDBC history/journal/dual-write/cluster остаются fail-closed. **Prod Yes (B2)** и Prod Yes для A-A не подписаны.

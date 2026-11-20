@@ -1,0 +1,8 @@
+{
+  "status": "superseded",
+  "note": "Captured while B2/A-A boot fences were briefly lifted. Those fences are restored; JDBC history/journal and cluster again refuse on MSSQL B1. Opt-in single-engine work is PR #816 / mssql-single-engine epic. Not Prod Yes for B2 or A-A.",
+  "generated_at": "2026-11-20T10:45:00Z",
+  "fail_count": 0,
+  "pass_count": 0,
+  "items": []
+}

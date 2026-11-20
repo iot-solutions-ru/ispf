@@ -1,0 +1,60 @@
+{
+  "generated_at": "2026-11-20T10:56:23.032471Z",
+  "base": "http://127.0.0.1:18080",
+  "engine_note": "SQL Server 2022 Enterprise Evaluation Edition 16.0.4325.4 RTM (local AMD64). B1 Prod Yes signature cell. Boot fences for JDBC history/journal/dual-write/cluster remain fail-closed (see #814 close + gate-evidence.sh g7*).",
+  "edition": "Enterprise Evaluation Edition (64-bit) 16.0.4325.4 RTM",
+  "fail_count": 0,
+  "pass_count": 10,
+  "items": [
+    {
+      "id": "g1_health",
+      "status": "PASS",
+      "detail": "actuator health UP"
+    },
+    {
+      "id": "g1_login",
+      "status": "PASS",
+      "detail": "admin login ok"
+    },
+    {
+      "id": "g1_rcsi",
+      "status": "PASS",
+      "detail": "ispf DB CS collation + RCSI on"
+    },
+    {
+      "id": "g1_flyway",
+      "status": "PASS",
+      "detail": "flyway V1 success=1"
+    },
+    {
+      "id": "g2_import",
+      "status": "PASS",
+      "detail": "cert bundle import 200"
+    },
+    {
+      "id": "g2_paths",
+      "status": "PASS",
+      "detail": "all cert paths 200"
+    },
+    {
+      "id": "g3_dual_jvm",
+      "status": "PASS",
+      "detail": "second non-clustered JVM health UP on :18081 against shared ispf; live lease reclaim not asserted (cluster off). Lease failover is CI: MssqlFlywayBaselineTckTest"
+    },
+    {
+      "id": "g4_concurrent",
+      "status": "PASS",
+      "detail": "serial reimport 200; audit_event_chain rows=6. Concurrent append/verify is CI only (AuditChainConcurrentAppendTest, MssqlFlywayBaselineTckTest), not live on this cell"
+    },
+    {
+      "id": "g5_rls",
+      "status": "PASS",
+      "detail": "refused with: db-row-isolation=true is unsupported on MSSQL"
+    },
+    {
+      "id": "g6_hard",
+      "status": "PASS",
+      "detail": "refused with: isolation-mode=HARD is unsupported on MSSQL"
+    }
+  ]
+}
