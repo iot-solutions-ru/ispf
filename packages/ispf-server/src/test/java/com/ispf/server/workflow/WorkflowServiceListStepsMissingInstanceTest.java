@@ -1,6 +1,7 @@
 package com.ispf.server.workflow;
 
 import com.ispf.plugin.workflow.WorkflowEngine;
+import com.ispf.plugin.workflow.WorkflowException;
 import com.ispf.server.persistence.WorkflowInstanceRepository;
 import com.ispf.server.spi.WorkflowConditionCheck;
 import com.ispf.server.spi.WorkflowMetrics;
@@ -57,7 +58,7 @@ class WorkflowServiceListStepsMissingInstanceTest {
     private WorkflowConditionCheck formalVerificationService;
 
     @Test
-    void missingInstanceIsRejectedBeforeReadingSteps() {
+    void missingInstanceIsRejectedBeforeReadingSteps() throws WorkflowException {
         when(instanceStore.exists("no-such-instance-716")).thenReturn(false);
 
         WorkflowInstanceNotFoundException exception = assertThrows(
@@ -71,7 +72,7 @@ class WorkflowServiceListStepsMissingInstanceTest {
     }
 
     @Test
-    void existingInstanceWithoutStepsReturnsEmpty() {
+    void existingInstanceWithoutStepsReturnsEmpty() throws WorkflowException {
         when(instanceStore.exists("present")).thenReturn(true);
         when(instanceStore.listSteps("present")).thenReturn(List.of());
 
