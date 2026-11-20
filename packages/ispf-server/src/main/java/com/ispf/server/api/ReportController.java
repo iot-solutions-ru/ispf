@@ -158,6 +158,7 @@ public class ReportController {
         Map<String, Object> parameters = request != null && request.parameters() != null
                 ? request.parameters()
                 : Map.of();
+        reportService.validateRunParameters(resolved, parameters);
         var jobId = platformJobService.submitReportRun(resolved, parameters, currentUserName());
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(Map.of(
                 "jobId", jobId.toString(),

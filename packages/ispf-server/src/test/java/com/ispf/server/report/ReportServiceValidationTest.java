@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ReportServiceValidationTest {
@@ -26,6 +27,38 @@ class ReportServiceValidationTest {
     void reportPathSanitizesReportId() {
         assertEquals("root.platform.reports.ready-items", ReportService.reportPath("ready-items"));
         assertEquals("root.platform.reports.tree-report", ReportService.reportPath("tree-report"));
+    }
+
+    @Test
+    void missingDeclaredParameterIsNotFilledWithEmptyString() {
+        Map<String, Object> effective = ReportSqlQuery.effectiveParameters(
+                Map.of(),
+                Map.of("to", "2027-12-31T23:59:59Z")
+        );
+        assertEquals("2027-12-31T23:59:59Z", effective.get("to"));
+        assertFalse(effective.containsKey("from"));
+
+        IllegalArgumentException missing = assertThrows(IllegalArgumentException.class, () ->
+                ReportSqlQuery.bindQueryParameters(
+                        "SELECT CAST(? AS TIMESTAMP), CAST(? AS TIMESTAMP)",
+                        List.of("from", "to"),
+                        effective
+                ));
+        assertEquals("Missing report parameter: from", missing.getMessage());
+    }
+
+    @Test
+    void defaultParameterSuppliesOmittedInput() {
+        Map<String, Object> effective = ReportSqlQuery.effectiveParameters(
+                Map.of("from", "2027-01-01T00:00:00Z"),
+                Map.of("to", "2027-12-31T23:59:59Z")
+        );
+        List<Object> bound = ReportSqlQuery.bindQueryParameters(
+                "SELECT CAST(? AS TIMESTAMP), CAST(? AS TIMESTAMP)",
+                List.of("from", "to"),
+                effective
+        );
+        assertEquals(List.of("2027-01-01T00:00:00Z", "2027-12-31T23:59:59Z"), bound);
     }
 
     @Test
