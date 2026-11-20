@@ -21,6 +21,9 @@ public class ObjectEditLeaseService {
     }
 
     public EditLease acquire(String pathPrefix, String holder, Duration ttl) {
+        if (ttl == null || ttl.isZero() || ttl.isNegative()) {
+            throw new IllegalArgumentException("Edit lease ttl must be positive");
+        }
         purgeExpired();
         String normalized = normalizePrefix(pathPrefix);
         try {
@@ -53,7 +56,8 @@ public class ObjectEditLeaseService {
                     normalized
             );
         }
-        return findActive(normalized).orElseThrow();
+        return findActive(normalized).orElseThrow(() ->
+                new IllegalStateException("Edit lease was not stored for " + normalized));
     }
 
     public void release(String pathPrefix, String holder) {
