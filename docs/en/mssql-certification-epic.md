@@ -53,7 +53,7 @@ Make `ISPF_METADATA_DB_KIND=mssql` a **certified** production option for platfor
 
 ### Phase 3 — B1 behavioral gate
 
-- [x] Bundle import (certification bundle) — fixture `mssql-b1-cert-bundle.json` + always-on parse/`register`-skip tests; **lab PG** (`ispf-lab`): import + `by-path` 200 for application/device/dashboard/data-source; **MSSQL** Testcontainers live Spring Boot import green (`MssqlLiveBundleImportTckTest`, dedicated `ispf` DB + RCSI via `MssqlTestSupport`). Register no longer CREATE/USE app schemas on MSSQL
+- [x] Bundle import (certification bundle) — fixture `mssql-b1-cert-bundle.json` + always-on parse/`register`-skip tests; **lab PG** (`ispf-lab`): import + `by-path` 200 for application/device/dashboard/data-source; **MSSQL** Testcontainers live Spring Boot import green (`MssqlLiveBundleImportTckTest`, dedicated `ispf` DB + RCSI via `MssqlTestSupport`); **AMD64 stand** (`tools/mssql-b1-lab/stand-local.ps1`, SQL Server 2022 + branch `bootJar` on `:18080`): Flyway V1, health UP, import + 20×6 path soak 0 fails; **ispf-lab aarch64** (`tools/mssql-b1-lab/run.sh`, Azure SQL Edge + same `bootJar` on `:18080`): RCSI+CS DB, health UP, import + 15×4 soak 0 fails, cluster fence refuses; **B1 metadata load** (`tools/mssql-b1-lab/loadtest.py`): read ~4350 rps p99~8 ms, write ~187 rps p99~114 ms, serial re-import ~5/s, mixed read/write ~3080 rps, 0 fails / health UP (concurrent import saturates Hikari on Edge — keep import serial). Official `mssql/server` amd64 image segfaults under QEMU on `ispf-lab` aarch64 (Edge used as ARM64 lab stand-in). Register no longer CREATE/USE app schemas on MSSQL
 - [x] Leader/driver lease reclaim against one writable primary (`MssqlFlywayBaselineTckTest` ownership failover; Docker lab — same-JVM dual `DriverOwnershipService`, ADR-0078 CI matrix `lease-failover-mssql`)
 - [x] Concurrent audit-chain append + verify (`AuditChainConcurrentAppendTest` H2 always-on; live MSSQL path in `MssqlFlywayBaselineTckTest` when Docker available)
 - [x] Unsupported app-schema paths fail closed (`ApplicationSchemaSession.ensureSchemaExists` / `callInSchema` + `MssqlDialect`; `ApplicationSchemaSessionMssqlTest`)
@@ -110,10 +110,9 @@ SKU promotion (Standard / Azure SQL) is a **manual** checklist attached to the r
 | Timescale hypertables | Optional accelerator | N/A | Non-goal; partition fork or cap |
 | RLS + GUC (V86) | Prod default path | Boot refuse if isolation on | Same |
 | `search_path` app schemas | Supported | Unsupported until designed | Same |
-| `LIMIT` in JDBC stores | Common | Must dialect | Must dialect |
+| `LIMIT` in JDBC stores | Audit/config + journal | Must dialect for **B1** (audit/config) and **B2** (journal) | Same |
 | `pg_advisory_xact_lock` | Audit + scripts | Dialect / table lock | Same |
 | Unique / PK violation | Soft conflict `23505` | Error codes **`2627` / `2601`** (not bare `23000`) | Same |
-| `LIMIT` in JDBC stores | Audit/config + journal | Must dialect for **B1** (audit/config) and **B2** (journal) | Same |
 | GIN indexes | Present in DDL | Omit / btree substitute | Same |
 | Leader/driver leases | Table-based | Keep tables | Same |
 | External JDBC reports | Supported | **Still preferred** for corporate SQL | Same |

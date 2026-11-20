@@ -79,6 +79,7 @@ deploy/remote-*
 deploy/run_lab_*
 deploy/run_vps_*
 deploy/_lab_*
+tools/_lab_*
 deploy/_fetch_*
 deploy/tmp-*
 deploy/tmp_*
