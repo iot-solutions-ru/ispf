@@ -35,7 +35,7 @@
 | Гипертаблицы TimescaleDB | `TimescaleHypertableInitializer` | Вызов `create_hypertable` (только при наличии расширения) | `supportsTimescale()` |
 | Leader locks | `PlatformLeaderLockService` | Table leases (`platform_leader_locks`), не `pg_advisory_lock` | На MSSQL оставлять table leases ([0078](decisions/0078-mssql-metadata-certification.md)) |
 | Audit / script locks | `AuditChainStore`, function `advisoryLock` | `pg_advisory_xact_lock` (+ SQLSTATE `23505`) | Dialect / table lock для B1 ([0078](decisions/0078-mssql-metadata-certification.md)) |
-| JDBC `LIMIT` stores | Audit/config + event journal | Жёсткий `LIMIT` | `OFFSET/FETCH` / `TOP` через диалект для B1 (audit/config); journal — B2 — [0078](decisions/0078-mssql-metadata-certification.md) |
+| JDBC `LIMIT` stores | Audit/config + event journal | Dialect `limitClause()` для audit/config и journal | Lab/CI на MSSQL Evaluation; B2 Prod Yes не подписан — [0078](decisions/0078-mssql-metadata-certification.md) |
 
 ---
 

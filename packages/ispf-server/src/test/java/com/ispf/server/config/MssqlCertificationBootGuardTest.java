@@ -31,13 +31,39 @@ class MssqlCertificationBootGuardTest {
     }
 
     @Test
-    void allowsJdbcHistoryDualWriteJournalAndClusterOnMssql() {
-        assertThatCode(() -> newGuard(
-                false, TenantIsolationProperties.IsolationMode.LOGICAL, true, "jdbc", false, false, "jdbc", false
-        ).refuseUnsupportedMssqlModes()).doesNotThrowAnyException();
-        assertThatCode(() -> newGuard(
-                false, TenantIsolationProperties.IsolationMode.LOGICAL, true, "jdbc", true, true, "jdbc", true
-        ).refuseUnsupportedMssqlModes()).doesNotThrowAnyException();
+    void refusesNonExternalHistoryStoreTypo() {
+        MssqlCertificationBootGuard guard = newGuard(
+                false, TenantIsolationProperties.IsolationMode.LOGICAL, true, "clikhouse", false, false, "jdbc", false);
+        assertThatThrownBy(guard::refuseUnsupportedMssqlModes)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("variable-history");
+    }
+
+    @Test
+    void refusesDualWriteOnMssql() {
+        MssqlCertificationBootGuard guard = newGuard(
+                false, TenantIsolationProperties.IsolationMode.LOGICAL, true, "clickhouse", true, false, "jdbc", false);
+        assertThatThrownBy(guard::refuseUnsupportedMssqlModes)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("dual-write");
+    }
+
+    @Test
+    void refusesJdbcEventJournalWhenEnabled() {
+        MssqlCertificationBootGuard guard = newGuard(
+                false, TenantIsolationProperties.IsolationMode.LOGICAL, false, "clickhouse", false, true, "jpa", false);
+        assertThatThrownBy(guard::refuseUnsupportedMssqlModes)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("event-journal");
+    }
+
+    @Test
+    void refusesClusterOnMssql() {
+        MssqlCertificationBootGuard guard = newGuard(
+                false, TenantIsolationProperties.IsolationMode.LOGICAL, false, "clickhouse", false, false, "jdbc", true);
+        assertThatThrownBy(guard::refuseUnsupportedMssqlModes)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("cluster");
     }
 
     @Test

@@ -104,7 +104,7 @@ echo "== load soak =="
 BASE="http://127.0.0.1:${ISPF_PORT}" ROUNDS="$ROUNDS" CONCURRENCY="$CONCURRENCY" BUNDLE="$BUNDLE" \
   bash "$SCRIPT_DIR/load.sh"
 
-echo "== fence (row isolation must refuse) =="
+echo "== fence (cluster must refuse) =="
 docker rm -f ispf-mssql-b1-fence 2>/dev/null || true
 docker run -d --name ispf-mssql-b1-fence --network "$NET" \
   -v "$JAR:/app/ispf-server.jar:ro" \
@@ -114,16 +114,16 @@ docker run -d --name ispf-mssql-b1-fence --network "$NET" \
   -e SPRING_DATASOURCE_USERNAME=sa \
   -e SPRING_DATASOURCE_PASSWORD="$MSSQL_SA_PASSWORD" \
   -e SPRING_DATASOURCE_DRIVER_CLASS_NAME=com.microsoft.sqlserver.jdbc.SQLServerDriver \
-  -e ISPF_TENANT_DB_ROW_ISOLATION=true \
+  -e ISPF_TENANT_DB_ROW_ISOLATION=false \
   -e ISPF_VARIABLE_HISTORY_ENABLED=false \
   -e ISPF_EVENT_JOURNAL_ENABLED=false \
-  -e ISPF_CLUSTER_ENABLED=false \
+  -e ISPF_CLUSTER_ENABLED=true \
   -e ISPF_BOOTSTRAP_FIXTURES_ENABLED=false \
   "$IMAGE_JRE" java -jar /app/ispf-server.jar >/dev/null
 
 fence_ok=0
 for i in $(seq 1 40); do
-  if docker logs ispf-mssql-b1-fence 2>&1 | grep -q 'db-row-isolation=true is unsupported on MSSQL'; then
+  if docker logs ispf-mssql-b1-fence 2>&1 | grep -q 'not certified on MSSQL'; then
     fence_ok=1
     break
   fi

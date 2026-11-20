@@ -18,7 +18,7 @@
 
 ### Фаза 6 — честность кластерного режима
 
-- [x] Active-active **стартует** на MSSQL (boot-fence снят). Lab: две JVM `edge-api` + `io` на одном Evaluation primary, NATS JetStream + Redis (2026-11-20). AG failover soak — не Prod Yes.
+- [x] Active-active на MSSQL **не сертифицирован** — boot отказывает `ispf.cluster.enabled=true` (`MssqlCertificationBootGuard`).
 - [x] AG listener / RCSI / выделенная БД документированы в checklist продвижения SKU и README миграций MSSQL.
 
-**Prod Yes (B1)** подписан 2026-11-20 на SQL Server 2022 Enterprise Evaluation `16.0.4325.4` ([checklist](../en/mssql-sku-promotion-checklist.md)). Это 180-дневный trial класса Enterprise, не бессрочная лицензия. B2 jdbc history/journal и split-profile кластер имеют lab smoke на той же ячейке; **Prod Yes (B2)** и Prod Yes для A-A не подписаны (нет замера большой purge и AG soak).
+**Prod Yes (B1)** подписан 2026-11-20 на SQL Server 2022 Enterprise Evaluation `16.0.4325.4` ([checklist](../en/mssql-sku-promotion-checklist.md), issue #814). Это 180-дневный trial класса Enterprise, не бессрочная лицензия. B1 fences для JDBC history/journal/dual-write/cluster остаются fail-closed. **Prod Yes (B2)** и Prod Yes для A-A не подписаны.

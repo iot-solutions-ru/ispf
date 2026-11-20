@@ -280,6 +280,26 @@ run_fence g6_hard \
   "-e ISPF_TENANT_DB_ROW_ISOLATION=false -e ISPF_TENANT_ISOLATION_MODE=HARD -e ISPF_VARIABLE_HISTORY_ENABLED=false -e ISPF_EVENT_JOURNAL_ENABLED=false -e ISPF_CLUSTER_ENABLED=false" \
   "isolation-mode=HARD is unsupported on MSSQL"
 
+note "7 jdbc history refuse"
+run_fence g7_hist \
+  "-e ISPF_TENANT_DB_ROW_ISOLATION=false -e ISPF_VARIABLE_HISTORY_ENABLED=true -e ISPF_VARIABLE_HISTORY_STORE=jdbc -e ISPF_EVENT_JOURNAL_ENABLED=false -e ISPF_CLUSTER_ENABLED=false" \
+  "variable-history"
+
+note "7b dual-write refuse"
+run_fence g7_dual \
+  "-e ISPF_TENANT_DB_ROW_ISOLATION=false -e ISPF_VARIABLE_HISTORY_ENABLED=true -e ISPF_VARIABLE_HISTORY_STORE=clickhouse -e ISPF_VARIABLE_HISTORY_DUAL_WRITE_ENABLED=true -e ISPF_EVENT_JOURNAL_ENABLED=false -e ISPF_CLUSTER_ENABLED=false" \
+  "dual-write"
+
+note "7c jdbc journal refuse"
+run_fence g7_journal \
+  "-e ISPF_TENANT_DB_ROW_ISOLATION=false -e ISPF_VARIABLE_HISTORY_ENABLED=false -e ISPF_EVENT_JOURNAL_ENABLED=true -e ISPF_EVENT_JOURNAL_STORE=jdbc -e ISPF_CLUSTER_ENABLED=false" \
+  "event-journal"
+
+note "7d cluster refuse"
+run_fence g7_cluster \
+  "-e ISPF_TENANT_DB_ROW_ISOLATION=false -e ISPF_VARIABLE_HISTORY_ENABLED=false -e ISPF_EVENT_JOURNAL_ENABLED=false -e ISPF_CLUSTER_ENABLED=true" \
+  "not certified on MSSQL"
+
 # write JSON
 : > /tmp/gate_items.jsonl
 for r in "${results[@]}"; do

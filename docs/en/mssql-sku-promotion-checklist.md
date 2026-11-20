@@ -27,11 +27,11 @@ Promote `ISPF_METADATA_DB_KIND=mssql` to a production claim only after signing *
 4. Audit chain — serial reimport **PASS** (`audit_event_chain` row count > 0). Concurrent append + hash verify is **CI only** (`AuditChainConcurrentAppendTest`, `MssqlFlywayBaselineTckTest`), not live on this cell
 5. Boot refuse when row isolation on — **PASS**
 6. App schema / HARD isolation fail-closed — HARD boot refuse **PASS** on this cell. Session schema switch (`ApplicationSchemaSession`) is CI `ApplicationSchemaSessionMssqlTest` (no live `USE` probe)
-7. Row isolation and HARD still refuse. JDBC history, dual-write, jdbc journal, and cluster **no longer refuse** (B2 / active-active lab smoke 2026-11-20; not part of the B1 Prod Yes signature)
+7. Boot refuse for jdbc history / dual-write / jdbc journal / cluster on MSSQL — **PASS** (issue #814 close: 14 PASS / 0 FAIL on Evaluation). `gate-evidence.sh` re-checks these fences
 
-Evidence: [`tools/mssql-b1-lab/gate-evidence-local-evaluation.json`](../../tools/mssql-b1-lab/gate-evidence-local-evaluation.json) (`fail_count=0`, `pass_count=10`, post-lift B1: RLS+HARD refuse only). B2/A-A lab smoke: [`gate-evidence-b2-aa-lab.json`](../../tools/mssql-b1-lab/gate-evidence-b2-aa-lab.json).
+Evidence: issue [#814](https://github.com/iot-solutions-ru/ispf/issues/814) close comment + [`tools/mssql-b1-lab/gate-evidence-local-evaluation.json`](../../tools/mssql-b1-lab/gate-evidence-local-evaluation.json). Items 3 (lease reclaim), 4 (concurrent audit append), and 6 (session schema switch) also have CI TCK coverage (`MssqlFlywayBaselineTckTest`, `AuditChainConcurrentAppendTest`, `ApplicationSchemaSessionMssqlTest`).
 
-**License note:** Evaluation proves the Enterprise engine class for B1 metadata. A production host still needs a licensed SQL Server Standard or Enterprise, or Azure SQL Database / Managed Instance. Azure SQL Edge and Developer edition are not this signature. B2 jdbc history/journal and active-active stay **not certified**.
+**License note:** Evaluation proves the SQL Server 2022 **Enterprise** engine class for B1 metadata — not Standard feature caps and not Azure SQL DB/MI PaaS. A production host still needs a licensed SQL Server Standard or Enterprise, or Azure SQL Database / Managed Instance. Re-run this checklist before signing those cells. Azure SQL Edge and Developer edition are not this signature. B2 jdbc history/journal and active-active stay **not certified** (boot refuses; opt-in single-engine is a separate epic).
 
 ### Lab rehearsal (not a SKU signature)
 
