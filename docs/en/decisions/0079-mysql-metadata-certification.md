@@ -16,7 +16,7 @@ MySQL certification does **not** imply MariaDB certification. They have distinct
 
 - Scope the first gate to **B1 metadata** on a named MySQL 8.x version/edition.
 - Keep journal and variable history outside the claim unless a later B2 decision and gate cover them.
-- Start implementation only **after** MSSQL passes the named-SKU gate in ADR-0078. An MSSQL **policy waiver** (unsigned B1 envelope) is **not** that gate.
+- Start implementation only **after** MSSQL passes the named-SKU gate in ADR-0078.
 - Keep `Prod: No`. `UncertifiedRelationalEngineBootGuard` already refuses boot for `mysql`; retain that fail-closed behavior until the complete gate passes.
 - Require a greenfield Flyway pack, fixed bundle import, concurrent audit verification, lease/failover checks, and explicit unsupported-feature failures before promotion.
 - Treat Testcontainers or a developer lab as lab evidence only, never as production certification.

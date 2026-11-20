@@ -58,8 +58,7 @@ Make `ISPF_METADATA_DB_KIND=mssql` a **certified** production option for platfor
 - [x] Concurrent audit-chain append + verify (`AuditChainConcurrentAppendTest` H2 always-on; live MSSQL path in `MssqlFlywayBaselineTckTest` when Docker available)
 - [x] Unsupported app-schema paths fail closed (`ApplicationSchemaSession.ensureSchemaExists` / `callInSchema` + `MssqlDialect`; `ApplicationSchemaSessionMssqlTest`)
 - [x] Solution SQL policy: documented **unsupported** for in-DB function `exec` / PG-only scripts against `ISPF_DB` on MSSQL (`db/migration/mssql/README.md`, [known-limitations](known-limitations.md)); dialect-safe cert bundle still optional later
-- [x] Absolute production forbid waived for the **unsigned B1 operator-risk envelope** in [0037](decisions/0037-relational-core-portability.md) (EN+RU) — product direction; **not** Prod Yes / not §8 pass
-- [ ] Update 0037 tier 3 → **Prod Yes (B1)** — still **blocked** until one named non-Developer SKU is signed ([mssql-sku-promotion-checklist](mssql-sku-promotion-checklist.md))
+- [ ] Update 0037 tier 3 → **Prod Yes (B1)** + lift README ban (EN+RU) — **blocked** until named non-Developer SKU ([mssql-sku-promotion-checklist](mssql-sku-promotion-checklist.md)); lab-green + boot fences landed
 
 ### Phase 4 — Lockstep tax (ongoing while certified)
 
@@ -80,7 +79,7 @@ Make `ISPF_METADATA_DB_KIND=mssql` a **certified** production option for platfor
 - [x] Mark A-A cell **not certified** on MSSQL — boot refuses `ispf.cluster.enabled=true` (`MssqlCertificationBootGuard`); PG lab soak is not MSSQL evidence
 - [x] Document AG listener / RCSI / dedicated DB in [mssql-sku-promotion-checklist](mssql-sku-promotion-checklist.md) + `db/migration/mssql/README.md`
 
-## Definition of Done (Prod Yes B1 — named-SKU §8)
+## Definition of Done (lift production ban)
 
 All Phase 1–3 items green on the **named SKU**. Phase 4 process exists. Phase 5–6 only if those cells are sold.
 
@@ -133,4 +132,4 @@ Keep [storage-portability-inventory](storage-portability-inventory.md) aligned w
 
 - [ADR-0078](decisions/0078-mssql-metadata-certification.md)
 - [ADR-0037](decisions/0037-relational-core-portability.md)
-- [known-limitations](known-limitations.md) — do not claim MSSQL **Prod Yes** until §8 gate
+- [known-limitations](known-limitations.md) — do not claim MSSQL prod until gate

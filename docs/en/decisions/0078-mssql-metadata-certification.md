@@ -2,18 +2,18 @@
 
 ## Status
 
-**Accepted** (2026-11-19) — policy and certification contract. Implementation **Lab green (B1)** (Flyway `mssql/V1`, boot fences, TCKs, lockstep CI, lab harness [`tools/mssql-b1-lab`](../../../tools/mssql-b1-lab/README.md)). Absolute production forbid waived for the **unsigned B1 operator-risk envelope** in [0037](0037-relational-core-portability.md) tier 3; **Prod Yes (B1)** remains blocked until one named non-Developer §8 cell is signed.
+**Accepted** (2026-11-19) — policy and certification contract. Implementation **Lab green (B1)** (Flyway `mssql/V1`, boot fences, TCKs, lockstep CI, lab harness [`tools/mssql-b1-lab`](../../tools/mssql-b1-lab/README.md)); production ban remains until the §8 named-SKU gate.
 
-Amends [0037-relational-core-portability](0037-relational-core-portability.md) and [0064-release-compatibility-lts](0064-release-compatibility-lts.md): MS SQL Server is the **first** non-PG production engine target. This ADR defines what “certified” means, what is explicitly **not** claimed, and the §8 named-SKU gate that must pass before ISPF claims **Prod Yes (B1)** / certified production support (the absolute forbid is waived only for the unsigned B1 operator-risk envelope in 0037).
+Amends [0037-relational-core-portability](0037-relational-core-portability.md) and [0064-release-compatibility-lts](0064-release-compatibility-lts.md): MS SQL Server is the **first** non-PG production engine target. This ADR defines what “certified” means, what is explicitly **not** claimed, and the gate that must pass before operators may set `ISPF_METADATA_DB_KIND=mssql` in production.
 
-MySQL / Oracle follow-on charters: [0079](0079-mysql-metadata-certification.md), [0080](0080-oracle-metadata-certification.md) — implementation starts only after this ADR’s named-SKU gate (not a policy waiver).
+MySQL / Oracle follow-on charters: [0079](0079-mysql-metadata-certification.md), [0080](0080-oracle-metadata-certification.md) — implementation starts only after this ADR’s named-SKU gate.
 
 ## Context
 
 Operators (including GxP EMS sites) often standardize on Microsoft SQL Server for DBA process, backup, and corporate policy. ISPF today:
 
 - Runs the relational core on **PostgreSQL 16 (+ Timescale)** or **H2** (local/edge).
-- Ships `MssqlDialect`, generated `db/migration/mssql/V1__baseline.sql`, and fail-closed B1 boot fences — **Lab green (B1)**; not Prod Yes until §8.
+- Ships `MssqlDialect`, generated `db/migration/mssql/V1__baseline.sql`, and fail-closed B1 boot fences — **lab-certified**, not production until §8.
 - Already reaches corporate MSSQL via **external** `DATA_SOURCE` / JDBC for reports and bindings (read paths). That is **not** the same as hosting `ISPF_DB` on MSSQL.
 
 ADR-0037 promised portability via dialect packs. Without a certification contract, “works with any DB through JDBC” is misread as “platform metadata runs on any JDBC URL.”
@@ -80,7 +80,7 @@ ISPF active-active ([0028](0028-horizontal-active-active-cluster.md), [0069](006
 
 ### 7. Dialect and SQL surfaces beyond today’s SPI
 
-B1 portability prerequisites (implemented for lab-green; required before **Prod Yes (B1)**) include:
+Before lifting the production ban, extend portability for at least:
 
 - Pagination (`LIMIT` → `OFFSET/FETCH` or `TOP`) in event journal and other JDBC stores that hardcode PostgreSQL/`LIMIT`
 - Audit-chain concurrency (two connections append; chain verifies; dialect-aware conflict SQLSTATE)
@@ -88,9 +88,9 @@ B1 portability prerequisites (implemented for lab-green; required before **Prod 
 
 Solution SQL (`ON CONFLICT`, PG-only functions in shipped scripts) is **not** auto-portable. B1 either ships a dialect-safe test bundle or lists function-script / internal SQL bindings against `ISPF_DB` as **unsupported** on MSSQL (external `DATA_SOURCE` remains the supported report path).
 
-### 8. Certification gate (Prod Yes only after)
+### 8. Certification gate (lift ban only after)
 
-Promote 0037 tier 3 to **Prod Yes (B1)** (and update both language editions of the inventory/README from operator-risk waiver to certified) **only** when all of the following pass for the named SKU (version + Standard|Enterprise|Azure SQL):
+Lift “do not set `ISPF_METADATA_DB_KIND=mssql` in production” in 0037, both language editions of the inventory/README, **only** when all of the following pass for the named SKU (version + Standard|Enterprise|Azure SQL):
 
 1. Empty DB → Flyway mssql baseline → server boot
 2. Bundle import of a fixed certification bundle
@@ -110,7 +110,7 @@ A plausible first slice is “empty dedicated DB, platform tables, login, one bu
 ## Consequences
 
 - Sales / EMS proposals: prefer **external MSSQL** for corporate reports today; B1 removes PG only for **platform metadata** when certified; B2 is optional and capped.
-- 0037 tier 3 is **No — not certified** with an operator-risk B1 envelope (absolute forbid waived). **Prod Yes (B1)** only after §8; optionally **Prod Yes (B2)** as a separate cell. An MSSQL policy waiver is **not** the start trigger for [0079](0079-mysql-metadata-certification.md) / [0080](0080-oracle-metadata-certification.md).
+- 0037 tier 3 stays **Not started** until the gate in §8 passes; then **Prod Yes (B1)** and optionally **Prod Yes (B2)** as separate cells.
 - Risks: dual migration stream drift; pool poisoning if schema/`USE` is mishandled; noisy-neighbor if B2 shares an instance; false confidence from Developer-edition CI.
 
 ## Related

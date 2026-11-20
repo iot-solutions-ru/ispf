@@ -43,7 +43,7 @@ Before v1.0: new install = new DB; changing `ISPF_METADATA_DB_KIND` = empty DB +
 | Env | Purpose |
 |-----|------------|
 | `ISPF_DB_URL` | JDBC URL metadata + jdbc time-series |
-| `ISPF_METADATA_DB_KIND` | `postgresql`, `h2`, `mssql`, `mysql`, `oracle` (optional, auto-detect if empty). **`mssql` — lab green; absolute forbid waived for B1 envelope** (not Prod Yes) ([0078](decisions/0078-mssql-metadata-certification.md), [0037](decisions/0037-relational-core-portability.md)); **`mysql` / `oracle` — boot refused** until their gates ([0079](decisions/0079-mysql-metadata-certification.md), [0080](decisions/0080-oracle-metadata-certification.md)) |
+| `ISPF_METADATA_DB_KIND` | `postgresql`, `h2`, `mssql`, `mysql`, `oracle` (optional, auto-detect if empty). **`mssql` — lab green, production banned** until named-SKU gate ([0078](decisions/0078-mssql-metadata-certification.md), [checklist](mssql-sku-promotion-checklist.md)); **`mysql` / `oracle` — boot refused** until their gates ([0079](decisions/0079-mysql-metadata-certification.md), [0080](decisions/0080-oracle-metadata-certification.md)) |
 | `ISPF_EVENT_JOURNAL_STORE` | `jdbc` = same DB |
 | `ISPF_VARIABLE_HISTORY_STORE` | `jdbc` = same DB |
 

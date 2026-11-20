@@ -44,7 +44,7 @@
 | Переменная | Назначение |
 |------------|------------|
 | `ISPF_DB_URL` | JDBC-строка подключения к основной реляционной базе метаданных |
-| `ISPF_METADATA_DB_KIND` | Явное указание диалекта: `postgresql`, `h2`, `mssql`, `mysql`, `oracle` (если не указано — по JDBC URL). **`mssql` — lab green; абсолютный запрет снят для B1-envelope** (не Prod Yes) ([0078](decisions/0078-mssql-metadata-certification.md), [0037](decisions/0037-relational-core-portability.md)); **`mysql` / `oracle` — boot refuse** до своих gate ([0079](decisions/0079-mysql-metadata-certification.md), [0080](decisions/0080-oracle-metadata-certification.md)) |
+| `ISPF_METADATA_DB_KIND` | Явное указание диалекта: `postgresql`, `h2`, `mssql`, … (если не указано — по JDBC URL). **`mssql` / `mysql` / `oracle` — не prod** до сертификации ([0078](decisions/0078-mssql-metadata-certification.md)) |
 | `ISPF_EVENT_JOURNAL_STORE` | Хранилище журнала событий: `jdbc` (та же реляционная БД) или `clickhouse` |
 | `ISPF_VARIABLE_HISTORY_STORE` | Хранилище истории переменных: `jdbc` (та же реляционная БД) или `clickhouse` |
 

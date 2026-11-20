@@ -21,4 +21,4 @@
 - [x] A-A на MSSQL отмечен как **не сертифицированный**; при `ispf.cluster.enabled=true` загрузка блокируется.
 - [x] AG listener / RCSI / выделенная БД документированы в checklist продвижения SKU и README миграций MSSQL.
 
-Абсолютный prod-запрет **снят** для unsigned B1 operator-risk envelope ([0037](decisions/0037-relational-core-portability.md)). Статус **Prod Yes (B1)** по-прежнему заблокирован до named non-Developer SKU ([checklist](../en/mssql-sku-promotion-checklist.md)).
+Снятие запрета и статус **Prod Yes (B1)** остаются заблокированы до проверки на именованном SKU, отличном от Developer ([checklist](../en/mssql-sku-promotion-checklist.md)).

@@ -13,7 +13,7 @@
 ## Решение
 
 - Первый scope — **B1 metadata** на именованной версии/редакции MySQL 8.x.
-- Работы начинаются только после named-SKU gate MSSQL из [0078](0078-mssql-metadata-certification.md). Policy waiver для MSSQL (unsigned B1 envelope) этим gate **не** является.
+- Работы начинаются только после named-SKU gate MSSQL из [0078](0078-mssql-metadata-certification.md).
 - `Prod: No`; `UncertifiedRelationalEngineBootGuard` уже запрещает boot для `mysql` и остаётся fail-closed до полного gate.
 - Journal/history не входят в B1. Lab/Testcontainers не дают production claim.
 - MariaDB требует отдельного charter, Flyway pack и gate.

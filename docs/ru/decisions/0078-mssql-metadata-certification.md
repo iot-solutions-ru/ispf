@@ -2,11 +2,11 @@
 
 ## Статус
 
-**Accepted** (2026-11-19) — контракт политики и сертификации. Реализация **Lab green (B1)**. Абсолютный запрет `ISPF_METADATA_DB_KIND=mssql` в проде **снят** для unsigned B1 operator-risk envelope в [0037](0037-relational-core-portability.md); **Prod Yes (B1)** — только после named-SKU §8.
+**Accepted** (2026-11-19) — контракт политики и сертификации. Реализация **Not started**.
 
-Дополняет [0037-relational-core-portability](0037-relational-core-portability.md) и [0064-release-compatibility-lts](0064-release-compatibility-lts.md).
+Дополняет [0037-relational-core-portability](0037-relational-core-portability.md) и [0064-release-compatibility-lts](0064-release-compatibility-lts.md): MS SQL Server — **первый** non-PG целевой движок для продакшена. ADR фиксирует смысл «certified», явные **non-claims** и gate, без которого нельзя ставить `ISPF_METADATA_DB_KIND=mssql` в проде.
 
-MySQL/Oracle: [0079](0079-mysql-metadata-certification.md) / [0080](0080-oracle-metadata-certification.md) — старт реализации только после named-SKU gate MSSQL (policy waiver ≠ этот gate).
+**Не** планирует MySQL/Oracle. В 0037 они остаются заглушками «после MSSQL» без обязательств по срокам.
 
 Канонический текст (детали таблиц и gate): английская редакция [en/decisions/0078-mssql-metadata-certification.md](../../en/decisions/0078-mssql-metadata-certification.md). Эпик: [en/mssql-certification-epic.md](../../en/mssql-certification-epic.md).
 
@@ -15,7 +15,7 @@ MySQL/Oracle: [0079](0079-mysql-metadata-certification.md) / [0080](0080-oracle-
 Площадки (в т.ч. GxP EMS) часто требуют Microsoft SQL Server для DBA/бэкапов/политики. Сейчас ISPF:
 
 - Relational core — **PostgreSQL 16 (+ Timescale)** или **H2** (local/edge).
-- Есть `MssqlDialect`, `db/migration/mssql/V1__baseline.sql` и B1 boot fences — lab-green, не Prod Yes.
+- Есть `MssqlDialect` и `db/migration/mssql/README.md` — **нет** Flyway baseline.
 - Корпоративный MSSQL уже доступен как **внешний** `DATA_SOURCE` / JDBC для отчётов — это **не** хостинг `ISPF_DB` на MSSQL.
 
 Формулировка «через JDBC работает с любой БД» не означает «метаданные платформы поднимаются на любом JDBC URL».
@@ -28,7 +28,7 @@ MySQL/Oracle: [0079](0079-mysql-metadata-certification.md) / [0080](0080-oracle-
 4. **App schemas / `search_path`:** на MSSQL **unsupported** до отдельного механизма; текущий `USE` / `USE dbo` в диалекте некорректен.
 5. **Кластер:** N JVM → один writable primary (AG listener); RCSI обязателен; dedicated DB (B1), dedicated instance (B2).
 6. **Flyway:** greenfield `mssql/V1`; далее lockstep twin к каждому PG `Vnn` или явный ANSI exception в CI.
-7. **Абсолютный запрет** снят для B1-envelope (0037); **Prod Yes** — только после gate EN ADR §8. Testcontainers Developer ≠ заявленный SKU; A-A без chaos/soak на MSSQL — «not certified».
+7. **Снятие бана** только после gate из EN ADR §8 (boot, bundle, lease failover, audit concurrency, RLS refuse, schema fail-closed; B2 — отдельно). Testcontainers Developer ≠ заявленный SKU; A-A без chaos/soak на MSSQL — «not certified».
 8. **RLS default:** `ISPF_TENANT_DB_ROW_ISOLATION` по умолчанию **true** → на MSSQL boot refuse; single-tenant B1 явно ставит `false`.
 
 ## Последствия

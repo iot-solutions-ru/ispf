@@ -1,32 +1,22 @@
 # MS SQL Server migration pack (ADR-0037 / ADR-0078)
 
-Enterprise certification target. **Greenfield only.** Operator-risk B1 envelope — **not** a support or GxP claim.
+Enterprise certification target. **Greenfield only.**
 
 | Artifact | Status |
 |----------|--------|
 | `V1__baseline.sql` | Present (generated from PG pack; regenerate with `python tools/mssql-baseline-generate.py`) |
-| Production claim | **Not certified** (no Prod Yes). Absolute forbid waived for the B1 envelope in [0037](../../../../../../../../docs/en/decisions/0037-relational-core-portability.md) |
+| Production claim | **Not certified** until the [0078](../../../../../../../../docs/en/decisions/0078-mssql-metadata-certification.md) gate |
 
-`ISPF_METADATA_DB_KIND=mssql` may be used on **Standard / Enterprise / Azure SQL DB / MI** inside the B1 envelope.
+Do **not** set `ISPF_METADATA_DB_KIND=mssql` in production until the named-SKU §8 gate passes ([sku checklist](../../../../../../../../docs/en/mssql-sku-promotion-checklist.md)). Lab/B1 boot fences (refuse otherwise):
 
-### Boot-enforced fences (refuse startup)
-
-- `ISPF_TENANT_DB_ROW_ISOLATION=false` (and not `HARD` tenant isolation)
+- `ISPF_TENANT_DB_ROW_ISOLATION=false`
 - `ISPF_VARIABLE_HISTORY_ENABLED=false` **or** non-JDBC store (`clickhouse` / `cassandra` / `scylla`); dual-write off
 - `ISPF_EVENT_JOURNAL_ENABLED=false` **or** non-JDBC journal store
-- `ISPF_CLUSTER_ENABLED=false` (A-A **not certified**)
+- `ISPF_CLUSTER_ENABLED=false` (A-A **not certified** on MSSQL until soak)
 
-### Operator-verified DB / SKU preconditions (not checked at boot)
+Runtime: `MssqlDialect` — session schema switch unsupported (no `USE`); table-lock advisory; `FETCH NEXT` limits; unique codes `2627`/`2601`. Dedicated DB + RCSI + case-sensitive collation required. Config migration: new empty DB + bundle import.
 
-- Dedicated database; case-sensitive collation; `READ_COMMITTED_SNAPSHOT ON`
-- Greenfield empty DB + bundle import
-- Licensable SKU for production: Standard / Enterprise / Azure SQL DB / MI
-
-**Lab/CI only:** SQL Server Developer, Express, Azure SQL Edge, Testcontainers. Named-SKU §8 checklist remains unsigned ([sku checklist](../../../../../../../../docs/en/mssql-sku-promotion-checklist.md)).
-
-Runtime: `MssqlDialect` — session schema switch unsupported (no `USE`); table-lock advisory; `FETCH NEXT` limits; unique codes `2627`/`2601`.
-
-**Solution SQL policy (B1):** function-script `exec` / shipped SQL that assumes PostgreSQL (`ON CONFLICT`, `search_path` app schemas, PG-only functions) against `ISPF_DB` is **unsupported** on MSSQL. Prefer an external JDBC `DATA_SOURCE` for report/solution SQL, or keep those solutions on PostgreSQL.
+**Solution SQL policy (B1):** function-script `exec` / shipped SQL that assumes PostgreSQL (`ON CONFLICT`, `search_path` app schemas, PG-only functions) against `ISPF_DB` is **unsupported** on MSSQL. Prefer an external JDBC `DATA_SOURCE` for report/solution SQL, or keep those solutions on PostgreSQL. A dialect-safe cert bundle may replace this non-claim later ([0078](../../../../../../../../docs/en/decisions/0078-mssql-metadata-certification.md)).
 
 **Cert bundle:** tree-only fixture `mssql-b1-cert-bundle.json` (no migrations). Lab gate: `MssqlBundleImportTckTest` (skips without Docker).
 
