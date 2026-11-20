@@ -184,9 +184,13 @@ final class WorkflowInstanceControl {
 
     Map<String, Object> deliverSignalByWorkflowPath(String workflowPath, String signalName, String operatorId)
             throws WorkflowException {
+        if (workflowPath == null || workflowPath.isBlank()) {
+            throw new WorkflowException("Workflow path is required");
+        }
         if (signalName == null || signalName.isBlank()) {
             throw new WorkflowException("Signal name is required");
         }
+        workflows.getWorkflow(workflowPath);
         List<WorkflowInstanceEntity> waiting = instanceRepository.findByWorkflowPathAndStatus(
                 workflowPath,
                 InstanceStatus.WAITING.name()
