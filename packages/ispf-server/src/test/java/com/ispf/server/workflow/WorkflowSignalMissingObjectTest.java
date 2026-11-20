@@ -1,9 +1,10 @@
 package com.ispf.server.workflow;
 
 import com.ispf.core.object.ObjectNotFoundException;
-import com.ispf.core.object.PlatformObject;
 import com.ispf.plugin.workflow.InstanceStatus;
 import com.ispf.plugin.workflow.WorkflowEngine;
+import com.ispf.plugin.workflow.WorkflowException;
+import com.ispf.plugin.workflow.WorkflowLifecycleStatus;
 import com.ispf.server.persistence.WorkflowInstanceRepository;
 import com.ispf.server.spi.WorkflowObjectAccess;
 import org.junit.jupiter.api.Test;
@@ -42,7 +43,7 @@ class WorkflowSignalMissingObjectTest {
     @Test
     void missingWorkflowIsRejectedBeforeWaitingInstances() {
         String path = "root.platform.workflows.cc-wave-1192-missing";
-        when(objects.require(path)).thenThrow(new ObjectNotFoundException(path));
+        when(workflows.getWorkflow(path)).thenThrow(new ObjectNotFoundException(path));
 
         assertThrows(
                 ObjectNotFoundException.class,
@@ -52,9 +53,51 @@ class WorkflowSignalMissingObjectTest {
     }
 
     @Test
+    void nonWorkflowObjectIsRejected() {
+        String path = "root.platform.devices.demo-sensor-01";
+        when(workflows.getWorkflow(path))
+                .thenThrow(new IllegalArgumentException("Not a workflow object: " + path));
+
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> control().deliverSignalByWorkflowPath(path, "probe", "operator")
+        );
+
+        assertEquals("Not a workflow object: " + path, exception.getMessage());
+        verify(instanceRepository, never()).findByWorkflowPathAndStatus(any(), any());
+    }
+
+    @Test
+    void blankWorkflowPathIsRejected() {
+        WorkflowException exception = assertThrows(
+                WorkflowException.class,
+                () -> control().deliverSignalByWorkflowPath("  ", "probe", "operator")
+        );
+
+        assertEquals("Workflow path is required", exception.getMessage());
+        verify(workflows, never()).getWorkflow(any());
+        verify(instanceRepository, never()).findByWorkflowPathAndStatus(any(), any());
+    }
+
+    @Test
     void existingWorkflowWithoutWaitingInstancesSignalsNone() throws Exception {
         String path = "root.platform.workflows.signal-empty";
-        when(objects.require(path)).thenReturn(org.mockito.Mockito.mock(PlatformObject.class));
+        when(workflows.getWorkflow(path)).thenReturn(new WorkflowService.WorkflowView(
+                path,
+                "signal-empty",
+                WorkflowLifecycleStatus.DRAFT,
+                "",
+                "{}",
+                null,
+                "{}",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+        ));
         when(instanceRepository.findByWorkflowPathAndStatus(path, InstanceStatus.WAITING.name()))
                 .thenReturn(List.of());
 
