@@ -46,6 +46,20 @@ class HistorianTierDeployProfileEnvironmentPostProcessorTest {
     }
 
     @Test
+    void mssqlSingleEngineDisablesWarmAndSetsFlag() {
+        MockEnvironment environment = new MockEnvironment();
+        environment.setProperty(
+                HistorianTierDeployProfileEnvironmentPostProcessor.DEPLOY_PROFILE_KEY, "mssql-single-engine");
+
+        processor.postProcessEnvironment(environment, new SpringApplication());
+
+        assertThat(environment.getProperty(HistorianTierDeployProfileEnvironmentPostProcessor.WARM_ENABLED_KEY))
+                .isEqualTo("false");
+        assertThat(environment.getProperty(HistorianTierDeployProfileEnvironmentPostProcessor.SINGLE_ENGINE_KEY))
+                .isEqualTo("true");
+    }
+
+    @Test
     void unknownProfileLeavesWarmUnset() {
         MockEnvironment environment = new MockEnvironment();
         environment.setProperty(HistorianTierDeployProfileEnvironmentPostProcessor.DEPLOY_PROFILE_KEY, "custom");

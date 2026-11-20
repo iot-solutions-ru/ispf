@@ -1,0 +1,83 @@
+{
+    "status":  "Gate B lab PASS — not 0037 Prod Yes (B2)",
+    "gate":  "B2-core",
+    "sku":  "SQL Server 2022 Enterprise Evaluation 16.0.4325.4",
+    "generated_at":  "2026-11-20T12:43:58.3981375Z",
+    "base":  "http://127.0.0.1:18082",
+    "db":  "ispf_b2",
+    "purge_rows":  20000,
+    "pass_count":  13,
+    "fail_count":  0,
+    "items":  [
+                  {
+                      "id":  "b2_sku",
+                      "status":  "PASS",
+                      "detail":  "Enterprise Evaluation Edition (64-bit)|16.0.4325.4"
+                  },
+                  {
+                      "id":  "b2_health",
+                      "status":  "PASS",
+                      "detail":  "actuator UP"
+                  },
+                  {
+                      "id":  "b2_login",
+                      "status":  "PASS",
+                      "detail":  "admin login ok"
+                  },
+                  {
+                      "id":  "b2_flyway_v101_1",
+                      "status":  "PASS",
+                      "detail":  "101.1 single engine historian divergence"
+                  },
+                  {
+                      "id":  "b2_bundle_import",
+                      "status":  "PASS",
+                      "detail":  "mssql-b1-cert imported"
+                  },
+                  {
+                      "id":  "b2_variable",
+                      "status":  "PASS",
+                      "detail":  "created temp with historyEnabled"
+                  },
+                  {
+                      "id":  "b2_history_write",
+                      "status":  "PASS",
+                      "detail":  "seeded 300 samples"
+                  },
+                  {
+                      "id":  "b2_history_bucket",
+                      "status":  "PASS",
+                      "detail":  "aggregate buckets/points=51"
+                  },
+                  {
+                      "id":  "b2_journal_jdbc",
+                      "status":  "PASS",
+                      "detail":  "global events list from JDBC ok; {\"id\":\"61227F4D-05EA-4D1F-93E3-EEA577679F9A\",\"objectPath\":\"root.platform.devices.mssql-b1-cert-sensor-01\",\"eventName\":\"b2-gate\",\"level\":\"INFO\",\"payload\":{\"schema\":{\"name\":\"eventPay"
+                  },
+                  {
+                      "id":  "b2_purge_seed",
+                      "status":  "PASS",
+                      "detail":  "rows=20000 seed_ms=23721"
+                  },
+                  {
+                      "id":  "b2_purge_measure",
+                      "status":  "PASS",
+                      "detail":  "purge_ms=461 deleted=20000 leftover_b2_purge=0 rows=20000"
+                  },
+                  {
+                      "id":  "b2_retention_cap",
+                      "status":  "PASS",
+                      "detail":  "max-retention-days default 90 under single-engine; Gate C partitions still required before 0037 Prod Yes (B2)"
+                  },
+                  {
+                      "id":  "b2_dedicated_instance",
+                      "status":  "PASS",
+                      "detail":  "Lab: Evaluation container ispf-mssql-b1-stand hosts only ISPF DBs (ispf / ispf_b2); no co-tenant ERP. Prod B2 requires a dedicated SQL Server instance."
+                  }
+              ],
+    "non_claims":  [
+                       "0037 Prod Yes (B2) waits for Gate C archive (monthly partitions + SWITCH)",
+                       "Unbounded 10y / plant-wide \u003c=20s scan stays a non-claim",
+                       "A-A / ispf.cluster.enabled still refused on MSSQL"
+                   ]
+}

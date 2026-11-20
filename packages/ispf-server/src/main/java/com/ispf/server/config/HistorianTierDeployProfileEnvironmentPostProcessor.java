@@ -20,18 +20,25 @@ public final class HistorianTierDeployProfileEnvironmentPostProcessor implements
 
     static final String WARM_ENABLED_KEY = "ispf.historian.tiers.warm.enabled";
     static final String DEPLOY_PROFILE_KEY = "ispf.historian.deploy-profile";
+    static final String SINGLE_ENGINE_KEY = "ispf.relational.mssql.single-engine";
 
     @Override
     public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
         String deployProfile = environment.getProperty(DEPLOY_PROFILE_KEY, "three-tier");
-        if (environment.containsProperty(WARM_ENABLED_KEY)) {
-            return;
-        }
         Map<String, Object> overrides = new LinkedHashMap<>();
-        if ("hot-only".equalsIgnoreCase(deployProfile)) {
-            overrides.put(WARM_ENABLED_KEY, "false");
-        } else if ("three-tier".equalsIgnoreCase(deployProfile)) {
-            overrides.put(WARM_ENABLED_KEY, "true");
+        if ("mssql-single-engine".equalsIgnoreCase(deployProfile)) {
+            if (!environment.containsProperty(WARM_ENABLED_KEY)) {
+                overrides.put(WARM_ENABLED_KEY, "false");
+            }
+            if (!environment.containsProperty(SINGLE_ENGINE_KEY)) {
+                overrides.put(SINGLE_ENGINE_KEY, "true");
+            }
+        } else if (!environment.containsProperty(WARM_ENABLED_KEY)) {
+            if ("hot-only".equalsIgnoreCase(deployProfile)) {
+                overrides.put(WARM_ENABLED_KEY, "false");
+            } else if ("three-tier".equalsIgnoreCase(deployProfile)) {
+                overrides.put(WARM_ENABLED_KEY, "true");
+            }
         }
         if (overrides.isEmpty()) {
             return;

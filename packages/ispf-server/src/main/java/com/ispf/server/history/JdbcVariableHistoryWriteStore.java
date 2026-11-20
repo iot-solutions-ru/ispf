@@ -1,17 +1,18 @@
 package com.ispf.server.history;
 
+import com.ispf.server.relational.JdbcUtcTimestamps;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.sql.Timestamp;
+import java.sql.SQLException;
 import java.sql.Types;
-import java.time.Instant;
-import java.util.Calendar;
 import java.util.List;
-import java.util.TimeZone;
 
 /**
  * Batched JDBC inserts for historian — avoids per-row JPA {@code IDENTITY} round-trips.
@@ -26,9 +27,19 @@ public class JdbcVariableHistoryWriteStore implements VariableHistoryWriteStore 
             """;
 
     private final JdbcTemplate jdbcTemplate;
+    private final ObjectProvider<MssqlJdbcHistoryBuffer> mssqlBuffer;
 
     public JdbcVariableHistoryWriteStore(JdbcTemplate jdbcTemplate) {
+        this(jdbcTemplate, null);
+    }
+
+    @Autowired
+    public JdbcVariableHistoryWriteStore(
+            JdbcTemplate jdbcTemplate,
+            ObjectProvider<MssqlJdbcHistoryBuffer> mssqlBuffer
+    ) {
         this.jdbcTemplate = jdbcTemplate;
+        this.mssqlBuffer = mssqlBuffer;
     }
 
     @Override
@@ -37,12 +48,17 @@ public class JdbcVariableHistoryWriteStore implements VariableHistoryWriteStore 
         if (records.isEmpty()) {
             return;
         }
-        jdbcTemplate.batchUpdate(
-                INSERT_SQL,
-                records,
-                records.size(),
-                (statement, record) -> bindInsert(statement, record)
-        );
+        try {
+            jdbcTemplate.batchUpdate(
+                    INSERT_SQL,
+                    records,
+                    records.size(),
+                    (statement, record) -> bindInsert(statement, record)
+            );
+        } catch (DataAccessException ex) {
+            bufferOnConnectivityLoss(records, ex);
+            throw ex;
+        }
     }
 
     @Override
@@ -56,8 +72,8 @@ public class JdbcVariableHistoryWriteStore implements VariableHistoryWriteStore 
         statement.setString(1, record.objectPath());
         statement.setString(2, record.variableName());
         statement.setString(3, record.fieldName());
-        bindUtcTimestamp(statement, 4, record.sampledAt());
-        bindUtcTimestamp(statement, 5, record.observedAt());
+        JdbcUtcTimestamps.bind(statement, 4, record.sampledAt());
+        JdbcUtcTimestamps.bind(statement, 5, record.observedAt());
         if (record.valueDouble() != null) {
             statement.setDouble(6, record.valueDouble());
         } else {
@@ -75,14 +91,24 @@ public class JdbcVariableHistoryWriteStore implements VariableHistoryWriteStore 
         }
     }
 
-    /**
-     * {@code variable_samples} stores {@code TIMESTAMP} without a time zone and Hibernate reads it as UTC.
-     * {@link java.sql.PreparedStatement#setTimestamp(int, Timestamp)} sends the JVM zone, so a Moscow
-     * clock stores a sample three hours ahead of the instant that was written.
-     */
-    private static void bindUtcTimestamp(java.sql.PreparedStatement statement, int index, Instant instant)
-            throws java.sql.SQLException {
-        Calendar utc = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-        statement.setTimestamp(index, Timestamp.from(instant), utc);
+    private void bufferOnConnectivityLoss(List<VariableHistoryWriteRecord> records, DataAccessException ex) {
+        if (mssqlBuffer == null) {
+            return;
+        }
+        MssqlJdbcHistoryBuffer buffer = mssqlBuffer.getIfAvailable();
+        if (buffer == null) {
+            return;
+        }
+        SQLException sql = ex.getMostSpecificCause() instanceof SQLException sqlException
+                ? sqlException
+                : null;
+        if (sql == null || !MssqlJdbcHistoryBuffer.isConnectivity(sql)) {
+            return;
+        }
+        try {
+            buffer.accept(records);
+        } catch (java.io.IOException io) {
+            ex.addSuppressed(io);
+        }
     }
 }

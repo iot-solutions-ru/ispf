@@ -14,7 +14,7 @@ Make `ISPF_METADATA_DB_KIND=mssql` a **certified** production option for platfor
 - “Any JDBC URL” without a Flyway pack
 - Claiming PostgreSQL RLS equivalence via “app-layer checks”
 - Scheduling MySQL/Oracle certification
-- Selling B2 as a GxP EMS 10-year / 20 s plant-wide report path
+- Selling B2 as an unbounded 10-year / ≤20 s plant-wide raw-scan path (named fixtures only — [single-engine epic](mssql-single-engine-ems-epic.md))
 
 ## Site assumptions (fill per customer)
 
@@ -65,14 +65,20 @@ Make `ISPF_METADATA_DB_KIND=mssql` a **certified** production option for platfor
 - [x] CI rule: `tools/mssql-flyway-lockstep-check.py` in `.github/workflows/ci.yml` (grandfather list in `mssql-flyway-exceptions.txt` — regenerate baseline to shrink)
 - [x] Expand/contract discipline (0064) — process note in [0064](decisions/0064-release-compatibility-lts.md) pointing at lockstep script + exception file (grandfather ≠ dual-pack maturity / Prod Yes)
 
-### Phase 5 — B2 (optional, separate estimate)
+### Phase 5 — B2 (separate gates — see [single-engine epic](mssql-single-engine-ems-epic.md))
 
-- [ ] Event journal deep pages / JDBC journal on MSSQL (boot still refuses; see single-engine epic / PR #816)
-- [ ] History write + bucket aggregate **TCK** on MSSQL (`history-bucket-mssql`)
-- [ ] Retention: schema-fork partitioning **or** documented cap + measured purge
-- [ ] Named report fixture (tag count, window, query text, p95) **or** keep ≤20 s as non-claim
-- [ ] Dedicated **instance** requirement enforced in deploy docs
-- [ ] 0037 cell **Prod Yes (B2)** only after the archive gate
+Do not quote B1 + B2-core + archive + spool as one delivery. B1 boot fences stay; JDBC history/journal need `ISPF_MSSQL_SINGLE_ENGINE=true`.
+
+- [x] Bucket SQL on MSSQL uses `DATE_BUCKET` and a SARGable `observed_at` predicate (no `DATEDIFF` int overflow, no `COALESCE` wrapper)
+- [x] Opt-in `mssql-single-engine` boot profile: JDBC journal/history allowed only when the flag is on; warm tier, cold archive, dual-write, cluster, and row isolation stay refused
+- [x] Event journal deep pages use keyset pagination (`before` / `beforeId` → `queryRecentBefore`)
+- [x] History write + bucket aggregate **TCK on MSSQL** (`MssqlHistoryBucketTckTest`, tag `mssql-docker`; skips without Docker)
+- [x] Retention: documented cap `ispf.relational.mssql.max-retention-days` (default 90) while single-engine is on — **not** a substitute for Gate C partitions
+- [x] Gate B lab on Evaluation: `stand-b2-local.ps1` + `gate-b2-core.ps1` → `gate-evidence-b2-core-evaluation.json` (history write, DATE_BUCKET aggregate, journal JDBC, 20k-row purge ~0.5 s) — **not** 0037 Prod Yes (B2)
+- [ ] Named report fixture filled in ADR-0078 §2b **or** keep ≤20 s as non-claim (kept as non-claim)
+- [x] Dedicated **instance** requirement in [examples/mssql-single-engine](../../examples/mssql-single-engine/README.md) + Gate B evidence (lab container has no co-tenant OLTP)
+- [ ] 0037 cell **Prod Yes (B2)** only after the archive gate — **not** this change
+- [ ] Gate C archive: monthly partitions + PK rewrite + SWITCH retention (V101.1 only adds unique series+time key, rollup table DDL, spool batch tokens)
 
 ### Phase 6 — Cluster honesty
 
@@ -132,4 +138,5 @@ Keep [storage-portability-inventory](storage-portability-inventory.md) aligned w
 
 - [ADR-0078](decisions/0078-mssql-metadata-certification.md)
 - [ADR-0037](decisions/0037-relational-core-portability.md)
-- [known-limitations](known-limitations.md) — B1 Prod Yes is the signed Evaluation cell only; B2 and A-A stay refused at boot / non-claims
+- [known-limitations](known-limitations.md) — B1 Prod Yes is the signed Evaluation cell only; B2 needs single-engine opt-in (non-claim until Gate C); A-A stays refused at boot
+- [mssql-single-engine-ems-epic](mssql-single-engine-ems-epic.md) — opt-in JDBC journal/history; §2 non-claims stay

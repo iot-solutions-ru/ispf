@@ -36,6 +36,7 @@ Sites may publish stricter numbers only with dated restore evidence under `docs/
 1. Do not claim ClickHouse-only or tree-only backup as full DR.
 2. Restore drills must name which tiers were restored and what was verified (login, one DEVICE poll, one history query).
 3. Secrets-key escrow is a **people/process** control outside the object tree.
+4. **MSSQL single-engine profile** (when sold): one backup stream covers metadata and JDBC history/journal together (T2+T3 in one database). That is not full DR. Secrets-key (T4) and any local JDBC buffer bytes are **outside** the `.bak`. Do not publish RPO/RTO for this profile until a dated drill records login, one device poll, one history query, and one journal row under `docs/evidence/dr-restore/`. Procedure sketch (no drill yet): [mssql-single-engine.md](../../evidence/dr-restore/mssql-single-engine.md).
 
 ## Consequences
 

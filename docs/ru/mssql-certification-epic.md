@@ -3,7 +3,7 @@
 > Каноническая доска поставки (фазы, DoD, CI-матрица): **[en/mssql-certification-epic.md](../en/mssql-certification-epic.md)**.  
 > Политика: [ADR-0078](decisions/0078-mssql-metadata-certification.md).
 
-Кратко: сначала **B1** (метаданные на MSSQL), опционально **B2** (journal/history jdbc в той же БД). 10 лет сырого архива и multi-year отчёт ≤20 с на rowstore MSSQL — **не claim**. MySQL/Oracle — отдельные ADR-0079/0080 (не этот эпик).
+Кратко: сначала **B1** (метаданные на MSSQL), затем отдельные гейты **B2** ([single-engine](mssql-single-engine-ems-epic.md)). Неограниченные 10 лет сырого архива и multi-year отчёт ≤20 с на rowstore MSSQL — **не claim**. MySQL/Oracle — отдельные ADR-0079/0080 (не этот эпик).
 
 ### Lab / стенд (B1 evidence)
 
@@ -21,4 +21,4 @@
 - [x] Active-active на MSSQL **не сертифицирован** — boot отказывает `ispf.cluster.enabled=true` (`MssqlCertificationBootGuard`).
 - [x] AG listener / RCSI / выделенная БД документированы в checklist продвижения SKU и README миграций MSSQL.
 
-**Prod Yes (B1)** подписан 2026-11-20 на SQL Server 2022 Enterprise Evaluation `16.0.4325.4` ([checklist](../en/mssql-sku-promotion-checklist.md), issue #814). Это 180-дневный trial класса Enterprise, не бессрочная лицензия. B1 fences для JDBC history/journal/dual-write/cluster остаются fail-closed. **Prod Yes (B2)** и Prod Yes для A-A не подписаны.
+**Prod Yes (B1)** подписан 2026-11-20 на SQL Server 2022 Enterprise Evaluation `16.0.4325.4` ([checklist](../en/mssql-sku-promotion-checklist.md), issue #814). Это 180-дневный trial класса Enterprise, не бессрочная лицензия. B1 fences для JDBC history/journal/dual-write/cluster остаются fail-closed (JDBC history/journal — только opt-in `ISPF_MSSQL_SINGLE_ENGINE`). **Gate B (B2-core)** прогнан на Evaluation (`gate-evidence-b2-core-evaluation.json`); **Prod Yes (B2)** в 0037 — только после Gate C (partitions). A-A не подписан.

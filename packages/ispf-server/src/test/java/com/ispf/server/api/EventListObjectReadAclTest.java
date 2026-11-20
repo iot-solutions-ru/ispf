@@ -81,16 +81,20 @@ class EventListObjectReadAclTest {
     void listByPathDeniesObjectTheCallerCannotRead() {
         deny(CLOSED);
 
-        assertForbidden(() -> eventController.list(CLOSED, 50, null, null, operator));
-        verify(eventService, never()).list(nullable(String.class), anyInt(), nullable(String.class), nullable(String.class));
+        assertForbidden(() -> eventController.list(CLOSED, 50, null, null, null, null, operator));
+        verify(eventService, never()).list(
+                nullable(String.class), anyInt(), nullable(String.class), nullable(String.class),
+                nullable(java.time.Instant.class), nullable(String.class));
     }
 
     @Test
     void listByFilterPathDeniesFilterTheCallerCannotRead() {
         deny(FILTER);
 
-        assertForbidden(() -> eventController.list(null, 50, FILTER, null, operator));
-        verify(eventService, never()).list(nullable(String.class), anyInt(), nullable(String.class), nullable(String.class));
+        assertForbidden(() -> eventController.list(null, 50, FILTER, null, null, null, operator));
+        verify(eventService, never()).list(
+                nullable(String.class), anyInt(), nullable(String.class), nullable(String.class),
+                nullable(java.time.Instant.class), nullable(String.class));
     }
 
     @Test
@@ -104,13 +108,15 @@ class EventListObjectReadAclTest {
     @Test
     void listDropsEventsOfObjectsTheCallerCannotRead() {
         allow(OPEN);
-        when(eventService.list(nullable(String.class), anyInt(), nullable(String.class), nullable(String.class)))
+        when(eventService.list(
+                nullable(String.class), anyInt(), nullable(String.class), nullable(String.class),
+                nullable(java.time.Instant.class), nullable(String.class)))
                 .thenReturn(List.of(event(OPEN, "kept"), event(CLOSED, "hidden")));
 
-        assertThat(eventController.list(OPEN, 50, null, null, operator))
+        assertThat(eventController.list(OPEN, 50, null, null, null, null, operator))
                 .extracting(ObjectEvent::eventName)
                 .containsExactly("kept");
-        assertThat(eventController.list(null, 50, null, null, operator))
+        assertThat(eventController.list(null, 50, null, null, null, null, operator))
                 .extracting(ObjectEvent::eventName)
                 .containsExactly("kept");
     }

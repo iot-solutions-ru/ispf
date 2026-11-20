@@ -55,27 +55,33 @@ class EventControllerListMissingObjectTest {
     void missingObjectIsNotAnEmptyEventList() {
         when(objectManager.require(MISSING)).thenThrow(new ObjectNotFoundException(MISSING));
 
-        assertThatThrownBy(() -> controller.list(MISSING, 50, null, "true", operator))
+        assertThatThrownBy(() -> controller.list(MISSING, 50, null, "true", null, null, operator))
                 .isInstanceOf(ObjectNotFoundException.class)
                 .hasMessage("Object not found: " + MISSING);
-        verify(eventService, never()).list(nullable(String.class), anyInt(), nullable(String.class), nullable(String.class));
+        verify(eventService, never()).list(
+                nullable(String.class), anyInt(), nullable(String.class), nullable(String.class),
+                nullable(java.time.Instant.class), nullable(String.class));
     }
 
     @Test
     void existingObjectWithoutEventsStaysEmpty() {
         when(objectManager.require(PRESENT)).thenReturn(mock(PlatformObject.class));
-        when(eventService.list(eq(PRESENT), eq(50), nullable(String.class), nullable(String.class))).thenReturn(List.of());
+        when(eventService.list(
+                eq(PRESENT), eq(50), nullable(String.class), nullable(String.class),
+                nullable(java.time.Instant.class), nullable(String.class))).thenReturn(List.of());
 
-        assertThat(controller.list(PRESENT, 50, null, null, operator)).isEmpty();
+        assertThat(controller.list(PRESENT, 50, null, null, null, null, operator)).isEmpty();
         verify(objectManager).require(PRESENT);
     }
 
     @Test
     void omittedPathDoesNotRequireAnObject() {
-        when(eventService.list(nullable(String.class), anyInt(), nullable(String.class), nullable(String.class)))
+        when(eventService.list(
+                nullable(String.class), anyInt(), nullable(String.class), nullable(String.class),
+                nullable(java.time.Instant.class), nullable(String.class)))
                 .thenReturn(List.of());
 
-        assertThat(controller.list(null, 50, null, null, operator)).isEmpty();
+        assertThat(controller.list(null, 50, null, null, null, null, operator)).isEmpty();
         verify(objectManager, never()).require(any());
     }
 }

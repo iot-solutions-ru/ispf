@@ -87,24 +87,31 @@ public class MssqlDialect extends AbstractRelationalDialect {
 
     @Override
     public String variableSampleBucketAggregateSql() {
+        // Compute DATE_BUCKET once in a derived table. Binding the same interval
+        // placeholder twice (SELECT + GROUP BY) makes SQL Server treat the expressions
+        // as unequal and reject observed_at in the select list.
         return """
                 SELECT *
                 FROM (
                     SELECT TOP (?)
-                        DATEADD(SECOND, (DATEDIFF(SECOND, '1970-01-01', COALESCE(observed_at, sampled_at)) / ?) * ?, '1970-01-01')
-                            AS bucket_start,
+                        bucket_start,
                         AVG(value_double) AS avg_val,
                         MIN(value_double) AS min_val,
                         MAX(value_double) AS max_val,
                         COUNT(*) AS sample_count
-                    FROM variable_samples
-                    WHERE object_path = ?
-                      AND variable_name = ?
-                      AND field_name = ?
-                      AND COALESCE(observed_at, sampled_at) >= ?
-                      AND COALESCE(observed_at, sampled_at) <= ?
-                      AND value_double IS NOT NULL
-                    GROUP BY DATEADD(SECOND, (DATEDIFF(SECOND, '1970-01-01', COALESCE(observed_at, sampled_at)) / ?) * ?, '1970-01-01')
+                    FROM (
+                        SELECT
+                            DATE_BUCKET(SECOND, ?, observed_at) AS bucket_start,
+                            value_double
+                        FROM variable_samples
+                        WHERE object_path = ?
+                          AND variable_name = ?
+                          AND field_name = ?
+                          AND observed_at >= ?
+                          AND observed_at <= ?
+                          AND value_double IS NOT NULL
+                    ) bucketed
+                    GROUP BY bucket_start
                     ORDER BY bucket_start DESC
                 ) recent_buckets
                 ORDER BY bucket_start ASC

@@ -88,6 +88,15 @@ ispf:
   metadata:
     db:
       kind: ${ISPF_METADATA_DB_KIND:}
+  relational:
+    mssql:
+      # Opt-in. Does not certify Prod Yes or unbounded 10y/20s scans.
+      single-engine: ${ISPF_MSSQL_SINGLE_ENGINE:false}
+      jdbc-buffer-enabled: ${ISPF_MSSQL_JDBC_BUFFER:false}
+      jdbc-buffer-directory: ${ISPF_MSSQL_JDBC_BUFFER_DIR:data/mssql-jdbc-buffer}
+      jdbc-buffer-max-bytes: ${ISPF_MSSQL_JDBC_BUFFER_MAX_BYTES:268435456}
+      # Until Gate C partitions: clamp historian retention (days) in single-engine mode.
+      max-retention-days: ${ISPF_MSSQL_MAX_RETENTION_DAYS:90}
   datasource:
     external:
       default-pool-size: ${ISPF_DATASOURCE_EXTERNAL_POOL_SIZE:5}

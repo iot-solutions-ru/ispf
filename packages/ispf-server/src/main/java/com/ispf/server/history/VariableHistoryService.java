@@ -67,6 +67,7 @@ public class VariableHistoryService {
     private final ObjectProvider<HistorianRollupMaterializerService> rollupMaterializer;
     private final HistorianIngressCompressor ingressCompressor;
     private final HistoryParquetExportGateway parquetExport;
+    private final ObjectProvider<com.ispf.server.config.MssqlRelationalProperties> mssqlRelationalProperties;
 
     /** Last sample epoch ms per (path|var|field) for debounce. */
     private final ConcurrentHashMap<String, Long> lastSampleMs = new ConcurrentHashMap<>();
@@ -92,7 +93,8 @@ public class VariableHistoryService {
             ObjectProvider<AnalyticsOnChangeTrigger> analyticsOnChangeTrigger,
             ObjectProvider<HistorianRollupQueryService> rollupQueryService,
             ObjectProvider<HistorianRollupMaterializerService> rollupMaterializer,
-            HistoryParquetExportGateway parquetExport
+            HistoryParquetExportGateway parquetExport,
+            ObjectProvider<com.ispf.server.config.MssqlRelationalProperties> mssqlRelationalProperties
     ) {
         this.parquetExport = parquetExport;
         this.rollupMaterializer = rollupMaterializer;
@@ -113,6 +115,7 @@ public class VariableHistoryService {
         this.queryMetricsRecorder = queryMetricsRecorder;
         this.analyticsOnChangeTrigger = analyticsOnChangeTrigger;
         this.rollupQueryService = rollupQueryService;
+        this.mssqlRelationalProperties = mssqlRelationalProperties;
     }
 
     @EventListener
@@ -739,7 +742,7 @@ public class VariableHistoryService {
     private Instant resolveHistoryStart(String objectPath, String variableName, Instant to) {
         int retentionDays = variableRepository.findByObjectPathAndName(objectPath, variableName)
                 .map(this::resolveRetentionDays)
-                .orElse(properties.getRetentionDays());
+                .orElseGet(() -> clampRetentionDays(properties.getRetentionDays()));
         return to.minus(Math.max(retentionDays, 1), ChronoUnit.DAYS);
     }
 
@@ -965,10 +968,23 @@ public class VariableHistoryService {
     }
 
     private int resolveRetentionDays(ObjectVariableEntity entity) {
-        if (entity.getHistoryRetentionDays() != null) {
-            return entity.getHistoryRetentionDays();
+        int days = entity.getHistoryRetentionDays() != null
+                ? entity.getHistoryRetentionDays()
+                : properties.getRetentionDays();
+        return clampRetentionDays(days);
+    }
+
+    /** Single-engine: cap above max and treat ≤0 (unlimited) as the named ceiling. */
+    int clampRetentionDays(int days) {
+        com.ispf.server.config.MssqlRelationalProperties mssql = mssqlRelationalProperties.getIfAvailable();
+        if (mssql == null || !mssql.isSingleEngine()) {
+            return days;
         }
-        return properties.getRetentionDays();
+        int cap = mssql.getMaxRetentionDays();
+        if (days <= 0 || days > cap) {
+            return cap;
+        }
+        return days;
     }
 
     private static Optional<Double> toNumeric(Object raw) {
