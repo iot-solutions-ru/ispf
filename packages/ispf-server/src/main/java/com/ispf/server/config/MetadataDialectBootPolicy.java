@@ -109,11 +109,18 @@ public final class MetadataDialectBootPolicy {
                             + "On MSSQL set it false. The JDBC file buffer is ISPF_MSSQL_JDBC_BUFFER."
             );
         }
-        if (variableHistoryProperties.isEnabled() && variableHistoryProperties.isExternalTimeSeriesStore()) {
-            throw new IllegalStateException(
-                    "MSSQL single-engine requires ISPF_VARIABLE_HISTORY_STORE=jdbc "
-                            + "(ClickHouse/Cassandra stores are refused)."
-            );
+        if (variableHistoryProperties.isEnabled()) {
+            String store = variableHistoryProperties.getStore() == null
+                    ? ""
+                    : variableHistoryProperties.getStore().trim();
+            if (variableHistoryProperties.isExternalTimeSeriesStore() || !"jdbc".equalsIgnoreCase(store)) {
+                throw new IllegalStateException(
+                        "MSSQL single-engine requires ISPF_VARIABLE_HISTORY_STORE=jdbc "
+                                + "(got '" + store + "'; ClickHouse/Cassandra/jpa and typos are refused). "
+                                + "Gate C1 partitions use PRIMARY KEY (sampled_at, id); "
+                                + "VariableSampleEntity keeps a single @Id for PostgreSQL."
+                );
+            }
         }
         if (eventJournalProperties.isEnabled() && !eventJournalProperties.isJdbcStore()) {
             throw new IllegalStateException(
