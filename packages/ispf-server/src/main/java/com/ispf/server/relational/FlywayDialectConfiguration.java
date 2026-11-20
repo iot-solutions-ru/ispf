@@ -1,5 +1,10 @@
 package com.ispf.server.relational;
 
+import com.ispf.server.config.ClusterProperties;
+import com.ispf.server.config.EventJournalProperties;
+import com.ispf.server.config.MetadataDialectBootPolicy;
+import com.ispf.server.config.TenantIsolationProperties;
+import com.ispf.server.config.VariableHistoryProperties;
 import org.springframework.boot.flyway.autoconfigure.FlywayConfigurationCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,10 +19,23 @@ public class FlywayDialectConfiguration {
     @Bean
     FlywayConfigurationCustomizer flywayDialectCustomizer(
             DataSource dataSource,
-            RelationalDialectDetector relationalDialectDetector
+            RelationalDialectDetector relationalDialectDetector,
+            TenantIsolationProperties tenantIsolationProperties,
+            VariableHistoryProperties variableHistoryProperties,
+            EventJournalProperties eventJournalProperties,
+            ClusterProperties clusterProperties
     ) {
         return configuration -> {
             RelationalDialect dialect = relationalDialectDetector.resolve(dataSource);
+            // Refuse before Flyway locations are applied / migrate runs.
+            MetadataDialectBootPolicy.assertEngineCertified(dialect);
+            MetadataDialectBootPolicy.assertMssqlB1Fences(
+                    dialect,
+                    tenantIsolationProperties,
+                    variableHistoryProperties,
+                    eventJournalProperties,
+                    clusterProperties
+            );
             configuration.locations(dialect.flywayLocations());
             // PostgreSQL-only bodies (V86 RLS, V89 random_uuid, …): H2 also loads the
             // postgresql pack, so wrap those sections in placeholders → block comments on H2.

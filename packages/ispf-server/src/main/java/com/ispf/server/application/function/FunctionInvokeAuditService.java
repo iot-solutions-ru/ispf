@@ -6,6 +6,7 @@ import com.ispf.server.concurrent.ElasticBatchQueueWriter;
 import com.ispf.server.config.FunctionProperties;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.persistence.ObjectEntityMapper;
+import com.ispf.server.relational.RelationalDialect;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
@@ -43,6 +44,7 @@ public class FunctionInvokeAuditService {
     private final FunctionProperties properties;
     private final ObjectManager objectManager;
     private final ObjectEntityMapper entityMapper;
+    private final RelationalDialect relationalDialect;
     private final String auditTable;
 
     private ElasticBatchQueueWriter<PendingRecord> batchWriter;
@@ -65,12 +67,14 @@ public class FunctionInvokeAuditService {
             PlatformSqlCatalog platformSqlCatalog,
             FunctionProperties properties,
             ObjectManager objectManager,
-            ObjectEntityMapper entityMapper
+            ObjectEntityMapper entityMapper,
+            RelationalDialect relationalDialect
     ) {
         this.jdbcTemplate = jdbcTemplate;
         this.properties = properties;
         this.objectManager = objectManager;
         this.entityMapper = entityMapper;
+        this.relationalDialect = relationalDialect;
         this.auditTable = platformSqlCatalog.table("function_invoke_audit");
     }
 
@@ -163,7 +167,7 @@ public class FunctionInvokeAuditService {
             sql.append(" AND success = ?");
             args.add(success);
         }
-        sql.append(" ORDER BY invoked_at DESC, id DESC LIMIT ?");
+        sql.append(" ORDER BY invoked_at DESC, id DESC").append(relationalDialect.limitClause());
         args.add(cappedLimit);
         return jdbcTemplate.query(sql.toString(), rowMapper, args.toArray());
     }

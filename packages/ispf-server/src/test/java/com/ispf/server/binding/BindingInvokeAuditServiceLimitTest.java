@@ -34,7 +34,8 @@ class BindingInvokeAuditServiceLimitTest {
                 jdbcTemplate,
                 catalog,
                 mock(BindingProperties.class),
-                mock(ObjectManager.class)
+                mock(ObjectManager.class),
+                new com.ispf.server.relational.H2Dialect()
         );
     }
 

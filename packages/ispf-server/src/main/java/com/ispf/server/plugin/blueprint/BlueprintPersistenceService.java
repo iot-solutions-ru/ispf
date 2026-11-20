@@ -117,13 +117,18 @@ public class BlueprintPersistenceService {
     }
 
     public void delete(String modelId) {
-        jdbcTemplate.update("DELETE FROM blueprint_definitions WHERE id = ? AND builtin = FALSE", modelId);
+        jdbcTemplate.update(
+                "DELETE FROM blueprint_definitions WHERE id = ? AND builtin = ?",
+                modelId,
+                false
+        );
     }
 
     public void restoreCustomBlueprints() {
         List<String> jsonRows = jdbcTemplate.queryForList(
-                "SELECT definition_json FROM blueprint_definitions WHERE builtin = FALSE",
-                String.class
+                "SELECT definition_json FROM blueprint_definitions WHERE builtin = ?",
+                String.class,
+                false
         );
         for (String json : jsonRows) {
             try {

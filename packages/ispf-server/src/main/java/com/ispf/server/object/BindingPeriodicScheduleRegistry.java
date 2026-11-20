@@ -108,9 +108,10 @@ public class BindingPeriodicScheduleRegistry {
         Integer count = jdbcTemplate.queryForObject(
                 """
                         SELECT COUNT(*) FROM platform_binding_periodic_rules
-                        WHERE enabled = TRUE AND periodic_ms > 0
+                        WHERE enabled = ? AND periodic_ms > 0
                         """,
-                Integer.class
+                Integer.class,
+                true
         );
         return count != null ? count : 0;
     }
@@ -119,9 +120,10 @@ public class BindingPeriodicScheduleRegistry {
         return jdbcTemplate.query(
                 """
                         SELECT MIN(next_run_at) FROM platform_binding_periodic_rules
-                        WHERE enabled = TRUE AND periodic_ms > 0
+                        WHERE enabled = ? AND periodic_ms > 0
                         """,
-                rs -> rs.next() ? toInstant(rs.getTimestamp(1)) : null
+                rs -> rs.next() ? toInstant(rs.getTimestamp(1)) : null,
+                true
         );
     }
 
@@ -130,7 +132,7 @@ public class BindingPeriodicScheduleRegistry {
                 """
                         SELECT object_path, rule_id, periodic_ms
                         FROM platform_binding_periodic_rules
-                        WHERE enabled = TRUE
+                        WHERE enabled = ?
                           AND periodic_ms > 0
                           AND next_run_at <= ?
                         ORDER BY next_run_at, object_path, rule_id
@@ -140,6 +142,7 @@ public class BindingPeriodicScheduleRegistry {
                         rs.getString("rule_id"),
                         rs.getLong("periodic_ms")
                 ),
+                true,
                 Timestamp.from(now)
         );
         for (DueRule dueRule : dueRules) {

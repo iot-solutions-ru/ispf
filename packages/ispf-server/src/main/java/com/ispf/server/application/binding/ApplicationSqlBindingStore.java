@@ -94,9 +94,10 @@ public class ApplicationSqlBindingStore {
                        refresh_interval_ms, value_field, trigger_object_path, trigger_function_name,
                        enabled, last_refreshed_at
                 FROM %s
-                WHERE enabled = TRUE AND refresh_mode = 'on_schedule'
+                WHERE enabled = ? AND refresh_mode = 'on_schedule'
                 """.formatted(bindingsTable),
-                this::mapRow
+                this::mapRow,
+                true
         );
     }
 
@@ -106,13 +107,14 @@ public class ApplicationSqlBindingStore {
                        refresh_interval_ms, value_field, trigger_object_path, trigger_function_name,
                        enabled, last_refreshed_at
                 FROM %s
-                WHERE enabled = TRUE
+                WHERE enabled = ?
                   AND refresh_mode = 'on_event'
                   AND object_path = ?
                   AND (trigger_object_path IS NULL OR trigger_object_path = ?)
                   AND (trigger_function_name IS NULL OR trigger_function_name = ?)
                 """.formatted(bindingsTable),
                 this::mapRow,
+                true,
                 objectPath,
                 objectPath,
                 eventName
@@ -125,9 +127,10 @@ public class ApplicationSqlBindingStore {
                        refresh_interval_ms, value_field, trigger_object_path, trigger_function_name,
                        enabled, last_refreshed_at
                 FROM %s
-                WHERE enabled = TRUE AND refresh_mode = 'on_event'
+                WHERE enabled = ? AND refresh_mode = 'on_event'
                 """.formatted(bindingsTable),
-                this::mapRow
+                this::mapRow,
+                true
         );
     }
 
@@ -137,7 +140,7 @@ public class ApplicationSqlBindingStore {
                        refresh_interval_ms, value_field, trigger_object_path, trigger_function_name,
                        enabled, last_refreshed_at
                 FROM %s
-                WHERE enabled = TRUE
+                WHERE enabled = ?
                   AND refresh_mode = 'on_function_success'
                   AND app_id = ?
                   AND (
@@ -149,6 +152,7 @@ public class ApplicationSqlBindingStore {
                   )
                 """.formatted(bindingsTable),
                 this::mapRow,
+                true,
                 appId,
                 functionName,
                 objectPath,
@@ -185,10 +189,12 @@ public class ApplicationSqlBindingStore {
         }
         return jdbcTemplate.update("""
                 UPDATE %s
-                SET enabled = FALSE
-                WHERE enabled = TRUE
+                SET enabled = ?
+                WHERE enabled = ?
                   AND (object_path = ? OR object_path LIKE ?)
                 """.formatted(bindingsTable),
+                false,
+                true,
                 path,
                 path + ".%"
         );

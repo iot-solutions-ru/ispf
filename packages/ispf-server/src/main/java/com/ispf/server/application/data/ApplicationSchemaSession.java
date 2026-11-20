@@ -25,8 +25,10 @@ public class ApplicationSchemaSession {
     /**
      * Creates application schema if missing. Uses a connection from the pool without relying on the
      * caller's read-only transaction (report previews are {@code readOnly=true}).
+     * Fail-closed on dialects without session schema switch (MSSQL, ADR-0078).
      */
     public void ensureSchemaExists(String schemaName) {
+        requireSessionSchemaSwitch(schemaName);
         try (Connection connection = dataSource.getConnection()) {
             createSchemaIfMissing(connection, schemaName);
         } catch (SQLException ex) {
@@ -36,6 +38,7 @@ public class ApplicationSchemaSession {
 
     @SuppressWarnings("Finally")
     public <T> T callInSchema(String schemaName, Function<Connection, T> action) {
+        requireSessionSchemaSwitch(schemaName);
         ensureSchemaExists(schemaName);
         Connection connection = DataSourceUtils.getConnection(dataSource);
         String previousSchema = null;
@@ -152,7 +155,8 @@ public class ApplicationSchemaSession {
             } finally {
                 try {
                     rollbackIfNeeded(connection, actionError);
-                    if (previousSchema != null && !previousSchema.isBlank()
+                    if (dialect.supportsSessionSchemaSwitch()
+                            && previousSchema != null && !previousSchema.isBlank()
                             && !dialect.defaultPlatformSchema().equalsIgnoreCase(previousSchema)) {
                         // Restore only — never CREATE SCHEMA (may be inside read-only tx).
                         switchSearchPath(connection, previousSchema);
@@ -181,6 +185,9 @@ public class ApplicationSchemaSession {
     }
 
     private void restoreSchema(Connection connection, String previousSchema) throws SQLException {
+        if (!dialect.supportsSessionSchemaSwitch()) {
+            return;
+        }
         if (previousSchema != null && !previousSchema.isBlank()
                 && !dialect.defaultPlatformSchema().equalsIgnoreCase(previousSchema)) {
             switchSearchPath(connection, previousSchema);
@@ -190,6 +197,7 @@ public class ApplicationSchemaSession {
     }
 
     private void switchSearchPath(Connection connection, String schemaName) throws SQLException {
+        requireSessionSchemaSwitch(schemaName);
         // Allowlisted identifier — dialect SQL may include companion schemas (e.g. ", public").
         final String safeSchema = ApplicationSchemaSupport.quoteIdentifier(schemaName);
         try (Statement statement = connection.createStatement()) {
@@ -197,6 +205,17 @@ public class ApplicationSchemaSession {
             // codeql[java/sql-injection]
             statement.execute(dialect.activateSchemaSql(safeSchema));
         }
+    }
+
+    private void requireSessionSchemaSwitch(String schemaName) {
+        if (dialect.supportsSessionSchemaSwitch()) {
+            return;
+        }
+        throw new UnsupportedOperationException(
+                "Session schema switch is unsupported on " + dialect.kind()
+                        + " (ADR-0078). Requested schema=" + schemaName
+                        + ". Use an external DATA_SOURCE or PostgreSQL for per-app schemas."
+        );
     }
 
     private void createSchemaIfMissing(Connection connection, String schemaName) throws SQLException {
@@ -209,6 +228,10 @@ public class ApplicationSchemaSession {
     }
 
     private void resetSchema(Connection connection) throws SQLException {
+        if (!dialect.supportsSessionSchemaSwitch()) {
+            // MSSQL: stay on dbo / ISPF database — no USE (ADR-0078 §4).
+            return;
+        }
         try (Statement statement = connection.createStatement()) {
             statement.execute(dialect.resetPlatformSchemaSql());
         }

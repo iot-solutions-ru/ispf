@@ -8,7 +8,7 @@ English ADRs for ISPF. Russian mirror: [../../ru/decisions/readme.md](../../ru/d
 
 Engineering record — not marketing. Prefer Status / Context / Decision / Consequences / Related; use `Risks:` bullets under Consequences. Avoid hype scores and template **Positive** / **Negative** blocks.
 
-**Number uniqueness:** new ADRs must use the next free number (**0077+**; **0067** reserved / gap until FIELD maturity ADR lands on main). Historical collisions **0016** and **0025** keep dual files; cite them as **0016a/b** and **0025a/b** (or by filename). Do not renumber existing files.
+**Number uniqueness:** new ADRs must use the next free number (**0081+**; **0067** reserved / gap until FIELD maturity ADR lands on main). Historical collisions **0016** and **0025** keep dual files; cite them as **0016a/b** and **0025a/b** (or by filename). Do not renumber existing files.
 
 Regressions: [`strip-neuro-slang.py`](../../../tools/docs-audit/strip-neuro-slang.py), then [`polish-docs.py`](../../../tools/docs-audit/polish-docs.py).
 
@@ -128,6 +128,9 @@ Regressions: [`strip-neuro-slang.py`](../../../tools/docs-audit/strip-neuro-slan
 | [0075-observability-slo-otel](0075-observability-slo-otel.md) | First-party metrics + OTel taxonomy / SLO honesty — **Accepted** |
 | [0076-external-secrets-providers](0076-external-secrets-providers.md) | External KMS/HSM/Vault/GOST non-claims (amends 0065) — **Accepted** |
 | [0077-contextpack-hybrid-retrieval](0077-contextpack-hybrid-retrieval.md) | ContextPack hybrid lexical+embedding `search_context` — **Accepted** |
+| [0078-mssql-metadata-certification](0078-mssql-metadata-certification.md) | MS SQL Server metadata certification B1/B2 (amends 0037) — **Accepted** (impl In progress / lab-green) |
+| [0079-mysql-metadata-certification](0079-mysql-metadata-certification.md) | MySQL 8.x B1 metadata certification charter (amends 0037) — **Accepted** (impl Not started) |
+| [0080-oracle-metadata-certification](0080-oracle-metadata-certification.md) | Oracle B1 metadata certification charter (amends 0037) — **Accepted** (impl Not started) |
 
 ## Topic chains (read in order)
 
@@ -139,7 +142,7 @@ Regressions: [`strip-neuro-slang.py`](../../../tools/docs-audit/strip-neuro-slan
 | Workflow / BPMN | [0047-custom-bpmn-subset-engine](0047-custom-bpmn-subset-engine.md) → [0049-ot-automation-excellence](0049-ot-automation-excellence.md) → [0052-ispf-workflow-diagram-editor](0052-ispf-workflow-diagram-editor.md) | [workflows](../workflows.md) |
 | Server modularization | [0048-server-modularization-seams](0048-server-modularization-seams.md) → [0005-tree-first-ai-agent](0005-tree-first-ai-agent.md) | — |
 | Manufacturing solutions | [0001-app-platform-boundary](0001-app-platform-boundary.md) → [0007-bundle-tree-packaging](0007-bundle-tree-packaging.md) → [0050-manufacturing-patterns-as-solutions](0050-manufacturing-patterns-as-solutions.md) | [manufacturing-patterns](../manufacturing-patterns.md), [mes](../mes.md) |
-| Release / compatibility | [0007-bundle-tree-packaging](0007-bundle-tree-packaging.md) → [0037-relational-core-portability](0037-relational-core-portability.md) → [0064-release-compatibility-lts](0064-release-compatibility-lts.md) → [0070-cluster-rolling-upgrade](0070-cluster-rolling-upgrade.md) | [applications](../applications.md), [deployment](../deployment.md), [release-upgrade](../release-upgrade.md) |
+| Release / compatibility | [0007-bundle-tree-packaging](0007-bundle-tree-packaging.md) → [0037-relational-core-portability](0037-relational-core-portability.md) → [0064-release-compatibility-lts](0064-release-compatibility-lts.md) → [0070-cluster-rolling-upgrade](0070-cluster-rolling-upgrade.md) → [0078-mssql-metadata-certification](0078-mssql-metadata-certification.md) → [0079-mysql-metadata-certification](0079-mysql-metadata-certification.md) → [0080-oracle-metadata-certification](0080-oracle-metadata-certification.md) | [applications](../applications.md), [deployment](../deployment.md), [release-upgrade](../release-upgrade.md), [mssql-certification-epic](../mssql-certification-epic.md) |
 | Secrets / credentials | [0049-ot-automation-excellence](0049-ot-automation-excellence.md) → [0065-secrets-key-rotation](0065-secrets-key-rotation.md) → [0076-external-secrets-providers](0076-external-secrets-providers.md) | [security](../security.md), [tutorial-ot-credentials-vault](../tutorial-ot-credentials-vault.md) |
 | Security model | [0066-security-model](0066-security-model.md) → [0056-webauthn-idp-mfa](0056-webauthn-idp-mfa.md) → [0065-secrets-key-rotation](0065-secrets-key-rotation.md) | [security](../security.md), [multi-tenant](../multi-tenant.md) |
 | Backup / DR | [0068-backup-and-dr](0068-backup-and-dr.md) | [deployment](../deployment.md), [air-gap-deployment](../air-gap-deployment.md) |

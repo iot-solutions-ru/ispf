@@ -1,5 +1,6 @@
 package com.ispf.server.audit;
 
+import com.ispf.server.relational.H2Dialect;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -29,7 +30,7 @@ class AuditChainStoreTest {
                 .setName("audit-chain-" + UUID.randomUUID())
                 .build();
         jdbc = new JdbcTemplate(dataSource);
-        store = new AuditChainStore(jdbc);
+        store = new AuditChainStore(jdbc, new H2Dialect());
         store.ensureTable();
         jdbc.execute("""
                 CREATE TABLE IF NOT EXISTS audit_events (

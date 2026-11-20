@@ -1,6 +1,7 @@
 package com.ispf.server.application.bundle;
 
 import com.ispf.server.application.data.PlatformSqlCatalog;
+import com.ispf.server.relational.RelationalDialect;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -16,10 +17,16 @@ import java.util.UUID;
 public class ApplicationBundleSnapshotStore {
 
     private final JdbcTemplate jdbcTemplate;
+    private final RelationalDialect relationalDialect;
     private final String deploymentsTable;
 
-    public ApplicationBundleSnapshotStore(JdbcTemplate jdbcTemplate, PlatformSqlCatalog platformSqlCatalog) {
+    public ApplicationBundleSnapshotStore(
+            JdbcTemplate jdbcTemplate,
+            PlatformSqlCatalog platformSqlCatalog,
+            RelationalDialect relationalDialect
+    ) {
         this.jdbcTemplate = jdbcTemplate;
+        this.relationalDialect = relationalDialect;
         this.deploymentsTable = platformSqlCatalog.table("application_bundle_deployments");
     }
 
@@ -48,7 +55,8 @@ public class ApplicationBundleSnapshotStore {
     ) {
         if (active) {
             jdbcTemplate.update(
-                    "UPDATE %s SET is_active = FALSE WHERE app_id = ?".formatted(deploymentsTable),
+                    "UPDATE %s SET is_active = %s WHERE app_id = ?"
+                            .formatted(deploymentsTable, relationalDialect.booleanLiteral(false)),
                     appId
             );
         }
@@ -127,12 +135,13 @@ public class ApplicationBundleSnapshotStore {
         List<BundleSnapshot> rows = jdbcTemplate.query("""
                 SELECT id, app_id, bundle_version, manifest_json, operator_manifest_json, deployed_at, is_active
                 FROM %s
-                WHERE app_id = ? AND is_active = TRUE
+                WHERE app_id = ? AND is_active = ?
                 ORDER BY deployed_at DESC
-                LIMIT 1
-                """.formatted(deploymentsTable),
+                """.formatted(deploymentsTable) + relationalDialect.limitClause(),
                 this::mapRow,
-                appId
+                appId,
+                true,
+                1
         );
         return rows.isEmpty() ? Optional.empty() : Optional.of(rows.get(0));
     }
@@ -169,13 +178,14 @@ public class ApplicationBundleSnapshotStore {
 
     public void activate(String appId, String bundleVersion) {
         jdbcTemplate.update(
-                "UPDATE %s SET is_active = FALSE WHERE app_id = ?".formatted(deploymentsTable),
+                "UPDATE %s SET is_active = %s WHERE app_id = ?"
+                        .formatted(deploymentsTable, relationalDialect.booleanLiteral(false)),
                 appId
         );
         int updated = jdbcTemplate.update("""
-                UPDATE %s SET is_active = TRUE, deployed_at = ?
+                UPDATE %s SET is_active = %s, deployed_at = ?
                 WHERE app_id = ? AND bundle_version = ?
-                """.formatted(deploymentsTable),
+                """.formatted(deploymentsTable, relationalDialect.booleanLiteral(true)),
                 Timestamp.from(Instant.now()),
                 appId,
                 bundleVersion
@@ -190,7 +200,8 @@ public class ApplicationBundleSnapshotStore {
             return;
         }
         jdbcTemplate.update(
-                "UPDATE %s SET is_active = FALSE WHERE app_id = ?".formatted(deploymentsTable),
+                "UPDATE %s SET is_active = %s WHERE app_id = ?"
+                        .formatted(deploymentsTable, relationalDialect.booleanLiteral(false)),
                 appId.trim()
         );
     }

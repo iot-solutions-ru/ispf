@@ -28,23 +28,33 @@ public class OracleDialect extends AbstractRelationalDialect {
     }
 
     @Override
+    public boolean supportsSessionSchemaSwitch() {
+        return false;
+    }
+
+    @Override
     public boolean requiresSchemaDdlBeforeSwitch() {
-        return true;
+        return false;
     }
 
     @Override
     public String activateSchemaSql(String quotedSchema) {
-        return "ALTER SESSION SET CURRENT_SCHEMA = " + quotedSchema;
+        throw new UnsupportedOperationException(
+                "Oracle per-application schema switching is not certified (ADR-0037). "
+                        + "External DATA_SOURCE remains the supported path."
+        );
     }
 
     @Override
     public String resetPlatformSchemaSql() {
-        return "ALTER SESSION SET CURRENT_SCHEMA = ISPF";
+        return null;
     }
 
     @Override
     public String createSchemaIfNotExistsSql(String quotedSchema) {
-        throw new UnsupportedOperationException("Oracle schema creation is not automated yet");
+        throw new UnsupportedOperationException(
+                "Oracle schema creation is not certified (ADR-0037)."
+        );
     }
 
     @Override

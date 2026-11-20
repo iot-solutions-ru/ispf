@@ -54,6 +54,8 @@ jobs:
               - 'tools/license-audit/**'
               - 'tools/agent-regression/**'
               - 'tools/ship-canon-fixtures/**'
+              - 'tools/mssql-*.py'
+              - 'docs/en/mssql-flyway-exceptions.txt'
               - 'examples/**'
             drivers:
               - 'packages/ispf-driver-*/**'
@@ -143,6 +145,9 @@ jobs:
 
       - name: License compliance audit
         run: node tools/license-audit/check-all.mjs
+
+      - name: MSSQL Flyway lockstep (ADR-0078 Phase 4)
+        run: python tools/mssql-flyway-lockstep-check.py
 
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew

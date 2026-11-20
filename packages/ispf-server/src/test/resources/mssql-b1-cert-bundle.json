@@ -1,0 +1,49 @@
+{
+  "version": "1.0.0",
+  "displayName": "MSSQL B1 Certification",
+  "tablePrefix": "",
+  "schemaName": "app_mssql_b1_cert",
+  "formatVersion": 1,
+  "metadata": {
+    "purpose": "ADR-0078 Phase 3 certification fixture — tree-only, no app-schema SQL / migrations"
+  },
+  "objects": [
+    {
+      "parentPath": "root.platform.devices",
+      "name": "mssql-b1-cert-sensor-01",
+      "type": "DEVICE",
+      "displayName": "MSSQL B1 cert sensor"
+    }
+  ],
+  "blueprints": [
+    {
+      "name": "mssql-b1-cert-hub-v1",
+      "description": "MSSQL B1 cert logic hub (SINGLETON)",
+      "type": "SINGLETON",
+      "variables": [],
+      "events": [],
+      "functions": [],
+      "bindings": [],
+      "parameters": {}
+    }
+  ],
+  "dashboards": [
+    {
+      "path": "root.platform.dashboards.mssql-b1-cert-overview",
+      "title": "MSSQL B1 cert overview",
+      "refreshIntervalMs": 5000,
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[]}"
+    }
+  ],
+  "operatorUi": {
+    "appId": "mssql-b1-cert",
+    "title": "MSSQL B1 Cert",
+    "defaultDashboard": "root.platform.dashboards.mssql-b1-cert-overview",
+    "dashboards": [
+      {
+        "path": "root.platform.dashboards.mssql-b1-cert-overview",
+        "title": "Overview"
+      }
+    ]
+  }
+}

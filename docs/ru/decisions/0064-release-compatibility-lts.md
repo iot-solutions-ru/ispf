@@ -55,6 +55,8 @@
 4. Смена движка (PG → MSSQL, …) — **greenfield + bundle import**, не live-миграция.
 5. Пакеты не-PG (`mssql` / `mysql` / `oracle`) — **не начаты**, пока нет сертифицированного baseline.
 
+**Процесс фазы 4 ADR-0078:** CI запускает `tools/mssql-flyway-lockstep-check.py`; намеренные исключения фиксируются в `docs/en/mssql-flyway-exceptions.txt`. Этот grandfather list — лишь учёт миграций, а не подтверждение полной зрелости двух пакетов, и он не делает MSSQL **Prod Yes**.
+
 ### 5. Driver SPI и ui-pack
 
 - Driver pack объявляет совместимость с major платформы; minor платформы не требует пересборки pack без явной записи в changelog.

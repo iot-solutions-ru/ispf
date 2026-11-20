@@ -61,8 +61,10 @@ dependencies {
 
     runtimeOnly("org.postgresql:postgresql")
     runtimeOnly("com.h2database:h2")
+    runtimeOnly("com.microsoft.sqlserver:mssql-jdbc")
     implementation("org.springframework.boot:spring-boot-starter-flyway")
     runtimeOnly("org.flywaydb:flyway-database-postgresql")
+    runtimeOnly("org.flywaydb:flyway-sqlserver")
 
     implementation("io.micrometer:micrometer-registry-prometheus")
     implementation("io.micrometer:micrometer-registry-otlp")
@@ -102,6 +104,8 @@ dependencies {
     // ADR-0074: ClickHouse quality round-trip. The test stays off unless
     // ISPF_CLICKHOUSE_QUALITY_TCK=true, so default CI does not start a container.
     testImplementation("org.testcontainers:testcontainers-clickhouse:2.0.5")
+    // ADR-0078: MSSQL Flyway baseline gate (skips when Docker unavailable).
+    testImplementation("org.testcontainers:testcontainers-mssqlserver:2.0.5")
 }
 
 val webConsoleDistDir = rootProject.layout.projectDirectory.dir("apps/web-console/dist")
@@ -184,6 +188,10 @@ tasks.named<Test>("test") {
         }
         if (System.getProperty("ispf.test.skipFederation") == "true") {
             excludeTags("federation")
+        }
+        // ADR-0078 MSSQL Testcontainers (~1.5GB image) — opt-in: -Dispf.test.mssqlDocker=true
+        if (System.getProperty("ispf.test.mssqlDocker") != "true") {
+            excludeTags("mssql-docker")
         }
     }
 }

@@ -45,6 +45,7 @@ public class FunctionScriptEngine {
     private final ApplicationMessageRelay outboxRelay;
     private final AuditEventService auditEventService;
     private final TenantLocalDataAccessGuard tenantLocalDataAccessGuard;
+    private final com.ispf.server.relational.RelationalDialect relationalDialect;
 
     public FunctionScriptEngine(
             JdbcTemplate jdbcTemplate,
@@ -52,7 +53,28 @@ public class FunctionScriptEngine {
             WorkflowInstanceCancelService workflowCancelService,
             PlatformScriptBridge platformScriptBridge
     ) {
-        this(jdbcTemplate, objectMapper, workflowCancelService, platformScriptBridge, null, null, null);
+        this(jdbcTemplate, objectMapper, workflowCancelService, platformScriptBridge, null, null, null, null);
+    }
+
+    public FunctionScriptEngine(
+            JdbcTemplate jdbcTemplate,
+            ObjectMapper objectMapper,
+            WorkflowInstanceCancelService workflowCancelService,
+            PlatformScriptBridge platformScriptBridge,
+            ApplicationMessageRelay outboxRelay,
+            AuditEventService auditEventService,
+            TenantLocalDataAccessGuard tenantLocalDataAccessGuard
+    ) {
+        this(
+                jdbcTemplate,
+                objectMapper,
+                workflowCancelService,
+                platformScriptBridge,
+                outboxRelay,
+                auditEventService,
+                tenantLocalDataAccessGuard,
+                null
+        );
     }
 
     @Autowired
@@ -63,7 +85,8 @@ public class FunctionScriptEngine {
             PlatformScriptBridge platformScriptBridge,
             ApplicationMessageRelay outboxRelay,
             AuditEventService auditEventService,
-            TenantLocalDataAccessGuard tenantLocalDataAccessGuard
+            TenantLocalDataAccessGuard tenantLocalDataAccessGuard,
+            com.ispf.server.relational.RelationalDialect relationalDialect
     ) {
         this.jdbcTemplate = jdbcTemplate;
         this.objectMapper = objectMapper;
@@ -72,6 +95,7 @@ public class FunctionScriptEngine {
         this.outboxRelay = outboxRelay;
         this.auditEventService = auditEventService;
         this.tenantLocalDataAccessGuard = tenantLocalDataAccessGuard;
+        this.relationalDialect = relationalDialect;
     }
 
     public DataRecord execute(
@@ -697,15 +721,21 @@ public class FunctionScriptEngine {
 
     private void acquireAdvisoryLock(String key) {
         jdbc().execute((Connection connection) -> {
-            String product = connection.getMetaData().getDatabaseProductName().toLowerCase(Locale.ROOT);
-            if (product.contains("postgresql")) {
-                try (PreparedStatement lock = connection.prepareStatement("SELECT pg_advisory_xact_lock(?)")) {
-                    lock.setLong(1, AuditChainStore.advisoryLockId(key));
-                    lock.execute();
-                }
-                return null;
-            }
             try {
+                if (relationalDialect != null) {
+                    relationalDialect.acquireTransactionLock(
+                            connection, key, AuditChainStore.advisoryLockId(key)
+                    );
+                    return null;
+                }
+                String product = connection.getMetaData().getDatabaseProductName().toLowerCase(Locale.ROOT);
+                if (product.contains("postgresql")) {
+                    try (PreparedStatement lock = connection.prepareStatement("SELECT pg_advisory_xact_lock(?)")) {
+                        lock.setLong(1, AuditChainStore.advisoryLockId(key));
+                        lock.execute();
+                    }
+                    return null;
+                }
                 String locksTable = AuditChainStore.platformScriptLocksTable(connection);
                 AuditChainStore.ensureLockRow(connection, key, locksTable);
                 try (PreparedStatement rowLock = connection.prepareStatement(

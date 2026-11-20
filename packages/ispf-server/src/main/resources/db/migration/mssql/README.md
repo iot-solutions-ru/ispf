@@ -1,9 +1,25 @@
-# MS SQL Server migration pack (ADR-0037)
+# MS SQL Server migration pack (ADR-0037 / ADR-0078)
 
-Enterprise POC target. **Greenfield only:** one `V1__baseline.sql` when certified.
+Enterprise certification target. **Greenfield only.**
 
-Until `V1__baseline.sql` exists, do **not** set `ISPF_METADATA_DB_KIND=mssql` in production.
+| Artifact | Status |
+|----------|--------|
+| `V1__baseline.sql` | Present (generated from PG pack; regenerate with `python tools/mssql-baseline-generate.py`) |
+| Production claim | **Not certified** until the [0078](../../../../../../../../docs/en/decisions/0078-mssql-metadata-certification.md) gate |
 
-Runtime SQL portability is via `MssqlDialect` (job queue `READPAST`, bucket aggregation, schema DDL). Config migration between engines: new empty DB + platform bundle import.
+Do **not** set `ISPF_METADATA_DB_KIND=mssql` in production until the named-SKU §8 gate passes ([sku checklist](../../../../../../../../docs/en/mssql-sku-promotion-checklist.md)). Lab/B1 boot fences (refuse otherwise):
 
-See [STORAGE_PORTABILITY_INVENTORY.md](../../../../../../../../docs/en/storage-portability-inventory.md) and [ADR-0037](../../../../../../../../docs/en/decisions/0037-relational-core-portability.md).
+- `ISPF_TENANT_DB_ROW_ISOLATION=false`
+- `ISPF_VARIABLE_HISTORY_ENABLED=false` **or** non-JDBC store (`clickhouse` / `cassandra` / `scylla`); dual-write off
+- `ISPF_EVENT_JOURNAL_ENABLED=false` **or** non-JDBC journal store
+- `ISPF_CLUSTER_ENABLED=false` (A-A **not certified** on MSSQL until soak)
+
+Runtime: `MssqlDialect` — session schema switch unsupported (no `USE`); table-lock advisory; `FETCH NEXT` limits; unique codes `2627`/`2601`. Dedicated DB + RCSI + case-sensitive collation required. Config migration: new empty DB + bundle import.
+
+**Solution SQL policy (B1):** function-script `exec` / shipped SQL that assumes PostgreSQL (`ON CONFLICT`, `search_path` app schemas, PG-only functions) against `ISPF_DB` is **unsupported** on MSSQL. Prefer an external JDBC `DATA_SOURCE` for report/solution SQL, or keep those solutions on PostgreSQL. A dialect-safe cert bundle may replace this non-claim later ([0078](../../../../../../../../docs/en/decisions/0078-mssql-metadata-certification.md)).
+
+**Cert bundle:** tree-only fixture `mssql-b1-cert-bundle.json` (no migrations). Lab gate: `MssqlBundleImportTckTest` (skips without Docker).
+
+Delivery board: [mssql-certification-epic](../../../../../../../../docs/en/mssql-certification-epic.md).
+
+See [storage-portability-inventory](../../../../../../../../docs/en/storage-portability-inventory.md) and [ADR-0037](../../../../../../../../docs/en/decisions/0037-relational-core-portability.md).

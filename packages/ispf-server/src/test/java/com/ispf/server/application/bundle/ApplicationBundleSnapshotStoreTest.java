@@ -33,7 +33,11 @@ class ApplicationBundleSnapshotStoreTest {
     void setUp() {
         when(platformSqlCatalog.table("application_bundle_deployments"))
                 .thenReturn("application_bundle_deployments");
-        store = new ApplicationBundleSnapshotStore(jdbcTemplate, platformSqlCatalog);
+        store = new ApplicationBundleSnapshotStore(
+                jdbcTemplate,
+                platformSqlCatalog,
+                new com.ispf.server.relational.H2Dialect()
+        );
     }
 
     @Test
@@ -44,7 +48,7 @@ class ApplicationBundleSnapshotStoreTest {
         store.recordDeployment("demo", "1.0.0", "{}", null, true);
 
         verify(jdbcTemplate).update(
-                eq("UPDATE application_bundle_deployments SET is_active = FALSE WHERE app_id = ?"),
+                contains("SET is_active = FALSE WHERE app_id = ?"),
                 eq("demo")
         );
         verify(jdbcTemplate).update(
@@ -67,7 +71,7 @@ class ApplicationBundleSnapshotStoreTest {
         store.recordDeployment("demo", "2.0.0", "{\"v\":2}", null, false);
 
         verify(jdbcTemplate, never()).update(
-                eq("UPDATE application_bundle_deployments SET is_active = FALSE WHERE app_id = ?"),
+                contains("SET is_active = FALSE WHERE app_id = ?"),
                 eq("demo")
         );
         verify(jdbcTemplate).update(
@@ -90,7 +94,7 @@ class ApplicationBundleSnapshotStoreTest {
         store.recordDeployment("demo", "1.0.0", "{}", null);
 
         verify(jdbcTemplate).update(
-                eq("UPDATE application_bundle_deployments SET is_active = FALSE WHERE app_id = ?"),
+                contains("SET is_active = FALSE WHERE app_id = ?"),
                 eq("demo")
         );
         ArgumentCaptor<Boolean> activeCaptor = ArgumentCaptor.forClass(Boolean.class);

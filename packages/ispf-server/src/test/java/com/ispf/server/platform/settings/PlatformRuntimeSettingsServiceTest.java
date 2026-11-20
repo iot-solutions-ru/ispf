@@ -10,6 +10,9 @@ import com.ispf.server.config.ObjectChangeProperties;
 import com.ispf.server.config.RuntimeTelemetryProperties;
 import com.ispf.server.config.VariableHistoryProperties;
 import com.ispf.server.object.bus.ObjectChangeEventBus;
+import com.ispf.server.relational.PostgreSqlDialect;
+import com.ispf.server.relational.RelationalDialect;
+import com.ispf.server.relational.MssqlDialect;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -41,19 +44,27 @@ class PlatformRuntimeSettingsServiceTest {
     @BeforeEach
     void setUp() {
         environment = new MockEnvironment();
-        service = new PlatformRuntimeSettingsService(
+        service = newService(new EventJournalProperties(), new PostgreSqlDialect());
+    }
+
+    private PlatformRuntimeSettingsService newService(
+            EventJournalProperties eventJournalProperties,
+            RelationalDialect dialect
+    ) {
+        return new PlatformRuntimeSettingsService(
                 environment,
                 store,
                 new ObjectChangeProperties(),
                 new RuntimeTelemetryProperties(),
-                new EventJournalProperties(),
+                eventJournalProperties,
                 new FunctionProperties(),
                 new BindingProperties(),
                 new VariableHistoryProperties(),
                 new DriverPackProperties(),
                 new MqttGatewayProperties(),
                 new ExpressionFormalVerificationProperties(),
-                objectChangeEventBus
+                objectChangeEventBus,
+                dialect
         );
     }
 
@@ -131,20 +142,7 @@ class PlatformRuntimeSettingsServiceTest {
     void patchHotReloadsEventJournalBatchSize() {
         when(store.readOverrides()).thenReturn(Map.of());
         EventJournalProperties eventJournalProperties = new EventJournalProperties();
-        service = new PlatformRuntimeSettingsService(
-                environment,
-                store,
-                new ObjectChangeProperties(),
-                new RuntimeTelemetryProperties(),
-                eventJournalProperties,
-                new FunctionProperties(),
-                new BindingProperties(),
-                new VariableHistoryProperties(),
-                new DriverPackProperties(),
-                new MqttGatewayProperties(),
-                new ExpressionFormalVerificationProperties(),
-                objectChangeEventBus
-        );
+        service = newService(eventJournalProperties, new PostgreSqlDialect());
 
         PlatformRuntimeSettingsPatchResult result = service.patch(
                 new PlatformRuntimeSettingsPatchRequest(Map.of("event-journal.batch-size", "5000"))
@@ -153,6 +151,25 @@ class PlatformRuntimeSettingsServiceTest {
         assertThat(result.errors()).isEmpty();
         assertThat(result.appliedLive()).containsExactly("event-journal.batch-size");
         assertThat(eventJournalProperties.getBatchSize()).isEqualTo(5000);
+    }
+
+    @Test
+    void patchRejectsEnablingJdbcEventJournalOnMssql() {
+        when(store.readOverrides()).thenReturn(Map.of());
+        EventJournalProperties eventJournalProperties = new EventJournalProperties();
+        eventJournalProperties.setStore("jdbc");
+        service = newService(eventJournalProperties, new MssqlDialect());
+
+        PlatformRuntimeSettingsPatchResult result = service.patch(
+                new PlatformRuntimeSettingsPatchRequest(Map.of("event-journal.enabled", "true"))
+        );
+
+        assertThat(result.errors()).anyMatch(error -> error.contains("ADR-0078 B1"));
+        assertThat(eventJournalProperties.isEnabled()).isFalse();
+
+        ArgumentCaptor<Map<String, String>> captor = ArgumentCaptor.forClass(Map.class);
+        verify(store).writeOverrides(captor.capture());
+        assertThat(captor.getValue()).doesNotContainKey("ispf.event-journal.enabled");
     }
 
     private static PlatformRuntimeSettingView findSetting(PlatformRuntimeSettingsResponse response, String id) {

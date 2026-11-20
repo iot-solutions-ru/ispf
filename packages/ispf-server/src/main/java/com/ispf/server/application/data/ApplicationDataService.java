@@ -3,6 +3,7 @@ package com.ispf.server.application.data;
 import com.ispf.server.application.tree.ApplicationObjectTreeService;
 import com.ispf.server.datasource.DataSourceObjectService;
 import com.ispf.server.migration.MigrationLedger;
+import com.ispf.server.relational.RelationalDialect;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,24 +18,31 @@ public class ApplicationDataService {
     private final ApplicationSchemaSession schemaSession;
     private final ApplicationObjectTreeService objectTreeService;
     private final DataSourceObjectService dataSourceObjectService;
+    private final RelationalDialect dialect;
 
     public ApplicationDataService(
             ApplicationDataStore store,
             ApplicationSchemaSession schemaSession,
             ApplicationObjectTreeService objectTreeService,
-            DataSourceObjectService dataSourceObjectService
+            DataSourceObjectService dataSourceObjectService,
+            RelationalDialect dialect
     ) {
         this.store = store;
         this.schemaSession = schemaSession;
         this.objectTreeService = objectTreeService;
         this.dataSourceObjectService = dataSourceObjectService;
+        this.dialect = dialect;
     }
 
     public Map<String, Object> register(String appId, String displayName, String tablePrefix, String schemaName) {
         store.registerApp(appId, displayName, tablePrefix, schemaName);
         Map<String, Object> app = store.findApp(appId).orElseThrow();
         String resolvedSchema = String.valueOf(app.get("schema_name"));
-        schemaSession.ensureSchemaExists(resolvedSchema);
+        // ADR-0078: MSSQL has no session schema switch — register the app + DATA_SOURCE node,
+        // but do not CREATE/USE an isolated SQL schema on ISPF_DB.
+        if (dialect.supportsSessionSchemaSwitch()) {
+            schemaSession.ensureSchemaExists(resolvedSchema);
+        }
         dataSourceObjectService.ensureDataSource(
                 appId,
                 displayName != null && !displayName.isBlank() ? displayName : appId,

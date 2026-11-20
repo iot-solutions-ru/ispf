@@ -1,6 +1,7 @@
 package com.ispf.server.event;
 
 import com.ispf.server.history.TimescaleHypertableInitializer;
+import com.ispf.server.relational.RelationalDialect;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -34,15 +35,18 @@ public class JdbcEventJournalStore implements EventJournalStore {
     private final JdbcTemplate jdbcTemplate;
     private final EventHistoryRecordCounter recordCounter;
     private final TimescaleHypertableInitializer timescaleHypertableInitializer;
+    private final RelationalDialect relationalDialect;
 
     public JdbcEventJournalStore(
             JdbcTemplate jdbcTemplate,
             EventHistoryRecordCounter recordCounter,
-            TimescaleHypertableInitializer timescaleHypertableInitializer
+            TimescaleHypertableInitializer timescaleHypertableInitializer,
+            RelationalDialect relationalDialect
     ) {
         this.jdbcTemplate = jdbcTemplate;
         this.recordCounter = recordCounter;
         this.timescaleHypertableInitializer = timescaleHypertableInitializer;
+        this.relationalDialect = relationalDialect;
     }
 
     @Override
@@ -79,14 +83,14 @@ public class JdbcEventJournalStore implements EventJournalStore {
     @Transactional(readOnly = true)
     public List<EventJournalRecord> queryRecent(String objectPath, int limit) {
         int capped = Math.max(1, Math.min(limit, 200));
+        String limitSql = relationalDialect.limitClause();
         if (objectPath == null || objectPath.isBlank()) {
             return jdbcTemplate.query(
                     """
                             SELECT id, object_path, event_name, level, payload_json, occurred_at
                             FROM event_history
                             ORDER BY occurred_at DESC
-                            LIMIT ?
-                            """,
+                            """ + limitSql,
                     ROW_MAPPER,
                     capped
             );
@@ -97,8 +101,7 @@ public class JdbcEventJournalStore implements EventJournalStore {
                         FROM event_history
                         WHERE object_path = ?
                         ORDER BY occurred_at DESC
-                        LIMIT ?
-                        """,
+                        """ + limitSql,
                 ROW_MAPPER,
                 objectPath,
                 capped
@@ -108,17 +111,18 @@ public class JdbcEventJournalStore implements EventJournalStore {
     @Override
     @Transactional(readOnly = true)
     public Optional<EventJournalRecord> findLatest(String objectPath, String eventName) {
+        String sql = """
+                SELECT id, object_path, event_name, level, payload_json, occurred_at
+                FROM event_history
+                WHERE object_path = ? AND event_name = ?
+                ORDER BY occurred_at DESC
+                """ + relationalDialect.limitClause();
         List<EventJournalRecord> rows = jdbcTemplate.query(
-                """
-                        SELECT id, object_path, event_name, level, payload_json, occurred_at
-                        FROM event_history
-                        WHERE object_path = ? AND event_name = ?
-                        ORDER BY occurred_at DESC
-                        LIMIT 1
-                        """,
+                sql,
                 ROW_MAPPER,
                 objectPath,
-                eventName
+                eventName,
+                1
         );
         return rows.isEmpty() ? Optional.empty() : Optional.of(rows.getFirst());
     }
