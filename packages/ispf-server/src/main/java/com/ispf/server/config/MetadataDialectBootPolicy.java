@@ -47,31 +47,8 @@ public final class MetadataDialectBootPolicy {
                             + "Per-tenant schemas require PostgreSQL search_path."
             );
         }
-        if (variableHistoryProperties.isEnabled() && !variableHistoryProperties.isExternalTimeSeriesStore()) {
-            throw new IllegalStateException(
-                    "ispf.variable-history store falls back to ISPF_DB JDBC on MSSQL (B2, ADR-0078). "
-                            + "Set ISPF_VARIABLE_HISTORY_STORE=clickhouse (or cassandra/scylla), "
-                            + "or ISPF_VARIABLE_HISTORY_ENABLED=false for B1 metadata-only."
-            );
-        }
-        if (variableHistoryProperties.isDualWriteEnabled()) {
-            throw new IllegalStateException(
-                    "ispf.variable-history.dual-write-enabled=true on MSSQL is B2 (ADR-0078) "
-                            + "because the jdbc primary would land in ISPF_DB. Disable dual-write for B1."
-            );
-        }
-        if (eventJournalProperties.isEnabled() && eventJournalProperties.isJdbcStore()) {
-            throw new IllegalStateException(
-                    "ispf.event-journal store falls back to ISPF_DB JDBC on MSSQL (B2, ADR-0078). "
-                            + "Set ISPF_EVENT_JOURNAL_STORE=clickhouse (or cassandra/scylla), "
-                            + "or ISPF_EVENT_JOURNAL_ENABLED=false for B1 metadata-only."
-            );
-        }
-        if (clusterProperties.enabled()) {
-            throw new IllegalStateException(
-                    "ispf.cluster.enabled=true is not certified on MSSQL (ADR-0078 Phase 6). "
-                            + "Run a single node, or use PostgreSQL for active-active until an MSSQL soak passes."
-            );
-        }
+        // B2 jdbc history/journal (including dual-write's jdbc primary) and active-active
+        // are allowed. RLS and HARD stay refused. Cluster still fail-closes without NATS
+        // JetStream (and Redis when live mirror is on) via ClusterDependencyValidator.
     }
 }

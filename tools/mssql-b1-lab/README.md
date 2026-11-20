@@ -4,18 +4,21 @@ Operator scripts for a **single-node** B1 metadata stand. Not a production deplo
 
 | Script | Role |
 |--------|------|
-| `run.sh` | aarch64 lab: Azure SQL Edge + branch `bootJar` + soak + cluster fence |
-| `stand-local.ps1` | AMD64: SQL Server 2022 + `bootJar` (Docker Desktop) |
+| `run.sh` | aarch64 lab: Azure SQL Edge + branch `bootJar` + soak + row-isolation fence |
+| `stand-local.ps1` | AMD64: SQL Server 2022 Evaluation (`MSSQL_PID`, default Evaluation) + `bootJar` (Docker Desktop) |
+| `gate-evidence.sh` | §8 evidence collector (`MSSQL_SA_PASSWORD` required). Signed B1 run: `gate-evidence-local-evaluation.json`. B2/A-A lab smoke: `gate-evidence-b2-aa-lab.json` |
 | `load.sh` | Cert-bundle import + concurrent `by-path` soak |
 | `loadtest.py` / `loadtest-run.sh` | Metadata RPS/latency (read / serial import / write / mixed) |
 
-## B1 fences (required env)
+## Boot fences still enforced
+
+- `ISPF_TENANT_DB_ROW_ISOLATION=false` (row isolation still refuses on MSSQL)
+- `ISPF_TENANT_ISOLATION_MODE` must not be `HARD`
+
+## B1 scope env (typical)
 
 - `ISPF_METADATA_DB_KIND=mssql`
-- `ISPF_TENANT_DB_ROW_ISOLATION=false`
-- `ISPF_VARIABLE_HISTORY_ENABLED=false` (or non-JDBC store)
-- `ISPF_EVENT_JOURNAL_ENABLED=false` (or non-JDBC store)
-- `ISPF_CLUSTER_ENABLED=false`
+- JDBC history/journal and `ISPF_CLUSTER_ENABLED=true` are allowed (lab smoke; not Prod Yes for B2/A-A)
 
 ## Secrets
 

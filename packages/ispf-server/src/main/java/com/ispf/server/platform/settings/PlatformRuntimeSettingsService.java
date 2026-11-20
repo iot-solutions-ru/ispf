@@ -10,8 +10,6 @@ import com.ispf.server.config.ObjectChangeProperties;
 import com.ispf.server.config.RuntimeTelemetryProperties;
 import com.ispf.server.config.VariableHistoryProperties;
 import com.ispf.server.object.bus.ObjectChangeEventBus;
-import com.ispf.server.relational.RelationalDbKind;
-import com.ispf.server.relational.RelationalDialect;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
@@ -38,7 +36,6 @@ public class PlatformRuntimeSettingsService {
     private final MqttGatewayProperties mqttGatewayProperties;
     private final ExpressionFormalVerificationProperties expressionFormalVerificationProperties;
     private final ObjectChangeEventBus objectChangeEventBus;
-    private final RelationalDialect relationalDialect;
 
     public PlatformRuntimeSettingsService(
             Environment environment,
@@ -52,8 +49,7 @@ public class PlatformRuntimeSettingsService {
             DriverPackProperties driverPackProperties,
             MqttGatewayProperties mqttGatewayProperties,
             ExpressionFormalVerificationProperties expressionFormalVerificationProperties,
-            ObjectChangeEventBus objectChangeEventBus,
-            RelationalDialect relationalDialect
+            ObjectChangeEventBus objectChangeEventBus
     ) {
         this.environment = environment;
         this.store = store;
@@ -67,7 +63,6 @@ public class PlatformRuntimeSettingsService {
         this.mqttGatewayProperties = mqttGatewayProperties;
         this.expressionFormalVerificationProperties = expressionFormalVerificationProperties;
         this.objectChangeEventBus = objectChangeEventBus;
-        this.relationalDialect = relationalDialect;
     }
 
     public PlatformRuntimeSettingsResponse snapshot() {
@@ -112,12 +107,6 @@ public class PlatformRuntimeSettingsService {
             }
             if (definition.sensitive() && SENSITIVE_MASK.equals(normalized)) {
                 errors.add(entry.getKey() + ": masked placeholder is not a real value");
-                continue;
-            }
-            try {
-                assertMssqlB1HotReloadAllowed(entry.getKey(), normalized);
-            } catch (IllegalArgumentException ex) {
-                errors.add(entry.getKey() + ": " + ex.getMessage());
                 continue;
             }
             overrides.put(definition.propertyKey(), normalized);
@@ -212,22 +201,6 @@ public class PlatformRuntimeSettingsService {
             }
             case DURATION, STRING -> trimmed;
         };
-    }
-
-    /**
-     * ADR-0078 B1: hot-reload must not enable JDBC event journal on MSSQL (boot fence alone is not enough).
-     */
-    private void assertMssqlB1HotReloadAllowed(String settingId, String value) {
-        if (!"event-journal.enabled".equals(settingId) || !Boolean.parseBoolean(value)) {
-            return;
-        }
-        if (relationalDialect.kind() == RelationalDbKind.MSSQL && eventJournalProperties.isJdbcStore()) {
-            throw new IllegalArgumentException(
-                    "cannot enable JDBC event journal on MSSQL (ADR-0078 B1); "
-                            + "set ISPF_EVENT_JOURNAL_STORE=clickhouse (or cassandra/scylla), "
-                            + "or keep event-journal.enabled=false"
-            );
-        }
     }
 
     private void applyLive(PlatformRuntimeSettingDefinition definition, String value) {

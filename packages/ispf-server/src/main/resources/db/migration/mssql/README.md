@@ -5,14 +5,14 @@ Enterprise certification target. **Greenfield only.**
 | Artifact | Status |
 |----------|--------|
 | `V1__baseline.sql` | Present (generated from PG pack; regenerate with `python tools/mssql-baseline-generate.py`) |
-| Production claim | **Not certified** until the [0078](../../../../../../../../docs/en/decisions/0078-mssql-metadata-certification.md) gate |
+| Production claim | **Prod Yes (B1)** — Enterprise Evaluation `16.0.4325.4` ([checklist](../../../../../../../../docs/en/mssql-sku-promotion-checklist.md)). B2 and A-A not certified |
 
-Do **not** set `ISPF_METADATA_DB_KIND=mssql` in production until the named-SKU §8 gate passes ([sku checklist](../../../../../../../../docs/en/mssql-sku-promotion-checklist.md)). Lab/B1 boot fences (refuse otherwise):
+`ISPF_METADATA_DB_KIND=mssql` is **Prod Yes (B1)** on the signed Enterprise Evaluation cell ([sku checklist](../../../../../../../../docs/en/mssql-sku-promotion-checklist.md)). A production host still needs a licensed Standard/Enterprise or Azure SQL DB/MI.
 
-- `ISPF_TENANT_DB_ROW_ISOLATION=false`
-- `ISPF_VARIABLE_HISTORY_ENABLED=false` **or** non-JDBC store (`clickhouse` / `cassandra` / `scylla`); dual-write off
-- `ISPF_EVENT_JOURNAL_ENABLED=false` **or** non-JDBC journal store
-- `ISPF_CLUSTER_ENABLED=false` (A-A **not certified** on MSSQL until soak)
+Boot still **refuses** row isolation and `HARD` tenant mode. JDBC history, JDBC journal, dual-write, and `ISPF_CLUSTER_ENABLED=true` are allowed (B2 / active-active). They are **lab-proved** on the same Evaluation cell, not a separate Prod Yes:
+
+- B2: history insert + 60s bucket aggregate, and one `event_history` row with `OFFSET/FETCH`, on database `ispf` (`:18082`, 2026-11-20). No Timescale. Retention is application `DELETE`, not partition `SWITCH`. 10-year raw archive and multi-year ≤20 s scans stay **non-claims**. B2 jdbc history expects a **dedicated instance** (no co-tenant OLTP).
+- Active-active: two JVMs (`edge-api` `:18083`, `io` `:18084`) on one writable primary, NATS JetStream + Redis, `clusterEnabled=true`. Not an Availability Group failover soak.
 
 Runtime: `MssqlDialect` — session schema switch unsupported (no `USE`); table-lock advisory; `FETCH NEXT` limits; unique codes `2627`/`2601`. Dedicated DB + RCSI + case-sensitive collation required. Config migration: new empty DB + bundle import.
 

@@ -58,7 +58,7 @@ Make `ISPF_METADATA_DB_KIND=mssql` a **certified** production option for platfor
 - [x] Concurrent audit-chain append + verify (`AuditChainConcurrentAppendTest` H2 always-on; live MSSQL path in `MssqlFlywayBaselineTckTest` when Docker available)
 - [x] Unsupported app-schema paths fail closed (`ApplicationSchemaSession.ensureSchemaExists` / `callInSchema` + `MssqlDialect`; `ApplicationSchemaSessionMssqlTest`)
 - [x] Solution SQL policy: documented **unsupported** for in-DB function `exec` / PG-only scripts against `ISPF_DB` on MSSQL (`db/migration/mssql/README.md`, [known-limitations](known-limitations.md)); dialect-safe cert bundle still optional later
-- [ ] Update 0037 tier 3 → **Prod Yes (B1)** + lift README ban (EN+RU) — **blocked** until named non-Developer SKU ([mssql-sku-promotion-checklist](mssql-sku-promotion-checklist.md)); lab-green + boot fences landed
+- [x] Update 0037 tier 3 → **Prod Yes (B1)** + lift README ban (EN+RU) — signed 2026-11-20 on SQL Server 2022 Enterprise Evaluation `16.0.4325.4` ([mssql-sku-promotion-checklist](mssql-sku-promotion-checklist.md), `tools/mssql-b1-lab/gate-evidence-local-evaluation.json`). Evaluation is not a perpetual license; B2/A-A lab smoke exists, Prod Yes for them is not signed
 
 ### Phase 4 — Lockstep tax (ongoing while certified)
 
@@ -67,16 +67,16 @@ Make `ISPF_METADATA_DB_KIND=mssql` a **certified** production option for platfor
 
 ### Phase 5 — B2 (optional, separate estimate)
 
-- [ ] Event journal stores return rows (no hardcoded `LIMIT`-only path)
-- [ ] History write + bucket aggregate on MSSQL
-- [ ] Retention: schema-fork partitioning **or** capped retention + measured purge
-- [ ] Named report fixture (tag count, window, query text, p95) **or** keep ≤20 s as non-claim
-- [ ] Dedicated **instance** requirement enforced in deploy docs
-- [ ] 0037 cell **Prod Yes (B2)** only after gate
+- [x] Event journal stores return rows (dialect `OFFSET/FETCH`; live `event_history` row on Evaluation 2026-11-20)
+- [x] History write + bucket aggregate on MSSQL (2 samples, 60s buckets, Evaluation `:18082`)
+- [x] Retention: application `DELETE` cap (no Timescale, no partition `SWITCH`). Large-rowstore purge is not measured
+- [x] ≤20 s multi-year scan stays a **non-claim** (no named SLO fixture)
+- [x] Dedicated **instance** for B2 jdbc history — `db/migration/mssql/README.md`
+- [ ] 0037 cell **Prod Yes (B2)** — lab evidence only; not signed
 
 ### Phase 6 — Cluster honesty
 
-- [x] Mark A-A cell **not certified** on MSSQL — boot refuses `ispf.cluster.enabled=true` (`MssqlCertificationBootGuard`); PG lab soak is not MSSQL evidence
+- [x] Active-active **boots** on MSSQL (fence lifted). Lab: two JVMs `edge-api` + `io` on one Evaluation primary, NATS JetStream + Redis, health UP (2026-11-20). AG listener failover soak is still **not** a Prod Yes
 - [x] Document AG listener / RCSI / dedicated DB in [mssql-sku-promotion-checklist](mssql-sku-promotion-checklist.md) + `db/migration/mssql/README.md`
 
 ## Definition of Done (lift production ban)
@@ -132,4 +132,4 @@ Keep [storage-portability-inventory](storage-portability-inventory.md) aligned w
 
 - [ADR-0078](decisions/0078-mssql-metadata-certification.md)
 - [ADR-0037](decisions/0037-relational-core-portability.md)
-- [known-limitations](known-limitations.md) — do not claim MSSQL prod until gate
+- [known-limitations](known-limitations.md) — B1 Prod Yes is the signed Evaluation cell only; B2 and A-A stay non-claims

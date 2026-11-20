@@ -34,8 +34,8 @@
 | Интервальная агрегация истории | `JdbcVariableHistoryQueryStore` | Вычисление временных корзин (`extract(epoch...)`, `to_timestamp`) | `variableSampleBucketAggregateSql()` |
 | Гипертаблицы TimescaleDB | `TimescaleHypertableInitializer` | Вызов `create_hypertable` (только при наличии расширения) | `supportsTimescale()` |
 | Leader locks | `PlatformLeaderLockService` | Table leases (`platform_leader_locks`), не `pg_advisory_lock` | На MSSQL оставлять table leases ([0078](decisions/0078-mssql-metadata-certification.md)) |
-| Audit / script locks | `AuditChainStore`, function `advisoryLock` | `pg_advisory_xact_lock` (+ SQLSTATE `23505`) | Dialect API до MSSQL prod (0078) |
-| JDBC `LIMIT` stores | Audit/config + event journal | Жёсткий `LIMIT` | `OFFSET/FETCH` / `TOP` через диалект **до B1** (audit/config) и **B2** (journal) — [0078](decisions/0078-mssql-metadata-certification.md) |
+| Audit / script locks | `AuditChainStore`, function `advisoryLock` | `pg_advisory_xact_lock` (+ SQLSTATE `23505`) | Dialect / table lock для B1 ([0078](decisions/0078-mssql-metadata-certification.md)) |
+| JDBC `LIMIT` stores | Audit/config + event journal | Жёсткий `LIMIT` | `OFFSET/FETCH` / `TOP` через диалект для B1 (audit/config); journal — B2 — [0078](decisions/0078-mssql-metadata-certification.md) |
 
 ---
 
@@ -44,7 +44,7 @@
 | Переменная | Назначение |
 |------------|------------|
 | `ISPF_DB_URL` | JDBC-строка подключения к основной реляционной базе метаданных |
-| `ISPF_METADATA_DB_KIND` | Явное указание диалекта: `postgresql`, `h2`, `mssql`, … (если не указано — по JDBC URL). **`mssql` / `mysql` / `oracle` — не prod** до сертификации ([0078](decisions/0078-mssql-metadata-certification.md)) |
+| `ISPF_METADATA_DB_KIND` | Явное указание диалекта: `postgresql`, `h2`, `mssql`, … (если не указано — по JDBC URL). **`mssql` — Prod Yes (B1)** на Enterprise Evaluation `16.0.4325.4` ([0078](decisions/0078-mssql-metadata-certification.md)); B2 и A-A не сертифицированы. **`mysql` / `oracle` — не prod** до своих gate |
 | `ISPF_EVENT_JOURNAL_STORE` | Хранилище журнала событий: `jdbc` (та же реляционная БД) или `clickhouse` |
 | `ISPF_VARIABLE_HISTORY_STORE` | Хранилище истории переменных: `jdbc` (та же реляционная БД) или `clickhouse` |
 
