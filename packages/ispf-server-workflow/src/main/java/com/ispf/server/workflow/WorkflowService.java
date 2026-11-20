@@ -440,6 +440,9 @@ public class WorkflowService {
 
     @Transactional(readOnly = true)
     public List<Map<String, Object>> listSteps(String instanceId) {
+        if (!instanceStore.exists(instanceId)) {
+            throw new WorkflowInstanceNotFoundException(instanceId);
+        }
         return instanceStore.listSteps(instanceId).stream().map(step -> {
             Map<String, Object> row = new HashMap<>();
             row.put("id", step.getId());

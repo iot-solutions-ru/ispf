@@ -192,6 +192,11 @@ public class WorkflowInstanceStore {
     }
 
     @Transactional(readOnly = true)
+    public boolean exists(String instanceId) {
+        return instanceRepository.existsById(instanceId);
+    }
+
+    @Transactional(readOnly = true)
     public List<WorkflowExecutionStepEntity> listSteps(String instanceId) {
         return stepRepository.findByInstanceIdOrderBySeqAsc(instanceId);
     }
