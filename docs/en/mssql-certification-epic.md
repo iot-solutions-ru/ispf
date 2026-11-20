@@ -63,7 +63,7 @@ Make `ISPF_METADATA_DB_KIND=mssql` a **certified** production option for platfor
 ### Phase 4 — Lockstep tax (ongoing while certified)
 
 - [x] CI rule: `tools/mssql-flyway-lockstep-check.py` in `.github/workflows/ci.yml` (grandfather list in `mssql-flyway-exceptions.txt` — regenerate baseline to shrink)
-- [ ] Expand/contract discipline (0064) — process note only until LTS amend
+- [x] Expand/contract discipline (0064) — process note in [0064](decisions/0064-release-compatibility-lts.md) pointing at lockstep script + exception file (grandfather ≠ dual-pack maturity / Prod Yes)
 
 ### Phase 5 — B2 (optional, separate estimate)
 

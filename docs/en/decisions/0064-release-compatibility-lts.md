@@ -53,6 +53,8 @@ PostgreSQL metadata DB:
 4. Engine change (PG → MSSQL, …) remains **greenfield + bundle import**, not live migration.
 5. Non-PG packs (`mssql` / `mysql` / `oracle`) stay **not started** until a certified baseline exists.
 
+**ADR-0078 Phase 4 process:** CI runs `tools/mssql-flyway-lockstep-check.py`; intentional exceptions are recorded in `docs/en/mssql-flyway-exceptions.txt`. That grandfather list is migration bookkeeping, not evidence of full dual-pack maturity, and does not make MSSQL **Prod Yes**.
+
 ### 5. Driver SPI and ui-pack
 
 - Driver packs declare compatibility against a platform major (existing pack metadata); a platform minor must not require pack rebuilds unless the changelog says otherwise.
