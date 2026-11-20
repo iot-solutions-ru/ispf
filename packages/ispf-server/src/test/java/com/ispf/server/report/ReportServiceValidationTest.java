@@ -62,6 +62,50 @@ class ReportServiceValidationTest {
     }
 
     @Test
+    void rejectsStructuredReportParameter() {
+        String query = "SELECT CAST(? AS TIMESTAMP), CAST(? AS TIMESTAMP)";
+        IllegalArgumentException array = assertThrows(IllegalArgumentException.class, () ->
+                ReportSqlQuery.bindQueryParameters(
+                        query,
+                        List.of("from", "to"),
+                        Map.of("from", List.of("2020"), "to", "2027-12-31T23:59:59Z")
+                ));
+        assertEquals("Report parameter from must be a scalar value", array.getMessage());
+
+        IllegalArgumentException object = assertThrows(IllegalArgumentException.class, () ->
+                ReportSqlQuery.bindQueryParameters(
+                        query,
+                        List.of("from", "to"),
+                        Map.of("from", Map.of("x", "2020"), "to", "2027-12-31T23:59:59Z")
+                ));
+        assertEquals("Report parameter from must be a scalar value", object.getMessage());
+    }
+
+    @Test
+    void rejectsNonTemporalValueForTimestampCast() {
+        String query = "SELECT CAST(? AS TIMESTAMP), CAST(? AS TIMESTAMP)";
+        assertTemporalRejected(query, true);
+        assertTemporalRejected(query, 123);
+        assertTemporalRejected(query, "[\"2020\"]");
+        List<Object> bound = ReportSqlQuery.bindQueryParameters(
+                query,
+                List.of("from", "to"),
+                Map.of("from", "2027-01-01 00:00:00", "to", "2027-12-31T23:59:59Z")
+        );
+        assertEquals(List.of("2027-01-01 00:00:00", "2027-12-31T23:59:59Z"), bound);
+    }
+
+    private static void assertTemporalRejected(String query, Object from) {
+        IllegalArgumentException rejected = assertThrows(IllegalArgumentException.class, () ->
+                ReportSqlQuery.bindQueryParameters(
+                        query,
+                        List.of("from", "to"),
+                        Map.of("from", from, "to", "2027-01-01 00:00:00")
+                ));
+        assertEquals("Report parameter from must be a timestamp", rejected.getMessage());
+    }
+
+    @Test
     void bindQueryParametersRepeatsSingleNamedParamForMultiplePlaceholders() {
         String query = "SELECT 1 WHERE (? = '' OR item_code = ?)";
         List<Object> bound = ReportSqlQuery.bindQueryParameters(

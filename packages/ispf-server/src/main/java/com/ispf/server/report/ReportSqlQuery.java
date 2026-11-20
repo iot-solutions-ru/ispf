@@ -1,12 +1,21 @@
 package com.ispf.server.report;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.TemporalAccessor;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
-
-import java.util.Locale;
 /**
  * Read-only SQL guard rails and parameter binding for report queries. Pure functions — no
  * database access; the service decides where (schema / external data source) the query runs.
@@ -67,9 +76,18 @@ final class ReportSqlQuery {
             if (!values.containsKey(name)) {
                 throw new IllegalArgumentException("Missing report parameter: " + name);
             }
-            resolved.add(values.get(name));
+            Object value = values.get(name);
+            requireScalarParameter(name, value);
+            resolved.add(value);
         }
         return resolved;
+    }
+
+    /** JSON arrays and objects are not SQL scalars. Numbers, booleans and strings still bind. */
+    private static void requireScalarParameter(String name, Object value) {
+        if (value instanceof Map<?, ?> || value instanceof Collection<?> || (value != null && value.getClass().isArray())) {
+            throw new IllegalArgumentException("Report parameter " + name + " must be a scalar value");
+        }
     }
 
     /**
@@ -83,21 +101,165 @@ final class ReportSqlQuery {
     ) {
         List<Object> resolved = resolveParameterValues(paramNames, parameters);
         int placeholderCount = countSqlPlaceholders(query);
+        List<Object> bound;
         if (placeholderCount == resolved.size()) {
-            return resolved;
-        }
-        if (placeholderCount > resolved.size() && paramNames != null && paramNames.size() == 1) {
+            bound = resolved;
+        } else if (placeholderCount > resolved.size() && paramNames != null && paramNames.size() == 1) {
             Object value = resolved.getFirst();
             List<Object> expanded = new ArrayList<>(placeholderCount);
             for (int i = 0; i < placeholderCount; i++) {
                 expanded.add(value);
             }
-            return expanded;
+            bound = expanded;
+        } else {
+            throw new IllegalArgumentException(
+                    "Report query has " + placeholderCount + " SQL placeholder(s) but "
+                            + resolved.size() + " bound parameter value(s)"
+            );
         }
-        throw new IllegalArgumentException(
-                "Report query has " + placeholderCount + " SQL placeholder(s) but "
-                        + resolved.size() + " bound parameter value(s)"
-        );
+        validateTemporalCasts(query, paramNames, bound);
+        return bound;
+    }
+
+    /**
+     * A placeholder inside {@code CAST(? AS timestamp/date/time)} only accepts a temporal value
+     * or a literal that parses as one. Other SQL types are left to the driver.
+     */
+    private static void validateTemporalCasts(String query, List<String> paramNames, List<Object> bound) {
+        if (query == null || bound == null || bound.isEmpty()) {
+            return;
+        }
+        List<Integer> positions = placeholderPositions(query);
+        int limit = Math.min(bound.size(), positions.size());
+        for (int i = 0; i < limit; i++) {
+            if (temporalCastType(query, positions.get(i)) == null) {
+                continue;
+            }
+            requireTemporalParameter(parameterName(paramNames, i), bound.get(i));
+        }
+    }
+
+    private static String parameterName(List<String> paramNames, int placeholderIndex) {
+        if (paramNames == null || paramNames.isEmpty()) {
+            return "parameter";
+        }
+        if (paramNames.size() == 1 || placeholderIndex >= paramNames.size()) {
+            return paramNames.getFirst();
+        }
+        return paramNames.get(placeholderIndex);
+    }
+
+    private static void requireTemporalParameter(String name, Object value) {
+        if (value == null || value instanceof TemporalAccessor || value instanceof Date) {
+            return;
+        }
+        if (value instanceof CharSequence && isTemporalLiteral(value.toString())) {
+            return;
+        }
+        throw new IllegalArgumentException("Report parameter " + name + " must be a timestamp");
+    }
+
+    private static final DateTimeFormatter LOCAL_DATE_TIME_SPACE =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+    private static boolean isTemporalLiteral(String raw) {
+        if (raw == null) {
+            return false;
+        }
+        String value = raw.trim();
+        if (value.isEmpty()) {
+            return false;
+        }
+        return parses(value, Instant::parse)
+                || parses(value, OffsetDateTime::parse)
+                || parses(value, LocalDateTime::parse)
+                || parses(value, text -> LocalDateTime.parse(text, LOCAL_DATE_TIME_SPACE))
+                || parses(value, LocalDate::parse)
+                || parses(value, LocalTime::parse);
+    }
+
+    private static boolean parses(String value, java.util.function.Consumer<String> parser) {
+        try {
+            parser.accept(value);
+            return true;
+        } catch (DateTimeParseException ex) {
+            return false;
+        }
+    }
+
+    private static List<Integer> placeholderPositions(String query) {
+        List<Integer> positions = new ArrayList<>();
+        if (query == null || query.isBlank()) {
+            return positions;
+        }
+        boolean inSingleQuote = false;
+        for (int i = 0; i < query.length(); i++) {
+            char ch = query.charAt(i);
+            if (ch == '\'') {
+                if (inSingleQuote && i + 1 < query.length() && query.charAt(i + 1) == '\'') {
+                    i++;
+                    continue;
+                }
+                inSingleQuote = !inSingleQuote;
+                continue;
+            }
+            if (!inSingleQuote && ch == '?') {
+                positions.add(i);
+            }
+        }
+        return positions;
+    }
+
+    /** {@code CAST(? AS timestamp)} and the same shape for date/time, ignoring quoted text. */
+    private static String temporalCastType(String query, int questionMark) {
+        int open = skipWhitespaceBackward(query, questionMark - 1);
+        if (open < 0 || query.charAt(open) != '(') {
+            return null;
+        }
+        int wordEnd = skipWhitespaceBackward(query, open - 1);
+        if (wordEnd < 3 || !query.regionMatches(true, wordEnd - 3, "CAST", 0, 4)) {
+            return null;
+        }
+        int wordStart = wordEnd - 3;
+        if (wordStart > 0 && Character.isLetterOrDigit(query.charAt(wordStart - 1))) {
+            return null;
+        }
+        int asStart = skipWhitespaceForward(query, questionMark + 1);
+        if (asStart < 0 || !query.regionMatches(true, asStart, "AS", 0, 2)) {
+            return null;
+        }
+        if (asStart + 2 < query.length() && Character.isLetterOrDigit(query.charAt(asStart + 2))) {
+            return null;
+        }
+        int typeStart = skipWhitespaceForward(query, asStart + 2);
+        if (typeStart < 0) {
+            return null;
+        }
+        int typeEnd = typeStart;
+        while (typeEnd < query.length() && query.charAt(typeEnd) != ')') {
+            typeEnd++;
+        }
+        String type = query.substring(typeStart, typeEnd).trim().toLowerCase(Locale.ROOT).replaceAll("\\s+", " ");
+        if (type.startsWith("timestamp") || type.startsWith("timestamptz") || "date".equals(type) || type.startsWith("time")) {
+            return type;
+        }
+        return null;
+    }
+
+    private static int skipWhitespaceBackward(String query, int index) {
+        int i = index;
+        while (i >= 0 && Character.isWhitespace(query.charAt(i))) {
+            i--;
+        }
+        return i;
+    }
+
+    private static int skipWhitespaceForward(String query, int index) {
+        int i = index;
+        while (i < query.length() && Character.isWhitespace(query.charAt(i))) {
+            i++;
+        }
+        return i < query.length() ? i : -1;
     }
 
     /** Counts {@code ?} outside single-quoted literals ({@code ''} escapes handled). */

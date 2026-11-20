@@ -435,19 +435,15 @@ public class ApplicationController {
             @RequestBody(required = false) RunReportRequest request,
             Authentication authentication
     ) {
-        try {
-            String reportPath = ReportService.reportPath(reportId);
-            objectAccessService.requireRead(reportPath, authentication);
-            Map<String, Object> parameters = request != null && request.parameters() != null
-                    ? request.parameters()
-                    : Map.of();
-            return VariableAclRequestContext.callAsMember(
-                    authentication,
-                    () -> reportService.run(appId, reportId, parameters)
-            );
-        } catch (IllegalArgumentException ex) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
-        }
+        String reportPath = ReportService.reportPath(reportId);
+        objectAccessService.requireRead(reportPath, authentication);
+        Map<String, Object> parameters = request != null && request.parameters() != null
+                ? request.parameters()
+                : Map.of();
+        return VariableAclRequestContext.callAsMember(
+                authentication,
+                () -> reportService.run(appId, reportId, parameters)
+        );
     }
 
     @GetMapping("/{appId}/reports/{reportId}/export")
@@ -458,23 +454,19 @@ public class ApplicationController {
             @RequestParam Map<String, String> queryParams,
             Authentication authentication
     ) {
-        try {
-            String reportPath = ReportService.reportPath(reportId);
-            objectAccessService.requireRead(reportPath, authentication);
-            Map<String, Object> parameters = new LinkedHashMap<>(queryParams);
-            parameters.remove("format");
-            ReportExportFormat exportFormat = ReportExportFormat.parse(format);
-            var exported = VariableAclRequestContext.callAsMember(
-                    authentication,
-                    () -> reportService.export(appId, reportId, exportFormat, parameters)
-            );
-            return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + exported.filename() + "\"")
-                    .contentType(org.springframework.http.MediaType.parseMediaType(exported.contentType()))
-                    .body(exported.content());
-        } catch (IllegalArgumentException ex) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
-        }
+        String reportPath = ReportService.reportPath(reportId);
+        objectAccessService.requireRead(reportPath, authentication);
+        Map<String, Object> parameters = new LinkedHashMap<>(queryParams);
+        parameters.remove("format");
+        ReportExportFormat exportFormat = ReportExportFormat.parse(format);
+        var exported = VariableAclRequestContext.callAsMember(
+                authentication,
+                () -> reportService.export(appId, reportId, exportFormat, parameters)
+        );
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + exported.filename() + "\"")
+                .contentType(org.springframework.http.MediaType.parseMediaType(exported.contentType()))
+                .body(exported.content());
     }
 
     @PostMapping("/{appId}/functions/deploy")
