@@ -31,8 +31,8 @@ Before v1.0: new install = new DB; changing `ISPF_METADATA_DB_KIND` = empty DB +
 | Historian buckets | `JdbcVariableHistoryQueryStore` | `extract(epoch...)`, `to_timestamp` | `variableSampleBucketAggregateSql()` |
 | Timescale | `TimescaleHypertableInitializer` | `create_hypertable` | `supportsTimescale()` |
 | Leader locks | `PlatformLeaderLockService` | Table leases (`platform_leader_locks`) — not `pg_advisory_lock` | Keep table leases on MSSQL ([0078](decisions/0078-mssql-metadata-certification.md)) |
-| Audit / script locks | `AuditChainStore`, function `advisoryLock` | `pg_advisory_xact_lock` (+ SQLSTATE `23505`) | Dialect API required before MSSQL prod (0078) |
-| JDBC `LIMIT` stores | Audit/config stores + event journal | Hardcoded `LIMIT` in places | `OFFSET/FETCH` / `TOP` via dialect **before B1** (audit/config) and **B2** (event journal) — see [0078](decisions/0078-mssql-metadata-certification.md) |
+| Audit / script locks | `AuditChainStore`, function `advisoryLock` | `pg_advisory_xact_lock` (+ SQLSTATE `23505`) | Dialect / table lock landed for B1 lab; keep for named-SKU gate ([0078](decisions/0078-mssql-metadata-certification.md)) |
+| JDBC `LIMIT` stores | Audit/config stores + event journal | Dialect `limitClause()` for B1 audit/config; journal still B2 | B2 journal path still needs dialect coverage — see [0078](decisions/0078-mssql-metadata-certification.md) |
 
 ## JDBC stores (raw SQL)
 
@@ -43,7 +43,7 @@ Before v1.0: new install = new DB; changing `ISPF_METADATA_DB_KIND` = empty DB +
 | Env | Purpose |
 |-----|------------|
 | `ISPF_DB_URL` | JDBC URL metadata + jdbc time-series |
-| `ISPF_METADATA_DB_KIND` | `postgresql`, `h2`, `mssql`, `mysql`, `oracle` (optional, auto-detect if empty). **`mssql` / `mysql` / `oracle` — not production** until certified ([0078](decisions/0078-mssql-metadata-certification.md)) |
+| `ISPF_METADATA_DB_KIND` | `postgresql`, `h2`, `mssql`, `mysql`, `oracle` (optional, auto-detect if empty). **`mssql` — lab green, production banned** until named-SKU gate ([0078](decisions/0078-mssql-metadata-certification.md), [checklist](mssql-sku-promotion-checklist.md)); **`mysql` / `oracle` — boot refused** until their gates ([0079](decisions/0079-mysql-metadata-certification.md), [0080](decisions/0080-oracle-metadata-certification.md)) |
 | `ISPF_EVENT_JOURNAL_STORE` | `jdbc` = same DB |
 | `ISPF_VARIABLE_HISTORY_STORE` | `jdbc` = same DB |
 

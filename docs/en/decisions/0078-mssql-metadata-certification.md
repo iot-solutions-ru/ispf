@@ -2,18 +2,18 @@
 
 ## Status
 
-**Accepted** (2026-11-19) — policy and certification contract. Implementation **In progress** (Phase 1 dialect/boot-guard + generated `mssql/V1__baseline.sql`; production ban remains until §8 gate).
+**Accepted** (2026-11-19) — policy and certification contract. Implementation **Lab green (B1)** (Flyway `mssql/V1`, boot fences, TCKs, lockstep CI, lab harness [`tools/mssql-b1-lab`](../../tools/mssql-b1-lab/README.md)); production ban remains until the §8 named-SKU gate.
 
 Amends [0037-relational-core-portability](0037-relational-core-portability.md) and [0064-release-compatibility-lts](0064-release-compatibility-lts.md): MS SQL Server is the **first** non-PG production engine target. This ADR defines what “certified” means, what is explicitly **not** claimed, and the gate that must pass before operators may set `ISPF_METADATA_DB_KIND=mssql` in production.
 
-**Does not** schedule MySQL or Oracle. Those remain “after MSSQL” placeholders in 0037 with **no** delivery commitment.
+MySQL / Oracle follow-on charters: [0079](0079-mysql-metadata-certification.md), [0080](0080-oracle-metadata-certification.md) — implementation starts only after this ADR’s named-SKU gate.
 
 ## Context
 
 Operators (including GxP EMS sites) often standardize on Microsoft SQL Server for DBA process, backup, and corporate policy. ISPF today:
 
 - Runs the relational core on **PostgreSQL 16 (+ Timescale)** or **H2** (local/edge).
-- Exposes `MssqlDialect` and `db/migration/mssql/README.md` only — **no** Flyway baseline.
+- Ships `MssqlDialect`, generated `db/migration/mssql/V1__baseline.sql`, and fail-closed B1 boot fences — **lab-certified**, not production until §8.
 - Already reaches corporate MSSQL via **external** `DATA_SOURCE` / JDBC for reports and bindings (read paths). That is **not** the same as hosting `ISPF_DB` on MSSQL.
 
 ADR-0037 promised portability via dialect packs. Without a certification contract, “works with any DB through JDBC” is misread as “platform metadata runs on any JDBC URL.”
