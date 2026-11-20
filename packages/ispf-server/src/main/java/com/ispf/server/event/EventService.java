@@ -191,16 +191,33 @@ public class EventService implements WorkflowEventPublish {
      */
     @Transactional(readOnly = true)
     public List<ObjectEvent> list(String objectPath, int limit, String filterPath, String expression) {
+        return list(objectPath, limit, filterPath, expression, null, null);
+    }
+
+    /**
+     * @param beforeOccurredAt optional keyset cursor time
+     * @param beforeId optional tie-break id when timestamps collide
+     */
+    @Transactional(readOnly = true)
+    public List<ObjectEvent> list(
+            String objectPath,
+            int limit,
+            String filterPath,
+            String expression,
+            Instant beforeOccurredAt,
+            String beforeId
+    ) {
         if (limit < 1) {
             throw new IllegalArgumentException("Event limit must be positive");
         }
         int capped = Math.min(limit, 200);
         EventFilterDefinition filter = resolveFilter(filterPath);
         String expr = normalizeExpression(expression);
-        // Over-fetch when filtering so pattern/severity/CEL cuts still return a full page.
+        // Over-fetch when filtering so pattern/payload/CEL cuts still return a full page.
         int fetchLimit = (filter != null || expr != null) ? Math.min(1000, capped * 10) : capped;
         boolean globalQuery = objectPath == null || objectPath.isBlank();
-        List<ObjectEvent> fromCache = recentEventCache.isEnabled()
+        boolean keyset = beforeOccurredAt != null;
+        List<ObjectEvent> fromCache = (!keyset && recentEventCache.isEnabled())
                 ? recentEventCache.query(objectPath, fetchLimit)
                 : List.of();
         if (!eventJournalProperties.isEnabled()) {
@@ -209,7 +226,7 @@ public class EventService implements WorkflowEventPublish {
         if (!globalQuery && !objectManager.isEventJournalEnabled(objectPath.trim())) {
             return applyFilter(fromCache, filter, expr, capped);
         }
-        if (filter == null && expr == null && fromCache.size() >= capped) {
+        if (!keyset && filter == null && expr == null && fromCache.size() >= capped) {
             return fromCache.subList(0, capped);
         }
         boolean skipGlobalStore = globalQuery
@@ -224,7 +241,9 @@ public class EventService implements WorkflowEventPublish {
         }
         int remaining = Math.max(0, fetchLimit - fromCache.size());
         List<EventJournalRecord> records = remaining > 0
-                ? eventJournalStore.queryRecent(objectPath, remaining)
+                ? (keyset
+                        ? eventJournalStore.queryRecentBefore(objectPath, beforeOccurredAt, beforeId, remaining)
+                        : eventJournalStore.queryRecent(objectPath, remaining))
                 : List.of();
         List<ObjectEvent> merged = new ArrayList<>(fromCache);
         for (EventJournalRecord record : records) {
@@ -235,7 +254,13 @@ public class EventService implements WorkflowEventPublish {
                 }
             }
         }
-        merged.sort((left, right) -> right.timestamp().compareTo(left.timestamp()));
+        merged.sort((left, right) -> {
+            int byTime = right.timestamp().compareTo(left.timestamp());
+            if (byTime != 0) {
+                return byTime;
+            }
+            return right.id().compareTo(left.id());
+        });
         return applyFilter(merged, filter, expr, capped);
     }
 

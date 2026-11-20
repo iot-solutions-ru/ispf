@@ -20,7 +20,7 @@ Runtime: `MssqlDialect` — session schema switch unsupported (no `USE`); table-
 
 **Cert bundle:** tree-only fixture `mssql-b1-cert-bundle.json` (no migrations). Lab gate: `MssqlBundleImportTckTest` (skips without Docker).
 
-**Single-engine (opt-in, not Prod Yes):** `ISPF_MSSQL_SINGLE_ENGINE=true` allows JDBC history and journal on this database and refuses warm tier, cold archive, dual-write, and cluster. Boot also requires RCSI and a `_CS_` collation. Profile: [examples/mssql-single-engine](../../../../../../../../examples/mssql-single-engine/README.md).
+**Single-engine (opt-in, not Prod Yes):** `ISPF_MSSQL_SINGLE_ENGINE=true` allows JDBC history and journal on this database and refuses warm tier, cold archive, dual-write, and cluster. Boot also requires RCSI and a `_CS_` collation. Retention clamps to `ispf.relational.mssql.max-retention-days` (default 90) until monthly partitions land. `V101.1__single_engine_historian_divergence.sql` adds the unique series+time index, `variable_sample_rollups`, and `historian_spool_batches` — not the partition/PK rewrite. Profile: [examples/mssql-single-engine](../../../../../../../../examples/mssql-single-engine/README.md).
 
 Delivery board: [mssql-certification-epic](../../../../../../../../docs/en/mssql-certification-epic.md).
 

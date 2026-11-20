@@ -54,6 +54,8 @@ public class EventController {
             @RequestParam(defaultValue = "50") int limit,
             @RequestParam(required = false) String filterPath,
             @RequestParam(required = false) String expr,
+            @RequestParam(required = false) Instant before,
+            @RequestParam(required = false) String beforeId,
             Authentication authentication
     ) {
         String canonicalObject = canonicalizeOptional(objectPath, authentication);
@@ -68,7 +70,7 @@ public class EventController {
             objectAccessService.requireRead(canonicalFilter, authentication);
         }
         try {
-            return eventService.list(canonicalObject, limit, canonicalFilter, expr).stream()
+            return eventService.list(canonicalObject, limit, canonicalFilter, expr, before, beforeId).stream()
                     .filter(event -> tenantScopeService.isPathVisible(event.objectPath(), authentication))
                     .filter(event -> objectAccessService.canRead(event.objectPath(), authentication))
                     .map(event -> virtualizeEvent(event, authentication))

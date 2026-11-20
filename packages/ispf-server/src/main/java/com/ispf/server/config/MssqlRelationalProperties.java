@@ -12,6 +12,11 @@ public class MssqlRelationalProperties {
     private boolean jdbcBufferEnabled = false;
     private String jdbcBufferDirectory = "data/mssql-jdbc-buffer";
     private long jdbcBufferMaxBytes = 268_435_456L;
+    /**
+     * Hard ceiling while monthly partitions are not applied (Gate C).
+     * Clamp every variable retention to this many days when single-engine is on.
+     */
+    private int maxRetentionDays = 90;
 
     public boolean isSingleEngine() {
         return singleEngine;
@@ -43,5 +48,13 @@ public class MssqlRelationalProperties {
 
     public void setJdbcBufferMaxBytes(long jdbcBufferMaxBytes) {
         this.jdbcBufferMaxBytes = jdbcBufferMaxBytes;
+    }
+
+    public int getMaxRetentionDays() {
+        return maxRetentionDays;
+    }
+
+    public void setMaxRetentionDays(int maxRetentionDays) {
+        this.maxRetentionDays = Math.max(1, maxRetentionDays);
     }
 }

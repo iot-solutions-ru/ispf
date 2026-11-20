@@ -71,12 +71,13 @@ Do not quote B1 + B2-core + archive + spool as one delivery.
 
 - [x] Bucket SQL on MSSQL uses `DATE_BUCKET` and a SARGable `observed_at` predicate (no `DATEDIFF` int overflow, no `COALESCE` wrapper)
 - [x] Opt-in `mssql-single-engine` boot profile: JDBC journal/history allowed only when the flag is on; warm tier, cold archive, dual-write, cluster, and row isolation stay refused
-- [ ] Event journal deep pages use keyset pagination (recent page already uses dialect `FETCH NEXT`)
-- [ ] History write + bucket aggregate **TCK on MSSQL** (`history-bucket-mssql`)
-- [ ] Retention: schema-fork partitioning **before** any production B2, or a documented cap until then
+- [x] Event journal deep pages use keyset pagination (`before` / `beforeId` → `queryRecentBefore`)
+- [x] History write + bucket aggregate **TCK on MSSQL** (`MssqlHistoryBucketTckTest`, tag `mssql-docker`; skips without Docker)
+- [x] Retention: documented cap `ispf.relational.mssql.max-retention-days` (default 90) while single-engine is on — **not** a substitute for Gate C partitions
 - [ ] Named report fixture filled in ADR-0078 §2b **or** keep ≤20 s as non-claim
 - [ ] Dedicated **instance** requirement enforced in deploy docs
 - [ ] 0037 cell **Prod Yes (B2)** only after the archive gate — **not** this change
+- [ ] Gate C archive: monthly partitions + PK rewrite + SWITCH retention (V101.1 only adds unique series+time key, rollup table DDL, spool batch tokens)
 
 ### Phase 6 — Cluster honesty
 
