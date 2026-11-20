@@ -197,7 +197,12 @@ public class TreeCrudService {
         }
     }
 
-    @Transactional
+    /**
+     * A missing path throws before any row is written. That exception must not mark a caller's
+     * transaction rollback-only: bulk delete catches it per path and still commits the paths that
+     * were removed in the same request.
+     */
+    @Transactional(noRollbackFor = ObjectNotFoundException.class)
     public void delete(String path) {
         if (path == null || path.isBlank() || "root".equals(path)) {
             throw new IllegalArgumentException("Cannot delete root object");
