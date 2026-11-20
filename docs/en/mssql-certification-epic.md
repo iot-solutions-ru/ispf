@@ -78,7 +78,8 @@ Do not quote B1 + B2-core + archive + spool as one delivery. B1 boot fences stay
 - [ ] Named report fixture filled in ADR-0078 §2b **or** keep ≤20 s as non-claim (kept as non-claim)
 - [x] Dedicated **instance** requirement in [examples/mssql-single-engine](../../examples/mssql-single-engine/README.md) + Gate B evidence (lab container has no co-tenant OLTP)
 - [ ] 0037 cell **Prod Yes (B2)** only after the archive gate — **not** this change
-- [ ] Gate C archive: monthly partitions + PK rewrite + SWITCH retention (V101.1 only adds unique series+time key, rollup table DDL, spool batch tokens)
+- [x] Gate C1: empty-DB monthly partitions + PK `(sampled_at, id)` + status `APPLIED`/`SKIPPED_NONEMPTY` (`V101.2`, operator SPLIT script) — **not** SWITCH retention
+- [ ] Gate C2: rollup materializer + SWITCH/TRUNCATE retention cutover (still required before 0037 **Prod Yes (B2)**)
 
 ### Phase 6 — Cluster honesty
 

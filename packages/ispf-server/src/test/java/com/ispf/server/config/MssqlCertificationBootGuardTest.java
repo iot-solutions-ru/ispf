@@ -112,6 +112,26 @@ class MssqlCertificationBootGuardTest {
     }
 
     @Test
+    void singleEngineRefusesJpaHistoryStore() {
+        MssqlCertificationBootGuard guard = newGuard(
+                false, TenantIsolationProperties.IsolationMode.LOGICAL, true, "jpa", false, true, "jdbc", false,
+                true, false, false);
+        assertThatThrownBy(guard::refuseUnsupportedMssqlModes)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("jpa");
+    }
+
+    @Test
+    void singleEngineRefusesHistoryStoreTypo() {
+        MssqlCertificationBootGuard guard = newGuard(
+                false, TenantIsolationProperties.IsolationMode.LOGICAL, true, "jbdc", false, true, "jdbc", false,
+                true, false, false);
+        assertThatThrownBy(guard::refuseUnsupportedMssqlModes)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("jbdc");
+    }
+
+    @Test
     void b1StillRefusesJdbcHistory() {
         MssqlCertificationBootGuard guard = newGuard(
                 false, TenantIsolationProperties.IsolationMode.LOGICAL, true, "jdbc", false, false, "jdbc", false,

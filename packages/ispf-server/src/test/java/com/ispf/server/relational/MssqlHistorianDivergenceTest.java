@@ -12,5 +12,7 @@ class MssqlHistorianDivergenceTest {
         assertThat(MssqlHistorianDivergence.greenfieldPrimaryKeySketch()).contains("sampled_at");
         assertThat(MssqlHistorianDivergence.rollupTableSketch()).contains("variable_sample_rollups");
         assertThat(MssqlHistorianDivergence.V101_1_FOUNDATION).contains("variable_sample_rollups");
+        assertThat(MssqlHistorianDivergence.V101_2_PARTITIONS).contains("APPLIED");
+        assertThat(MssqlHistorianDivergence.STATUS_SKIPPED_NONEMPTY).isEqualTo("SKIPPED_NONEMPTY");
     }
 }

@@ -2,23 +2,32 @@ package com.ispf.server.relational;
 
 /**
  * Greenfield target for MSSQL history. Partition/PK rewrite is not applied to {@code V1__baseline.sql}.
- * Foundation objects (unique series+time key, rollup table, spool batch tokens) land in
- * {@code V101.1__single_engine_historian_divergence.sql}. An in-place PK rewrite after production B2
- * would break ADR-0064.
+ * Foundation objects land in {@code V101.1}; empty-only monthly partitions in {@code V101.2}.
+ * An in-place PK rewrite after rows exist is refused (ADR-0064) and recorded as {@code SKIPPED_NONEMPTY}.
  */
 public final class MssqlHistorianDivergence {
 
     public static final String NOT_APPLIED =
-            "Partition/PK rewrite not applied to V1. Monthly partitions. Partition column sampled_at must sit in the primary key.";
+            "Partition/PK rewrite not applied to V1. Monthly partitions require an empty variable_samples (V101.2) or a new database.";
 
     /** Applied by Flyway V101.1 on the mssql pack (not a Timescale twin; avoids squatting shared V102). */
     public static final String V101_1_FOUNDATION =
             "uq_variable_samples_series_time + variable_sample_rollups + historian_spool_batches";
 
+    /**
+     * Flyway V101.2 empty-table rebuild. Durable row in {@code mssql_historian_partition_status}:
+     * {@code APPLIED} or {@code SKIPPED_NONEMPTY}. SWITCH retention and event_history partitions stay deferred.
+     */
+    public static final String V101_2_PARTITIONS =
+            "Empty-only variable_samples PK (sampled_at, id) on pf/ps_variable_samples_month; status APPLIED|SKIPPED_NONEMPTY";
+
+    public static final String STATUS_APPLIED = "APPLIED";
+    public static final String STATUS_SKIPPED_NONEMPTY = "SKIPPED_NONEMPTY";
+
     private MssqlHistorianDivergence() {
     }
 
-    /** Sketch only — Flyway does not rewrite the IDENTITY PK yet. */
+    /** Greenfield / V101.2 APPLIED shape. */
     public static String greenfieldPrimaryKeySketch() {
         return "PRIMARY KEY (sampled_at, id)";
     }

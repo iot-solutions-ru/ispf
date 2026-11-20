@@ -9,6 +9,7 @@ Operator scripts for a **single-node** stand. Not a production deploy path.
 | `stand-b2-local.ps1` | AMD64 Gate B: same SQL + `ISPF_MSSQL_SINGLE_ENGINE=true` on DB `ispf_b2` (:18082) |
 | `gate-evidence.sh` | B1 §8 evidence collector (`MSSQL_SA_PASSWORD` required). Signed B1: `gate-evidence-local-evaluation.json` |
 | `gate-b2-core.ps1` | Gate B evidence (history write, DATE_BUCKET, journal JDBC, purge). Output: `gate-evidence-b2-core-evaluation.json` |
+| `split-variable-samples-horizon.sql` | Gate C1: SPLIT empty monthly horizon + alignment check (no SWITCH) |
 | `load.sh` | Cert-bundle import + concurrent `by-path` soak |
 | `loadtest.py` / `loadtest-run.sh` | Metadata RPS/latency (read / serial import / write / mixed) |
 
@@ -20,7 +21,7 @@ Operator scripts for a **single-node** stand. Not a production deploy path.
 - `ISPF_EVENT_JOURNAL_ENABLED=false` (or non-JDBC store)
 - `ISPF_CLUSTER_ENABLED=false`
 
-Boot also refuses dual-write on MSSQL. JDBC history/journal need the opt-in single-engine profile ([examples/mssql-single-engine](../../examples/mssql-single-engine/README.md)). Gate B lab ≠ ADR-0037 **Prod Yes (B2)** (Gate C archive still open). Active-active stays refused.
+Boot also refuses dual-write on MSSQL. JDBC history/journal need the opt-in single-engine profile ([examples/mssql-single-engine](../../examples/mssql-single-engine/README.md)). Gate B lab ≠ ADR-0037 **Prod Yes (B2)**. Gate C1 (`V101.2`) partitions empty DBs only; SWITCH retention (C2) and Prod Yes B2 stay open. Active-active stays refused.
 
 ## Secrets
 

@@ -48,15 +48,16 @@ Opt-in `ISPF_MSSQL_SINGLE_ENGINE=true` plus `ISPF_HISTORIAN_DEPLOY_PROFILE=mssql
 
 ### Gate C — B2-archive (before any Prod Yes B2)
 
-Partition/PK rewrite is not applied to `V1`. In-place rewrite of `variable_samples` after a production B2 install is forbidden (ADR-0064).
+Partition/PK rewrite is not applied to `V1`. In-place rewrite of `variable_samples` after rows exist is forbidden (ADR-0064).
 
-**V101.1 foundation (migrated on the mssql pack):** unique series+time index `uq_variable_samples_series_time`, table `variable_sample_rollups`, table `historian_spool_batches`. See `MssqlHistorianDivergence.V101_1_FOUNDATION`. Automatic buffer replay and a JDBC rollup materializer job are still open.
+**V101.1 foundation (migrated on the mssql pack):** unique series+time index `uq_variable_samples_series_time`, table `variable_sample_rollups`, table `historian_spool_batches`. See `MssqlHistorianDivergence.V101_1_FOUNDATION`.
 
-Still open (sketched in `MssqlHistorianDivergence`, not migrated):
+**V101.2 Gate C1 (migrated, empty DB only):** rebuilds `variable_samples` to `PRIMARY KEY (sampled_at, id)` on monthly `RANGE RIGHT` partitions (`pf`/`ps_variable_samples_month`, `PRIMARY` filegroup, `LOCK_ESCALATION = AUTO`). Durable status in `mssql_historian_partition_status`: `APPLIED` or `SKIPPED_NONEMPTY`. Nonempty databases keep the IDENTITY PK and the 90-day `DELETE` retention path. Operator horizon extend: `tools/mssql-b1-lab/split-variable-samples-horizon.sql` (SPLIT only — no SWITCH). TCK: `MssqlVariableSamplesPartitionTckTest`. See `MssqlHistorianDivergence.V101_2_PARTITIONS`.
 
-- Partition key (`sampled_at`) in the **primary key** (IDENTITY PK remains until a greenfield fork).
-- Monthly `SPLIT` ahead of the clock; `SWITCH` / `TRUNCATE` by a maintenance login. The runtime login does not mutate raw rows.
-- Per-variable retention vs a dropped month: single-engine mode uses one global floor (`max-retention-days`, default 90) until `SWITCH` exists, because `SWITCH` drops a time slice for every variable.
+Still open (Gate C2 / later — not Prod Yes B2 yet):
+
+- Monthly `SWITCH` / `TRUNCATE` retention by a maintenance login after a rollup watermark (runtime login stays without `ALTER`).
+- Per-variable retention vs a dropped month: single-engine mode keeps one global floor (`max-retention-days`, default 90) until that cutover, because `SWITCH` drops a time slice for every variable.
 - `event_history` partition retention (batched `DELETE TOP` is already in place).
 - A scheduled JDBC rollup materializer so multi-year reports do not scan raw `variable_samples`. The ClickHouse rollup services are not that table.
 - Automatic replay that relies on the V101.1 unique key (replay is still manual / off).
