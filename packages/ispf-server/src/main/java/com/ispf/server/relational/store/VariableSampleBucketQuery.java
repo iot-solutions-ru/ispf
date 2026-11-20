@@ -44,10 +44,9 @@ public class VariableSampleBucketQuery {
                         ps.setString(5, fieldName);
                         JdbcUtcTimestamps.bind(ps, 6, from);
                         JdbcUtcTimestamps.bind(ps, 7, to);
-                        ps.setLong(8, bucketSeconds);
                     },
                     (rs, rowNum) -> new SimpleVariableSampleBucketAggregate(
-                            rs.getTimestamp("bucket_start").toInstant(),
+                            JdbcUtcTimestamps.read(rs, "bucket_start"),
                             rs.getDouble("avg_val"),
                             rs.getDouble("min_val"),
                             rs.getDouble("max_val"),
@@ -58,7 +57,7 @@ public class VariableSampleBucketQuery {
         return jdbcTemplate.query(
                 dialect.variableSampleBucketAggregateSql(),
                 (rs, rowNum) -> new SimpleVariableSampleBucketAggregate(
-                        rs.getTimestamp("bucket_start").toInstant(),
+                        JdbcUtcTimestamps.read(rs, "bucket_start"),
                         rs.getDouble("avg_val"),
                         rs.getDouble("min_val"),
                         rs.getDouble("max_val"),

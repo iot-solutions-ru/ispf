@@ -8,12 +8,15 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
 @ConditionalOnProperty(name = "ispf.event-journal.store", havingValue = "jdbc", matchIfMissing = true)
@@ -37,17 +40,22 @@ public class JdbcEventJournalStore implements EventJournalStore {
     private final EventHistoryRecordCounter recordCounter;
     private final TimescaleHypertableInitializer timescaleHypertableInitializer;
     private final RelationalDialect relationalDialect;
+    private final TransactionTemplate requiresNewTx;
 
     public JdbcEventJournalStore(
             JdbcTemplate jdbcTemplate,
             EventHistoryRecordCounter recordCounter,
             TimescaleHypertableInitializer timescaleHypertableInitializer,
-            RelationalDialect relationalDialect
+            RelationalDialect relationalDialect,
+            PlatformTransactionManager transactionManager
     ) {
         this.jdbcTemplate = jdbcTemplate;
         this.recordCounter = recordCounter;
         this.timescaleHypertableInitializer = timescaleHypertableInitializer;
         this.relationalDialect = relationalDialect;
+        TransactionTemplate tx = new TransactionTemplate(transactionManager);
+        tx.setPropagationBehavior(Propagation.REQUIRES_NEW.value());
+        this.requiresNewTx = tx;
     }
 
     @Override
@@ -182,63 +190,30 @@ public class JdbcEventJournalStore implements EventJournalStore {
     }
 
     @Override
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void purgeOlderThan(Instant cutoff) {
         deleteOlderThan(cutoff, null);
     }
 
     @Override
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public long deleteOlderThan(Instant cutoff, String objectPath) {
         if (relationalDialect.kind() == RelationalDbKind.MSSQL) {
             return deleteOlderThanMssql(cutoff, objectPath);
         }
-        long deleted;
-        if (objectPath == null || objectPath.isBlank()) {
-            deleted = jdbcTemplate.update(connection -> {
-                java.sql.PreparedStatement statement = connection.prepareStatement(
-                        "DELETE FROM event_history WHERE occurred_at < ?");
-                JdbcUtcTimestamps.bind(statement, 1, cutoff);
-                return statement;
-            });
-        } else {
-            String path = objectPath;
-            deleted = jdbcTemplate.update(connection -> {
-                java.sql.PreparedStatement statement = connection.prepareStatement(
-                        """
-                                DELETE FROM event_history
-                                WHERE occurred_at < ?
-                                  AND (object_path = ? OR object_path LIKE ?)
-                                """);
-                JdbcUtcTimestamps.bind(statement, 1, cutoff);
-                statement.setString(2, path);
-                statement.setString(3, path + ".%");
-                return statement;
-            });
-        }
-        recordCounter.recordDeleted(deleted);
-        return deleted;
-    }
-
-    /** Bounded batches so a multi-year purge does not hold one giant transaction lock. */
-    private long deleteOlderThanMssql(Instant cutoff, String objectPath) {
-        long total = 0;
-        int deleted;
-        boolean global = objectPath == null || objectPath.isBlank();
-        do {
-            if (global) {
-                deleted = jdbcTemplate.update(connection -> {
+        Long deleted = requiresNewTx.execute(status -> {
+            long count;
+            if (objectPath == null || objectPath.isBlank()) {
+                count = jdbcTemplate.update(connection -> {
                     java.sql.PreparedStatement statement = connection.prepareStatement(
-                            "DELETE TOP (5000) FROM event_history WHERE occurred_at < ?");
+                            "DELETE FROM event_history WHERE occurred_at < ?");
                     JdbcUtcTimestamps.bind(statement, 1, cutoff);
                     return statement;
                 });
             } else {
                 String path = objectPath;
-                deleted = jdbcTemplate.update(connection -> {
+                count = jdbcTemplate.update(connection -> {
                     java.sql.PreparedStatement statement = connection.prepareStatement(
                             """
-                                    DELETE TOP (5000) FROM event_history
+                                    DELETE FROM event_history
                                     WHERE occurred_at < ?
                                       AND (object_path = ? OR object_path LIKE ?)
                                     """);
@@ -248,6 +223,45 @@ public class JdbcEventJournalStore implements EventJournalStore {
                     return statement;
                 });
             }
+            return count;
+        });
+        long total = deleted != null ? deleted : 0L;
+        recordCounter.recordDeleted(total);
+        return total;
+    }
+
+    /** Each DELETE TOP commits in its own REQUIRES_NEW transaction (no multi-batch lock hold). */
+    private long deleteOlderThanMssql(Instant cutoff, String objectPath) {
+        long total = 0;
+        int deleted;
+        boolean global = objectPath == null || objectPath.isBlank();
+        do {
+            AtomicInteger batch = new AtomicInteger();
+            requiresNewTx.executeWithoutResult(status -> {
+                if (global) {
+                    batch.set(jdbcTemplate.update(connection -> {
+                        java.sql.PreparedStatement statement = connection.prepareStatement(
+                                "DELETE TOP (5000) FROM event_history WHERE occurred_at < ?");
+                        JdbcUtcTimestamps.bind(statement, 1, cutoff);
+                        return statement;
+                    }));
+                } else {
+                    String path = objectPath;
+                    batch.set(jdbcTemplate.update(connection -> {
+                        java.sql.PreparedStatement statement = connection.prepareStatement(
+                                """
+                                        DELETE TOP (5000) FROM event_history
+                                        WHERE occurred_at < ?
+                                          AND (object_path = ? OR object_path LIKE ?)
+                                        """);
+                        JdbcUtcTimestamps.bind(statement, 1, cutoff);
+                        statement.setString(2, path);
+                        statement.setString(3, path + ".%");
+                        return statement;
+                    }));
+                }
+            });
+            deleted = batch.get();
             total += deleted;
         } while (deleted == 5000);
         recordCounter.recordDeleted(total);

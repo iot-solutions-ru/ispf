@@ -1,6 +1,6 @@
 {
   "contextPackVersion": "ispf-1.0.0",
-  "generatedAt": "2026-11-17T14:19:24.135893+00:00",
+  "generatedAt": "2026-11-20T12:40:47.060873+00:00",
   "platformVersion": "1.0.0",
   "bundleManifest": {
     "fields": [
@@ -18608,6 +18608,12 @@
       "keywords": "drivers Device drivers"
     },
     {
+      "id": "ems-solution-epic",
+      "path": "docs/en/ems-solution-epic.md",
+      "title": "Epic: EMS solution pack (separate from storage)",
+      "keywords": "ems-solution-epic Epic: EMS solution pack (separate from storage)"
+    },
+    {
       "id": "expression-language",
       "path": "docs/en/expression-language.md",
       "title": "Expression language reference",
@@ -18788,10 +18794,34 @@
       "keywords": "messaging Messaging Channels: REST/BFF, WebSocket, Event Journal, and NATS"
     },
     {
+      "id": "mssql-certification-epic",
+      "path": "docs/en/mssql-certification-epic.md",
+      "title": "Epic: MS SQL Server relational certification (ADR-0078)",
+      "keywords": "mssql-certification-epic Epic: MS SQL Server relational certification (ADR-0078)"
+    },
+    {
+      "id": "mssql-single-engine-ems-epic",
+      "path": "docs/en/mssql-single-engine-ems-epic.md",
+      "title": "Epic: MSSQL single-engine (metadata + journal + history)",
+      "keywords": "mssql-single-engine-ems-epic Epic: MSSQL single-engine (metadata + journal + history)"
+    },
+    {
+      "id": "mssql-sku-promotion-checklist",
+      "path": "docs/en/mssql-sku-promotion-checklist.md",
+      "title": "MSSQL B1 SKU promotion checklist (ADR-0078 §8)",
+      "keywords": "mssql-sku-promotion-checklist MSSQL B1 SKU promotion checklist (ADR-0078 §8)"
+    },
+    {
       "id": "multi-tenant",
       "path": "docs/en/multi-tenant.md",
       "title": "Multi-tenant SaaS (BL-125, BL-126, BL-155)",
       "keywords": "multi-tenant Multi-tenant SaaS (BL-125, BL-126, BL-155)"
+    },
+    {
+      "id": "mysql-certification-epic",
+      "path": "docs/en/mysql-certification-epic.md",
+      "title": "Epic: MySQL relational certification (ADR-0079)",
+      "keywords": "mysql-certification-epic Epic: MySQL relational certification (ADR-0079)"
     },
     {
       "id": "object-functions",
@@ -18834,6 +18864,12 @@
       "path": "docs/en/operator-pwa-android-smoke.md",
       "title": "Operator PWA — Android Chrome smoke checklist (BL-90)",
       "keywords": "operator-pwa-android-smoke Operator PWA — Android Chrome smoke checklist (BL-90)"
+    },
+    {
+      "id": "oracle-certification-epic",
+      "path": "docs/en/oracle-certification-epic.md",
+      "title": "Epic: Oracle relational certification (ADR-0080)",
+      "keywords": "oracle-certification-epic Epic: Oracle relational certification (ADR-0080)"
     },
     {
       "id": "ot-automation-excellence-tutorials",
@@ -19650,6 +19686,24 @@
       "path": "docs/en/decisions/0077-contextpack-hybrid-retrieval.md",
       "title": "ADR-0077: ContextPack hybrid retrieval",
       "keywords": "adr decision 0077-contextpack-hybrid-retrieval ADR-0077: ContextPack hybrid retrieval"
+    },
+    {
+      "id": "adr-0078-mssql-metadata-certification",
+      "path": "docs/en/decisions/0078-mssql-metadata-certification.md",
+      "title": "ADR-0078: MS SQL Server metadata certification (amends 0037)",
+      "keywords": "adr decision 0078-mssql-metadata-certification ADR-0078: MS SQL Server metadata certification (amends 0037)"
+    },
+    {
+      "id": "adr-0079-mysql-metadata-certification",
+      "path": "docs/en/decisions/0079-mysql-metadata-certification.md",
+      "title": "ADR-0079: MySQL metadata certification (amends 0037)",
+      "keywords": "adr decision 0079-mysql-metadata-certification ADR-0079: MySQL metadata certification (amends 0037)"
+    },
+    {
+      "id": "adr-0080-oracle-metadata-certification",
+      "path": "docs/en/decisions/0080-oracle-metadata-certification.md",
+      "title": "ADR-0080: Oracle metadata certification (amends 0037)",
+      "keywords": "adr decision 0080-oracle-metadata-certification ADR-0080: Oracle metadata certification (amends 0037)"
     }
   ],
   "apiSlice": {
@@ -71599,5 +71653,5 @@
   "embeddingModel": "ispf-hash-v1",
   "embeddingDims": 384,
   "embeddingCoverage": 41,
-  "contentSha256": "47fa933108647b94c7c2cd28f4cb10ab1944cb6313d9405107a50a5e780a76da"
+  "contentSha256": "a9a89f51d3460cbce0f05ad3b5796a53a17b341b163e6b45c6b7db78d686f1a1"
 }

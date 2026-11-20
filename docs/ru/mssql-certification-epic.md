@@ -21,4 +21,4 @@
 - [x] Active-active на MSSQL **не сертифицирован** — boot отказывает `ispf.cluster.enabled=true` (`MssqlCertificationBootGuard`).
 - [x] AG listener / RCSI / выделенная БД документированы в checklist продвижения SKU и README миграций MSSQL.
 
-**Prod Yes (B1)** подписан 2026-11-20 на SQL Server 2022 Enterprise Evaluation `16.0.4325.4` ([checklist](../en/mssql-sku-promotion-checklist.md), issue #814). Это 180-дневный trial класса Enterprise, не бессрочная лицензия. B1 fences для JDBC history/journal/dual-write/cluster остаются fail-closed. **Prod Yes (B2)** и Prod Yes для A-A не подписаны.
+**Prod Yes (B1)** подписан 2026-11-20 на SQL Server 2022 Enterprise Evaluation `16.0.4325.4` ([checklist](../en/mssql-sku-promotion-checklist.md), issue #814). Это 180-дневный trial класса Enterprise, не бессрочная лицензия. B1 fences для JDBC history/journal/dual-write/cluster остаются fail-closed (JDBC history/journal — только opt-in `ISPF_MSSQL_SINGLE_ENGINE`). **Gate B (B2-core)** прогнан на Evaluation (`gate-evidence-b2-core-evaluation.json`); **Prod Yes (B2)** в 0037 — только после Gate C (partitions). A-A не подписан.

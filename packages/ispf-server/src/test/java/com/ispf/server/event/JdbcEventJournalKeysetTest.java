@@ -6,6 +6,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 import java.time.Instant;
@@ -46,7 +47,8 @@ class JdbcEventJournalKeysetTest {
         TimescaleHypertableInitializer timescale = mock(TimescaleHypertableInitializer.class);
         when(timescale.isEventHistoryTimescaleActive()).thenReturn(false);
         EventHistoryRecordCounter counter = mock(EventHistoryRecordCounter.class);
-        store = new JdbcEventJournalStore(jdbc, counter, timescale, new H2Dialect());
+        store = new JdbcEventJournalStore(
+                jdbc, counter, timescale, new H2Dialect(), new DataSourceTransactionManager(dataSource));
     }
 
     @AfterEach

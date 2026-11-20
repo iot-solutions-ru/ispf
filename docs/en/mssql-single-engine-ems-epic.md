@@ -31,7 +31,7 @@ Not this epic: Part 11 / a validated EMS, multi-tenant RLS, ISPF active-active, 
 
 Engineering in repo: `V1__baseline.sql` is frozen as the greenfield squash (do not regenerate after a site has applied it). Boot preflight for RCSI + a `_CS_` collation runs only when single-engine mode is on.
 
-**Still open:** a human signature on one non-Developer cell of [mssql-sku-promotion-checklist](mssql-sku-promotion-checklist.md). This epic does **not** move ADR-0037 to Prod Yes (B1).
+**Signed:** ADR-0037 **Prod Yes (B1)** on SQL Server 2022 Enterprise Evaluation `16.0.4325.4` ([checklist](mssql-sku-promotion-checklist.md)). Licensed Standard / Enterprise / Azure SQL DB|MI cells still need their own re-run.
 
 ### Gate B — B2-core (capped retention)
 
@@ -44,7 +44,7 @@ Opt-in `ISPF_MSSQL_SINGLE_ENGINE=true` plus `ISPF_HISTORIAN_DEPLOY_PROFILE=mssql
 - Retention cap until Gate C: do not claim 10 years.
 - Testcontainers Developer edition is a smoke signal, not the §8 signature.
 
-**Exit sentence:** journal + history JDBC on the same dedicated instance, retention capped to N named in the fixture.
+**Lab exit (2026-11-20):** journal + history JDBC on Evaluation `16.0.4325.4`, dedicated lab DB `ispf_b2`, retention floor 90 days, measured `DELETE TOP` purge of 20 000 `event_history` rows in ~0.5 s (`tools/mssql-b1-lab/gate-evidence-b2-core-evaluation.json`). This is **Gate B engineering**, not ADR-0037 **Prod Yes (B2)** (Gate C still open). ≤20 s plant-wide scans stay a non-claim.
 
 ### Gate C — B2-archive (before any Prod Yes B2)
 

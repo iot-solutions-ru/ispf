@@ -74,8 +74,9 @@ Do not quote B1 + B2-core + archive + spool as one delivery. B1 boot fences stay
 - [x] Event journal deep pages use keyset pagination (`before` / `beforeId` → `queryRecentBefore`)
 - [x] History write + bucket aggregate **TCK on MSSQL** (`MssqlHistoryBucketTckTest`, tag `mssql-docker`; skips without Docker)
 - [x] Retention: documented cap `ispf.relational.mssql.max-retention-days` (default 90) while single-engine is on — **not** a substitute for Gate C partitions
-- [ ] Named report fixture filled in ADR-0078 §2b **or** keep ≤20 s as non-claim
-- [ ] Dedicated **instance** requirement enforced in deploy docs
+- [x] Gate B lab on Evaluation: `stand-b2-local.ps1` + `gate-b2-core.ps1` → `gate-evidence-b2-core-evaluation.json` (history write, DATE_BUCKET aggregate, journal JDBC, 20k-row purge ~0.5 s) — **not** 0037 Prod Yes (B2)
+- [ ] Named report fixture filled in ADR-0078 §2b **or** keep ≤20 s as non-claim (kept as non-claim)
+- [x] Dedicated **instance** requirement in [examples/mssql-single-engine](../../examples/mssql-single-engine/README.md) + Gate B evidence (lab container has no co-tenant OLTP)
 - [ ] 0037 cell **Prod Yes (B2)** only after the archive gate — **not** this change
 - [ ] Gate C archive: monthly partitions + PK rewrite + SWITCH retention (V101.1 only adds unique series+time key, rollup table DDL, spool batch tokens)
 
@@ -137,5 +138,5 @@ Keep [storage-portability-inventory](storage-portability-inventory.md) aligned w
 
 - [ADR-0078](decisions/0078-mssql-metadata-certification.md)
 - [ADR-0037](decisions/0037-relational-core-portability.md)
-- [known-limitations](known-limitations.md) — B1 Prod Yes is the signed Evaluation cell only; B2 and A-A stay refused at boot / non-claims unless single-engine opt-in
+- [known-limitations](known-limitations.md) — B1 Prod Yes is the signed Evaluation cell only; B2 needs single-engine opt-in (non-claim until Gate C); A-A stays refused at boot
 - [mssql-single-engine-ems-epic](mssql-single-engine-ems-epic.md) — opt-in JDBC journal/history; §2 non-claims stay
