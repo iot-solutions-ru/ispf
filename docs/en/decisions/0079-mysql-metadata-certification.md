@@ -35,4 +35,5 @@ No Flyway SQL is authorized or supplied by this policy ADR.
 - [0037-relational-core-portability](0037-relational-core-portability.md)
 - [0078-mssql-metadata-certification](0078-mssql-metadata-certification.md)
 - [0080-oracle-metadata-certification](0080-oracle-metadata-certification.md)
+- [mysql-certification-epic](../mysql-certification-epic.md)
 - [storage-portability-inventory](../storage-portability-inventory.md)
