@@ -33,7 +33,13 @@ public class WorkQueueService {
 
     @Transactional(readOnly = true)
     public List<WorkQueueItem> listOpenTasks(int limit, String operatorAppId) {
-        int pageSize = Math.max(1, limit);
+        if (limit < 0) {
+            throw new IllegalArgumentException("Work queue limit must not be negative");
+        }
+        if (limit == 0) {
+            return List.of();
+        }
+        int pageSize = limit;
         PageRequest page = PageRequest.of(0, pageSize);
         List<String> statuses = List.of("OPEN", "CLAIMED");
         List<WorkflowUserTaskEntity> tasks;
