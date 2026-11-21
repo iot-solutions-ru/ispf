@@ -26,6 +26,14 @@ public class MssqlRelationalProperties {
     private long rollupMaterializerTickMs = 60_000L;
     /** Catch-up chunk width in hours (walks oldest-first from the coverage cursor). */
     private int rollupMaterializerChunkHours = 24;
+    /**
+     * Chart-prep JDBC writer into {@code variable_sample_observed_rollups}. Default off.
+     * Walks a {@code sampled_at} arrival cursor and recomputes touched {@code observed_at} buckets.
+     * Does not cut over charts / {@code /history/aggregate}.
+     */
+    private boolean observedRollupMaterializerEnabled = false;
+    private long observedRollupMaterializerTickMs = 60_000L;
+    private int observedRollupMaterializerChunkHours = 24;
 
     public boolean isSingleEngine() {
         return singleEngine;
@@ -89,5 +97,29 @@ public class MssqlRelationalProperties {
 
     public void setRollupMaterializerChunkHours(int rollupMaterializerChunkHours) {
         this.rollupMaterializerChunkHours = Math.max(1, Math.min(168, rollupMaterializerChunkHours));
+    }
+
+    public boolean isObservedRollupMaterializerEnabled() {
+        return observedRollupMaterializerEnabled;
+    }
+
+    public void setObservedRollupMaterializerEnabled(boolean observedRollupMaterializerEnabled) {
+        this.observedRollupMaterializerEnabled = observedRollupMaterializerEnabled;
+    }
+
+    public long getObservedRollupMaterializerTickMs() {
+        return observedRollupMaterializerTickMs;
+    }
+
+    public void setObservedRollupMaterializerTickMs(long observedRollupMaterializerTickMs) {
+        this.observedRollupMaterializerTickMs = Math.max(1_000L, observedRollupMaterializerTickMs);
+    }
+
+    public int getObservedRollupMaterializerChunkHours() {
+        return observedRollupMaterializerChunkHours;
+    }
+
+    public void setObservedRollupMaterializerChunkHours(int observedRollupMaterializerChunkHours) {
+        this.observedRollupMaterializerChunkHours = Math.max(1, Math.min(168, observedRollupMaterializerChunkHours));
     }
 }

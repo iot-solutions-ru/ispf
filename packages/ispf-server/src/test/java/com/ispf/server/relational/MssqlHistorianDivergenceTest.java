@@ -15,5 +15,6 @@ class MssqlHistorianDivergenceTest {
         assertThat(MssqlHistorianDivergence.V101_2_PARTITIONS).contains("APPLIED");
         assertThat(MssqlHistorianDivergence.STATUS_SKIPPED_NONEMPTY).isEqualTo("SKIPPED_NONEMPTY");
         assertThat(MssqlHistorianDivergence.V101_3_ROLLUP_CURSOR).contains("rollup_cursor");
+        assertThat(MssqlHistorianDivergence.V101_4_OBSERVED_ROLLUPS).contains("observed_rollups");
     }
 }
