@@ -131,7 +131,7 @@ Regressions: [`strip-neuro-slang.py`](../../../tools/docs-audit/strip-neuro-slan
 | [0078-mssql-metadata-certification](0078-mssql-metadata-certification.md) | MS SQL Server metadata certification B1/B2 (amends 0037) — **Accepted** (B1 Prod Yes on Evaluation; B2/A-A boot-refused, not Prod Yes) |
 | [0079-mysql-metadata-certification](0079-mysql-metadata-certification.md) | MySQL 8.x B1 metadata certification charter (amends 0037) — **Accepted** (impl Not started) |
 | [0080-oracle-metadata-certification](0080-oracle-metadata-certification.md) | Oracle B1 metadata certification charter (amends 0037) — **Accepted** (impl Not started) |
-| [0081-mssql-historian-switch-retention](0081-mssql-historian-switch-retention.md) | MSSQL historian monthly SWITCH retention — **Accepted as design** (impl Not started; no SQL) |
+| [0081-mssql-historian-switch-retention](0081-mssql-historian-switch-retention.md) | MSSQL historian monthly SWITCH retention — **Accepted as design** (lab script exists; product/JVM Not started) |
 
 ## Topic chains (read in order)
 
