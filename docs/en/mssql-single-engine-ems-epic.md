@@ -60,11 +60,11 @@ Partition/PK rewrite is not applied to `V1`. In-place rewrite of `variable_sampl
 
 **V101.4 observed_at rollups (chart-prep, writes only):** table `variable_sample_observed_rollups` + arrival cursor `mssql_historian_observed_rollup_cursor`. Opt-in JDBC writer (`ISPF_MSSQL_OBSERVED_ROLLUP_MATERIALIZER`, default off) walks new `sampled_at` rows and recomputes touched `observed_at` 1h/1d buckets from raw rows still present. Charts / `/history/aggregate` still scan raw `observed_at`. See `MssqlHistorianDivergence.V101_4_OBSERVED_ROLLUPS`.
 
-**SWITCH retention (ADR-0081):** design locked; lab script `tools/mssql-b1-lab/switch-variable-samples-month.sql` (dry-run default, explicit ceiling + confirm). Retention **in force** for the product remains app `DELETE` + `max-retention-days`. No Flyway, JVM job, or stand wiring. Prod Yes B2 stays closed.
+**SWITCH retention (ADR-0081):** design locked; lab script `tools/mssql-b1-lab/switch-variable-samples-month.sql` (dry-run default, explicit ceiling + confirm). Dry-run evidence on Evaluation: `tools/mssql-b1-lab/gate-evidence-switch-dryrun-evaluation.json` (not §2b). Amendment (2026-11-21) allows empty Flyway staging DDL only; JVM/schedule `SWITCH` still forbidden. Retention **in force** for the product remains app `DELETE` + `max-retention-days`. Prod Yes B2 stays closed.
 
 Still open (later — not Prod Yes B2 yet):
 
-- Productizing ADR-0081 beyond the lab script (JVM/schedule/Flyway still refused); report/cursor alone still does not authorize drops.
+- Productizing ADR-0081 beyond the lab script (JVM/schedule/Flyway SWITCH still refused; 2026-11-21 amendment allows empty Flyway staging DDL only); report/cursor alone still does not authorize drops.
 - Per-variable retention vs a dropped month: single-engine mode keeps one global floor (`max-retention-days`, default 90) until that cutover, because `SWITCH` drops a time slice for every variable.
 - `event_history` partition retention (batched `DELETE TOP` is already in place).
 - Cutting operator charts / `/history/aggregate` over to `variable_sample_observed_rollups` (table + writer exist; read path unchanged).
