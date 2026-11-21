@@ -60,6 +60,42 @@ public class JdbcVariableSampleRollupConfiguration {
 
     @Bean
     @ConditionalOnProperty(prefix = "ispf.relational.mssql", name = "single-engine", havingValue = "true")
+    public JdbcMssqlObservedAtRollupMaterializer jdbcMssqlObservedAtRollupMaterializer(
+            JdbcTemplate jdbcTemplate,
+            MssqlRelationalProperties mssqlRelationalProperties,
+            VariableHistoryProperties variableHistoryProperties,
+            ClusterProperties clusterProperties,
+            RelationalDialect relationalDialect,
+            PlatformTransactionManager transactionManager
+    ) {
+        return new JdbcMssqlObservedAtRollupMaterializer(
+                jdbcTemplate,
+                mssqlRelationalProperties,
+                variableHistoryProperties,
+                clusterProperties,
+                relationalDialect,
+                transactionManager
+        );
+    }
+
+    @Bean
+    @ConditionalOnProperty(prefix = "ispf.relational.mssql", name = "single-engine", havingValue = "true")
+    public JdbcMssqlObservedAtRollupMaterializerRunner jdbcMssqlObservedAtRollupMaterializerRunner(
+            JdbcMssqlObservedAtRollupMaterializer materializer,
+            PlatformLeaderLockService leaderLockService,
+            ClusterProperties clusterProperties,
+            MssqlRelationalProperties mssqlRelationalProperties
+    ) {
+        return new JdbcMssqlObservedAtRollupMaterializerRunner(
+                materializer,
+                leaderLockService,
+                clusterProperties,
+                mssqlRelationalProperties
+        );
+    }
+
+    @Bean
+    @ConditionalOnProperty(prefix = "ispf.relational.mssql", name = "single-engine", havingValue = "true")
     public JdbcMssqlIngestRollupReportService jdbcMssqlIngestRollupReportService(
             JdbcVariableSampleRollupStore rollupStore,
             JdbcMssqlHistorianRollupMaterializer materializer,

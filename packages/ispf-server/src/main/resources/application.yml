@@ -101,6 +101,10 @@ ispf:
       rollup-materializer-enabled: ${ISPF_MSSQL_ROLLUP_MATERIALIZER:false}
       rollup-materializer-tick-ms: ${ISPF_MSSQL_ROLLUP_MATERIALIZER_TICK_MS:60000}
       rollup-materializer-chunk-hours: ${ISPF_MSSQL_ROLLUP_MATERIALIZER_CHUNK_HOURS:24}
+      # Chart-prep: observed_at rollups (arrival cursor on sampled_at). Default off. No chart cutover.
+      observed-rollup-materializer-enabled: ${ISPF_MSSQL_OBSERVED_ROLLUP_MATERIALIZER:false}
+      observed-rollup-materializer-tick-ms: ${ISPF_MSSQL_OBSERVED_ROLLUP_MATERIALIZER_TICK_MS:60000}
+      observed-rollup-materializer-chunk-hours: ${ISPF_MSSQL_OBSERVED_ROLLUP_MATERIALIZER_CHUNK_HOURS:24}
   datasource:
     external:
       default-pool-size: ${ISPF_DATASOURCE_EXTERNAL_POOL_SIZE:5}
