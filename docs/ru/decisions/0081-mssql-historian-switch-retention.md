@@ -2,7 +2,7 @@
 
 ## Статус
 
-**Accepted as design** (2026-11-20). **Amended** (2026-11-21): разрешён только пустой Flyway staging DDL; JVM/schedule `SWITCH` по-прежнему запрещены.
+**Accepted as design** (2026-11-20). **Amended** (2026-11-21): пустой Flyway staging DDL (`V101.5`) разрешён и отгружен; JVM/schedule `SWITCH` по-прежнему запрещены.
 
 Канонический текст: [EN ADR-0081](../../en/decisions/0081-mssql-historian-switch-retention.md).
 
@@ -23,7 +23,7 @@ C1 может дать `APPLIED` только на пустой БД; `SKIPPED_N
 
 ## Последствия
 
-Следующий код-PR после amend — только empty staging DDL + отказ скрипта при missing staging (R4). JVM/schedule / Prod Yes B2 этим документом не открываются.
+`V101.5` + отказ скрипта при missing/nonempty/non-identical staging отгружены. JVM/schedule / Prod Yes B2 этим документом не открываются.
 
 ## Связанные
 

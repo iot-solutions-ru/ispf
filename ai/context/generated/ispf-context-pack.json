@@ -1,6 +1,6 @@
 {
   "contextPackVersion": "ispf-1.0.0",
-  "generatedAt": "2026-11-20T12:40:47.060873+00:00",
+  "generatedAt": "2026-11-21T15:57:34.790154+00:00",
   "platformVersion": "1.0.0",
   "bundleManifest": {
     "fields": [
@@ -19704,6 +19704,12 @@
       "path": "docs/en/decisions/0080-oracle-metadata-certification.md",
       "title": "ADR-0080: Oracle metadata certification (amends 0037)",
       "keywords": "adr decision 0080-oracle-metadata-certification ADR-0080: Oracle metadata certification (amends 0037)"
+    },
+    {
+      "id": "adr-0081-mssql-historian-switch-retention",
+      "path": "docs/en/decisions/0081-mssql-historian-switch-retention.md",
+      "title": "ADR-0081: MSSQL historian monthly SWITCH retention (design only)",
+      "keywords": "adr decision 0081-mssql-historian-switch-retention ADR-0081: MSSQL historian monthly SWITCH retention (design only)"
     }
   ],
   "apiSlice": {
@@ -71653,5 +71659,5 @@
   "embeddingModel": "ispf-hash-v1",
   "embeddingDims": 384,
   "embeddingCoverage": 41,
-  "contentSha256": "a9a89f51d3460cbce0f05ad3b5796a53a17b341b163e6b45c6b7db78d686f1a1"
+  "contentSha256": "215ecc7c7b7430d6e8fb9397ac43f8e0e919eec840e7e00b4c5b7928fc9a846e"
 }

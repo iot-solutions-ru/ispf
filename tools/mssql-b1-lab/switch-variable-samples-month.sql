@@ -14,6 +14,7 @@
     sqlcmd -S <host> -d ispf -U <maint> -P <pwd> -b -v MaxRetentionDays=90 -v DryRun=1 -v ConfirmSwitch=NO -i switch-variable-samples-month.sql
     sqlcmd -S <host> -d ispf -U <maint> -P <pwd> -b -v MaxRetentionDays=90 -v DryRun=0 -v ConfirmSwitch=YES -i switch-variable-samples-month.sql
 
+  Requires Flyway V101.5 empty dbo.variable_samples_switch_staging on PRIMARY (script refuses if missing).
   Maintenance login only. ISPF runtime login must not have ALTER.
   Product retention remains app DELETE + max-retention-days until operators run this deliberately.
 */
@@ -164,6 +165,162 @@ BEGIN
     RETURN;
 END
 
+-- Staging guards before month selection so missing/bad V101.5 fails even when no month is eligible.
+DECLARE @stagingFg INT;
+SELECT @stagingFg = data_space_id FROM sys.filegroups WHERE name = N'PRIMARY';
+IF @stagingFg IS NULL
+BEGIN
+    RAISERROR(N'PRIMARY filegroup missing — refuse.', 16, 1);
+    RETURN;
+END
+
+IF OBJECT_ID(N'dbo.variable_samples_switch_staging', N'U') IS NULL
+BEGIN
+    RAISERROR(
+        N'Staging dbo.variable_samples_switch_staging missing — refuse. Apply Flyway V101.5 (empty PRIMARY staging); script no longer auto-creates.',
+        16, 1
+    );
+    RETURN;
+END
+
+IF EXISTS (SELECT 1 FROM dbo.variable_samples_switch_staging)
+BEGIN
+    RAISERROR(N'Staging dbo.variable_samples_switch_staging is nonempty — refuse (no pre-SWITCH TRUNCATE/DROP).', 16, 1);
+    RETURN;
+END
+
+IF EXISTS (
+    SELECT 1 FROM sys.foreign_keys fk
+    WHERE fk.parent_object_id = OBJECT_ID(N'dbo.variable_samples_switch_staging')
+       OR fk.referenced_object_id = OBJECT_ID(N'dbo.variable_samples_switch_staging')
+)
+BEGIN
+    RAISERROR(N'Foreign key touches staging — refuse.', 16, 1);
+    RETURN;
+END
+
+IF EXISTS (
+    SELECT 1
+    FROM sys.indexes i
+    WHERE i.object_id = OBJECT_ID(N'dbo.variable_samples_switch_staging')
+      AND i.type > 0
+      AND (i.data_space_id <> @stagingFg OR i.is_disabled = 1)
+)
+BEGIN
+    RAISERROR(N'Staging index not on PRIMARY or disabled — refuse.', 16, 1);
+    RETURN;
+END
+
+IF EXISTS (
+    SELECT 1
+    FROM (
+        SELECT c.column_id, c.name, c.system_type_id, c.user_type_id, c.max_length,
+               c.precision, c.scale, c.is_nullable, c.is_identity, c.collation_name, c.is_computed
+        FROM sys.columns c
+        WHERE c.object_id = OBJECT_ID(N'dbo.variable_samples')
+        EXCEPT
+        SELECT c.column_id, c.name, c.system_type_id, c.user_type_id, c.max_length,
+               c.precision, c.scale, c.is_nullable, c.is_identity, c.collation_name, c.is_computed
+        FROM sys.columns c
+        WHERE c.object_id = OBJECT_ID(N'dbo.variable_samples_switch_staging')
+    ) d
+)
+OR EXISTS (
+    SELECT 1
+    FROM (
+        SELECT c.column_id, c.name, c.system_type_id, c.user_type_id, c.max_length,
+               c.precision, c.scale, c.is_nullable, c.is_identity, c.collation_name, c.is_computed
+        FROM sys.columns c
+        WHERE c.object_id = OBJECT_ID(N'dbo.variable_samples_switch_staging')
+        EXCEPT
+        SELECT c.column_id, c.name, c.system_type_id, c.user_type_id, c.max_length,
+               c.precision, c.scale, c.is_nullable, c.is_identity, c.collation_name, c.is_computed
+        FROM sys.columns c
+        WHERE c.object_id = OBJECT_ID(N'dbo.variable_samples')
+    ) d
+)
+BEGIN
+    RAISERROR(N'Staging columns are not identical to variable_samples — refuse.', 16, 1);
+    RETURN;
+END
+
+IF EXISTS (
+    SELECT 1
+    FROM (
+        SELECT
+            i.type, i.is_unique, i.is_primary_key, i.has_filter, i.filter_definition,
+            (
+                SELECT STRING_AGG(
+                    CONCAT(c.name, N':', ic.key_ordinal, N':', ic.is_descending_key, N':', ic.is_included_column),
+                    N'|'
+                ) WITHIN GROUP (ORDER BY ic.key_ordinal, ic.index_column_id)
+                FROM sys.index_columns ic
+                INNER JOIN sys.columns c
+                    ON c.object_id = ic.object_id AND c.column_id = ic.column_id
+                WHERE ic.object_id = i.object_id AND ic.index_id = i.index_id
+            ) AS col_sig
+        FROM sys.indexes i
+        WHERE i.object_id = OBJECT_ID(N'dbo.variable_samples')
+          AND i.type > 0
+        EXCEPT
+        SELECT
+            i.type, i.is_unique, i.is_primary_key, i.has_filter, i.filter_definition,
+            (
+                SELECT STRING_AGG(
+                    CONCAT(c.name, N':', ic.key_ordinal, N':', ic.is_descending_key, N':', ic.is_included_column),
+                    N'|'
+                ) WITHIN GROUP (ORDER BY ic.key_ordinal, ic.index_column_id)
+                FROM sys.index_columns ic
+                INNER JOIN sys.columns c
+                    ON c.object_id = ic.object_id AND c.column_id = ic.column_id
+                WHERE ic.object_id = i.object_id AND ic.index_id = i.index_id
+            ) AS col_sig
+        FROM sys.indexes i
+        WHERE i.object_id = OBJECT_ID(N'dbo.variable_samples_switch_staging')
+          AND i.type > 0
+    ) d
+)
+OR EXISTS (
+    SELECT 1
+    FROM (
+        SELECT
+            i.type, i.is_unique, i.is_primary_key, i.has_filter, i.filter_definition,
+            (
+                SELECT STRING_AGG(
+                    CONCAT(c.name, N':', ic.key_ordinal, N':', ic.is_descending_key, N':', ic.is_included_column),
+                    N'|'
+                ) WITHIN GROUP (ORDER BY ic.key_ordinal, ic.index_column_id)
+                FROM sys.index_columns ic
+                INNER JOIN sys.columns c
+                    ON c.object_id = ic.object_id AND c.column_id = ic.column_id
+                WHERE ic.object_id = i.object_id AND ic.index_id = i.index_id
+            ) AS col_sig
+        FROM sys.indexes i
+        WHERE i.object_id = OBJECT_ID(N'dbo.variable_samples_switch_staging')
+          AND i.type > 0
+        EXCEPT
+        SELECT
+            i.type, i.is_unique, i.is_primary_key, i.has_filter, i.filter_definition,
+            (
+                SELECT STRING_AGG(
+                    CONCAT(c.name, N':', ic.key_ordinal, N':', ic.is_descending_key, N':', ic.is_included_column),
+                    N'|'
+                ) WITHIN GROUP (ORDER BY ic.key_ordinal, ic.index_column_id)
+                FROM sys.index_columns ic
+                INNER JOIN sys.columns c
+                    ON c.object_id = ic.object_id AND c.column_id = ic.column_id
+                WHERE ic.object_id = i.object_id AND ic.index_id = i.index_id
+            ) AS col_sig
+        FROM sys.indexes i
+        WHERE i.object_id = OBJECT_ID(N'dbo.variable_samples')
+          AND i.type > 0
+    ) d
+)
+BEGIN
+    RAISERROR(N'Staging index structure does not match variable_samples — refuse.', 16, 1);
+    RETURN;
+END
+
 DECLARE @nowUtc DATETIME2 = SYSUTCDATETIME();
 DECLARE @cutoff DATETIME2 = DATEADD(DAY, -@maxRetentionDays, @nowUtc);
 
@@ -251,9 +408,6 @@ BEGIN
     RETURN;
 END
 
-DECLARE @stagingFg INT;
-SELECT @stagingFg = data_space_id FROM sys.filegroups WHERE name = N'PRIMARY';
-
 DECLARE @partFg INT;
 SELECT @partFg = dds.data_space_id
 FROM sys.destination_data_spaces dds
@@ -267,187 +421,9 @@ BEGIN
     RETURN;
 END
 
-IF OBJECT_ID(N'dbo.variable_samples_switch_staging', N'U') IS NULL
-BEGIN
-    IF @dryRun = 1
-    BEGIN
-        PRINT N'Dry-run: staging dbo.variable_samples_switch_staging is absent; confirm path will create it empty on PRIMARY.';
-    END
-    ELSE
-    BEGIN
-        BEGIN TRANSACTION;
-        CREATE TABLE dbo.variable_samples_switch_staging (
-            id            BIGINT IDENTITY(1,1) NOT NULL,
-            object_path   VARCHAR(512) NOT NULL,
-            variable_name VARCHAR(128) NOT NULL,
-            field_name    VARCHAR(128) NOT NULL CONSTRAINT df_variable_samples_switch_staging_field DEFAULT ('value'),
-            sampled_at    DATETIME2    NOT NULL,
-            observed_at   DATETIME2    NOT NULL,
-            value_double  FLOAT NULL,
-            value_text    NVARCHAR(MAX) NULL,
-            quality       VARCHAR(32) NULL,
-            CONSTRAINT pk_variable_samples_switch_staging PRIMARY KEY CLUSTERED (sampled_at, id)
-        ) ON [PRIMARY];
-
-        CREATE UNIQUE INDEX uq_variable_samples_switch_staging_series_time
-            ON dbo.variable_samples_switch_staging (object_path, variable_name, field_name, sampled_at);
-
-        CREATE INDEX idx_variable_samples_switch_staging_lookup
-            ON dbo.variable_samples_switch_staging (object_path, variable_name, field_name, sampled_at DESC);
-        COMMIT TRANSACTION;
-        PRINT N'Created empty dbo.variable_samples_switch_staging on PRIMARY.';
-    END
-END
-ELSE
-BEGIN
-    IF EXISTS (SELECT 1 FROM dbo.variable_samples_switch_staging)
-    BEGIN
-        RAISERROR(N'Staging dbo.variable_samples_switch_staging is nonempty — refuse (no pre-SWITCH TRUNCATE/DROP).', 16, 1);
-        RETURN;
-    END
-
-    IF EXISTS (
-        SELECT 1 FROM sys.foreign_keys fk
-        WHERE fk.parent_object_id = OBJECT_ID(N'dbo.variable_samples_switch_staging')
-           OR fk.referenced_object_id = OBJECT_ID(N'dbo.variable_samples_switch_staging')
-    )
-    BEGIN
-        RAISERROR(N'Foreign key touches staging — refuse.', 16, 1);
-        RETURN;
-    END
-
-    IF EXISTS (
-        SELECT 1
-        FROM sys.indexes i
-        WHERE i.object_id = OBJECT_ID(N'dbo.variable_samples_switch_staging')
-          AND i.type > 0
-          AND (i.data_space_id <> @stagingFg OR i.is_disabled = 1)
-    )
-    BEGIN
-        RAISERROR(N'Staging index not on PRIMARY or disabled — refuse.', 16, 1);
-        RETURN;
-    END
-
-    IF EXISTS (
-        SELECT 1
-        FROM (
-            SELECT c.column_id, c.name, c.system_type_id, c.user_type_id, c.max_length,
-                   c.precision, c.scale, c.is_nullable, c.is_identity, c.collation_name, c.is_computed
-            FROM sys.columns c
-            WHERE c.object_id = OBJECT_ID(N'dbo.variable_samples')
-            EXCEPT
-            SELECT c.column_id, c.name, c.system_type_id, c.user_type_id, c.max_length,
-                   c.precision, c.scale, c.is_nullable, c.is_identity, c.collation_name, c.is_computed
-            FROM sys.columns c
-            WHERE c.object_id = OBJECT_ID(N'dbo.variable_samples_switch_staging')
-        ) d
-    )
-    OR EXISTS (
-        SELECT 1
-        FROM (
-            SELECT c.column_id, c.name, c.system_type_id, c.user_type_id, c.max_length,
-                   c.precision, c.scale, c.is_nullable, c.is_identity, c.collation_name, c.is_computed
-            FROM sys.columns c
-            WHERE c.object_id = OBJECT_ID(N'dbo.variable_samples_switch_staging')
-            EXCEPT
-            SELECT c.column_id, c.name, c.system_type_id, c.user_type_id, c.max_length,
-                   c.precision, c.scale, c.is_nullable, c.is_identity, c.collation_name, c.is_computed
-            FROM sys.columns c
-            WHERE c.object_id = OBJECT_ID(N'dbo.variable_samples')
-        ) d
-    )
-    BEGIN
-        RAISERROR(N'Staging columns are not identical to variable_samples — refuse.', 16, 1);
-        RETURN;
-    END
-
-    IF EXISTS (
-        SELECT 1
-        FROM (
-            SELECT
-                i.type, i.is_unique, i.is_primary_key, i.has_filter, i.filter_definition,
-                (
-                    SELECT STRING_AGG(
-                        CONCAT(c.name, N':', ic.key_ordinal, N':', ic.is_descending_key, N':', ic.is_included_column),
-                        N'|'
-                    ) WITHIN GROUP (ORDER BY ic.key_ordinal, ic.index_column_id)
-                    FROM sys.index_columns ic
-                    INNER JOIN sys.columns c
-                        ON c.object_id = ic.object_id AND c.column_id = ic.column_id
-                    WHERE ic.object_id = i.object_id AND ic.index_id = i.index_id
-                ) AS col_sig
-            FROM sys.indexes i
-            WHERE i.object_id = OBJECT_ID(N'dbo.variable_samples')
-              AND i.type > 0
-            EXCEPT
-            SELECT
-                i.type, i.is_unique, i.is_primary_key, i.has_filter, i.filter_definition,
-                (
-                    SELECT STRING_AGG(
-                        CONCAT(c.name, N':', ic.key_ordinal, N':', ic.is_descending_key, N':', ic.is_included_column),
-                        N'|'
-                    ) WITHIN GROUP (ORDER BY ic.key_ordinal, ic.index_column_id)
-                    FROM sys.index_columns ic
-                    INNER JOIN sys.columns c
-                        ON c.object_id = ic.object_id AND c.column_id = ic.column_id
-                    WHERE ic.object_id = i.object_id AND ic.index_id = i.index_id
-                ) AS col_sig
-            FROM sys.indexes i
-            WHERE i.object_id = OBJECT_ID(N'dbo.variable_samples_switch_staging')
-              AND i.type > 0
-        ) d
-    )
-    OR EXISTS (
-        SELECT 1
-        FROM (
-            SELECT
-                i.type, i.is_unique, i.is_primary_key, i.has_filter, i.filter_definition,
-                (
-                    SELECT STRING_AGG(
-                        CONCAT(c.name, N':', ic.key_ordinal, N':', ic.is_descending_key, N':', ic.is_included_column),
-                        N'|'
-                    ) WITHIN GROUP (ORDER BY ic.key_ordinal, ic.index_column_id)
-                    FROM sys.index_columns ic
-                    INNER JOIN sys.columns c
-                        ON c.object_id = ic.object_id AND c.column_id = ic.column_id
-                    WHERE ic.object_id = i.object_id AND ic.index_id = i.index_id
-                ) AS col_sig
-            FROM sys.indexes i
-            WHERE i.object_id = OBJECT_ID(N'dbo.variable_samples_switch_staging')
-              AND i.type > 0
-            EXCEPT
-            SELECT
-                i.type, i.is_unique, i.is_primary_key, i.has_filter, i.filter_definition,
-                (
-                    SELECT STRING_AGG(
-                        CONCAT(c.name, N':', ic.key_ordinal, N':', ic.is_descending_key, N':', ic.is_included_column),
-                        N'|'
-                    ) WITHIN GROUP (ORDER BY ic.key_ordinal, ic.index_column_id)
-                    FROM sys.index_columns ic
-                    INNER JOIN sys.columns c
-                        ON c.object_id = ic.object_id AND c.column_id = ic.column_id
-                    WHERE ic.object_id = i.object_id AND ic.index_id = i.index_id
-                ) AS col_sig
-            FROM sys.indexes i
-            WHERE i.object_id = OBJECT_ID(N'dbo.variable_samples')
-              AND i.type > 0
-        ) d
-    )
-    BEGIN
-        RAISERROR(N'Staging index structure does not match variable_samples — refuse.', 16, 1);
-        RETURN;
-    END
-END
-
 IF @dryRun = 1
 BEGIN
     PRINT N'Dry-run complete — no SWITCH/TRUNCATE. Re-run with -v DryRun=0 -v ConfirmSwitch=YES to mutate.';
-    RETURN;
-END
-
-IF OBJECT_ID(N'dbo.variable_samples_switch_staging', N'U') IS NULL
-BEGIN
-    RAISERROR(N'Staging missing after create path — refuse mutation.', 16, 1);
     RETURN;
 END
 
