@@ -10,6 +10,7 @@ Operator scripts for a **single-node** stand. Not a production deploy path.
 | `gate-evidence.sh` | B1 §8 evidence collector (`MSSQL_SA_PASSWORD` required). Signed B1: `gate-evidence-local-evaluation.json` |
 | `gate-b2-core.ps1` | Gate B evidence (history write, DATE_BUCKET, journal JDBC, purge). Output: `gate-evidence-b2-core-evaluation.json` |
 | `split-variable-samples-horizon.sql` | Gate C1: SPLIT empty monthly horizon + alignment check (no SWITCH) |
+| `switch-variable-samples-month.sql` | ADR-0081 lab: dry-run-default SWITCH+TRUNCATE of one oldest eligible UTC month (maintenance login; not product retention) |
 | `load.sh` | Cert-bundle import + concurrent `by-path` soak |
 | `loadtest.py` / `loadtest-run.sh` | Metadata RPS/latency (read / serial import / write / mixed) |
 
@@ -21,7 +22,16 @@ Operator scripts for a **single-node** stand. Not a production deploy path.
 - `ISPF_EVENT_JOURNAL_ENABLED=false` (or non-JDBC store)
 - `ISPF_CLUSTER_ENABLED=false`
 
-Boot also refuses dual-write on MSSQL. JDBC history/journal need the opt-in single-engine profile ([examples/mssql-single-engine](../../examples/mssql-single-engine/README.md)). Gate B lab ≠ ADR-0037 **Prod Yes (B2)**. Gate C1 (`V101.2`) partitions empty DBs only; SWITCH retention (C2) and Prod Yes B2 stay open. Active-active stays refused.
+Boot also refuses dual-write on MSSQL. JDBC history/journal need the opt-in single-engine profile ([examples/mssql-single-engine](../../examples/mssql-single-engine/README.md)). Gate B lab ≠ ADR-0037 **Prod Yes (B2)**. Gate C1 (`V101.2`) partitions empty DBs only. Product retention stays app `DELETE` + `max-retention-days`. The ADR-0081 lab script can SWITCH one eligible month under a maintenance login; it is not wired into stands/gates and does not set Prod Yes B2. Active-active stays refused.
+
+### ADR-0081 SWITCH lab script
+
+```text
+sqlcmd -S <host> -d ispf -U <maint> -P <pwd> -b -v MaxRetentionDays=90 -v DryRun=1 -v ConfirmSwitch=NO -i switch-variable-samples-month.sql
+sqlcmd -S <host> -d ispf -U <maint> -P <pwd> -b -v MaxRetentionDays=90 -v DryRun=0 -v ConfirmSwitch=YES -i switch-variable-samples-month.sql
+```
+
+ODBC `sqlcmd` requires every `-v` variable used in the script (`MaxRetentionDays`, `DryRun`, `ConfirmSwitch`); otherwise it skips the batch. SSMS/JDBC without substitution leave the `$(…)` tokens and default to dry-run. `MaxRetentionDays` has no default — pass the live `ispf.relational.mssql.max-retention-days` ceiling. Dry-run prints the plan when staging is absent (confirm path creates it empty on `PRIMARY`). Mutation needs `DryRun=0` and exact `ConfirmSwitch=YES`. One oldest nonempty month whose exclusive end is `<= SYSUTCDATETIME() − MaxRetentionDays`. Not a chart cutover; not a seal from the rollup cursor.
 
 ## Secrets
 

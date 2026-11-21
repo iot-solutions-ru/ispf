@@ -2,11 +2,11 @@
 
 ## Status
 
-**Accepted as design** (2026-11-20). Implementation **Not started**.
+**Accepted as design** (2026-11-20). Lab script **exists**; product / JVM implementation **Not started**.
 
-This ADR locks the rules for a future maintenance-login `SWITCH` / staging-`TRUNCATE` retention path on partitioned `variable_samples`. It does **not** authorize a script, Flyway migration, JVM job, scheduler, TCK that switches a month, or copy-pasteable `SWITCH` / `TRUNCATE` / `ALTER PARTITION` SQL.
+This ADR locks the rules for a maintenance-login `SWITCH` / staging-`TRUNCATE` retention path on partitioned `variable_samples`. Lab helper: `tools/mssql-b1-lab/switch-variable-samples-month.sql` (dry-run by default; requires explicit `MaxRetentionDays` and `ConfirmSwitch=YES`). It does **not** authorize a Flyway migration, JVM job, scheduler, TCK that switches a month, or pasting bare `SWITCH` SQL without the script’s guards.
 
-Retention in force today remains application `DELETE` plus `ispf.relational.mssql.max-retention-days` (default 90). Charts stay on raw `observed_at`. ADR-0078 §2b stays empty. ADR-0037 **Prod Yes (B2)** stays closed.
+Retention **in force** for the product remains application `DELETE` plus `ispf.relational.mssql.max-retention-days` (default 90). Charts stay on raw `observed_at`. ADR-0078 §2b stays empty. ADR-0037 **Prod Yes (B2)** stays closed.
 
 ## Context
 
@@ -66,7 +66,7 @@ Operator charts remain on `observed_at`. This ADR does not change that clock and
 - No log-versus-`DELETE` performance claim under `FULL` recovery.
 - No `ONLINE` index rebuild requirement or authorization.
 - No fill of ADR-0078 §2b. No ADR-0037 **Prod Yes (B2)**.
-- No executable SQL in this ADR. No stub script that only `RAISERROR`s — a stub is the file the next edit turns on.
+- No executable SQL **in this ADR text**. The lab script under `tools/mssql-b1-lab/` must keep the guards in this Decision; it is not a product retention path and is not wired into Gate B stands.
 
 ## Consequences
 

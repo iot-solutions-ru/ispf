@@ -2,13 +2,13 @@
 
 ## Статус
 
-**Accepted as design** (2026-11-20). Реализация **Not started**.
+**Accepted as design** (2026-11-20). Lab-скрипт **есть**; product/JVM реализация **Not started**.
 
 Канонический текст: [EN ADR-0081](../../en/decisions/0081-mssql-historian-switch-retention.md).
 
-Этот ADR фиксирует правила будущего `SWITCH` / staging-`TRUNCATE` под maintenance login. Он **не** разрешает скрипт, Flyway, JVM-задачу, TCK со `SWITCH` месяца и копируемый SQL.
+Lab helper: `tools/mssql-b1-lab/switch-variable-samples-month.sql`. ADR **не** разрешает Flyway, JVM-задачу, TCK со `SWITCH` и голый SQL без гардов скрипта.
 
-Retention сейчас — app `DELETE` + `max-retention-days`. Charts на raw `observed_at`. §2b / Prod Yes B2 не открываются.
+Retention продукта — app `DELETE` + `max-retention-days`. Charts на raw `observed_at`. §2b / Prod Yes B2 не открываются.
 
 ## Контекст
 
@@ -21,7 +21,7 @@ C1 может дать `APPLIED` только на пустой БД; `SKIPPED_N
 - Один UTC-месяц за прогон, только oldest eligible; месяц, пересекающий `max-retention-days`, не роняется.
 - Global floor; список рядов без rollup-копии уничтожается вместе с месяцем.
 - Cursor/report не seal и не precondition; left catch-all без MERGE/SWITCH.
-- Без executable SQL и без stub с одним `RAISERROR`.
+- Без executable SQL в тексте этого ADR; lab-скрипт в `tools/mssql-b1-lab/` обязан держать гарды из Decision и не подключается к Gate B стендам.
 
 ## Последствия
 
