@@ -8,7 +8,7 @@ English ADRs for ISPF. Russian mirror: [../../ru/decisions/readme.md](../../ru/d
 
 Engineering record — not marketing. Prefer Status / Context / Decision / Consequences / Related; use `Risks:` bullets under Consequences. Avoid hype scores and template **Positive** / **Negative** blocks.
 
-**Number uniqueness:** new ADRs must use the next free number (**0081+**; **0067** reserved / gap until FIELD maturity ADR lands on main). Historical collisions **0016** and **0025** keep dual files; cite them as **0016a/b** and **0025a/b** (or by filename). Do not renumber existing files.
+**Number uniqueness:** new ADRs must use the next free number (**0082+**; **0067** reserved / gap until FIELD maturity ADR lands on main). Historical collisions **0016** and **0025** keep dual files; cite them as **0016a/b** and **0025a/b** (or by filename). Do not renumber existing files.
 
 Regressions: [`strip-neuro-slang.py`](../../../tools/docs-audit/strip-neuro-slang.py), then [`polish-docs.py`](../../../tools/docs-audit/polish-docs.py).
 
@@ -131,13 +131,14 @@ Regressions: [`strip-neuro-slang.py`](../../../tools/docs-audit/strip-neuro-slan
 | [0078-mssql-metadata-certification](0078-mssql-metadata-certification.md) | MS SQL Server metadata certification B1/B2 (amends 0037) — **Accepted** (B1 Prod Yes on Evaluation; B2/A-A boot-refused, not Prod Yes) |
 | [0079-mysql-metadata-certification](0079-mysql-metadata-certification.md) | MySQL 8.x B1 metadata certification charter (amends 0037) — **Accepted** (impl Not started) |
 | [0080-oracle-metadata-certification](0080-oracle-metadata-certification.md) | Oracle B1 metadata certification charter (amends 0037) — **Accepted** (impl Not started) |
+| [0081-mssql-historian-switch-retention](0081-mssql-historian-switch-retention.md) | MSSQL historian monthly SWITCH retention — **Accepted as design** (impl Not started; no SQL) |
 
 ## Topic chains (read in order)
 
 | Topic | ADRs | Runbook |
 |-------|------|---------|
 | Cluster HA | [0028-horizontal-active-active-cluster](0028-horizontal-active-active-cluster.md) → [0029-cluster-live-variable-replica-sync](0029-cluster-live-variable-replica-sync.md) → [0030-cluster-config-structure-replica-sync](0030-cluster-config-structure-replica-sync.md) → [0031-cluster-replica-roles-platform-jobs](0031-cluster-replica-roles-platform-jobs.md) → [0032-replica-profiles-and-capabilities](0032-replica-profiles-and-capabilities.md) → [0069-cluster-consistency](0069-cluster-consistency.md) → [0070-cluster-rolling-upgrade](0070-cluster-rolling-upgrade.md) | [cluster](../cluster.md), [deployment](../deployment.md), [release-upgrade](../release-upgrade.md) |
-| Historian / analytics | [0035-historian-dual-write](0035-historian-dual-write.md) → [0038-analytics-platform-architecture](0038-analytics-platform-architecture.md) → [0041-multi-tag-historian-computations](0041-multi-tag-historian-computations.md) → [0042-analytics-function-catalog](0042-analytics-function-catalog.md) → [0074-historian-quality-persistence](0074-historian-quality-persistence.md) | [historian-tiers](../historian-tiers.md), [analytics-platform-roadmap](../analytics-platform-roadmap.md) |
+| Historian / analytics | [0035-historian-dual-write](0035-historian-dual-write.md) → [0038-analytics-platform-architecture](0038-analytics-platform-architecture.md) → [0041-multi-tag-historian-computations](0041-multi-tag-historian-computations.md) → [0042-analytics-function-catalog](0042-analytics-function-catalog.md) → [0074-historian-quality-persistence](0074-historian-quality-persistence.md) → [0081-mssql-historian-switch-retention](0081-mssql-historian-switch-retention.md) | [historian-tiers](../historian-tiers.md), [analytics-platform-roadmap](../analytics-platform-roadmap.md), [mssql-single-engine-ems-epic](../mssql-single-engine-ems-epic.md) |
 | Automation / alarms | [0014-automation-pipeline-evolution](0014-automation-pipeline-evolution.md) → [0039-unified-alarm-architecture](0039-unified-alarm-architecture.md) | [automation](../automation.md) |
 | Workflow / BPMN | [0047-custom-bpmn-subset-engine](0047-custom-bpmn-subset-engine.md) → [0049-ot-automation-excellence](0049-ot-automation-excellence.md) → [0052-ispf-workflow-diagram-editor](0052-ispf-workflow-diagram-editor.md) | [workflows](../workflows.md) |
 | Server modularization | [0048-server-modularization-seams](0048-server-modularization-seams.md) → [0005-tree-first-ai-agent](0005-tree-first-ai-agent.md) | — |
