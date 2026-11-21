@@ -8,11 +8,11 @@ Lab script **exists** (`tools/mssql-b1-lab/switch-variable-samples-month.sql`, d
 
 ### Amendment (2026-11-21) — staging DDL only
 
-**Allowed (narrower productize):**
+**Shipped (narrower productize):**
 
-- A future MSSQL Flyway migration may create an empty `dbo.variable_samples_switch_staging` on `PRIMARY`, matching the lab script’s table/index shape (`IDENTITY` on `id`, `quality`, clustered PK `(sampled_at, id)`, matching unique/lookup indexes on `PRIMARY`, no foreign keys).
+- Flyway `V101.5` creates empty `dbo.variable_samples_switch_staging` on `PRIMARY`, matching the lab script’s table/index shape (`IDENTITY` on `id`, `quality`, clustered PK `(sampled_at, id)`, matching unique/lookup indexes on `PRIMARY`, no foreign keys). See `MssqlHistorianDivergence.V101_5_SWITCH_STAGING`.
 - The existing maintenance script remains the only operator entrypoint that may `SWITCH` / `TRUNCATE`. Confirm still requires `DryRun=0` and exact `ConfirmSwitch=YES`.
-- **After** that Flyway DDL ships, update the lab script to **refuse** when staging is missing (remove confirm-time auto-create), nonempty, or not identical. Until then the current script may print a dry-run plan when staging is absent and create empty staging only on confirm.
+- The lab script **refuses** when staging is missing, nonempty, or not identical (no confirm-time auto-create).
 
 **Still forbidden:**
 
@@ -88,7 +88,7 @@ Operator charts remain on `observed_at`. This ADR does not change that clock and
 
 - Implementers cannot treat `APPLIED` alone, rollup rows, or the report API as permission to drop.
 - Sites on `SKIPPED_NONEMPTY` stay on `DELETE` + the retention ceiling until they rebuild on a new empty database (already Gate C1 policy). Staging DDL on those databases is inert while the script refuses non-`APPLIED`.
-- The next code PR after this amendment may add empty staging DDL plus a script update that refuses missing/nonempty/non-identical staging (still not wired into stands/CI). It must not add a JVM schedule, confirm in CI, chart cutover, §2b, or Prod Yes B2.
+- Empty staging DDL (`V101.5`) plus script refuse-if-missing is shipped; still not wired into stands/CI as a confirm proof. JVM schedule, confirm in CI, chart cutover, §2b, and Prod Yes B2 stay closed.
 
 ## Related
 

@@ -32,7 +32,7 @@ sqlcmd -S <host> -d ispf -U <maint> -P <pwd> -b -v MaxRetentionDays=90 -v DryRun
 sqlcmd -S <host> -d ispf -U <maint> -P <pwd> -b -v MaxRetentionDays=90 -v DryRun=0 -v ConfirmSwitch=YES -i switch-variable-samples-month.sql
 ```
 
-ODBC `sqlcmd` requires every `-v` variable used in the script (`MaxRetentionDays`, `DryRun`, `ConfirmSwitch`); otherwise it skips the batch. SSMS/JDBC without substitution leave the `$(…)` tokens and default to dry-run. `MaxRetentionDays` has no default — pass the live `ispf.relational.mssql.max-retention-days` ceiling. Dry-run prints the plan when staging is absent (confirm path creates it empty on `PRIMARY`). Mutation needs `DryRun=0` and exact `ConfirmSwitch=YES`. One oldest nonempty month whose exclusive end is `<= SYSUTCDATETIME() − MaxRetentionDays`. Not a chart cutover; not a seal from the rollup cursor.
+ODBC `sqlcmd` requires every `-v` variable used in the script (`MaxRetentionDays`, `DryRun`, `ConfirmSwitch`); otherwise it skips the batch. SSMS/JDBC without substitution leave the `$(…)` tokens and default to dry-run. `MaxRetentionDays` has no default — pass the live `ispf.relational.mssql.max-retention-days` ceiling. Staging `dbo.variable_samples_switch_staging` must already exist empty on `PRIMARY` (Flyway `V101.5`); the script refuses if missing, nonempty, or not identical to `variable_samples`. Mutation needs `DryRun=0` and exact `ConfirmSwitch=YES`. One oldest nonempty month whose exclusive end is `<= SYSUTCDATETIME() − MaxRetentionDays`. Not a chart cutover; not a seal from the rollup cursor.
 
 ## Secrets
 

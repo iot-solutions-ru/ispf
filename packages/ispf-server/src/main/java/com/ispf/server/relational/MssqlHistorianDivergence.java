@@ -39,6 +39,13 @@ public final class MssqlHistorianDivergence {
     public static final String V101_4_OBSERVED_ROLLUPS =
             "variable_sample_observed_rollups + mssql_historian_observed_rollup_cursor (opt-in writer)";
 
+    /**
+     * ADR-0081 empty SWITCH staging on PRIMARY only. No SWITCH/TRUNCATE in Flyway. Lab script is the
+     * sole mutation entrypoint and refuses when staging is missing/nonempty/non-identical.
+     */
+    public static final String V101_5_SWITCH_STAGING =
+            "variable_samples_switch_staging empty PRIMARY table (Flyway DDL only; no SWITCH)";
+
     private MssqlHistorianDivergence() {
     }
 
