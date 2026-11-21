@@ -17,6 +17,7 @@ import org.springframework.beans.factory.ObjectProvider;
 import tools.jackson.databind.ObjectMapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -73,6 +74,7 @@ class VariableHistoryServiceRetentionClampTest {
                 analyticsOnChangeTrigger,
                 rollupQueryService,
                 rollupMaterializer,
+                mock(org.springframework.beans.factory.ObjectProvider.class),
                 parquetExport,
                 mssqlRelationalProperties
         );

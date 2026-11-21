@@ -113,4 +113,22 @@ public class JdbcVariableSampleRollupConfiguration {
                 objectManager
         );
     }
+
+    @Bean
+    @ConditionalOnProperty(prefix = "ispf.relational.mssql", name = "single-engine", havingValue = "true")
+    public JdbcMssqlObservedAtRollupQueryService jdbcMssqlObservedAtRollupQueryService(
+            JdbcVariableSampleRollupStore rollupStore,
+            JdbcMssqlObservedAtRollupMaterializer materializer,
+            VariableHistoryQueryStore queryStore,
+            MssqlRelationalProperties mssqlRelationalProperties,
+            RelationalDialect relationalDialect
+    ) {
+        return new JdbcMssqlObservedAtRollupQueryService(
+                rollupStore,
+                materializer,
+                queryStore,
+                mssqlRelationalProperties,
+                relationalDialect
+        );
+    }
 }

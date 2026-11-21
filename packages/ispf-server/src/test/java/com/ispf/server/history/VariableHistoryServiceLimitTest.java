@@ -105,6 +105,7 @@ class VariableHistoryServiceLimitTest {
                 analyticsOnChangeTrigger,
                 rollupQueryService,
                 rollupMaterializer,
+                mock(org.springframework.beans.factory.ObjectProvider.class),
                 parquetExport,
                 mock(org.springframework.beans.factory.ObjectProvider.class)
         );

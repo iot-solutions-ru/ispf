@@ -158,7 +158,7 @@ export interface VariableHistoryAggregateResponse {
   field: string;
   bucket: string;
   buckets: VariableHistoryBucket[];
-  dataSource?: "rollup" | "raw" | "none";
+  dataSource?: "rollup" | "observed_rollup" | "raw" | "none";
 }
 
 export function fetchVariableHistory(
