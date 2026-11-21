@@ -21,7 +21,7 @@ import java.util.Optional;
  * Chart-prep: JDBC writer into {@code variable_sample_observed_rollups}.
  * Walks a {@code sampled_at} arrival cursor and recomputes each touched {@code observed_at}
  * bucket from raw rows still present (late points rewrite the bucket). Default off.
- * Does not cut over {@code /history/aggregate} or operator charts. Not a SWITCH seal.
+ * Aggregate cutover is a separate opt-in ({@code ISPF_MSSQL_OBSERVED_ROLLUP_READ}). Not a SWITCH seal.
  */
 public class JdbcMssqlObservedAtRollupMaterializer {
 

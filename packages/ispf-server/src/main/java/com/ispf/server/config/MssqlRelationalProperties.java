@@ -29,11 +29,16 @@ public class MssqlRelationalProperties {
     /**
      * Chart-prep JDBC writer into {@code variable_sample_observed_rollups}. Default off.
      * Walks a {@code sampled_at} arrival cursor and recomputes touched {@code observed_at} buckets.
-     * Does not cut over charts / {@code /history/aggregate}.
+     * Aggregate cutover is {@link #observedRollupReadEnabled}.
      */
     private boolean observedRollupMaterializerEnabled = false;
     private long observedRollupMaterializerTickMs = 60_000L;
     private int observedRollupMaterializerChunkHours = 24;
+    /**
+     * Opt-in {@code /history/aggregate} read from {@code variable_sample_observed_rollups}
+     * with raw head/tail stitch. Default off. Requires single-engine; not Prod Yes B2 / SWITCH.
+     */
+    private boolean observedRollupReadEnabled = false;
 
     public boolean isSingleEngine() {
         return singleEngine;
@@ -121,5 +126,13 @@ public class MssqlRelationalProperties {
 
     public void setObservedRollupMaterializerChunkHours(int observedRollupMaterializerChunkHours) {
         this.observedRollupMaterializerChunkHours = Math.max(1, Math.min(168, observedRollupMaterializerChunkHours));
+    }
+
+    public boolean isObservedRollupReadEnabled() {
+        return observedRollupReadEnabled;
+    }
+
+    public void setObservedRollupReadEnabled(boolean observedRollupReadEnabled) {
+        this.observedRollupReadEnabled = observedRollupReadEnabled;
     }
 }
