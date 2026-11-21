@@ -58,11 +58,11 @@ Partition/PK rewrite is not applied to `V1`. In-place rewrite of `variable_sampl
 
 **Ingest rollup report (after C2):** `GET /api/v1/objects/by-path/variables/history/ingest-rollups` serves closed `1h`/`1d` buckets from `variable_sample_rollups` (axis `sampled_at`, before the coverage cursor). Unsupported grains or missing cursor fall back to raw `observed_at` aggregate. This is **not** a chart cutover and **not** a SWITCH seal.
 
-**SWITCH retention (ADR-0081):** design locked; lab script `tools/mssql-b1-lab/switch-variable-samples-month.sql` (dry-run default, explicit ceiling + confirm). Retention **in force** for the product remains app `DELETE` + `max-retention-days`. No Flyway, JVM job, or stand wiring. Prod Yes B2 stays closed.
+**SWITCH retention (ADR-0081):** design locked; lab script `tools/mssql-b1-lab/switch-variable-samples-month.sql` (dry-run default, explicit ceiling + confirm). Dry-run evidence on Evaluation: `tools/mssql-b1-lab/gate-evidence-switch-dryrun-evaluation.json` (not §2b). Amendment (2026-11-21) allows empty Flyway staging DDL only; JVM/schedule `SWITCH` still forbidden. Retention **in force** for the product remains app `DELETE` + `max-retention-days`. Prod Yes B2 stays closed.
 
 Still open (later — not Prod Yes B2 yet):
 
-- Productizing ADR-0081 beyond the lab script (JVM/schedule/Flyway still refused); report/cursor alone still does not authorize drops.
+- Productizing ADR-0081 beyond the lab script (JVM/schedule/Flyway SWITCH still refused; 2026-11-21 amendment allows empty Flyway staging DDL only); report/cursor alone still does not authorize drops.
 - Per-variable retention vs a dropped month: single-engine mode keeps one global floor (`max-retention-days`, default 90) until that cutover, because `SWITCH` drops a time slice for every variable.
 - `event_history` partition retention (batched `DELETE TOP` is already in place).
 - Moving operator charts off raw `observed_at` onto rollups (or rebuilding rollups on `observed_at`).

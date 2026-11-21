@@ -2,11 +2,27 @@
 
 ## Status
 
-**Accepted as design** (2026-11-20). Lab script **exists**; product / JVM implementation **Not started**.
+**Accepted as design** (2026-11-20). **Amended** (2026-11-21): empty Flyway staging DDL is allowed; JVM / scheduled `SWITCH` remain forbidden.
 
-This ADR locks the rules for a maintenance-login `SWITCH` / staging-`TRUNCATE` retention path on partitioned `variable_samples`. Lab helper: `tools/mssql-b1-lab/switch-variable-samples-month.sql` (dry-run by default; requires explicit `MaxRetentionDays` and `ConfirmSwitch=YES`). It does **not** authorize a Flyway migration, JVM job, scheduler, TCK that switches a month, or pasting bare `SWITCH` SQL without the script’s guards.
+Lab script **exists** (`tools/mssql-b1-lab/switch-variable-samples-month.sql`, dry-run by default; requires explicit `MaxRetentionDays` and `ConfirmSwitch=YES`). Product retention **in force** remains application `DELETE` plus `ispf.relational.mssql.max-retention-days` (default 90). Charts stay on raw `observed_at`. ADR-0078 §2b stays empty. ADR-0037 **Prod Yes (B2)** stays closed.
 
-Retention **in force** for the product remains application `DELETE` plus `ispf.relational.mssql.max-retention-days` (default 90). Charts stay on raw `observed_at`. ADR-0078 §2b stays empty. ADR-0037 **Prod Yes (B2)** stays closed.
+### Amendment (2026-11-21) — staging DDL only
+
+**Allowed (narrower productize):**
+
+- A future MSSQL Flyway migration may create an empty `dbo.variable_samples_switch_staging` on `PRIMARY`, matching the lab script’s table/index shape (`IDENTITY` on `id`, `quality`, clustered PK `(sampled_at, id)`, matching unique/lookup indexes on `PRIMARY`, no foreign keys).
+- The existing maintenance script remains the only operator entrypoint that may `SWITCH` / `TRUNCATE`. Confirm still requires `DryRun=0` and exact `ConfirmSwitch=YES`.
+- **After** that Flyway DDL ships, update the lab script to **refuse** when staging is missing (remove confirm-time auto-create), nonempty, or not identical. Until then the current script may print a dry-run plan when staging is absent and create empty staging only on confirm.
+
+**Still forbidden:**
+
+- Flyway (or any migration) that performs `SWITCH`, `TRUNCATE` of a live month, or `ALTER PARTITION` for retention.
+- Any in-process or scheduled JVM job that performs `SWITCH`.
+- A maintenance password in application config.
+- A TCK that switches a month on a shared or Evaluation database as CI proof.
+- Filling §2b, Prod Yes B2, or ticking Gate C2+/C3 from staging DDL alone.
+
+Privilege stays **maintenance-only** for mutation. Deploy / Flyway may create the empty staging table. The runtime login still has no `ALTER` for partition `SWITCH`.
 
 ## Context
 
@@ -66,13 +82,13 @@ Operator charts remain on `observed_at`. This ADR does not change that clock and
 - No log-versus-`DELETE` performance claim under `FULL` recovery.
 - No `ONLINE` index rebuild requirement or authorization.
 - No fill of ADR-0078 §2b. No ADR-0037 **Prod Yes (B2)**.
-- No executable SQL **in this ADR text**. The lab script under `tools/mssql-b1-lab/` must keep the guards in this Decision; it is not a product retention path and is not wired into Gate B stands.
+- No executable `SWITCH` SQL **in this ADR text**. The lab script under `tools/mssql-b1-lab/` must keep the guards in this Decision. Empty staging DDL (Flyway) is authorized only by the 2026-11-21 amendment above.
 
 ## Consequences
 
 - Implementers cannot treat `APPLIED` alone, rollup rows, or the report API as permission to drop.
-- Sites on `SKIPPED_NONEMPTY` stay on `DELETE` + the retention ceiling until they rebuild on a new empty database (already Gate C1 policy).
-- The first PR that adds a maintenance script or migration must re-open as R4, cite this ADR rule-by-rule, and still leave Prod Yes B2 unsigned until evidence and remaining Gate C exits are explicitly accepted.
+- Sites on `SKIPPED_NONEMPTY` stay on `DELETE` + the retention ceiling until they rebuild on a new empty database (already Gate C1 policy). Staging DDL on those databases is inert while the script refuses non-`APPLIED`.
+- The next code PR after this amendment may add empty staging DDL plus a script update that refuses missing/nonempty/non-identical staging (still not wired into stands/CI). It must not add a JVM schedule, confirm in CI, chart cutover, §2b, or Prod Yes B2.
 
 ## Related
 

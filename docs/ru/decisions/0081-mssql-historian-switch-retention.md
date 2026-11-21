@@ -2,13 +2,11 @@
 
 ## Статус
 
-**Accepted as design** (2026-11-20). Lab-скрипт **есть**; product/JVM реализация **Not started**.
+**Accepted as design** (2026-11-20). **Amended** (2026-11-21): разрешён только пустой Flyway staging DDL; JVM/schedule `SWITCH` по-прежнему запрещены.
 
 Канонический текст: [EN ADR-0081](../../en/decisions/0081-mssql-historian-switch-retention.md).
 
-Lab helper: `tools/mssql-b1-lab/switch-variable-samples-month.sql`. ADR **не** разрешает Flyway, JVM-задачу, TCK со `SWITCH` и голый SQL без гардов скрипта.
-
-Retention продукта — app `DELETE` + `max-retention-days`. Charts на raw `observed_at`. §2b / Prod Yes B2 не открываются.
+Lab helper: `tools/mssql-b1-lab/switch-variable-samples-month.sql`. Mutation — только maintenance login с `ConfirmSwitch=YES`. Retention продукта — app `DELETE` + `max-retention-days`. §2b / Prod Yes B2 не открываются.
 
 ## Контекст
 
@@ -25,7 +23,7 @@ C1 может дать `APPLIED` только на пустой БД; `SKIPPED_N
 
 ## Последствия
 
-Первый PR со скриптом или миграцией — отдельно, R4, со ссылкой на каждое правило EN ADR. Prod Yes B2 этим документом не ставится.
+Следующий код-PR после amend — только empty staging DDL + отказ скрипта при missing staging (R4). JVM/schedule / Prod Yes B2 этим документом не открываются.
 
 ## Связанные
 
