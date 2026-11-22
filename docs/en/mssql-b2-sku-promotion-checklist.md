@@ -1,7 +1,7 @@
 # MSSQL B2 SKU promotion checklist (ADR-0078 single-engine)
 
 > **Language:** Canonical English.  
-> **Status:** Operator checklist for **Prod Yes (B2)** on the named Evaluation cell. Not a perpetual license. A-A stays uncertified.
+> **Status:** Operator checklist for **Prod Yes (B2)** on the named Evaluation cell (owner-extended to licensed Standard / Enterprise / Azure SQL DB|MI). Not a perpetual license from Evaluation. A-A signed separately.
 
 Promote opt-in `ISPF_MSSQL_SINGLE_ENGINE=true` JDBC history/journal only after signing **one** named cell below.
 
@@ -17,7 +17,7 @@ Promote opt-in `ISPF_MSSQL_SINGLE_ENGINE=true` JDBC history/journal only after s
 | Dedicated instance | Lab: Evaluation container hosts only ISPF DBs. Production B2 still requires a dedicated SQL Server instance (no co-tenant OLTP) |
 | `ISPF_MSSQL_SINGLE_ENGINE` | `true` |
 | History / journal | JDBC (`ISPF_VARIABLE_HISTORY_STORE=jdbc`, `ISPF_EVENT_JOURNAL_STORE=jdbc`) |
-| Cluster | `ISPF_CLUSTER_ENABLED=false` (A-A **not certified**) |
+| Cluster | Optional; **Prod Yes (A-A)** — [A-A checklist](mssql-aa-sku-promotion-checklist.md); NATS required when enabled |
 | Wall-clock gate re-run | Capped at **≤1 hour**; signed re-run completed in ~20 s (2026-11-22) |
 | `ISPF_TENANT_DB_ROW_ISOLATION` | `false` (single-tenant; no RLS claim) |
 | `ISPF_HISTORIAN_DEPLOY_PROFILE` | `mssql-single-engine` (lab) |
@@ -36,8 +36,8 @@ Promote opt-in `ISPF_MSSQL_SINGLE_ENGINE=true` JDBC history/journal only after s
 - Plant-wide ≤20 s raw scans (ADR-0078 §2b stays empty unless a named fixture is filed)
 - Product or scheduled monthly `SWITCH` retention
 - Default-on chart cutover (`ISPF_MSSQL_OBSERVED_ROLLUP_READ` stays default off)
-- Active-active / cluster on MSSQL
-- Standard / Azure SQL DB/MI without re-running this checklist on that SKU
+- Completed AG failover / dual-JVM chaos soak (tech-debt **P-MSSQL-AA-SOAK**; A-A dialect fence lifted; NATS JetStream required)
+- Per-SKU re-run still recommended (tech-debt **P-MSSQL-SKU-RERUN**); owner extension already signs licensed cells
 
 ## Gate evidence (attach)
 

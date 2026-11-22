@@ -58,7 +58,7 @@ Make `ISPF_METADATA_DB_KIND=mssql` a **certified** production option for platfor
 - [x] Concurrent audit-chain append + verify (`AuditChainConcurrentAppendTest` H2 always-on; live MSSQL path in `MssqlFlywayBaselineTckTest` when Docker available)
 - [x] Unsupported app-schema paths fail closed (`ApplicationSchemaSession.ensureSchemaExists` / `callInSchema` + `MssqlDialect`; `ApplicationSchemaSessionMssqlTest`)
 - [x] Solution SQL policy: documented **unsupported** for in-DB function `exec` / PG-only scripts against `ISPF_DB` on MSSQL (`db/migration/mssql/README.md`, [known-limitations](known-limitations.md)); dialect-safe cert bundle still optional later
-- [x] Update 0037 tier 3 → **Prod Yes (B1)** + lift `mssql/README.md` + inventory/known-limitations ban (EN+RU) — signed 2026-11-20 on SQL Server 2022 Enterprise Evaluation `16.0.4325.4` ([mssql-sku-promotion-checklist](mssql-sku-promotion-checklist.md), issue #814). Evaluation is not a perpetual license. B1 boot fences for JDBC history/journal/dual-write/cluster stay fail-closed
+- [x] Update 0037 tier 3 → **Prod Yes (B1)** + lift `mssql/README.md` + inventory/known-limitations ban (EN+RU) — signed 2026-11-20 on SQL Server 2022 Enterprise Evaluation `16.0.4325.4` ([mssql-sku-promotion-checklist](mssql-sku-promotion-checklist.md), issue #814). Evaluation is not a perpetual license. B1 boot fences for JDBC history/journal/dual-write stay fail-closed (cluster dialect fence lifted in Phase 6)
 
 ### Phase 4 — Lockstep tax (ongoing while certified)
 
@@ -70,21 +70,22 @@ Make `ISPF_METADATA_DB_KIND=mssql` a **certified** production option for platfor
 Do not quote B1 + B2-core + archive + spool as one delivery. B1 boot fences stay; JDBC history/journal need `ISPF_MSSQL_SINGLE_ENGINE=true`.
 
 - [x] Bucket SQL on MSSQL uses `DATE_BUCKET` and a SARGable `observed_at` predicate (no `DATEDIFF` int overflow, no `COALESCE` wrapper)
-- [x] Opt-in `mssql-single-engine` boot profile: JDBC journal/history allowed only when the flag is on; warm tier, cold archive, dual-write, cluster, and row isolation stay refused
+- [x] Opt-in `mssql-single-engine` boot profile: JDBC journal/history allowed only when the flag is on; warm tier, cold archive, dual-write, and row isolation stay refused; cluster allowed when NATS JetStream is configured (`ClusterDependencyValidator`)
 - [x] Event journal deep pages use keyset pagination (`before` / `beforeId` → `queryRecentBefore`)
 - [x] History write + bucket aggregate **TCK on MSSQL** (`MssqlHistoryBucketTckTest`, tag `mssql-docker`; skips without Docker)
 - [x] Retention: documented cap `ispf.relational.mssql.max-retention-days` (default 90) while single-engine is on — **not** a substitute for Gate C partitions
 - [x] Gate B lab on Evaluation: `stand-b2-local.ps1` + `gate-b2-core.ps1` → `gate-evidence-b2-core-evaluation.json` / re-sign `gate-evidence-b2-prod-yes-evaluation.json` (history write, DATE_BUCKET aggregate, journal JDBC, 20k-row purge; wall-clock ≤1 h)
 - [ ] Named report fixture filled in ADR-0078 §2b **or** keep ≤20 s as non-claim (kept as non-claim)
 - [x] Dedicated **instance** requirement in [examples/mssql-single-engine](../../examples/mssql-single-engine/README.md) + Gate B evidence (lab container has no co-tenant OLTP)
-- [x] 0037 cell **Prod Yes (B2)** signed 2026-11-22 on Evaluation `16.0.4325.4` ([B2 checklist](mssql-b2-sku-promotion-checklist.md)) — capped JDBC history/journal; retention DELETE + 90 d; **not** product SWITCH / ≤20 s plant-wide / A-A
+- [x] 0037 cell **Prod Yes (B2)** signed 2026-11-22 on Evaluation `16.0.4325.4` ([B2 checklist](mssql-b2-sku-promotion-checklist.md)) — capped JDBC history/journal; retention DELETE + 90 d; **not** product SWITCH / ≤20 s plant-wide
 - [x] Gate C1: empty-DB monthly partitions + PK `(sampled_at, id)` + status `APPLIED`/`SKIPPED_NONEMPTY` (`V101.2`, operator SPLIT script) — **not** product SWITCH retention
 - [x] Gate C2 materializer: opt-in JDBC `sampled_at` rollups + cursor (`V101.3`, default off) — charts still raw `observed_at` unless opt-in stitch
 - [ ] Gate C2+/C3 productized SWITCH/TRUNCATE retention — still open after capped Prod Yes B2; JVM/schedule SWITCH forbidden by [ADR-0081](decisions/0081-mssql-historian-switch-retention.md); lab confirm + `V101.5` staging exist
 
 ### Phase 6 — Cluster honesty
 
-- [x] Mark A-A cell **not certified** on MSSQL — boot refuses `ispf.cluster.enabled=true` (`MssqlCertificationBootGuard`); PG lab soak is not MSSQL evidence
+- [x] **Prod Yes (A-A)** signed 2026-11-22 — dialect fence lifted (`MetadataDialectBootPolicy`); NATS JetStream still required; AG / dual-JVM soak tech-debt **P-MSSQL-AA-SOAK** ([A-A checklist](mssql-aa-sku-promotion-checklist.md))
+- [x] Licensed Standard / Enterprise / Azure SQL DB\|MI inherit B1+B2+A-A by owner extension — tech-debt **P-MSSQL-SKU-RERUN**
 - [x] Document AG listener / RCSI / dedicated DB in [mssql-sku-promotion-checklist](mssql-sku-promotion-checklist.md) + `db/migration/mssql/README.md`
 
 ## Definition of Done (lift production ban)
@@ -140,5 +141,5 @@ Keep [storage-portability-inventory](storage-portability-inventory.md) aligned w
 
 - [ADR-0078](decisions/0078-mssql-metadata-certification.md)
 - [ADR-0037](decisions/0037-relational-core-portability.md)
-- [known-limitations](known-limitations.md) — B1+B2 Prod Yes on signed Evaluation cell (B2 = capped single-engine JDBC); product SWITCH / A-A stay refused or lab-only
+- [known-limitations](known-limitations.md) — B1+B2+A-A Prod Yes (Evaluation + owner-extended licensed SKUs); product SWITCH outside claim; AG soak tech-debt
 - [mssql-single-engine-ems-epic](mssql-single-engine-ems-epic.md) — opt-in JDBC journal/history; §2 non-claims stay

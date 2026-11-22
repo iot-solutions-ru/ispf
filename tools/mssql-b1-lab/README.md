@@ -23,9 +23,9 @@ Operator scripts for a **single-node** stand. Not a production deploy path.
 - `ISPF_TENANT_DB_ROW_ISOLATION=false`
 - `ISPF_VARIABLE_HISTORY_ENABLED=false` (or non-JDBC store)
 - `ISPF_EVENT_JOURNAL_ENABLED=false` (or non-JDBC store)
-- `ISPF_CLUSTER_ENABLED=false`
+- `ISPF_CLUSTER_ENABLED` optional (**Prod Yes A-A**); when true, NATS JetStream is required
 
-Boot also refuses dual-write on MSSQL. JDBC history/journal need the opt-in single-engine profile ([examples/mssql-single-engine](../../examples/mssql-single-engine/README.md)). **Prod Yes (B2)** on Evaluation is signed for capped single-engine JDBC ([B2 checklist](../../docs/en/mssql-b2-sku-promotion-checklist.md)); product retention stays app `DELETE` + `max-retention-days`. Gate C1 (`V101.2`) partitions empty DBs only. The ADR-0081 lab script can SWITCH one eligible month under a maintenance login; it is not a JVM job. Active-active stays refused.
+Boot also refuses dual-write on MSSQL. JDBC history/journal need the opt-in single-engine profile ([examples/mssql-single-engine](../../examples/mssql-single-engine/README.md)). **Prod Yes (B2)** and **A-A** are signed ([B2](../../docs/en/mssql-b2-sku-promotion-checklist.md), [A-A](../../docs/en/mssql-aa-sku-promotion-checklist.md)); licensed SKUs owner-extended. Product retention stays app `DELETE` + `max-retention-days`. AG soak residual: **P-MSSQL-AA-SOAK**.
 
 ### ADR-0081 SWITCH lab script
 
