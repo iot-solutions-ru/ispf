@@ -1,6 +1,6 @@
 {
   "contextPackVersion": "ispf-1.0.0",
-  "generatedAt": "2026-11-22T12:46:25.086985+00:00",
+  "generatedAt": "2026-11-22T18:54:14.631452+00:00",
   "platformVersion": "1.0.0",
   "bundleManifest": {
     "fields": [
@@ -18888,6 +18888,12 @@
       "path": "docs/en/oracle-certification-epic.md",
       "title": "Epic: Oracle relational certification (ADR-0080)",
       "keywords": "oracle-certification-epic Epic: Oracle relational certification (ADR-0080)"
+    },
+    {
+      "id": "oracle-sku-promotion-checklist",
+      "path": "docs/en/oracle-sku-promotion-checklist.md",
+      "title": "Oracle B1 SKU promotion checklist (ADR-0080)",
+      "keywords": "oracle-sku-promotion-checklist Oracle B1 SKU promotion checklist (ADR-0080)"
     },
     {
       "id": "ot-automation-excellence-tutorials",
@@ -71677,5 +71683,5 @@
   "embeddingModel": "ispf-hash-v1",
   "embeddingDims": 384,
   "embeddingCoverage": 41,
-  "contentSha256": "efe0a1c8c6d58ec3e93b8cd7f99e93e3388e3b1c87277b0c7a89a2683d77ea20"
+  "contentSha256": "f4838887234fa9d1f22018194b7e485e8d4a99f87eb8d62c9700fd62c12158aa"
 }
