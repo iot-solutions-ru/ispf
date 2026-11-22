@@ -128,7 +128,7 @@ Regressions: [`strip-neuro-slang.py`](../../../tools/docs-audit/strip-neuro-slan
 | [0075-observability-slo-otel](0075-observability-slo-otel.md) | First-party metrics + OTel taxonomy / SLO honesty — **Accepted** |
 | [0076-external-secrets-providers](0076-external-secrets-providers.md) | External KMS/HSM/Vault/GOST non-claims (amends 0065) — **Accepted** |
 | [0077-contextpack-hybrid-retrieval](0077-contextpack-hybrid-retrieval.md) | ContextPack hybrid lexical+embedding `search_context` — **Accepted** |
-| [0078-mssql-metadata-certification](0078-mssql-metadata-certification.md) | MS SQL Server metadata certification B1/B2 (amends 0037) — **Accepted** (B1+B2 Prod Yes on Evaluation; B2 = capped JDBC DELETE+90d; A-A still refused) |
+| [0078-mssql-metadata-certification](0078-mssql-metadata-certification.md) | MS SQL Server metadata certification B1/B2/A-A (amends 0037) — **Accepted** (Prod Yes; licensed SKUs owner-extended; AG soak tech-debt) |
 | [0079-mysql-metadata-certification](0079-mysql-metadata-certification.md) | MySQL 8.x B1 metadata certification charter (amends 0037) — **Accepted** (B1 Lab green on 8.4 Community; Prod: No; LGPL MariaDB Connector/J client, MariaDB servers refused) |
 | [0080-oracle-metadata-certification](0080-oracle-metadata-certification.md) | Oracle B1 metadata certification charter (amends 0037) — **Accepted** (impl Not started) |
 | [0081-mssql-historian-switch-retention](0081-mssql-historian-switch-retention.md) | MSSQL historian monthly SWITCH retention — **Accepted as design** (lab dry-run + confirm evidence; staging DDL; JVM/schedule still forbidden; capped Prod Yes B2 does not use this as product retention) |

@@ -3,7 +3,7 @@
 > **Language:** Canonical English.  
 > **Status:** Operator checklist — **not** a pass by itself. Testcontainers Developer edition is a **lab** signal only.
 
-Promote `ISPF_METADATA_DB_KIND=mssql` to a production claim only after signing **one** named cell below (do not batch Standard + Azure + Enterprise into one signature).
+Promote `ISPF_METADATA_DB_KIND=mssql` to a production claim after signing a named cell. **2026-11-22 owner extension:** Evaluation `16.0.4325.4` evidence covers licensed Standard / Enterprise / Azure SQL DB|MI for B1 (tech-debt **P-MSSQL-SKU-RERUN** for a later per-SKU re-run).
 
 ## Named cell (fill one)
 
@@ -17,7 +17,7 @@ Promote `ISPF_METADATA_DB_KIND=mssql` to a production claim only after signing *
 | Dedicated instance | Required only for B2 (not this checklist) |
 | `ISPF_TENANT_DB_ROW_ISOLATION` | `false` (single-tenant) |
 | History / journal | Disabled (`ISPF_VARIABLE_HISTORY_ENABLED=false`, `ISPF_EVENT_JOURNAL_ENABLED=false`) |
-| Cluster | `ISPF_CLUSTER_ENABLED=false` (A-A **not certified**) |
+| Cluster | Optional; **Prod Yes (A-A)** — see [A-A checklist](mssql-aa-sku-promotion-checklist.md); NATS JetStream required when enabled |
 
 ## Gate evidence (attach)
 
@@ -31,7 +31,7 @@ Promote `ISPF_METADATA_DB_KIND=mssql` to a production claim only after signing *
 
 Evidence: issue [#814](https://github.com/iot-solutions-ru/ispf/issues/814) close comment + [`tools/mssql-b1-lab/gate-evidence-local-evaluation.json`](../../tools/mssql-b1-lab/gate-evidence-local-evaluation.json). Items 3 (lease reclaim), 4 (concurrent audit append), and 6 (session schema switch) also have CI TCK coverage (`MssqlFlywayBaselineTckTest`, `AuditChainConcurrentAppendTest`, `ApplicationSchemaSessionMssqlTest`).
 
-**License note:** Evaluation proves the SQL Server 2022 **Enterprise** engine class for B1 metadata — not Standard feature caps and not Azure SQL DB/MI PaaS. A production host still needs a licensed SQL Server Standard or Enterprise, or Azure SQL Database / Managed Instance. Re-run this checklist before signing those cells. Azure SQL Edge and Developer edition are not this signature. Opt-in B2 single-engine is signed separately ([B2 checklist](mssql-b2-sku-promotion-checklist.md)). Active-active stays **not certified**.
+**License note:** Evaluation proves the SQL Server 2022 **Enterprise** engine class. Owner extension 2026-11-22 signs licensed Standard / Enterprise / Azure SQL DB|MI for B1 from that evidence ([sku extension JSON](../../tools/mssql-b1-lab/gate-evidence-sku-extension-evaluation.json)); a production host still needs a real license. Azure SQL Edge and Developer edition are not this signature. B2 / A-A: [B2 checklist](mssql-b2-sku-promotion-checklist.md), [A-A checklist](mssql-aa-sku-promotion-checklist.md).
 
 ### Lab rehearsal (not a SKU signature)
 
@@ -42,7 +42,7 @@ Evidence: issue [#814](https://github.com/iot-solutions-ru/ispf/issues/814) clos
 | aarch64 Edge stand + fence | [`tools/mssql-b1-lab/run.sh`](../../tools/mssql-b1-lab/run.sh) |
 | Metadata load numbers | [mssql-certification-epic](mssql-certification-epic.md) Phase 3 + [`loadtest.py`](../../tools/mssql-b1-lab/loadtest.py) |
 
-This file is signed for the Evaluation cell above. Re-run the seven gates before signing any **additional** licensed Standard / Enterprise / Azure SQL cell.
+This file is signed for the Evaluation cell above; licensed Standard / Enterprise / Azure SQL DB|MI inherit by owner extension (tech-debt **P-MSSQL-SKU-RERUN**).
 
 Signer / date: local Evaluation gate / 2026-11-20
 

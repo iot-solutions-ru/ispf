@@ -58,12 +58,18 @@ class MssqlCertificationBootGuardTest {
     }
 
     @Test
-    void refusesClusterOnMssql() {
+    void allowsClusterOnMssql() {
         MssqlCertificationBootGuard guard = newGuard(
                 false, TenantIsolationProperties.IsolationMode.LOGICAL, false, "clickhouse", false, false, "jdbc", true);
-        assertThatThrownBy(guard::refuseUnsupportedMssqlModes)
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("cluster");
+        assertThatCode(guard::refuseUnsupportedMssqlModes).doesNotThrowAnyException();
+    }
+
+    @Test
+    void allowsClusterOnMssqlWithSingleEngine() {
+        MssqlCertificationBootGuard guard = newGuard(
+                false, TenantIsolationProperties.IsolationMode.LOGICAL, true, "jdbc", false, true, "jdbc", true,
+                true, false, false);
+        assertThatCode(guard::refuseUnsupportedMssqlModes).doesNotThrowAnyException();
     }
 
     @Test

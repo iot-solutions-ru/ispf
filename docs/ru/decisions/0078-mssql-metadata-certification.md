@@ -2,7 +2,7 @@
 
 ## Статус
 
-**Accepted** (2026-11-19) — контракт политики и сертификации. **Prod Yes (B1)** подписан 2026-11-20 на SQL Server 2022 Enterprise Evaluation `16.0.4325.4` ([checklist](../../en/mssql-sku-promotion-checklist.md), issue #814). **Prod Yes (B2)** подписан 2026-11-22 на той же Evaluation для opt-in single-engine JDBC history/journal ([B2 checklist](../../en/mssql-b2-sku-promotion-checklist.md)) — retention DELETE + 90 д; product SWITCH и ≤20 с plant-wide не входят. Evaluation — 180-дневный trial. Без `ISPF_MSSQL_SINGLE_ENGINE=true` B1 fences отказывают JDBC history/journal/dual-write/cluster. A-A не Prod Yes.
+**Accepted** (2026-11-19) — контракт политики и сертификации. **Prod Yes (B1)** 2026-11-20, **B2** 2026-11-22 на Evaluation `16.0.4325.4`. **Prod Yes (A-A)** 2026-11-22 — dialect fence снят ([A-A checklist](../../en/mssql-aa-sku-promotion-checklist.md)); NATS всё ещё нужен; AG soak = tech-debt **P-MSSQL-AA-SOAK**. Licensed Standard / Enterprise / Azure SQL DB|MI наследуют B1+B2+A-A (owner 2026-11-22; tech-debt **P-MSSQL-SKU-RERUN**). Без single-engine B1 fences отказывают JDBC history/journal/dual-write.
 
 Дополняет [0037-relational-core-portability](0037-relational-core-portability.md) и [0064-release-compatibility-lts](0064-release-compatibility-lts.md): MS SQL Server — **первый** non-PG целевой движок для продакшена. ADR фиксирует смысл «certified», явные **non-claims** и gate, без которого нельзя ставить `ISPF_METADATA_DB_KIND=mssql` в проде.
 
@@ -28,12 +28,12 @@
 4. **App schemas / `search_path`:** на MSSQL **unsupported** до отдельного механизма; текущий `USE` / `USE dbo` в диалекте некорректен.
 5. **Кластер:** N JVM → один writable primary (AG listener); RCSI обязателен; dedicated DB (B1), dedicated instance (B2).
 6. **Flyway:** greenfield `mssql/V1`; далее lockstep twin к каждому PG `Vnn` или явный ANSI exception в CI.
-7. **Бан B1 снят** gate из EN ADR §8 на Enterprise Evaluation `16.0.4325.4` (2026-11-20). **Prod Yes B2** подписан 2026-11-22 (capped JDBC; DELETE+90д). Developer и Azure SQL Edge — не эта подпись. Без single-engine boot-refuse для jdbc history/journal/dual-write/cluster **остаётся**. A-A не подписан.
+7. **Бан B1 снят**; **B2** и **A-A** подписаны 2026-11-22 (capped JDBC; cluster dialect allowed). Developer / Edge — не эта подпись. Без single-engine refuse jdbc history/journal/dual-write **остаётся**. AG soak = **P-MSSQL-AA-SOAK**.
 8. **RLS default:** `ISPF_TENANT_DB_ROW_ISOLATION` по умолчанию **true** → на MSSQL boot refuse; single-tenant B1 явно ставит `false`.
 
 ## Последствия
 
-- B1+B2: метаданные и opt-in capped JDBC history/journal на движке класса подписанной Evaluation ячейки; хосту всё ещё нужна лицензия Standard/Enterprise или Azure SQL DB/MI. Product SWITCH / A-A — вне claim.
+- B1+B2+A-A: Evaluation + owner-extended licensed Standard / Enterprise / Azure SQL DB|MI. Product SWITCH вне claim; AG soak tech-debt.
 - Оценка «недели DDL» ≠ полный B1; B2 и 10y SLO — отдельные проекты.
 
 ## Связанные

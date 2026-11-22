@@ -1,0 +1,21 @@
+{
+  "status": "Prod Yes (B1+B2) extended to licensed Standard / Enterprise / Azure SQL DB|MI by owner decision",
+  "basis": "SQL Server 2022 Enterprise Evaluation 16.0.4325.4 engine-class evidence (B1 2026-11-20, B2 2026-11-22)",
+  "signed_at_utc": "2026-11-22T08:35:00Z",
+  "cells": [
+    "SQL Server 2022 Standard (licensed)",
+    "SQL Server 2022 Enterprise (licensed)",
+    "Azure SQL Database",
+    "Azure SQL Managed Instance"
+  ],
+  "tech_debt": [
+    "P-MSSQL-SKU-RERUN: per-SKU checklist re-run still recommended when a named stand is available",
+    "ispf-lab Azure SQL Edge is not this signature"
+  ],
+  "non_claims": [
+    "Perpetual license from Evaluation trial",
+    "Product/scheduled SWITCH retention",
+    "Unbounded 10y / <=20s plant-wide scans"
+  ],
+  "owner_override": "2026-11-22 — Evaluation signed implies licensed SKUs work; residual re-run is tech-debt"
+}

@@ -244,16 +244,34 @@ run_fence() {
   ok=0
   for i in $(seq 1 60); do
     docker logs "$name" >"$logf" 2>&1 || true
+    if [[ "$id" == "g7_cluster" ]] && grep -Fq 'not certified on MSSQL' "$logf"; then
+      fail "$id" "stale MSSQL cluster dialect refuse still present"
+      docker rm -f "$name" >/dev/null 2>&1 || true
+      return
+    fi
     if grep -Fq "$expect" "$logf"; then
       ok=1
-      break
-    fi
-    if grep -Fq 'Started IspfServerApplication' "$logf"; then
       break
     fi
     # boot often dies with APPLICATION FAILED TO START before full message flush
     if grep -Fq 'APPLICATION FAILED TO START' "$logf" && grep -Fq "$expect" "$logf"; then
       ok=1
+      break
+    fi
+    # ApplicationRunner (NATS gate) may log after Started — wait for exit or grace
+    if grep -Fq 'Started IspfServerApplication' "$logf"; then
+      for j in $(seq 1 15); do
+        docker logs "$name" >"$logf" 2>&1 || true
+        if grep -Fq "$expect" "$logf"; then
+          ok=1
+          break
+        fi
+        running=$(docker inspect -f '{{.State.Running}}' "$name" 2>/dev/null || echo false)
+        if [[ "$running" != "true" ]]; then
+          break
+        fi
+        sleep 1
+      done
       break
     fi
     sleep 2
@@ -295,10 +313,10 @@ run_fence g7_journal \
   "-e ISPF_TENANT_DB_ROW_ISOLATION=false -e ISPF_VARIABLE_HISTORY_ENABLED=false -e ISPF_EVENT_JOURNAL_ENABLED=true -e ISPF_EVENT_JOURNAL_STORE=jdbc -e ISPF_CLUSTER_ENABLED=false" \
   "event-journal"
 
-note "7d cluster refuse"
+note "7d cluster dialect allows (NATS required)"
 run_fence g7_cluster \
   "-e ISPF_TENANT_DB_ROW_ISOLATION=false -e ISPF_VARIABLE_HISTORY_ENABLED=false -e ISPF_EVENT_JOURNAL_ENABLED=false -e ISPF_CLUSTER_ENABLED=true" \
-  "not certified on MSSQL"
+  "requires ispf.nats.enabled=true"
 
 # write JSON
 : > /tmp/gate_items.jsonl
