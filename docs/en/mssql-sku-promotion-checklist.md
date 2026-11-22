@@ -31,7 +31,7 @@ Promote `ISPF_METADATA_DB_KIND=mssql` to a production claim only after signing *
 
 Evidence: issue [#814](https://github.com/iot-solutions-ru/ispf/issues/814) close comment + [`tools/mssql-b1-lab/gate-evidence-local-evaluation.json`](../../tools/mssql-b1-lab/gate-evidence-local-evaluation.json). Items 3 (lease reclaim), 4 (concurrent audit append), and 6 (session schema switch) also have CI TCK coverage (`MssqlFlywayBaselineTckTest`, `AuditChainConcurrentAppendTest`, `ApplicationSchemaSessionMssqlTest`).
 
-**License note:** Evaluation proves the SQL Server 2022 **Enterprise** engine class for B1 metadata — not Standard feature caps and not Azure SQL DB/MI PaaS. A production host still needs a licensed SQL Server Standard or Enterprise, or Azure SQL Database / Managed Instance. Re-run this checklist before signing those cells. Azure SQL Edge and Developer edition are not this signature. B2 jdbc history/journal and active-active stay **not certified** (boot refuses; opt-in single-engine is a separate epic).
+**License note:** Evaluation proves the SQL Server 2022 **Enterprise** engine class for B1 metadata — not Standard feature caps and not Azure SQL DB/MI PaaS. A production host still needs a licensed SQL Server Standard or Enterprise, or Azure SQL Database / Managed Instance. Re-run this checklist before signing those cells. Azure SQL Edge and Developer edition are not this signature. Opt-in B2 single-engine is signed separately ([B2 checklist](mssql-b2-sku-promotion-checklist.md)). Active-active stays **not certified**.
 
 ### Lab rehearsal (not a SKU signature)
 

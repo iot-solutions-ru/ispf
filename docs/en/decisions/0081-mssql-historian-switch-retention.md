@@ -4,7 +4,7 @@
 
 **Accepted as design** (2026-11-20). **Amended** (2026-11-21): empty Flyway staging DDL is allowed; JVM / scheduled `SWITCH` remain forbidden.
 
-Lab script **exists** (`tools/mssql-b1-lab/switch-variable-samples-month.sql`, dry-run by default; requires explicit `MaxRetentionDays` and `ConfirmSwitch=YES`). Lab **confirm** evidence on disposable Evaluation: `tools/mssql-b1-lab/gate-evidence-switch-confirm-evaluation.json` (2026-11-22; one July month SWITCH+TRUNCATE). Product retention **in force** remains application `DELETE` plus `ispf.relational.mssql.max-retention-days` (default 90). Opt-in aggregate stitch does not change that. ADR-0078 §2b stays empty. ADR-0037 **Prod Yes (B2)** stays closed.
+Lab script **exists** (`tools/mssql-b1-lab/switch-variable-samples-month.sql`, dry-run by default; requires explicit `MaxRetentionDays` and `ConfirmSwitch=YES`). Lab **confirm** evidence on disposable Evaluation: `tools/mssql-b1-lab/gate-evidence-switch-confirm-evaluation.json` (2026-11-22; one July month SWITCH+TRUNCATE). Product retention **in force** remains application `DELETE` plus `ispf.relational.mssql.max-retention-days` (default 90). Opt-in aggregate stitch does not change that. ADR-0078 §2b stays empty. ADR-0037 **Prod Yes (B2)** is signed for capped JDBC history/journal on Evaluation ([B2 checklist](../mssql-b2-sku-promotion-checklist.md)); this ADR still does **not** make JVM/scheduled SWITCH the product retention path.
 
 ### Amendment (2026-11-21) — staging DDL only
 
@@ -81,14 +81,14 @@ Operator charts remain on `observed_at`. This ADR does not change that clock and
 
 - No log-versus-`DELETE` performance claim under `FULL` recovery.
 - No `ONLINE` index rebuild requirement or authorization.
-- No fill of ADR-0078 §2b. No ADR-0037 **Prod Yes (B2)**.
+- No fill of ADR-0078 §2b. This ADR does not productize JVM/scheduled SWITCH (capped Prod Yes B2 keeps DELETE + 90 d).
 - No executable `SWITCH` SQL **in this ADR text**. The lab script under `tools/mssql-b1-lab/` must keep the guards in this Decision. Empty staging DDL (Flyway) is authorized only by the 2026-11-21 amendment above.
 
 ## Consequences
 
 - Implementers cannot treat `APPLIED` alone, rollup rows, or the report API as permission to drop.
 - Sites on `SKIPPED_NONEMPTY` stay on `DELETE` + the retention ceiling until they rebuild on a new empty database (already Gate C1 policy). Staging DDL on those databases is inert while the script refuses non-`APPLIED`.
-- Empty staging DDL (`V101.5`) plus script refuse-if-missing is shipped; still not wired into stands/CI as a confirm proof. JVM schedule, confirm in CI, chart cutover, §2b, and Prod Yes B2 stay closed.
+- Empty staging DDL (`V101.5`) plus script refuse-if-missing is shipped; lab confirm evidence exists. JVM schedule, confirm in CI, and §2b stay closed. Capped Prod Yes B2 does not depend on this ADR becoming the product retention path.
 
 ## Related
 

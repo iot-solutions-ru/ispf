@@ -74,13 +74,13 @@ Do not quote B1 + B2-core + archive + spool as one delivery. B1 boot fences stay
 - [x] Event journal deep pages use keyset pagination (`before` / `beforeId` → `queryRecentBefore`)
 - [x] History write + bucket aggregate **TCK on MSSQL** (`MssqlHistoryBucketTckTest`, tag `mssql-docker`; skips without Docker)
 - [x] Retention: documented cap `ispf.relational.mssql.max-retention-days` (default 90) while single-engine is on — **not** a substitute for Gate C partitions
-- [x] Gate B lab on Evaluation: `stand-b2-local.ps1` + `gate-b2-core.ps1` → `gate-evidence-b2-core-evaluation.json` (history write, DATE_BUCKET aggregate, journal JDBC, 20k-row purge ~0.5 s) — **not** 0037 Prod Yes (B2)
+- [x] Gate B lab on Evaluation: `stand-b2-local.ps1` + `gate-b2-core.ps1` → `gate-evidence-b2-core-evaluation.json` / re-sign `gate-evidence-b2-prod-yes-evaluation.json` (history write, DATE_BUCKET aggregate, journal JDBC, 20k-row purge; wall-clock ≤1 h)
 - [ ] Named report fixture filled in ADR-0078 §2b **or** keep ≤20 s as non-claim (kept as non-claim)
 - [x] Dedicated **instance** requirement in [examples/mssql-single-engine](../../examples/mssql-single-engine/README.md) + Gate B evidence (lab container has no co-tenant OLTP)
-- [ ] 0037 cell **Prod Yes (B2)** only after the archive gate — **not** this change
-- [x] Gate C1: empty-DB monthly partitions + PK `(sampled_at, id)` + status `APPLIED`/`SKIPPED_NONEMPTY` (`V101.2`, operator SPLIT script) — **not** SWITCH retention
-- [x] Gate C2 materializer: opt-in JDBC `sampled_at` rollups + cursor (`V101.3`, default off) — charts still raw `observed_at`; **not** SWITCH
-- [ ] Gate C2+/C3: read-path cutover + SWITCH/TRUNCATE retention (still required before 0037 **Prod Yes (B2)**). [ADR-0081](decisions/0081-mssql-historian-switch-retention.md) + lab `switch-variable-samples-month.sql` + empty staging `V101.5` exist; product/scheduled SWITCH is **not** shipped
+- [x] 0037 cell **Prod Yes (B2)** signed 2026-11-22 on Evaluation `16.0.4325.4` ([B2 checklist](mssql-b2-sku-promotion-checklist.md)) — capped JDBC history/journal; retention DELETE + 90 d; **not** product SWITCH / ≤20 s plant-wide / A-A
+- [x] Gate C1: empty-DB monthly partitions + PK `(sampled_at, id)` + status `APPLIED`/`SKIPPED_NONEMPTY` (`V101.2`, operator SPLIT script) — **not** product SWITCH retention
+- [x] Gate C2 materializer: opt-in JDBC `sampled_at` rollups + cursor (`V101.3`, default off) — charts still raw `observed_at` unless opt-in stitch
+- [ ] Gate C2+/C3 productized SWITCH/TRUNCATE retention — still open after capped Prod Yes B2; JVM/schedule SWITCH forbidden by [ADR-0081](decisions/0081-mssql-historian-switch-retention.md); lab confirm + `V101.5` staging exist
 
 ### Phase 6 — Cluster honesty
 
@@ -140,5 +140,5 @@ Keep [storage-portability-inventory](storage-portability-inventory.md) aligned w
 
 - [ADR-0078](decisions/0078-mssql-metadata-certification.md)
 - [ADR-0037](decisions/0037-relational-core-portability.md)
-- [known-limitations](known-limitations.md) — B1 Prod Yes is the signed Evaluation cell only; B2 needs single-engine opt-in (non-claim until Gate C); A-A stays refused at boot
+- [known-limitations](known-limitations.md) — B1+B2 Prod Yes on signed Evaluation cell (B2 = capped single-engine JDBC); product SWITCH / A-A stay refused or lab-only
 - [mssql-single-engine-ems-epic](mssql-single-engine-ems-epic.md) — opt-in JDBC journal/history; §2 non-claims stay
