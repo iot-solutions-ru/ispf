@@ -1,0 +1,101 @@
+{
+  "generated_at": "2026-11-22T18:39:58.146Z",
+  "base": "http://127.0.0.1:18092",
+  "engine_note": "Oracle AI Database 26ai Free 23.26.4.0.0 (gvenzl/oracle-free:23-slim-faststart, local AMD64 Docker); ojdbc17 23.26.3.0.0 on loader.path",
+  "edition": "Oracle AI Database 26ai Free Release 23.26.4.0.0 - Develop, Learn, and Run for Free | AL32UTF8 | STANDARD | 8192",
+  "jdbc_client": "Oracle JDBC thin ojdbc17-23.26.3.0.0.jar (lab classpath via loader.path; not shipped by ISPF)",
+  "fail_count": 0,
+  "pass_count": 18,
+  "items": [
+    {
+      "id": "g0_engine",
+      "status": "PASS",
+      "detail": "Oracle AI Database 26ai Free Release 23.26.4.0.0 - Develop, Learn, and Run for Free; AL32UTF8, MAX_STRING_SIZE=STANDARD, 8 KiB blocks"
+    },
+    {
+      "id": "g1_health",
+      "status": "PASS",
+      "detail": "actuator health UP"
+    },
+    {
+      "id": "g1_login",
+      "status": "PASS",
+      "detail": "admin login ok"
+    },
+    {
+      "id": "g1_flyway",
+      "status": "PASS",
+      "detail": "flyway oracle/V1 success=1"
+    },
+    {
+      "id": "g1_dialect",
+      "status": "PASS",
+      "detail": "Hibernate OracleDialect (auto-detected)"
+    },
+    {
+      "id": "g1_driver_external",
+      "status": "PASS",
+      "detail": "bootJar carries no ojdbc; driver loaded from loader.path=/app/lib (ojdbc17-23.26.3.0.0.jar)"
+    },
+    {
+      "id": "g1_driver_missing",
+      "status": "PASS",
+      "detail": "refused with: needs the Oracle JDBC thin driver"
+    },
+    {
+      "id": "g2_import",
+      "status": "PASS",
+      "detail": "cert bundle import 200"
+    },
+    {
+      "id": "g2_paths",
+      "status": "PASS",
+      "detail": "all cert paths 200"
+    },
+    {
+      "id": "g3_dual_jvm",
+      "status": "PASS",
+      "detail": "second non-clustered JVM health UP on :18093 against shared ispf schema; live lease reclaim not asserted (cluster off). Lease failover is CI: OracleFlywayBaselineTckTest"
+    },
+    {
+      "id": "g4_audit",
+      "status": "PASS",
+      "detail": "serial reimport 200; audit_event_chain rows=1. Concurrent append + verify is CI: OracleFlywayBaselineTckTest (8 writers)"
+    },
+    {
+      "id": "g5_rls",
+      "status": "PASS",
+      "detail": "refused with: db-row-isolation=true is unsupported on Oracle"
+    },
+    {
+      "id": "g6_hard",
+      "status": "PASS",
+      "detail": "refused with: isolation-mode=HARD is unsupported on Oracle"
+    },
+    {
+      "id": "g7_hist",
+      "status": "PASS",
+      "detail": "refused with: variable-history store falls back to ISPF_DB JDBC on Oracle"
+    },
+    {
+      "id": "g7_dual",
+      "status": "PASS",
+      "detail": "refused with: dual-write-enabled=true is refused on Oracle"
+    },
+    {
+      "id": "g7_journal",
+      "status": "PASS",
+      "detail": "refused with: event-journal store falls back to ISPF_DB JDBC on Oracle"
+    },
+    {
+      "id": "g7_cluster",
+      "status": "PASS",
+      "detail": "refused with: ispf.cluster.enabled=true is not certified on Oracle"
+    },
+    {
+      "id": "g8_hot_reload",
+      "status": "PASS",
+      "detail": "PATCH event-journal.enabled=true refused on the JDBC store (ADR-0080 B1)"
+    }
+  ]
+}

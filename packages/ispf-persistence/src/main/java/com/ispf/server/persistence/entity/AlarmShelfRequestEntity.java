@@ -27,7 +27,8 @@ public class AlarmShelfRequestEntity {
     @Column(name = "duration_minutes")
     private Integer durationMinutes;
 
-    @Column(name = "comment", length = 1024)
+    // Quoted: COMMENT is reserved on Oracle (ADR-0080); every engine stores it as lowercase "comment".
+    @Column(name = "`comment`", length = 1024)
     private String comment;
 
     @Column(name = "requested_by", nullable = false, length = 128)

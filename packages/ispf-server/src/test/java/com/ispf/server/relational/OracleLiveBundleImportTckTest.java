@@ -1,6 +1,8 @@
 package com.ispf.server.relational;
 
 import com.ispf.server.audit.AuditChainStore;
+import com.ispf.server.persistence.AlarmShelfRepository;
+import com.ispf.server.persistence.entity.AlarmShelfEntity;
 import jakarta.persistence.EntityManagerFactory;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.junit.jupiter.api.AfterAll;
@@ -19,10 +21,13 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.testcontainers.oracle.OracleContainer;
 
 import javax.sql.DataSource;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -93,6 +98,12 @@ class OracleLiveBundleImportTckTest {
     @Autowired
     AuditChainStore auditChainStore;
 
+    @Autowired
+    AlarmShelfRepository alarmShelfRepository;
+
+    @Autowired
+    TransactionTemplate transactionTemplate;
+
     @Test
     void importsOracleB1CertBundleAndResolvesKeyPaths() throws Exception {
         assertThat(entityManagerFactory.unwrap(SessionFactoryImplementor.class)
@@ -127,6 +138,33 @@ class OracleLiveBundleImportTckTest {
                 Integer.class
         )).isEqualTo(1);
         assertThat(auditChainStore.verify()).isTrue();
+    }
+
+    @Test
+    void alarmShelfRoundTripsThroughJpa() {
+        // COMMENT is an Oracle reserved word; JPQL also renders boolean literals and Instant binds here.
+        Instant now = Instant.now().truncatedTo(ChronoUnit.MICROS);
+        AlarmShelfEntity shelf = new AlarmShelfEntity();
+        shelf.setId("oracle-tck-shelf");
+        shelf.setObjectPath("root.platform.devices.oracle-b1-cert-sensor-01");
+        shelf.setEventName("overheat");
+        shelf.setShelvedBy("tck");
+        shelf.setShelvedAt(now);
+        shelf.setExpiresAt(now.plusSeconds(3600));
+        shelf.setComment("maintenance window");
+        shelf.setActive(true);
+        alarmShelfRepository.saveAndFlush(shelf);
+
+        AlarmShelfEntity found = alarmShelfRepository
+                .findActiveShelf("root.platform.devices.oracle-b1-cert-sensor-01", "overheat", now)
+                .orElseThrow();
+        assertThat(found.getComment()).isEqualTo("maintenance window");
+        assertThat(found.getShelvedAt()).isEqualTo(now);
+        assertThat(alarmShelfRepository.findByActiveTrueOrderByShelvedAtDesc()).extracting(AlarmShelfEntity::getId)
+                .contains("oracle-tck-shelf");
+        Integer deactivated = transactionTemplate.execute(
+                status -> alarmShelfRepository.deactivateExpired(now.plusSeconds(7200)));
+        assertThat(deactivated).isEqualTo(1);
     }
 
     static boolean available() {

@@ -33,7 +33,8 @@ public class AlarmShelfEntity {
     @Column(name = "expires_at")
     private Instant expiresAt;
 
-    @Column(name = "comment", length = 1024)
+    // Quoted: COMMENT is reserved on Oracle (ADR-0080); every engine stores it as lowercase "comment".
+    @Column(name = "`comment`", length = 1024)
     private String comment;
 
     @Column(name = "active", nullable = false)
