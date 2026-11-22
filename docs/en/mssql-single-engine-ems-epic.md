@@ -44,9 +44,9 @@ Opt-in `ISPF_MSSQL_SINGLE_ENGINE=true` plus `ISPF_HISTORIAN_DEPLOY_PROFILE=mssql
 - Retention cap until Gate C: do not claim 10 years.
 - Testcontainers Developer edition is a smoke signal, not the §8 signature.
 
-**Lab exit (2026-11-20):** journal + history JDBC on Evaluation `16.0.4325.4`, dedicated lab DB `ispf_b2`, retention floor 90 days, measured `DELETE TOP` purge of 20 000 `event_history` rows in ~0.5 s (`tools/mssql-b1-lab/gate-evidence-b2-core-evaluation.json`). This is **Gate B engineering**, not ADR-0037 **Prod Yes (B2)** (Gate C still open). ≤20 s plant-wide scans stay a non-claim.
+**Lab exit (2026-11-20) + Prod Yes B2 (2026-11-22):** journal + history JDBC on Evaluation `16.0.4325.4`, dedicated lab DB `ispf_b2`, retention floor 90 days, measured `DELETE TOP` purge (`gate-evidence-b2-core-evaluation.json` / re-sign `gate-evidence-b2-prod-yes-evaluation.json`, wall-clock ≤1 h). ADR-0037 **Prod Yes (B2)** signed for this capped cell ([B2 checklist](mssql-b2-sku-promotion-checklist.md)). Product/scheduled SWITCH and ≤20 s plant-wide scans stay non-claims.
 
-### Gate C — B2-archive (before any Prod Yes B2)
+### Gate C — archive extras (outside capped Prod Yes B2)
 
 Partition/PK rewrite is not applied to `V1`. In-place rewrite of `variable_samples` after rows exist is forbidden (ADR-0064).
 
@@ -58,11 +58,11 @@ Partition/PK rewrite is not applied to `V1`. In-place rewrite of `variable_sampl
 
 **Ingest rollup report (after C2):** `GET /api/v1/objects/by-path/variables/history/ingest-rollups` serves closed `1h`/`1d` buckets from `variable_sample_rollups` (axis `sampled_at`, before the coverage cursor). Unsupported grains or missing cursor fall back to raw `observed_at` aggregate. This is **not** a chart cutover and **not** a SWITCH seal.
 
-**V101.4 observed_at rollups:** table `variable_sample_observed_rollups` + arrival cursor `mssql_historian_observed_rollup_cursor`. Opt-in JDBC writer (`ISPF_MSSQL_OBSERVED_ROLLUP_MATERIALIZER`, default off) walks new `sampled_at` rows and recomputes touched `observed_at` 1h/1d buckets from raw rows still present. Opt-in read (`ISPF_MSSQL_OBSERVED_ROLLUP_READ`, default off) stitches closed middle buckets into `/history/aggregate` with raw head/tail (`dataSource=observed_rollup`); one-grain cursor slack. Not a SWITCH seal; not Prod Yes B2. See `MssqlHistorianDivergence.V101_4_OBSERVED_ROLLUPS`.
+**V101.4 observed_at rollups:** table `variable_sample_observed_rollups` + arrival cursor `mssql_historian_observed_rollup_cursor`. Opt-in JDBC writer (`ISPF_MSSQL_OBSERVED_ROLLUP_MATERIALIZER`, default off) walks new `sampled_at` rows and recomputes touched `observed_at` 1h/1d buckets from raw rows still present. Opt-in read (`ISPF_MSSQL_OBSERVED_ROLLUP_READ`, default off) stitches closed middle buckets into `/history/aggregate` with raw head/tail (`dataSource=observed_rollup`); one-grain cursor slack. Not a SWITCH seal; outside the default Prod Yes B2 claim. See `MssqlHistorianDivergence.V101_4_OBSERVED_ROLLUPS`.
 
-**SWITCH retention (ADR-0081):** design locked; lab script `tools/mssql-b1-lab/switch-variable-samples-month.sql` (dry-run default, explicit ceiling + confirm). Dry-run: `gate-evidence-switch-dryrun-evaluation.json`. Lab **confirm** (mutation) on disposable Evaluation: `gate-evidence-switch-confirm-evaluation.json` (2026-11-22). `V101.5` empty staging on `PRIMARY`; script refuses missing/nonempty/non-identical staging. JVM/schedule `SWITCH` still forbidden. Retention **in force** for the product remains app `DELETE` + `max-retention-days`. Prod Yes B2 stays closed.
+**SWITCH retention (ADR-0081):** design locked; lab script + dry-run + confirm evidence on disposable Evaluation. `V101.5` empty staging; JVM/schedule `SWITCH` still forbidden. Retention **in force** for Prod Yes B2 remains app `DELETE` + `max-retention-days`.
 
-Still open (later — not Prod Yes B2 yet):
+Still open (outside capped Prod Yes B2):
 
 - Productizing ADR-0081 beyond empty staging + lab script (JVM/schedule/Flyway SWITCH still refused; `V101.5` is DDL only); report/cursor alone still does not authorize drops.
 - Per-variable retention vs a dropped month: single-engine mode keeps one global floor (`max-retention-days`, default 90) until that cutover, because `SWITCH` drops a time slice for every variable.

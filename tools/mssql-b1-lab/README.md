@@ -9,8 +9,9 @@ Operator scripts for a **single-node** stand. Not a production deploy path.
 | `stand-b2-local.ps1` | AMD64 Gate B: same SQL + `ISPF_MSSQL_SINGLE_ENGINE=true` on DB `ispf_b2` (:18082) |
 | `gate-evidence.sh` | B1 §8 evidence collector (`MSSQL_SA_PASSWORD` required). Signed B1: `gate-evidence-local-evaluation.json` |
 | `gate-b2-core.ps1` | Gate B evidence (history write, DATE_BUCKET, journal JDBC, purge). Output: `gate-evidence-b2-core-evaluation.json` |
-| `gate-evidence-switch-dryrun-evaluation.json` | ADR-0081 lab SWITCH dry-run on Evaluation (APPLIED plan + pre-V101.2 refuse). Not §2b / Prod Yes B2 |
-| `gate-evidence-switch-confirm-evaluation.json` | ADR-0081 lab SWITCH **confirm** on disposable `ispf_switch_confirm` (Evaluation `16.0.4325.4`, V101.5, July dropped / August kept). Product retention still DELETE. Not §2b / Prod Yes B2 |
+| `gate-evidence-b2-prod-yes-evaluation.json` | B2 re-sign gate (≤1 h wall-clock; ~20 s) for ADR-0037 **Prod Yes (B2)** — [B2 checklist](../../docs/en/mssql-b2-sku-promotion-checklist.md) |
+| `gate-evidence-switch-dryrun-evaluation.json` | ADR-0081 lab SWITCH dry-run on Evaluation (APPLIED plan + pre-V101.2 refuse). Not §2b |
+| `gate-evidence-switch-confirm-evaluation.json` | ADR-0081 lab SWITCH **confirm** on disposable `ispf_switch_confirm`. Product retention still DELETE; not product SWITCH |
 | `split-variable-samples-horizon.sql` | Gate C1: SPLIT empty monthly horizon + alignment check (no SWITCH) |
 | `switch-variable-samples-month.sql` | ADR-0081 lab: dry-run-default SWITCH+TRUNCATE of one oldest eligible UTC month (maintenance login; not product retention) |
 | `load.sh` | Cert-bundle import + concurrent `by-path` soak |
@@ -24,7 +25,7 @@ Operator scripts for a **single-node** stand. Not a production deploy path.
 - `ISPF_EVENT_JOURNAL_ENABLED=false` (or non-JDBC store)
 - `ISPF_CLUSTER_ENABLED=false`
 
-Boot also refuses dual-write on MSSQL. JDBC history/journal need the opt-in single-engine profile ([examples/mssql-single-engine](../../examples/mssql-single-engine/README.md)). Gate B lab ≠ ADR-0037 **Prod Yes (B2)**. Gate C1 (`V101.2`) partitions empty DBs only. Product retention stays app `DELETE` + `max-retention-days`. The ADR-0081 lab script can SWITCH one eligible month under a maintenance login; it is not wired into stands/gates and does not set Prod Yes B2. Active-active stays refused.
+Boot also refuses dual-write on MSSQL. JDBC history/journal need the opt-in single-engine profile ([examples/mssql-single-engine](../../examples/mssql-single-engine/README.md)). **Prod Yes (B2)** on Evaluation is signed for capped single-engine JDBC ([B2 checklist](../../docs/en/mssql-b2-sku-promotion-checklist.md)); product retention stays app `DELETE` + `max-retention-days`. Gate C1 (`V101.2`) partitions empty DBs only. The ADR-0081 lab script can SWITCH one eligible month under a maintenance login; it is not a JVM job. Active-active stays refused.
 
 ### ADR-0081 SWITCH lab script
 

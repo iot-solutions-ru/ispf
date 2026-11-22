@@ -1,0 +1,86 @@
+{
+    "status":  "Prod Yes (B2) signed — Evaluation cell; capped JDBC history/journal; retention DELETE+90d; product SWITCH not in force",
+    "gate":  "B2-core",
+    "sku":  "SQL Server 2022 Enterprise Evaluation 16.0.4325.4",
+    "generated_at":  "2026-11-22T08:08:07.1813563Z",
+    "base":  "http://127.0.0.1:18082",
+    "db":  "ispf_b2",
+    "purge_rows":  20000,
+    "pass_count":  13,
+    "fail_count":  0,
+    "items":  [
+                  {
+                      "id":  "b2_sku",
+                      "status":  "PASS",
+                      "detail":  "Enterprise Evaluation Edition (64-bit)|16.0.4325.4"
+                  },
+                  {
+                      "id":  "b2_health",
+                      "status":  "PASS",
+                      "detail":  "actuator UP"
+                  },
+                  {
+                      "id":  "b2_login",
+                      "status":  "PASS",
+                      "detail":  "admin login ok"
+                  },
+                  {
+                      "id":  "b2_flyway_v101_1",
+                      "status":  "PASS",
+                      "detail":  "101.1 single engine historian divergence"
+                  },
+                  {
+                      "id":  "b2_bundle_import",
+                      "status":  "PASS",
+                      "detail":  "import errored but device path exists: The remote server returned an error: (400) Bad Request."
+                  },
+                  {
+                      "id":  "b2_variable",
+                      "status":  "PASS",
+                      "detail":  "temp already present"
+                  },
+                  {
+                      "id":  "b2_history_write",
+                      "status":  "PASS",
+                      "detail":  "seeded 300 samples"
+                  },
+                  {
+                      "id":  "b2_history_bucket",
+                      "status":  "PASS",
+                      "detail":  "aggregate buckets/points=51"
+                  },
+                  {
+                      "id":  "b2_journal_jdbc",
+                      "status":  "PASS",
+                      "detail":  "global events list from JDBC ok; [{\"id\":\"6AFAC4A9-4D20-4163-AB6C-505DA75056F3\",\"objectPath\":\"root.platform.devices.mssql-b1-cert-sensor-01\",\"eventName\":\"b2-gate\",\"level\":\"INFO\",\"payload\":{\"schema\":{\"name\":\"eventPa"
+                  },
+                  {
+                      "id":  "b2_purge_seed",
+                      "status":  "PASS",
+                      "detail":  "rows=20000 seed_ms=17421"
+                  },
+                  {
+                      "id":  "b2_purge_measure",
+                      "status":  "PASS",
+                      "detail":  "purge_ms=474 deleted=20000 leftover_b2_purge=0 rows=20000"
+                  },
+                  {
+                      "id":  "b2_retention_cap",
+                      "status":  "PASS",
+                      "detail":  "max-retention-days default 90 under single-engine; product retention DELETE+ceiling; lab SWITCH is maintenance-only"
+                  },
+                  {
+                      "id":  "b2_dedicated_instance",
+                      "status":  "PASS",
+                      "detail":  "Lab: Evaluation container ispf-mssql-b1-stand hosts only ISPF DBs (ispf / ispf_b2); no co-tenant ERP. Prod B2 requires a dedicated SQL Server instance."
+                  }
+              ],
+    "non_claims":  [
+                       "Product/scheduled monthly SWITCH retention is not in force (product retention is DELETE + max-retention-days; lab SWITCH is maintenance-only)",
+                       "Unbounded 10y / plant-wide \u003c=20s scan stays a non-claim",
+                       "A-A / ispf.cluster.enabled still refused on MSSQL"
+                   ],
+    "signed_at_utc":  "2026-11-22T08:08:07Z",
+    "wall_clock_cap":  "\u003c=1h (actual ~20s)",
+    "checklist":  "docs/en/mssql-b2-sku-promotion-checklist.md"
+}

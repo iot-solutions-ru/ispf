@@ -6,7 +6,7 @@
 
 Канонический текст: [EN ADR-0081](../../en/decisions/0081-mssql-historian-switch-retention.md).
 
-Lab helper: `tools/mssql-b1-lab/switch-variable-samples-month.sql`. Lab confirm (mutation) на disposable Evaluation: `gate-evidence-switch-confirm-evaluation.json` (2026-11-22). Retention продукта — app `DELETE` + `max-retention-days`. §2b / Prod Yes B2 не открываются.
+Lab helper: `tools/mssql-b1-lab/switch-variable-samples-month.sql`. Lab confirm (mutation) на disposable Evaluation: `gate-evidence-switch-confirm-evaluation.json` (2026-11-22). Retention продукта — app `DELETE` + `max-retention-days`. Prod Yes B2 (capped JDBC) подписан отдельно; JVM/schedule SWITCH этим ADR не открывается.
 
 ## Контекст
 
@@ -23,7 +23,7 @@ C1 может дать `APPLIED` только на пустой БД; `SKIPPED_N
 
 ## Последствия
 
-`V101.5` + отказ скрипта при missing/nonempty/non-identical staging отгружены. JVM/schedule / Prod Yes B2 этим документом не открываются.
+`V101.5` + отказ скрипта при missing/nonempty/non-identical staging отгружены. Lab confirm evidence есть. JVM/schedule SWITCH и §2b остаются закрытыми. Capped Prod Yes B2 (DELETE+90д) этим ADR как product retention path не становится.
 
 ## Связанные
 

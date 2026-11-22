@@ -2,7 +2,7 @@
 
 ## Status
 
-**Accepted** (2026-11-19) — policy and certification contract. **Prod Yes (B1)** signed 2026-11-20 on SQL Server 2022 Enterprise Evaluation `16.0.4325.4` ([checklist](../mssql-sku-promotion-checklist.md), issue #814). Evaluation is a 180-day Enterprise-class trial: a production host still needs a licensed Standard/Enterprise or Azure SQL DB/MI. B1 boot fences still refuse JDBC history/journal, dual-write, and `ispf.cluster.enabled=true`. B2 and A-A are not Prod Yes.
+**Accepted** (2026-11-19) — policy and certification contract. **Prod Yes (B1)** signed 2026-11-20 on SQL Server 2022 Enterprise Evaluation `16.0.4325.4` ([checklist](../mssql-sku-promotion-checklist.md), issue #814). **Prod Yes (B2)** signed 2026-11-22 on the same Evaluation build for opt-in single-engine JDBC history/journal ([B2 checklist](../mssql-b2-sku-promotion-checklist.md)) — retention in force is DELETE + 90-day ceiling; product/scheduled SWITCH and ≤20 s plant-wide scans stay non-claims. Evaluation is a 180-day Enterprise-class trial: a production host still needs a licensed Standard/Enterprise or Azure SQL DB/MI. Without `ISPF_MSSQL_SINGLE_ENGINE=true`, B1 boot fences still refuse JDBC history/journal, dual-write, and `ispf.cluster.enabled=true`. A-A is not Prod Yes.
 
 Amends [0037-relational-core-portability](0037-relational-core-portability.md) and [0064-release-compatibility-lts](0064-release-compatibility-lts.md): MS SQL Server is the **first** non-PG production engine target. This ADR defines what “certified” means, what is explicitly **not** claimed, and the gate that must pass before operators may set `ISPF_METADATA_DB_KIND=mssql` in production.
 
@@ -119,7 +119,7 @@ Lift “do not set `ISPF_METADATA_DB_KIND=mssql` in production” in 0037, both 
 7. For **B2 only**: history write + bucket aggregate query; retention/purge behavior documented; report SLO fixture (if any) recorded — else SLO stays a non-claim
 8. Chaos/soak checklist from [cluster-chaos-soak-runbook](../cluster-chaos-soak-runbook.md) re-run against MSSQL for the A-A cell, or mark A-A **not certified** on that engine
 
-Testcontainers Developer edition and Azure SQL Edge are **lab** signals only. The signed cell is SQL Server 2022 Enterprise Evaluation `16.0.4325.4` (2026-11-20). That proves the SQL Server 2022 **Enterprise** engine class; signing Standard or Azure SQL DB/MI still requires re-running the checklist on that SKU. Sales may claim **B1 metadata** on the signed engine class; they may not claim a perpetual license from Evaluation, B2 jdbc stores, or active-active.
+Testcontainers Developer edition and Azure SQL Edge are **lab** signals only. The signed cell is SQL Server 2022 Enterprise Evaluation `16.0.4325.4` (B1 2026-11-20; B2 2026-11-22). That proves the SQL Server 2022 **Enterprise** engine class; signing Standard or Azure SQL DB/MI still requires re-running the checklists on that SKU. Sales may claim **B1 metadata** and opt-in **B2** capped JDBC history/journal on the signed engine class; they may not claim a perpetual license from Evaluation, product/scheduled SWITCH retention, unbounded 10y/≤20 s plant-wide scans, or active-active.
 
 §8 live-vs-CI: on the Evaluation cell, lease reclaim (item 3), concurrent audit append/verify (item 4), and session schema switch (item 6) are evidenced by CI TCK in addition to the live health/import/fence run recorded in #814.
 
@@ -130,7 +130,7 @@ A plausible first slice is “empty dedicated DB, platform tables, login, one bu
 ## Consequences
 
 - Sales / EMS proposals: prefer **external MSSQL** for corporate reports today; B1 removes PG only for **platform metadata** when certified; B2 is optional and capped.
-- 0037 tier 3 is **Prod Yes (B1)** for the signed Evaluation cell. **Prod Yes (B2)** stays a separate cell and is not signed.
+- 0037 tier 3 is **Prod Yes (B1 + B2)** for the signed Evaluation cell. B2 is opt-in single-engine JDBC with DELETE + 90-day retention in force; product SWITCH and A-A stay outside the claim.
 - Risks: dual migration stream drift; pool poisoning if schema/`USE` is mishandled; noisy-neighbor if B2 shares an instance; false confidence from Developer-edition CI.
 
 ## Related
