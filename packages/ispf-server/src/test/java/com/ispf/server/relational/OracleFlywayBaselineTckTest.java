@@ -104,6 +104,8 @@ class OracleFlywayBaselineTckTest {
             objectPathsAreCaseSensitive(jdbc);
             emptyStringIsNull(jdbc);
             reservedWordColumnsRoundTrip(jdbc);
+            PlatformSqlPathsTck.jobQueueRoundTrip(jdbc, dialect, cluster(), nats("oracle-tck-sql"));
+            PlatformSqlPathsTck.functionSuccessTriggers(jdbc, dialect);
             jobClaimSkipsLockedRows(dataSource, dialect);
             concurrentAuditChainHolds(jdbc, dialect);
             driverLockFailover(jdbc);

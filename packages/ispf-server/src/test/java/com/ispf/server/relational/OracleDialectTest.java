@@ -138,6 +138,13 @@ class OracleDialectTest {
     }
 
     @Test
+    void nullsLastAndConcatUseOracleNativeSyntax() {
+        assertThat(dialect.orderByNullsLast("started_at")).isEqualTo("started_at NULLS LAST");
+        assertThat(dialect.concatExpression("','", "trigger_function_name", "','"))
+                .isEqualTo("(',' || trigger_function_name || ',')");
+    }
+
+    @Test
     void bucketSqlStaysPostgresShapedUntilB2() {
         assertThat(dialect.variableSampleBucketAggregateSql()).contains("extract(epoch");
     }

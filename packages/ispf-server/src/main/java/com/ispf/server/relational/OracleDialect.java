@@ -164,6 +164,17 @@ public class OracleDialect extends AbstractRelationalDialect {
         return value ? "1" : "0";
     }
 
+    /**
+     * {@code ||}, but not PostgreSQL's NULL semantics: Oracle treats a NULL operand as an empty
+     * string (and {@code ''} as NULL), so the result is NULL only when every operand is. A NULL check
+     * cannot be added here without repeating bind operands; callers guard NULL operands themselves,
+     * as {@code ApplicationSqlBindingStore} does.
+     */
+    @Override
+    public String concatExpression(String... operands) {
+        return "(" + String.join(" || ", operands) + ")";
+    }
+
     @Override
     public String[] flywayLocations() {
         return new String[]{"classpath:db/migration/oracle"};
