@@ -19,7 +19,7 @@
 | Локальный профиль: встроенный H2 и учётные записи `admin` / `admin`, `developer` / `developer`, `operator` / `operator` | Эти пароли на сервере `prod` или с OIDC. Смените их до того, как машина станет доступна в сети |
 | История на ноутбуке — эта локальная база | Кластер ClickHouse, который создаёт ISPF, или вторая копия буфера историка на другом узле ISPF |
 | Relational core на PostgreSQL, H2 local или MSSQL **B1 + B2 + A-A** (Prod Yes; licensed SKUs owner-extended). См. EN [known-limitations](../en/known-limitations.md), [A-A](../en/mssql-aa-sku-promotion-checklist.md) | Бессрочная лицензия *из* Evaluation trial, product `SWITCH`, 10 лет raw, ≤20 с plant-wide, завершённый AG soak (tech-debt), Oracle ([0078](decisions/0078-mssql-metadata-certification.md)) |
-| MySQL Community Server 8.4.x **B1 metadata — Prod Yes** под B1 fences; клиент только MariaDB Connector/J, `jdbc:mysql://…?permitMysqlScheme=true` ([checklist](../en/mysql-sku-promotion-checklist.md)) | Prod Yes на MySQL Enterprise, HeatWave, RDS / Aurora, Azure Database for MySQL и любой другой non-Community ячейке (**P-MYSQL-SKU-RERUN**); JDBC history/journal, cluster и row isolation на MySQL; MariaDB как `ISPF_DB`; любой другой JDBC-клиент MySQL ([0079](decisions/0079-mysql-metadata-certification.md)) |
+| MySQL Community Server 8.4.x **B1 metadata — Prod Yes** под B1 fences; клиент только MariaDB Connector/J, `jdbc:mysql://…?permitMysqlScheme=true` ([checklist](../en/mysql-sku-promotion-checklist.md)) | Prod Yes на MySQL Enterprise, HeatWave, RDS / Aurora, Azure Database for MySQL и любой другой non-Community ячейке (**P-MYSQL-SKU-RERUN**); JDBC history/journal, cluster и row isolation на MySQL; MariaDB как `ISPF_DB`; любой другой JDBC-клиент MySQL; TLS на соединении MySQL `ISPF_DB` (обязанность оператора, gate не проходил — **P-MYSQL-TLS**); паритет SQL на путях вне B1 gate — отчёты через очередь задач и `GET /api/v1/platform/metrics` на MySQL ожидаемо не работают (**P-MYSQL-PG-SQL**) ([0079](decisions/0079-mysql-metadata-certification.md)) |
 | App SQL-схемы / `search_path` на PostgreSQL | Переключение per-app schema на MSSQL или MySQL (`ApplicationSchemaSession`) — **не поддерживается**, fail-closed ([0078](decisions/0078-mssql-metadata-certification.md), [0079](decisions/0079-mysql-metadata-certification.md)) |
 | PG-скрипты solution `exec` / `ON CONFLICT` против `ISPF_DB` | Те же скрипты на MSSQL или MySQL metadata — **не поддерживаются**; внешний `DATA_SOURCE` или dialect-safe SQL |
 | Дисковый буфер перед единственным хранилищем ClickHouse есть и выключен | Буфер сам не включается и не работает для JDBC и двойной записи |
@@ -77,6 +77,8 @@
 | **P-WEBAUTHN** | WebAuthn и MFA у поставщика идентификации |
 | **P-PENTEST** | Заказной тест на проникновение и повторная проверка |
 | **P-MYSQL-SKU-RERUN** | Повтор checklist MySQL на каждой named Enterprise / managed / non-Community ячейке |
+| **P-MYSQL-TLS** | Повтор B1 gate MySQL по TLS; TLS — обязанность оператора, не сертифицирован |
+| **P-MYSQL-PG-SQL** | PG-only SQL на путях MySQL вне B1 gate (отчёты через очередь задач, platform metrics, триггеры SQL-binding) |
 
 Доска: [parked-backlog](parked-backlog.md).
 

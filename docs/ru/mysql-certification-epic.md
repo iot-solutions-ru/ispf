@@ -2,7 +2,7 @@
 
 > **Язык:** русская версия. Канон: [en/mysql-certification-epic.md](../en/mysql-certification-epic.md).  
 > **Статус:** B1 **Prod Yes** только на MySQL Community Server 8.4.x + MariaDB Connector/J (owner extension 2026-11-22, [checklist](../en/mysql-sku-promotion-checklist.md)). Остальные ячейки MySQL — **P-MYSQL-SKU-RERUN**.  
-> **Политика:** lab после MSSQL B1 Prod Yes. MariaDB ≠ MySQL. B1 pack Oracle — только после MySQL B1 Prod Yes.
+> **Политика:** lab после MSSQL B1 Prod Yes. MariaDB ≠ MySQL. MySQL B1 Prod Yes подписан — B1 pack Oracle может начинаться; Oracle остаётся Prod: No.
 
 ## Phase 1 — честность диалекта (есть)
 
@@ -19,9 +19,15 @@
 - Hard refuse снят только для MySQL; boot под B1 fences; Oracle — refuse
 - Стенд `tools/mysql-b1-lab`: 17 PASS / 0 FAIL на MySQL 8.4.13 Community ([checklist](../en/mysql-sku-promotion-checklist.md))
 
-## Подпись Prod Yes (B1) — черновик 2026-11-22
+## Подпись Prod Yes (B1) — подписано 2026-11-22
 
 - Hibernate `ddl-auto=validate` на MySQL — **сделано**: закреплён `MysqlHibernateDialect` (регистр идентификаторов, когда MariaDB Connector/J его не сообщает; `BINARY` против `LONGBLOB`); TCK стартует с validate при `lower_case_table_names=0`
-- TLS вместо `allowPublicKeyRetrieval` — открыто до подписи
-- PG-only SQL на не покрытых gate путях — открыто до подписи
+- TLS на соединении `ISPF_DB` — зафиксирован как обязанность оператора, этой подписью **не сертифицирован**; `allowPublicKeyRetrieval` — настройка только lab-стенда (**P-MYSQL-TLS**)
+- PG-only SQL на не покрытых gate путях (platform jobs, триггеры SQL-binding) — зафиксирован как известный non-claim, полного паритета SQL нет (**P-MYSQL-PG-SQL**)
 - Owner extension из Lab-green ячейки вместо named self-managed хоста — **сделано**: повтор gate с validate на каждом JVM, 17 PASS / 0 FAIL (`gate-evidence-prod-yes-community.json`); повтор на named хосте рекомендуется, не блокирует; **P-MYSQL-SKU-RERUN** для Enterprise / managed / non-Community
+
+## Tech debt после подписи
+
+- **P-MYSQL-TLS** — повтор gate по TLS (`sslMode=verify-full`), рекомендуется на первом named хосте
+- **P-MYSQL-PG-SQL** — портировать или закрыть fence PG-only SQL на путях вне gate: отчёты через очередь задач и `GET /api/v1/platform/metrics` (`PlatformJobService`), триггеры SQL-binding по успеху функции (`ApplicationSqlBindingStore`) ([checklist](../en/mysql-sku-promotion-checklist.md#known-gaps-tracked-tech-debt))
+- **P-MYSQL-SKU-RERUN** — повтор checklist на каждой named Enterprise / managed / non-Community ячейке

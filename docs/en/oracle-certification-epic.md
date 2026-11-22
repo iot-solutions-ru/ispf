@@ -2,7 +2,7 @@
 
 > **Language:** Canonical English. Russian: [ru/oracle-certification-epic.md](../ru/oracle-certification-epic.md).  
 > **Status:** Phase 1 lab — delivery board for [ADR-0080](decisions/0080-oracle-metadata-certification.md). **Prod: No.**  
-> **Policy:** Phase 1 started early by owner decision. The B1 pack still starts **after** MySQL B1 Prod Yes ([0079](decisions/0079-mysql-metadata-certification.md)).
+> **Policy:** Phase 1 started early by owner decision. MySQL B1 Prod Yes was signed on 2026-11-22 ([0079](decisions/0079-mysql-metadata-certification.md)), so the B1 pack may start.
 
 ## Already landed
 
@@ -12,7 +12,7 @@
 - [x] Dialect honesty: unique violation **ORA-00001** only, `NUMTODSINTERVAL` expiry, `1`/`0` booleans, `SELECT 1 FROM DUAL` reset, identifiers with `"` or NUL fail closed
 - [x] `assertOracleB1Fences` + `OracleCertificationBootGuard` (no single-engine bypass; the engine refuse still wins first, pre-Flyway and on context refresh)
 
-## Next train (B1 pack — separate PR, after MySQL B1 Prod Yes)
+## Next train (B1 pack — separate PR, unblocked by MySQL B1 Prod Yes)
 
 - [ ] Counsel-approved Oracle JDBC driver (no `ojdbc*` on any classpath until signed)
 - [ ] Amend ADR-0080 to authorize lab Flyway SQL; generator + `db/migration/oracle/V1__baseline.sql` + lockstep CI

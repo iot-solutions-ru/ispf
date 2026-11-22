@@ -4,7 +4,7 @@
 
 **Accepted** (2026-11-20) — policy and certification charter. **Implementation: Phase 1 lab started** (2026-11-22). **Prod: No** — boot still refuses `ISPF_METADATA_DB_KIND=oracle`.
 
-Amends [0037-relational-core-portability](0037-relational-core-portability.md). The Oracle B1 pack is scheduled after the MySQL B1 gate in [0079](0079-mysql-metadata-certification.md). This ADR does not grant production support.
+Amends [0037-relational-core-portability](0037-relational-core-portability.md). MySQL B1 Prod Yes is signed in [0079](0079-mysql-metadata-certification.md) (2026-11-22), so the Oracle B1 pack may start. This ADR does not grant production support.
 
 ## Context
 
@@ -16,7 +16,7 @@ Oracle version, edition, JDBC driver, schema behavior, locking, and identifier r
 
 - Scope the first gate to **B1 metadata** on a named Oracle database version/edition and JDBC driver (candidates: **19c** or **23ai**, both long-term releases). Oracle Database Free is lab evidence only.
 - Keep journal and variable history outside the claim unless a later B2 decision and gate cover them. **No** MSSQL-style single-engine bypass in B1 fences.
-- **Lab Phase 1** started on 2026-11-22 by owner decision, ahead of MySQL B1 Prod Yes. Phase 1 is limited to dialect honesty and pre-wired fences. The Oracle B1 pack (Flyway SQL, JDBC driver, TCK) and any Prod Yes still wait for MySQL B1 Prod Yes in ADR-0079.
+- **Lab Phase 1** started on 2026-11-22 by owner decision, ahead of MySQL B1 Prod Yes. Phase 1 is limited to dialect honesty and pre-wired fences. MySQL B1 Prod Yes was signed on 2026-11-22 (ADR-0079 § Amendment 4), so the Oracle B1 pack (Flyway SQL, JDBC driver, TCK) may start. Oracle Prod Yes still needs its own gate.
 - Keep `Prod: No`. `UncertifiedRelationalEngineBootGuard` / `MetadataDialectBootPolicy.assertEngineCertified` refuse boot for `oracle` until the complete gate passes. `assertOracleB1Fences` / `OracleCertificationBootGuard` are pre-wired (unit-tested) for the pack PR: no row isolation, no `HARD` tenant mode, no dual-write, no cluster, no JDBC history/journal on `ISPF_DB`.
 - Require a greenfield Flyway pack, fixed bundle import, concurrent audit verification, lease/failover checks, and explicit unsupported-feature failures before promotion.
 - Treat containers, free editions, or a developer lab as lab evidence only, never as certification for another named production edition.
@@ -29,7 +29,7 @@ No Flyway SQL is authorized or supplied by this policy ADR yet.
 - Oracle remains unavailable as the production metadata database.
 - Sales and documentation must state the exact B1 scope and named database/driver combination.
 - Engine changes remain greenfield database plus bundle import, not in-place migration.
-- Starting Oracle Phase 1 early does not change the order of the packs: MySQL B1 Prod Yes still comes before the Oracle B1 pack.
+- Starting Oracle Phase 1 early did not change the order of the packs: MySQL B1 Prod Yes came first (2026-11-22), and the Oracle B1 pack may start now.
 
 ## Related
 

@@ -23,6 +23,9 @@ SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.mariadb.jdbc.Driver
 ISPF_METADATA_DB_KIND=mysql
 ```
 
+TLS (`sslMode=verify-full` above) is the operator's responsibility: Prod Yes (B1) did not run a gate over TLS
+(**P-MYSQL-TLS**). The lab stand's `allowPublicKeyRetrieval=true` is lab-only.
+
 Database: `CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_bin`; server `transaction_isolation=READ-COMMITTED`.
 Hibernate runs `MysqlHibernateDialect`, a `MySQLDialect` subclass pinned in `RelationalConfiguration`. The default
 `ddl-auto=validate` passes, including on `lower_case_table_names=0`; no property is needed. Do not set
@@ -30,7 +33,9 @@ Hibernate runs `MysqlHibernateDialect`, a `MySQLDialect` subclass pinned in `Rel
 
 MySQL DDL is not transactional: if V1 fails, drop the database and retry. An applied V1 is frozen — new PG
 `Vnn` scripts need a `mysql/Vnn` twin or an exception line. Per-app schemas and in-DB PG-flavored solution SQL are
-unsupported; external `DATA_SOURCE` JDBC to MySQL for reports remains supported. GPL `mysql-connector-j` is never
+unsupported; external `DATA_SOURCE` JDBC to MySQL for reports remains supported. Platform paths the B1 gate does not
+exercise can still carry PostgreSQL-only SQL: queued report runs and `GET /api/v1/platform/metrics` are expected to
+fail on MySQL (**P-MYSQL-PG-SQL**). GPL `mysql-connector-j` is never
 on the classpath.
 
 Charter: [0079-mysql-metadata-certification](../../../../../../../../docs/en/decisions/0079-mysql-metadata-certification.md).  

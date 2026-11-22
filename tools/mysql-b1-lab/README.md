@@ -33,7 +33,7 @@ Boot refuses each of these otherwise, and refuses a MariaDB server under any kin
 
 - Client: MariaDB Connector/J (LGPL) — `SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.mariadb.jdbc.Driver`. GPL `mysql-connector-j` is not used.
 - URL: `jdbc:mysql://<host>:3306/ispf?permitMysqlScheme=true&…` — Connector/J 3.x refuses `jdbc:mysql:` without `permitMysqlScheme`.
-- The stand adds `allowPublicKeyRetrieval=true` because it runs `caching_sha2_password` without TLS. A production host uses TLS (`sslMode=verify-full`) instead.
+- The stand adds `allowPublicKeyRetrieval=true` because it runs `caching_sha2_password` without TLS. That setting is lab-only. A production host uses TLS (`sslMode=verify-full`); Prod Yes (B1) does not certify TLS (**P-MYSQL-TLS**).
 - Server: `--transaction-isolation=READ-COMMITTED`, database `ispf` on `utf8mb4` / `utf8mb4_0900_bin` (case-sensitive object paths).
 - The stand grants `SELECT ON performance_schema.user_variables_by_thread` to the ISPF user; without it Flyway logs a 1142 warning and skips its user-variable reset.
 

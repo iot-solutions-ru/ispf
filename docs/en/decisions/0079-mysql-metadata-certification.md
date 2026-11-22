@@ -2,7 +2,7 @@
 
 ## Status
 
-**Accepted** (2026-11-20) — policy and certification charter. **Amended 2026-11-22 — B1 pack + Lab green:** lab Flyway SQL is authorized (§ Amendment 1), the JDBC client driver is decided (§ Amendment 2), and the Lab-green gate (§ Amendment 3) passed on MySQL 8.4.13 Community. **Prod Yes (B1)** 2026-11-22 by owner extension (§ Amendment 4) on one cell: **MySQL Community Server 8.4.x + MariaDB Connector/J only** ([checklist](../mysql-sku-promotion-checklist.md)). A MySQL `ISPF_DB` boots only under the B1 fences (`MetadataDialectBootPolicy.assertMysqlB1Fences`). Other MySQL cells are not Prod Yes (**P-MYSQL-SKU-RERUN**); MariaDB is never covered.
+**Accepted** (2026-11-20) — policy and certification charter. **Amended 2026-11-22 — B1 pack + Lab green:** lab Flyway SQL is authorized (§ Amendment 1), the JDBC client driver is decided (§ Amendment 2), and the Lab-green gate (§ Amendment 3) passed on MySQL 8.4.13 Community. **Prod Yes (B1)** 2026-11-22 by owner extension (§ Amendment 4) on one cell: **MySQL Community Server 8.4.x + MariaDB Connector/J only** ([checklist](../mysql-sku-promotion-checklist.md)). A MySQL `ISPF_DB` boots only under the B1 fences (`MetadataDialectBootPolicy.assertMysqlB1Fences`). Other MySQL cells are not Prod Yes (**P-MYSQL-SKU-RERUN**); MariaDB is never covered. TLS and SQL outside the gate's paths are not certified (**P-MYSQL-TLS**, **P-MYSQL-PG-SQL**).
 
 Amends [0037-relational-core-portability](0037-relational-core-portability.md). MySQL 8.x is the next enterprise metadata target after MSSQL B1 lab-green / Prod Yes on the Evaluation cell in [0078](0078-mssql-metadata-certification.md). This ADR grants production support only for the § Amendment 4 cell.
 
@@ -68,17 +68,17 @@ Closed after Lab green (2026-11-22): Hibernate `ddl-auto=validate` (default prof
 | Basis | The § Amendment 3 Lab-green cell (8.4.13 Community, local Docker), re-run 2026-11-22 with `ddl-auto=validate` on every JVM: 17 PASS / 0 FAIL ([`gate-evidence-prod-yes-community.json`](../../../tools/mysql-b1-lab/gate-evidence-prod-yes-community.json)) |
 | Owner extension | The lab Docker cell stands in for a named self-managed host, overriding the checklist's "not the lab Docker stand" rule for this cell only. A gate re-run on the first named host is recommended, not blocking |
 | Fences | Unchanged: boot refuses JDBC history / journal, dual-write, cluster, row isolation, `HARD`, and MariaDB servers |
+| TLS | Operator-required; **not certified** by this signature. The evidence cell ran without TLS, with `allowPublicKeyRetrieval=true`, which is lab-only. Tech debt **P-MYSQL-TLS** ([checklist](../mysql-sku-promotion-checklist.md#known-gaps-tracked-tech-debt)) |
+| SQL coverage | The gate's paths only; **no** full SQL parity with PostgreSQL. Read from the code, not run: PostgreSQL-only SQL in `PlatformJobService` (`(UUID) getObject` on `CHAR(36)`, `NULLS LAST`) is expected to break queued report runs and `GET /api/v1/platform/metrics`, and `ApplicationSqlBindingStore` `\|\|` concat is expected to over-match function-success SQL-binding triggers. Tech debt **P-MYSQL-PG-SQL** ([checklist](../mysql-sku-promotion-checklist.md#known-gaps-tracked-tech-debt)) |
 | Tech debt | **P-MYSQL-SKU-RERUN** — MySQL Enterprise, HeatWave, Amazon RDS / Aurora MySQL, Azure Database for MySQL, and every other non-Community cell need their own checklist run before a claim names them |
 | Non-claims | MySQL 8.0 and 9.x; MariaDB Server; any other JDBC client (GPL `mysql-connector-j` is never on the classpath); B2 history / journal; active-active; tenant row isolation; `HARD` and per-app schemas |
 
-**Draft — before signing:** two checklist items stay open until closed or waived in writing ([checklist](../mysql-sku-promotion-checklist.md) § Before signing): TLS on the `ISPF_DB` connection (`sslMode=verify-full` instead of the lab's `allowPublicKeyRetrieval=true`), and review or fencing of PostgreSQL-only SQL on paths the gate does not exercise (for example `PlatformJobService` `NULLS LAST` and `(UUID) getObject` on `CHAR(36)`, `ApplicationSqlBindingStore` `||` concat).
-
 ## Consequences
 
-- MySQL is **Prod Yes (B1)** on one cell: self-managed MySQL Community Server 8.4.x with MariaDB Connector/J, under the B1 fences. Other MySQL cells stay lab-only until their own checklist run (**P-MYSQL-SKU-RERUN**).
+- MySQL is **Prod Yes (B1)** on one cell: self-managed MySQL Community Server 8.4.x with MariaDB Connector/J, under the B1 fences. Other MySQL cells stay lab-only until their own checklist run (**P-MYSQL-SKU-RERUN**). TLS is operator-required and not certified (**P-MYSQL-TLS**); SQL outside the gate's paths is not claimed (**P-MYSQL-PG-SQL**).
 - Sales and documentation must name **MySQL Community Server 8.4 B1 metadata** with the MariaDB Connector/J client, and must not say “MySQL/MariaDB” or name Enterprise / managed MySQL.
 - Engine changes remain greenfield database plus bundle import, not in-place migration.
-- The Oracle B1 pack ([0080](0080-oracle-metadata-certification.md)) starts only after MySQL B1 Prod Yes. Oracle Phase 1 (dialect honesty and fences; boot refused) started early by owner decision.
+- MySQL B1 Prod Yes (§ Amendment 4) lets the Oracle B1 pack ([0080](0080-oracle-metadata-certification.md)) start. Oracle stays **Prod: No** until its own gate passes. Oracle Phase 1 (dialect honesty and fences; boot refused) started early by owner decision.
 
 ## Related
 

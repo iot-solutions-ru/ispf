@@ -1,8 +1,7 @@
 # MySQL B1 SKU promotion checklist (ADR-0079)
 
 > **Language:** Canonical English.  
-> **Status:** Operator checklist for **Prod Yes (B1)** on one named cell — **MySQL Community Server 8.4.x + MariaDB Connector/J only** — owner-extended 2026-11-22 from the Lab-green cell with `ddl-auto=validate` fixed. No other MySQL cell and no MariaDB server inherits it.  
-> **Draft:** the signature is final only when the open items in [Before signing](#before-signing) close or the owner waives them in writing.
+> **Status:** **Prod Yes (B1) — signed 2026-11-22** on one named cell — **MySQL Community Server 8.4.x + MariaDB Connector/J only** — by owner extension from the Lab-green cell with `ddl-auto=validate` fixed. No other MySQL cell and no MariaDB server inherits it. TLS and PostgreSQL-only SQL outside the gate are not certified ([Known gaps](#known-gaps-tracked-tech-debt)).
 
 Promote `ISPF_METADATA_DB_KIND=mysql` to a production claim only on a signed named cell (do not batch Community, Enterprise, and managed services into one signature).
 
@@ -20,6 +19,7 @@ Promote `ISPF_METADATA_DB_KIND=mysql` to a production claim only on a signed nam
 | `ISPF_TENANT_DB_ROW_ISOLATION` | `false` (single-tenant) |
 | History / journal | Disabled (`ISPF_VARIABLE_HISTORY_ENABLED=false`, `ISPF_EVENT_JOURNAL_ENABLED=false`) |
 | Cluster | `ISPF_CLUSTER_ENABLED=false` (A-A **not certified**) |
+| TLS | Not used on the evidence cell (`allowPublicKeyRetrieval=true`, lab-only). Operator-required in production; **not certified** (**P-MYSQL-TLS**) |
 
 ## What Prod Yes (B1) means on this cell
 
@@ -34,6 +34,24 @@ Promote `ISPF_METADATA_DB_KIND=mysql` to a production claim only on a signed nam
 - MariaDB Server under any `ISPF_METADATA_DB_KIND` (boot refuses it), and any JDBC client other than MariaDB Connector/J
 - B2 JDBC history / journal and historian dual-write on MySQL (boot refuses them)
 - Active-active (`ISPF_CLUSTER_ENABLED=true`), tenant row isolation, `HARD` schemas, per-app schema switch
+- TLS on the `ISPF_DB` connection: operator-required, not certified by this signature (tech debt **P-MYSQL-TLS**)
+- SQL parity with PostgreSQL: paths the gate does not exercise can still carry PostgreSQL-only SQL (tech debt **P-MYSQL-PG-SQL**)
+
+## Known gaps (tracked tech debt)
+
+Both were recorded at signing as non-claims. Neither was verified on MySQL.
+
+**TLS — P-MYSQL-TLS.** The evidence cell connects without TLS and sets `allowPublicKeyRetrieval=true` so `caching_sha2_password` works over plain TCP. That setting is lab-only: do not carry it to production. A production host must run the `ISPF_DB` connection over TLS (MariaDB Connector/J `sslMode=verify-full`). TLS is the operator's responsibility, and no gate has run over it. To close: re-run the gate over TLS, recommended on the first named host.
+
+**PostgreSQL-only SQL — P-MYSQL-PG-SQL.** No full SQL parity with PostgreSQL is claimed. The gate exercises boot, Flyway, bundle import, `by-path`, audit, leases and the boot fences, not every JDBC path, and the remaining SQL has not been reviewed in full. Known paths, read from the code and not run on MySQL:
+
+| Path | Construct | Expected on MySQL |
+|------|-----------|-------------------|
+| Report runs through the platform job queue (`POST /api/v1/reports/by-path/run-async`, `GET /api/v1/platform/jobs/{id}`). The console takes this path whenever the job consumer is on, the default on a single node | `PlatformJobService` casts `getObject` on the `CHAR(36)` `job_id` column to `UUID` | Fails with `ClassCastException`; the job stays `QUEUED` |
+| `GET /api/v1/platform/metrics` (console System metrics) | `PlatformJobService.listRunningByHolder`: `ORDER BY started_at NULLS LAST` | Fails: `NULLS LAST` is not MySQL syntax |
+| SQL bindings refreshed on function success (`on_function_success`) with a trigger object and a trigger function name, single or comma-separated | `ApplicationSqlBindingStore.listForFunctionSuccess`: `',' \|\| trigger_function_name \|\| ','` | Over-matches: MySQL reads `\|\|` as logical OR under the default `sql_mode`, so the binding can refresh after other functions on the trigger object |
+
+To close: port or fence each path, with a MySQL test per path.
 
 ## Gate evidence
 
@@ -55,15 +73,15 @@ Promote `ISPF_METADATA_DB_KIND=mysql` to a production claim only on a signed nam
 
 The Lab-green Docker cell stands in for a named self-managed host, so Prod Yes (B1) covers self-managed MySQL Community Server 8.4.x with MariaDB Connector/J. This overrides the earlier "not Testcontainers, not the lab Docker stand" rule for this cell only. A gate re-run on the first named host is recommended, not blocking.
 
-## Before signing
+## Sign-off items
 
 | Item | State |
 |------|-------|
 | Hibernate validate | **Closed 2026-11-22.** ISPF pins `MysqlHibernateDialect`, a `MySQLDialect` subclass: it looks names up as written when MariaDB Connector/J reports no identifier case (`lower_case_table_names=0`, the Linux default), and accepts the baseline's `LONGBLOB` for `BINARY` mappings. No operator property is needed. Leave `hibernate.dialect` unset: plain `MySQLDialect` fails validation with "missing table" |
 | Named host | **Owner extension** (above) |
 | Re-run | **Done** on the Lab-green cell with validate on every JVM (table above) |
-| TLS | **Open.** The lab stand connects with `allowPublicKeyRetrieval=true` and no TLS. A production host uses TLS (`sslMode=verify-full`); no gate has run it yet |
-| Uncovered SQL | **Open.** PostgreSQL-only SQL on paths this gate does not exercise (platform jobs `NULLS LAST` / `(UUID) getObject`, SQL-binding `||` triggers): review or fence |
+| TLS | **Not certified; operator-required.** Recorded at signing as a non-claim, not verified. `allowPublicKeyRetrieval=true` stays a lab-only stand setting. Tech debt **P-MYSQL-TLS** ([Known gaps](#known-gaps-tracked-tech-debt)) |
+| Uncovered SQL | **Known non-claim; tracked.** No full SQL parity. PostgreSQL-only SQL on paths this gate does not exercise (platform jobs `NULLS LAST` / `(UUID) getObject`, SQL-binding `\|\|` triggers) is listed, not fixed. Tech debt **P-MYSQL-PG-SQL** ([Known gaps](#known-gaps-tracked-tech-debt)) |
 
 **Tech debt P-MYSQL-SKU-RERUN:** this Prod Yes covers only self-managed MySQL Community Server 8.4.x with MariaDB Connector/J. MySQL Enterprise, HeatWave, Amazon RDS / Aurora MySQL, Azure Database for MySQL, and any other non-Community cell each need this checklist re-run before a claim names them. MariaDB is never covered.
 
@@ -75,6 +93,6 @@ The Lab-green Docker cell stands in for a named self-managed host, so Prod Yes (
 | Local MySQL 8.4 stand | [`tools/mysql-b1-lab/stand-local.ps1`](../../tools/mysql-b1-lab/stand-local.ps1) |
 | Gate collector | [`tools/mysql-b1-lab/gate-evidence.ps1`](../../tools/mysql-b1-lab/gate-evidence.ps1) |
 
-Signer / date: owner extension from the local Community lab gate / 2026-11-22 — draft until the open items above close
+Signer / date: owner extension from the local Community lab gate / 2026-11-22 — signed; TLS and PostgreSQL-only SQL recorded as non-claims (**P-MYSQL-TLS**, **P-MYSQL-PG-SQL**)
 
 Related: [0079](decisions/0079-mysql-metadata-certification.md), [mysql-certification-epic](mysql-certification-epic.md), [tools/mysql-b1-lab](../../tools/mysql-b1-lab/README.md).
