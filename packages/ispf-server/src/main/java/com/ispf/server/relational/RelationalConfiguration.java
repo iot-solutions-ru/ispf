@@ -55,6 +55,20 @@ public class RelationalConfiguration {
     }
 
     /**
+     * ADR-0080: Hibernate binds Instant as TIMESTAMP_UTC and reads it back as OffsetDateTime, which
+     * ojdbc refuses for a TIMESTAMP column (ORA-18716). Bind plain TIMESTAMP on Oracle: the same
+     * JVM-zone wall time ISPF's JDBC code writes with {@code Timestamp.from(instant)}.
+     */
+    @Bean
+    HibernatePropertiesCustomizer oracleHibernateInstants(RelationalDialect relationalDialect) {
+        return properties -> {
+            if (relationalDialect.kind() == RelationalDbKind.ORACLE) {
+                properties.putIfAbsent(AvailableSettings.PREFERRED_INSTANT_JDBC_TYPE, "TIMESTAMP");
+            }
+        };
+    }
+
+    /**
      * ADR-0080: on an Oracle ISPF_DB, JDBC code binds java.util.UUID values that ojdbc rejects
      * (ORA-17004). Only the primary DataSource of an Oracle deployment is wrapped.
      */
