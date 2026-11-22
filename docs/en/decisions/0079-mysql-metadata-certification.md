@@ -2,9 +2,9 @@
 
 ## Status
 
-**Accepted** (2026-11-20) — policy and certification charter. **Amended 2026-11-22 — B1 pack + Lab green:** lab Flyway SQL is authorized (§ Amendment 1), the JDBC client driver is decided (§ Amendment 2), and the Lab-green gate (§ Amendment 3) passed on MySQL 8.4.13 Community. **Prod: No — Lab green.** A MySQL `ISPF_DB` boots only under the B1 fences (`MetadataDialectBootPolicy.assertMysqlB1Fences`); no named-SKU Prod Yes cell is signed.
+**Accepted** (2026-11-20) — policy and certification charter. **Amended 2026-11-22 — B1 pack + Lab green:** lab Flyway SQL is authorized (§ Amendment 1), the JDBC client driver is decided (§ Amendment 2), and the Lab-green gate (§ Amendment 3) passed on MySQL 8.4.13 Community. **Prod Yes (B1)** 2026-11-22 by owner extension (§ Amendment 4) on one cell: **MySQL Community Server 8.4.x + MariaDB Connector/J only** ([checklist](../mysql-sku-promotion-checklist.md)). A MySQL `ISPF_DB` boots only under the B1 fences (`MetadataDialectBootPolicy.assertMysqlB1Fences`). Other MySQL cells are not Prod Yes (**P-MYSQL-SKU-RERUN**); MariaDB is never covered.
 
-Amends [0037-relational-core-portability](0037-relational-core-portability.md). MySQL 8.x is the next enterprise metadata target after MSSQL B1 lab-green / Prod Yes on the Evaluation cell in [0078](0078-mssql-metadata-certification.md). This ADR does not grant production support.
+Amends [0037-relational-core-portability](0037-relational-core-portability.md). MySQL 8.x is the next enterprise metadata target after MSSQL B1 lab-green / Prod Yes on the Evaluation cell in [0078](0078-mssql-metadata-certification.md). This ADR grants production support only for the § Amendment 4 cell.
 
 ## Context
 
@@ -16,10 +16,10 @@ MySQL certification does **not** imply MariaDB certification. They have distinct
 
 - Scope the first gate to **B1 metadata** on a named MySQL version/edition. The lab cell is **MySQL 8.4 LTS Community**; 8.0 is not a signed cell.
 - Keep journal and variable history outside the claim unless a later B2 decision and gate cover them. **No** MSSQL-style single-engine bypass in B1 fences.
-- **Lab green** is reached (§ Amendment 3). The MySQL **named-SKU Prod Yes** gate is separate and still open.
+- **Lab green** is reached (§ Amendment 3). **Prod Yes (B1)** covers one cell by owner extension (§ Amendment 4); every other MySQL cell needs its own checklist run.
 - `MetadataDialectBootPolicy.assertEngineCertified` no longer hard-refuses `mysql`. Like MSSQL, a MySQL `ISPF_DB` boots only under its B1 fences, enforced pre-Flyway (`FlywayDialectConfiguration`) and on context refresh (`MysqlCertificationBootGuard`). Oracle stays hard-refused.
 - Require a greenfield Flyway pack, fixed bundle import, concurrent audit verification, lease/failover checks, and explicit unsupported-feature failures before promotion.
-- Treat Testcontainers or a developer lab as lab evidence only, never as production certification.
+- Treat Testcontainers or a developer lab as lab evidence only, never as production certification. § Amendment 4 is an explicit owner exception for one cell.
 - Do not reuse a MySQL result for MariaDB. A MariaDB claim requires its own charter, pack, named version, and gate.
 - Do **not** add GPL `mysql-connector-j` to any classpath ([0016-agpl-dual-licensing](0016-agpl-dual-licensing.md)). The ISPF_DB client is the LGPL MariaDB Connector/J (§ Amendment 2).
 
@@ -60,20 +60,23 @@ Lab cell: MySQL **8.4.13 Community** (`mysql:8.4`), `transaction_isolation=READ-
 
 Closed after Lab green (2026-11-22): Hibernate `ddl-auto=validate` (default profile). MariaDB Connector/J reports neither lower-, upper- nor mixed-case identifier storage for a MySQL server with `lower_case_table_names=0`, so Hibernate looked tables up in upper case and reported them missing; with names resolved, `report_templates.content` (`BINARY` mapping, `LONGBLOB` column) failed the type check. `RelationalConfiguration` now pins `MysqlHibernateDialect`, which keeps names as written when the driver reports no case (a reported case still wins) and accepts `LONGBLOB` for `BINARY` mappings. `MysqlLiveBundleImportTckTest` boots with validate on MySQL 8.4.13 with `lower_case_table_names=0`. No operator property is needed; an explicit `hibernate.dialect` replaces the pin and brings the failure back.
 
-Open on the way to Prod Yes (not claimed by Lab green):
+### Amendment 4 (2026-11-22) — Prod Yes (B1) by owner extension
 
-- PostgreSQL-only SQL on paths the gate does not exercise (for example `PlatformJobService` `NULLS LAST` and `(UUID) getObject` on `CHAR(36)`, `ApplicationSqlBindingStore` `||` concat).
-- TLS: the lab uses `allowPublicKeyRetrieval=true`; a production host uses TLS (`sslMode=verify-full`).
-- B2 JDBC history/journal, active-active, tenant row isolation, `HARD` schemas, and per-app schemas stay refused or unsupported.
+| Item | Decision |
+|------|----------|
+| Cell | **MySQL Community Server 8.4.x** LTS, self-managed, with **MariaDB Connector/J** as the only `ISPF_DB` client |
+| Basis | The § Amendment 3 Lab-green cell (8.4.13 Community, local Docker), re-run 2026-11-22 with `ddl-auto=validate` on every JVM: 17 PASS / 0 FAIL ([`gate-evidence-prod-yes-community.json`](../../../tools/mysql-b1-lab/gate-evidence-prod-yes-community.json)) |
+| Owner extension | The lab Docker cell stands in for a named self-managed host, overriding the checklist's "not the lab Docker stand" rule for this cell only. A gate re-run on the first named host is recommended, not blocking |
+| Fences | Unchanged: boot refuses JDBC history / journal, dual-write, cluster, row isolation, `HARD`, and MariaDB servers |
+| Tech debt | **P-MYSQL-SKU-RERUN** — MySQL Enterprise, HeatWave, Amazon RDS / Aurora MySQL, Azure Database for MySQL, and every other non-Community cell need their own checklist run before a claim names them |
+| Non-claims | MySQL 8.0 and 9.x; MariaDB Server; any other JDBC client (GPL `mysql-connector-j` is never on the classpath); B2 history / journal; active-active; tenant row isolation; `HARD` and per-app schemas |
 
-### Owner-extended Prod Yes (optional; not signed by this amendment)
-
-An owner may later extend Prod Yes from the lab cell only by re-running the checklist on a named, self-managed MySQL 8.4.x Community host (not Testcontainers) with the validate gap closed or waived in writing. That note must carry tech debt **P-MYSQL-SKU-RERUN**: every MySQL Enterprise, HeatWave, Amazon RDS / Aurora MySQL, Azure Database for MySQL, or other non-Community cell needs its own checklist run before any claim names it.
+**Draft — before signing:** two checklist items stay open until closed or waived in writing ([checklist](../mysql-sku-promotion-checklist.md) § Before signing): TLS on the `ISPF_DB` connection (`sslMode=verify-full` instead of the lab's `allowPublicKeyRetrieval=true`), and review or fencing of PostgreSQL-only SQL on paths the gate does not exercise (for example `PlatformJobService` `NULLS LAST` and `(UUID) getObject` on `CHAR(36)`, `ApplicationSqlBindingStore` `||` concat).
 
 ## Consequences
 
-- MySQL is **Lab green, Prod: No**. A lab `ISPF_DB` may run on MySQL 8.4 under the B1 fences; a production claim waits for a named-SKU signature.
-- Sales and documentation must name **MySQL 8.4 B1 metadata (lab)** and must not say “MySQL/MariaDB”.
+- MySQL is **Prod Yes (B1)** on one cell: self-managed MySQL Community Server 8.4.x with MariaDB Connector/J, under the B1 fences. Other MySQL cells stay lab-only until their own checklist run (**P-MYSQL-SKU-RERUN**).
+- Sales and documentation must name **MySQL Community Server 8.4 B1 metadata** with the MariaDB Connector/J client, and must not say “MySQL/MariaDB” or name Enterprise / managed MySQL.
 - Engine changes remain greenfield database plus bundle import, not in-place migration.
 - The Oracle B1 pack ([0080](0080-oracle-metadata-certification.md)) starts only after MySQL B1 Prod Yes. Oracle Phase 1 (dialect honesty and fences; boot refused) started early by owner decision.
 

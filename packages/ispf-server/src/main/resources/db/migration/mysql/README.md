@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Production claim | **No — B1 Lab green** on MySQL 8.4.13 Community ([checklist](../../../../../../../../docs/en/mysql-sku-promotion-checklist.md)); no named-SKU Prod Yes |
+| Production claim | **Prod Yes (B1)** on MySQL Community Server 8.4.x + MariaDB Connector/J only — owner extension from the 8.4.13 Lab-green cell ([checklist](../../../../../../../../docs/en/mysql-sku-promotion-checklist.md)). Other MySQL cells: **P-MYSQL-SKU-RERUN** |
 | Baseline | `V1__baseline.sql`, generated: `python tools/mysql-baseline-generate.py` (greenfield only) |
 | Lockstep | `python tools/mysql-flyway-lockstep-check.py` + `docs/en/mysql-flyway-exceptions.txt` (CI) |
 

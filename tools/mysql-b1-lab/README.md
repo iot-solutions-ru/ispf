@@ -1,12 +1,13 @@
 # MySQL B1 lab harness (ADR-0079)
 
-Operator scripts for a **single-node** MySQL 8.4 lab stand. Not a production deploy path, and not a Prod Yes signature.
+Operator scripts for a **single-node** MySQL 8.4 lab stand. Not a production deploy path. The stand is not the signature: Prod Yes (B1) is signed in the [checklist](../../docs/en/mysql-sku-promotion-checklist.md).
 
 | Script / file | Role |
 |---------------|------|
 | `stand-local.ps1` | MySQL 8.4 Community (`mysql:8.4`, `:13306`) + branch `bootJar` (`:18090`); Hibernate `ddl-auto=validate`; history/journal off |
 | `gate-evidence.ps1` | Lab-green gate collector (17 items) against that stand; writes JSON (`-Out`) |
 | `gate-evidence-lab-community.json` | Signed Lab-green run: MySQL 8.4.13 Community, 2026-11-22, 17 PASS / 0 FAIL — [checklist](../../docs/en/mysql-sku-promotion-checklist.md) |
+| `gate-evidence-prod-yes-community.json` | Re-run on the same cell with `ddl-auto=validate` on every JVM (2026-11-22, 17 PASS / 0 FAIL) — basis of the owner-extended **Prod Yes (B1)** cell, MySQL Community Server 8.4.x + MariaDB Connector/J |
 | `mysql-b1-cert-bundle.json` | Tree-only cert bundle; mirrors `packages/ispf-server/src/test/resources/mysql-b1-cert-bundle.json` — keep them in sync |
 
 ```powershell

@@ -1,7 +1,7 @@
 # Epic: MySQL relational certification (ADR-0079)
 
 > **Language:** Canonical English. Russian: [ru/mysql-certification-epic.md](../ru/mysql-certification-epic.md).  
-> **Status:** B1 **Lab green** — delivery board for [ADR-0079](decisions/0079-mysql-metadata-certification.md). **Prod: No.**  
+> **Status:** B1 **Prod Yes** on MySQL Community Server 8.4.x + MariaDB Connector/J only (owner extension 2026-11-22, [checklist](mysql-sku-promotion-checklist.md)) — delivery board for [ADR-0079](decisions/0079-mysql-metadata-certification.md). Other MySQL cells: **P-MYSQL-SKU-RERUN**.  
 > **Policy:** Lab work unblocked after MSSQL B1 Prod Yes ([0078](decisions/0078-mssql-metadata-certification.md)). MariaDB is **not** this epic. The Oracle B1 pack waits for MySQL B1 Prod Yes ([0080](decisions/0080-oracle-metadata-certification.md)).
 
 ## Phase 1 — dialect honesty (landed)
@@ -21,12 +21,12 @@
 - [x] Hard engine refuse lifted for MySQL only; boot runs under B1 fences; Oracle still refused
 - [x] Lab stand + gate: [`tools/mysql-b1-lab`](../../tools/mysql-b1-lab/README.md) — 17 PASS / 0 FAIL on MySQL 8.4.13 Community ([checklist](mysql-sku-promotion-checklist.md))
 
-## Next train (Prod Yes — not started)
+## Prod Yes (B1) sign — drafted 2026-11-22
 
 - [x] Hibernate `ddl-auto=validate` on MySQL — pinned `MysqlHibernateDialect` (identifier case when MariaDB Connector/J reports none; `BINARY` mapping vs `LONGBLOB`); `MysqlLiveBundleImportTckTest` boots with validate on `lower_case_table_names=0`
-- [ ] TLS on the ISPF_DB connection instead of `allowPublicKeyRetrieval`
-- [ ] Review / fence PostgreSQL-only SQL on paths the gate does not exercise (platform jobs, SQL-binding triggers)
-- [ ] Named self-managed host signature; **P-MYSQL-SKU-RERUN** for Enterprise / managed / non-Community cells
+- [ ] TLS on the ISPF_DB connection instead of `allowPublicKeyRetrieval` — open before signing
+- [ ] Review / fence PostgreSQL-only SQL on paths the gate does not exercise (platform jobs, SQL-binding triggers) — open before signing
+- [x] Owner extension from the Lab-green cell instead of a named self-managed host: gate re-run with validate on every JVM, 17 PASS / 0 FAIL ([`gate-evidence-prod-yes-community.json`](../../tools/mysql-b1-lab/gate-evidence-prod-yes-community.json)); a named-host re-run is recommended, not blocking; **P-MYSQL-SKU-RERUN** for Enterprise / managed / non-Community cells
 
 ## Non-goals
 

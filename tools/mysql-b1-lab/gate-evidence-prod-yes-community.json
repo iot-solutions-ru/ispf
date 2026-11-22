@@ -1,0 +1,117 @@
+{
+  "status": "Prod Yes (B1) draft: owner extension from the Lab-green cell with ddl-auto=validate fixed; final when the checklist's open items close or are waived in writing",
+  "cell": "MySQL Community Server 8.4.x LTS (self-managed) + MariaDB Connector/J only",
+  "basis": "Lab-green cell MySQL 8.4.13 Community (Docker mysql:8.4, local AMD64; gate-evidence-lab-community.json, 17 PASS / 0 FAIL with ddl-auto=none), re-run below with ddl-auto=validate on every JVM",
+  "validate_fix": "MysqlHibernateDialect (pinned MySQLDialect subclass): looks names up as written when MariaDB Connector/J reports no identifier case, and accepts LONGBLOB for BINARY mappings. CI: MysqlLiveBundleImportTckTest boots with validate on lower_case_table_names=0",
+  "lower_case_table_names": 0,
+  "owner_override": "2026-11-22: the Lab-green Docker cell stands in for a named self-managed MySQL Community Server 8.4.x host; a gate re-run on the first named host is recommended, not blocking",
+  "open_before_sign": [
+    "TLS: production ISPF_DB connection with sslMode=verify-full instead of the lab's allowPublicKeyRetrieval=true (no gate run yet)",
+    "PostgreSQL-only SQL on paths the gate does not exercise (PlatformJobService NULLS LAST and (UUID) getObject on CHAR(36), ApplicationSqlBindingStore || concat): review or fence"
+  ],
+  "tech_debt": [
+    "P-MYSQL-SKU-RERUN: MySQL Enterprise, HeatWave, Amazon RDS / Aurora MySQL, Azure Database for MySQL and every other non-Community cell need their own checklist run before a claim names them"
+  ],
+  "non_claims": [
+    "MySQL Enterprise, HeatWave, Amazon RDS / Aurora MySQL, Azure Database for MySQL, or any other non-Community cell",
+    "MySQL 8.0 and 9.x Innovation releases",
+    "MariaDB Server (boot refuses it) and any JDBC client other than MariaDB Connector/J; GPL mysql-connector-j is not on any classpath",
+    "B2 JDBC history / journal and historian dual-write on MySQL (boot refuses them)",
+    "Active-active (ispf.cluster.enabled), tenant row isolation, HARD schemas, per-app schema switch"
+  ],
+  "checklist": "docs/en/mysql-sku-promotion-checklist.md",
+  "generated_at": "2026-11-22T16:39:19.668Z",
+  "base": "http://127.0.0.1:18090",
+  "engine_note": "MySQL 8.4 LTS Community (Docker mysql:8.4, local AMD64). ADR-0079 B1 gate re-run with Hibernate MysqlHibernateDialect and SPRING_JPA_HIBERNATE_DDL_AUTO=validate on every JVM. ISPF client: MariaDB Connector/J 3.5.10 (LGPL).",
+  "edition": "8.4.13 | MySQL Community Server - GPL | READ-COMMITTED | utf8mb4_0900_bin",
+  "jdbc_client": "MariaDB Connector/J (LGPL-2.1) org.mariadb.jdbc.Driver, jdbc:mysql: + permitMysqlScheme",
+  "fail_count": 0,
+  "pass_count": 17,
+  "items": [
+    {
+      "id": "g0_engine",
+      "status": "PASS",
+      "detail": "MySQL 8.4.13 (MySQL Community Server - GPL), READ-COMMITTED, ispf utf8mb4_0900_bin"
+    },
+    {
+      "id": "g1_health",
+      "status": "PASS",
+      "detail": "actuator health UP"
+    },
+    {
+      "id": "g1_login",
+      "status": "PASS",
+      "detail": "admin login ok"
+    },
+    {
+      "id": "g1_flyway",
+      "status": "PASS",
+      "detail": "flyway mysql/V1 success=1"
+    },
+    {
+      "id": "g1_dialect",
+      "status": "PASS",
+      "detail": "Hibernate MysqlHibernateDialect (pinned MySQLDialect subclass; MariaDB Connector/J would auto-select MariaDBDialect)"
+    },
+    {
+      "id": "g2_import",
+      "status": "PASS",
+      "detail": "cert bundle import 200"
+    },
+    {
+      "id": "g2_paths",
+      "status": "PASS",
+      "detail": "all cert paths 200"
+    },
+    {
+      "id": "g3_dual_jvm",
+      "status": "PASS",
+      "detail": "second non-clustered JVM health UP on :18091 against shared ispf; live lease reclaim not asserted (cluster off). Lease failover is CI: MysqlFlywayBaselineTckTest"
+    },
+    {
+      "id": "g4_audit",
+      "status": "PASS",
+      "detail": "serial reimport 200; audit_event_chain rows=1. Concurrent append + verify is CI: MysqlFlywayBaselineTckTest (8 writers)"
+    },
+    {
+      "id": "g5_rls",
+      "status": "PASS",
+      "detail": "refused with: db-row-isolation=true is unsupported on MySQL"
+    },
+    {
+      "id": "g6_hard",
+      "status": "PASS",
+      "detail": "refused with: isolation-mode=HARD is unsupported on MySQL"
+    },
+    {
+      "id": "g7_hist",
+      "status": "PASS",
+      "detail": "refused with: variable-history store falls back to ISPF_DB JDBC on MySQL"
+    },
+    {
+      "id": "g7_dual",
+      "status": "PASS",
+      "detail": "refused with: dual-write-enabled=true is refused on MySQL"
+    },
+    {
+      "id": "g7_journal",
+      "status": "PASS",
+      "detail": "refused with: event-journal store falls back to ISPF_DB JDBC on MySQL"
+    },
+    {
+      "id": "g7_cluster",
+      "status": "PASS",
+      "detail": "refused with: ispf.cluster.enabled=true is not certified on MySQL"
+    },
+    {
+      "id": "g8_mariadb_kind",
+      "status": "PASS",
+      "detail": "MariaDB 11.4.13-MariaDB-ubu2404 refused (ISPF_METADATA_DB_KIND=mysql): MariaDB is not a certified ISPF_DB engine"
+    },
+    {
+      "id": "g8_mariadb_detect",
+      "status": "PASS",
+      "detail": "MariaDB 11.4.13-MariaDB-ubu2404 refused (auto-detect): MariaDB is not a certified ISPF_DB engine"
+    }
+  ]
+}
