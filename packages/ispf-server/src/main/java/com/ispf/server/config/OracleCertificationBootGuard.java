@@ -10,8 +10,7 @@ import org.springframework.stereotype.Component;
 /**
  * ADR-0080 B1 fences for Oracle metadata (also enforced pre-Flyway via
  * {@link com.ispf.server.relational.FlywayDialectConfiguration} → {@link MetadataDialectBootPolicy}).
- * Unreachable while {@link MetadataDialectBootPolicy#assertEngineCertified} refuses Oracle;
- * unit-tested and ready for the B1 pack PR.
+ * Runs even when Flyway is disabled, so an Oracle ISPF_DB never boots outside B1.
  */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE + 22)

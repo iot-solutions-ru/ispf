@@ -6,7 +6,10 @@ import com.ispf.server.relational.OracleDialect;
 import com.ispf.server.relational.PostgreSqlDialect;
 import com.ispf.server.relational.RelationalDialect;
 import org.junit.jupiter.api.Test;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.util.ClassUtils;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
@@ -123,15 +126,42 @@ class OracleCertificationBootGuardTest {
     }
 
     @Test
-    void engineRefuseStillBlocksOracle() {
-        assertThatThrownBy(() -> MetadataDialectBootPolicy.assertEngineCertified(new OracleDialect()))
+    void engineGateNeedsTheFlywayPackAndTheOperatorDriver() {
+        OracleDialect oracle = new OracleDialect();
+        assertThatThrownBy(() -> MetadataDialectBootPolicy.assertEngineCertified(oracle, cls -> true, res -> false))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("oracle")
+                .hasMessageContaining("Flyway pack")
                 .hasMessageContaining("ADR-0080");
-        assertThatThrownBy(() -> new UncertifiedRelationalEngineBootGuard(new OracleDialect())
-                .refuseUncertifiedEngines())
+        assertThatThrownBy(() -> MetadataDialectBootPolicy.assertEngineCertified(oracle, cls -> false, res -> true))
                 .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining(MetadataDialectBootPolicy.ORACLE_JDBC_DRIVER)
+                .hasMessageContaining("does not ship")
+                .hasMessageContaining("-Dloader.path=lib")
                 .hasMessageContaining("ADR-0080");
+        assertThatCode(() -> MetadataDialectBootPolicy.assertEngineCertified(oracle, cls -> true, res -> true))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    void engineGateIgnoresOtherEngines() {
+        for (RelationalDialect dialect : new RelationalDialect[]{
+                new PostgreSqlDialect(), new MssqlDialect(), new MysqlDialect()}) {
+            assertThatCode(() -> MetadataDialectBootPolicy.assertEngineCertified(dialect, cls -> false, res -> false))
+                    .doesNotThrowAnyException();
+        }
+    }
+
+    @Test
+    void bootGuardFollowsTheRuntimeClasspath() {
+        assertThat(new ClassPathResource(MetadataDialectBootPolicy.ORACLE_B1_BASELINE).exists()).isTrue();
+        UncertifiedRelationalEngineBootGuard guard = new UncertifiedRelationalEngineBootGuard(new OracleDialect());
+        if (ClassUtils.isPresent(MetadataDialectBootPolicy.ORACLE_JDBC_DRIVER, getClass().getClassLoader())) {
+            assertThatCode(guard::refuseUncertifiedEngines).doesNotThrowAnyException();
+        } else {
+            assertThatThrownBy(guard::refuseUncertifiedEngines)
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("ojdbc17.jar");
+        }
     }
 
     private static OracleCertificationBootGuard newGuard(

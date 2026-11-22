@@ -90,7 +90,8 @@ class MysqlCertificationBootGuardTest {
     void engineGatePassesMysqlSoFencesDecide() {
         assertThatCode(() -> MetadataDialectBootPolicy.assertEngineCertified(new MysqlDialect()))
                 .doesNotThrowAnyException();
-        assertThatThrownBy(() -> MetadataDialectBootPolicy.assertEngineCertified(new OracleDialect()))
+        assertThatThrownBy(() -> MetadataDialectBootPolicy.assertEngineCertified(
+                new OracleDialect(), cls -> false, res -> true))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("ADR-0080");
     }

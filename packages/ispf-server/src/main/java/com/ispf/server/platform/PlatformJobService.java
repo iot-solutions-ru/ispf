@@ -119,8 +119,13 @@ public class PlatformJobService {
 
         List<UUID> candidates = jdbcTemplate.query(
                 relationalDialect.queuedPlatformJobSelectSql(),
-                (rs, rowNum) -> jobId(rs),
-                JobStatus.QUEUED.name()
+                select -> {
+                    // Oracle's claim has no row limit, and SKIP LOCKED locks each row it fetches.
+                    select.setMaxRows(1);
+                    select.setFetchSize(1);
+                    select.setString(1, JobStatus.QUEUED.name());
+                },
+                (rs, rowNum) -> jobId(rs)
         );
         if (candidates.isEmpty()) {
             return Optional.empty();
@@ -211,8 +216,8 @@ public class PlatformJobService {
     }
 
     /**
-     * {@code getObject} is a {@link UUID} only on PG/H2; MySQL {@code CHAR(36)} and MSSQL
-     * {@code UNIQUEIDENTIFIER} come back as strings.
+     * {@code getObject} is a {@link UUID} only on PG/H2; MySQL {@code CHAR(36)}, Oracle
+     * {@code VARCHAR2(36)} and MSSQL {@code UNIQUEIDENTIFIER} come back as strings.
      */
     private static UUID jobId(java.sql.ResultSet rs) throws java.sql.SQLException {
         return UUID.fromString(rs.getString("job_id"));

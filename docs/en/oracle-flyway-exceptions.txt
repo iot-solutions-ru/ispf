@@ -1,0 +1,38 @@
+# ADR-0080 — subsumed / deferred oracle twins
+# oracle/V1__baseline.sql is the greenfield subsuming baseline (generator: tools/oracle-baseline-generate.py),
+# generated from postgresql V1 + V71..V101. Every version below is inside that V1.
+# Honesty: a green lockstep run with this list means "exceptions are complete", not that V1 tracks PG.
+# Once an Oracle schema has applied V1, do not regenerate it: a new PG Vnn needs oracle/Vnn (or a line here).
+# Format: Vnn or bare number; # comments OK.
+
+V71
+V72
+V73
+V74
+V75
+V76
+V77
+V78
+V79
+V80
+V81
+V82
+V83
+V84
+V85
+V86
+V87
+V88
+V89
+V90
+V91
+V92
+V93
+V94
+V95
+V96
+V97
+V98
+V99
+V100
+V101

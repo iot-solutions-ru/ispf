@@ -2,12 +2,22 @@ package com.ispf.server.relational;
 
 import com.ispf.server.spi.JdbcExpirySql;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLIntegrityConstraintViolationException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class OracleDialectTest {
 
@@ -80,6 +90,54 @@ class OracleDialectTest {
     }
 
     @Test
+    void limitClauseUsesRowLimitingWithOneBind() {
+        assertThat(dialect.limitClause()).isEqualTo(" FETCH FIRST ? ROWS ONLY");
+    }
+
+    @Test
+    void topOneForUpdateLocksTheHeadRowWithoutRowLimit() {
+        // 19c: ORA-02014 for FETCH FIRST + FOR UPDATE; a bare FOR UPDATE would lock every row.
+        assertThat(dialect.selectTopOneForUpdate("chain_hash", "audit_event_chain", "seq DESC")).isEqualTo(
+                "SELECT chain_hash FROM audit_event_chain WHERE ROWID = (SELECT head_rowid FROM "
+                        + "(SELECT ROWID AS head_rowid FROM audit_event_chain ORDER BY seq DESC) "
+                        + "WHERE ROWNUM = 1) FOR UPDATE");
+    }
+
+    @Test
+    void jobClaimSkipsLockedRowsWithoutRowLimit() {
+        String sql = dialect.queuedPlatformJobSelectSql();
+        assertThat(sql).contains("ORDER BY priority DESC, created_at").endsWith("FOR UPDATE SKIP LOCKED\n");
+        assertThat(sql).doesNotContain("FETCH").doesNotContain("ROWNUM").doesNotContain("LIMIT");
+    }
+
+    @Test
+    void transactionLockInsertsFromDualThenLocksTheRow() throws SQLException {
+        Connection connection = connectionReturning(mock(PreparedStatement.class));
+
+        dialect.acquireTransactionLock(connection, "audit_event_chain", 1L);
+
+        ArgumentCaptor<String> sql = ArgumentCaptor.forClass(String.class);
+        verify(connection, times(2)).prepareStatement(sql.capture());
+        assertThat(sql.getAllValues().get(0)).isEqualToIgnoringWhitespace(
+                "INSERT INTO platform_script_locks (lock_key) SELECT ? FROM DUAL "
+                        + "WHERE NOT EXISTS (SELECT 1 FROM platform_script_locks WHERE lock_key = ?)");
+        assertThat(sql.getAllValues().get(1)).endsWith("WHERE lock_key = ? FOR UPDATE");
+    }
+
+    @Test
+    void racingLockRowInsertIgnoresOnlyOra00001() throws SQLException {
+        PreparedStatement duplicate = mock(PreparedStatement.class);
+        when(duplicate.executeUpdate()).thenThrow(sqlEx(1, "23000"));
+        when(duplicate.executeQuery()).thenReturn(mock(ResultSet.class));
+        dialect.acquireTransactionLock(connectionReturning(duplicate), "k", 1L);
+
+        PreparedStatement notNull = mock(PreparedStatement.class);
+        when(notNull.executeUpdate()).thenThrow(sqlEx(1400, "23000"));
+        assertThatThrownBy(() -> dialect.acquireTransactionLock(connectionReturning(notNull), "k", 1L))
+                .isInstanceOf(SQLException.class);
+    }
+
+    @Test
     void bucketSqlStaysPostgresShapedUntilB2() {
         assertThat(dialect.variableSampleBucketAggregateSql()).contains("extract(epoch");
     }
@@ -89,6 +147,16 @@ class OracleDialectTest {
         assertThat(dialect.supportsTenantDbRowIsolation()).isFalse();
         assertThat(dialect.supportsTimescaleHypertables()).isFalse();
         assertThat(dialect.flywayLocations()).containsExactly("classpath:db/migration/oracle");
+    }
+
+    private static Connection connectionReturning(PreparedStatement statement) throws SQLException {
+        Connection connection = mock(Connection.class);
+        DatabaseMetaData meta = mock(DatabaseMetaData.class);
+        when(connection.getMetaData()).thenReturn(meta);
+        when(meta.getDatabaseProductName()).thenReturn("Oracle");
+        when(connection.prepareStatement(anyString())).thenReturn(statement);
+        when(statement.executeQuery()).thenReturn(mock(ResultSet.class));
+        return connection;
     }
 
     private static SQLException sqlEx(int vendorCode, String sqlState) {

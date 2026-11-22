@@ -6,19 +6,30 @@ import com.ispf.server.relational.MysqlDialect;
 import com.ispf.server.relational.OracleDialect;
 import com.ispf.server.relational.PostgreSqlDialect;
 import org.junit.jupiter.api.Test;
+import org.springframework.util.ClassUtils;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 class UncertifiedRelationalEngineBootGuardTest {
 
     @Test
-    void refusesOracle() {
+    void refusesOracleWithoutTheOperatorDriver() {
+        assumeFalse(ClassUtils.isPresent(MetadataDialectBootPolicy.ORACLE_JDBC_DRIVER, getClass().getClassLoader()));
         assertThatThrownBy(() -> new UncertifiedRelationalEngineBootGuard(new OracleDialect())
                 .refuseUncertifiedEngines())
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("oracle")
                 .hasMessageContaining("ADR-0080");
+    }
+
+    @Test
+    void allowsOracleWithPackAndDriverBecauseB1FencesGuardIt() {
+        assumeTrue(ClassUtils.isPresent(MetadataDialectBootPolicy.ORACLE_JDBC_DRIVER, getClass().getClassLoader()));
+        assertThatCode(() -> new UncertifiedRelationalEngineBootGuard(new OracleDialect())
+                .refuseUncertifiedEngines()).doesNotThrowAnyException();
     }
 
     @Test

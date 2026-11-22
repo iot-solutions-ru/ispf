@@ -1,13 +1,15 @@
 package com.ispf.server.relational;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Locale;
 
 /**
- * Oracle dialect (ADR-0080 Phase 1 lab). Metadata boot remains refused until the B1 gate
- * ({@code MetadataDialectBootPolicy.assertEngineCertified}); no JDBC driver or Flyway pack ships.
- * The inherited PostgreSQL-shaped helpers ({@link #limitClause()}, {@link #selectTopOneForUpdate},
- * the lock-row insert without {@code FROM DUAL}) are not Oracle SQL; the B1 pack must override them.
+ * Oracle dialect (ADR-0080 B1 lab). Boot needs the Flyway pack and an operator-supplied JDBC driver
+ * ({@code MetadataDialectBootPolicy.assertEngineCertified}) and runs only under
+ * {@code assertOracleB1Fences}. SQL stays 19c-compatible: 23ai accepts {@code SELECT} without
+ * {@code FROM} and a row limit with {@code FOR UPDATE}, 19c rejects both (ORA-00923 / ORA-02014).
  */
 public class OracleDialect extends AbstractRelationalDialect {
 
@@ -75,9 +77,28 @@ public class OracleDialect extends AbstractRelationalDialect {
         );
     }
 
+    @Override
+    public String limitClause() {
+        return " FETCH FIRST ? ROWS ONLY";
+    }
+
     /**
-     * Oracle does not allow the row-limiting clause together with {@code FOR UPDATE}. The B1 pack
-     * must replace this claim query and prove it in the TCK; do not treat it as Oracle-ready.
+     * Picks the head ROWID first and locks only that row: 19c refuses a row limit with
+     * {@code FOR UPDATE} (ORA-02014), and {@code FOR UPDATE} without one locks every row.
+     * Appenders serialize on {@link #acquireTransactionLock} before reading the head.
+     */
+    @Override
+    public String selectTopOneForUpdate(String columns, String table, String orderBy) {
+        return "SELECT " + columns + " FROM " + table
+                + " WHERE ROWID = (SELECT head_rowid FROM (SELECT ROWID AS head_rowid FROM " + table
+                + " ORDER BY " + orderBy + ") WHERE ROWNUM = 1)"
+                + forUpdateClause();
+    }
+
+    /**
+     * No row limit: 19c refuses one with {@code FOR UPDATE} (ORA-02014), and a limit applied before
+     * {@code SKIP LOCKED} finds nothing while the head job is locked. {@code SKIP LOCKED} locks rows
+     * as they are fetched, so the caller must fetch a single row.
      */
     @Override
     public String queuedPlatformJobSelectSql() {
@@ -86,7 +107,6 @@ public class OracleDialect extends AbstractRelationalDialect {
                 FROM platform_jobs
                 WHERE status = ?
                 ORDER BY priority DESC, created_at
-                FETCH FIRST 1 ROW ONLY
                 FOR UPDATE SKIP LOCKED
                 """;
     }
@@ -112,6 +132,26 @@ public class OracleDialect extends AbstractRelationalDialect {
         }
         // ORA-00001 only — not bare SQLSTATE 23000 (FK ORA-02291/02292, NOT NULL ORA-01400, CHECK ORA-02290).
         return ex.getErrorCode() == 1;
+    }
+
+    /**
+     * {@code FROM DUAL}: 19c has no {@code SELECT} without {@code FROM}. A racing first insert waits on
+     * the other transaction's row and then fails with ORA-00001, which is ignored.
+     */
+    @Override
+    protected void ensureLockRow(Connection connection, String lockKey, String locksTable) throws SQLException {
+        try (PreparedStatement insert = connection.prepareStatement("""
+                INSERT INTO %s (lock_key)
+                SELECT ? FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM %s WHERE lock_key = ?)
+                """.formatted(locksTable, locksTable))) {
+            insert.setString(1, lockKey);
+            insert.setString(2, lockKey);
+            insert.executeUpdate();
+        } catch (SQLException ex) {
+            if (!isUniqueViolation(ex)) {
+                throw ex;
+            }
+        }
     }
 
     @Override
