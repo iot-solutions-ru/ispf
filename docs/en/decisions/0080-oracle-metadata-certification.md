@@ -20,7 +20,7 @@ Oracle version, edition, JDBC driver, schema behavior, locking, and identifier r
 - Keep `Prod: No`. `UncertifiedRelationalEngineBootGuard` / `MetadataDialectBootPolicy.assertEngineCertified` refuse boot for `oracle` until the complete gate passes. `assertOracleB1Fences` / `OracleCertificationBootGuard` are pre-wired (unit-tested) for the pack PR: no row isolation, no `HARD` tenant mode, no dual-write, no cluster, no JDBC history/journal on `ISPF_DB`.
 - Require a greenfield Flyway pack, fixed bundle import, concurrent audit verification, lease/failover checks, and explicit unsupported-feature failures before promotion.
 - Treat containers, free editions, or a developer lab as lab evidence only, never as certification for another named production edition.
-- Do **not** add an Oracle JDBC driver (`ojdbc*`, Oracle licence terms) to any classpath until counsel signs a driver choice ([0016-agpl-dual-licensing](0016-agpl-dual-licensing.md)). Pack / generator / lockstep CI wait for a follow-on PR that amends this ADR to authorize lab Flyway SQL.
+- Do **not** add an Oracle JDBC driver (`ojdbc*`, Oracle license terms) to any classpath until counsel signs a driver choice ([0016b — AGPL/dual-licensing](0016-agpl-dual-licensing.md)). Pack / generator / lockstep CI wait for a follow-on PR that amends this ADR to authorize lab Flyway SQL.
 
 No Flyway SQL is authorized or supplied by this policy ADR yet.
 
