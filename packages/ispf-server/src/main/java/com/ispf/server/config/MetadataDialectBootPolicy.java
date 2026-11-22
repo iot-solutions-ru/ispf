@@ -33,7 +33,7 @@ public final class MetadataDialectBootPolicy {
     }
 
     /**
-     * MySQL B1 fences (ADR-0079 Lab green). No single-engine bypass — JDBC history/journal on
+     * MySQL B1 fences (ADR-0079). No single-engine bypass — JDBC history/journal on
      * ISPF_DB is a later B2 decision. These fences are the only thing between a MySQL ISPF_DB and
      * an uncertified mode; keep them before Flyway and on context refresh.
      */
@@ -50,7 +50,7 @@ public final class MetadataDialectBootPolicy {
         if (tenantIsolationProperties.isDbRowIsolation()) {
             throw new IllegalStateException(
                     "ispf.tenant.db-row-isolation=true is unsupported on MySQL (ADR-0079). "
-                            + "Set ISPF_TENANT_DB_ROW_ISOLATION=false for single-tenant lab, "
+                            + "Set ISPF_TENANT_DB_ROW_ISOLATION=false for single-tenant B1, "
                             + "or use PostgreSQL until a native session security policy exists."
             );
         }

@@ -141,4 +141,14 @@ abstract class AbstractRelationalDialect implements RelationalDialect {
     public String booleanLiteral(boolean value) {
         return value ? "TRUE" : "FALSE";
     }
+
+    @Override
+    public String orderByNullsLast(String expression) {
+        return expression + " NULLS LAST";
+    }
+
+    @Override
+    public String concatExpression(String... operands) {
+        return "(" + String.join(" || ", operands) + ")";
+    }
 }

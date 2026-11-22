@@ -33,10 +33,10 @@ Hibernate runs `MysqlHibernateDialect`, a `MySQLDialect` subclass pinned in `Rel
 
 MySQL DDL is not transactional: if V1 fails, drop the database and retry. An applied V1 is frozen — new PG
 `Vnn` scripts need a `mysql/Vnn` twin or an exception line. Per-app schemas and in-DB PG-flavored solution SQL are
-unsupported; external `DATA_SOURCE` JDBC to MySQL for reports remains supported. Platform paths the B1 gate does not
-exercise can still carry PostgreSQL-only SQL: queued report runs and `GET /api/v1/platform/metrics` are expected to
-fail on MySQL (**P-MYSQL-PG-SQL**). GPL `mysql-connector-j` is never
-on the classpath.
+unsupported; external `DATA_SOURCE` JDBC to MySQL for reports remains supported. Queued report runs,
+`GET /api/v1/platform/metrics` and function-success SQL-binding triggers go through `RelationalDialect` and run on
+MySQL; the rest of the platform SQL has not been reviewed in full for PostgreSQL-only constructs (**P-MYSQL-PG-SQL**).
+GPL `mysql-connector-j` is never on the classpath.
 
 Charter: [0079-mysql-metadata-certification](../../../../../../../../docs/en/decisions/0079-mysql-metadata-certification.md).  
 Epic: [mysql-certification-epic](../../../../../../../../docs/en/mysql-certification-epic.md).  

@@ -1,5 +1,6 @@
 package com.ispf.server.relational;
 
+import com.ispf.server.platform.PlatformJobService;
 import jakarta.persistence.EntityManagerFactory;
 import org.hibernate.cfg.SchemaToolingSettings;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
@@ -22,6 +23,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.mysql.MySQLContainer;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -31,8 +34,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * ADR-0079 B1: live Spring Boot boot with Hibernate {@code ddl-auto=validate} + package import against
- * MySQL 8.4 Testcontainers. Skips when Docker is unavailable ({@link EnabledIf}).
+ * ADR-0079 B1: live Spring Boot boot with Hibernate {@code ddl-auto=validate} + package import, platform
+ * metrics and the job worker against MySQL 8.4 Testcontainers. Skips when Docker is unavailable
+ * ({@link EnabledIf}).
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -87,6 +91,30 @@ class MysqlLiveBundleImportTckTest {
 
     @Autowired
     JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    PlatformJobService platformJobService;
+
+    @Test
+    void platformMetricsAndJobQueueRunOnMysql() throws Exception {
+        // Every metrics snapshot lists this replica's running jobs, even when there are none.
+        mockMvc.perform(get("/api/v1/platform/metrics"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.diagnostics").exists());
+
+        // The job worker claims the job, reading job_id back from CHAR(36), and fails it as unsupported.
+        UUID jobId = platformJobService.submit("mysql-tck-unsupported", Map.of(), "tck");
+        String jobStatus = "QUEUED";
+        for (int attempt = 0; attempt < 150 && !"FAILED".equals(jobStatus); attempt++) {
+            TimeUnit.MILLISECONDS.sleep(200);
+            jobStatus = platformJobService.getJob(jobId).orElseThrow().status();
+        }
+        assertThat(jobStatus).isEqualTo("FAILED");
+        mockMvc.perform(get("/api/v1/platform/jobs/" + jobId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("FAILED"))
+                .andExpect(jsonPath("$.errorMessage").value("Unsupported job type: mysql-tck-unsupported"));
+    }
 
     @Test
     void validatesEntitiesAgainstCaseSensitiveServer() {

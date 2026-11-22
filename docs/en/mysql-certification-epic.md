@@ -25,13 +25,13 @@
 
 - [x] Hibernate `ddl-auto=validate` on MySQL — pinned `MysqlHibernateDialect` (identifier case when MariaDB Connector/J reports none; `BINARY` mapping vs `LONGBLOB`); `MysqlLiveBundleImportTckTest` boots with validate on `lower_case_table_names=0`
 - [x] TLS on the ISPF_DB connection: recorded as operator-required and **not certified** by this signature; `allowPublicKeyRetrieval` stays a lab-only stand setting (**P-MYSQL-TLS**)
-- [x] PostgreSQL-only SQL on paths the gate does not exercise (platform jobs, SQL-binding triggers): recorded as a known non-claim, no full SQL parity (**P-MYSQL-PG-SQL**)
-- [x] Owner extension from the Lab-green cell instead of a named self-managed host: gate re-run with validate on every JVM, 17 PASS / 0 FAIL ([`gate-evidence-prod-yes-community.json`](../../tools/mysql-b1-lab/gate-evidence-prod-yes-community.json)); a named-host re-run is recommended, not blocking; **P-MYSQL-SKU-RERUN** for Enterprise / managed / non-Community cells
+- [x] PostgreSQL-only SQL found at signing (platform jobs, SQL-binding triggers): fixed through `RelationalDialect`, run on MySQL in `MysqlFlywayBaselineTckTest`, `MysqlLiveBundleImportTckTest` and gate items `g9_metrics` / `g9_job_queue`; no full SQL parity is claimed (**P-MYSQL-PG-SQL**)
+- [x] Owner extension from the Lab-green cell instead of a named self-managed host: gate re-run with validate on the stand JVM and the second JVM, 20 PASS / 0 FAIL ([`gate-evidence-validate-community.json`](../../tools/mysql-b1-lab/gate-evidence-validate-community.json)); owner decision in [`gate-evidence-prod-yes-community.json`](../../tools/mysql-b1-lab/gate-evidence-prod-yes-community.json); a named-host re-run is recommended, not blocking; **P-MYSQL-SKU-RERUN** for Enterprise / managed / non-Community cells
 
 ## Tech debt after the sign
 
 - [ ] **P-MYSQL-TLS** — re-run the gate over TLS (`sslMode=verify-full`), recommended on the first named host
-- [ ] **P-MYSQL-PG-SQL** — port or fence PostgreSQL-only SQL on paths the gate does not exercise: queued report runs and `GET /api/v1/platform/metrics` (`PlatformJobService`), function-success SQL-binding triggers (`ApplicationSqlBindingStore`) ([checklist](mysql-sku-promotion-checklist.md#known-gaps-tracked-tech-debt))
+- [ ] **P-MYSQL-PG-SQL** — review the remaining JDBC SQL for PostgreSQL-only constructs and port or fence what the review finds; the paths found at signing are fixed ([checklist](mysql-sku-promotion-checklist.md#known-gaps-tracked-tech-debt))
 - [ ] **P-MYSQL-SKU-RERUN** — checklist re-run per named Enterprise / managed / non-Community cell
 
 ## Non-goals

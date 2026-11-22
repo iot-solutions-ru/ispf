@@ -5,16 +5,17 @@ Operator scripts for a **single-node** MySQL 8.4 lab stand. Not a production dep
 | Script / file | Role |
 |---------------|------|
 | `stand-local.ps1` | MySQL 8.4 Community (`mysql:8.4`, `:13306`) + branch `bootJar` (`:18090`); Hibernate `ddl-auto=validate`; history/journal off |
-| `gate-evidence.ps1` | Lab-green gate collector (17 items) against that stand; writes JSON (`-Out`) |
-| `gate-evidence-lab-community.json` | Signed Lab-green run: MySQL 8.4.13 Community, 2026-11-22, 17 PASS / 0 FAIL — [checklist](../../docs/en/mysql-sku-promotion-checklist.md) |
-| `gate-evidence-prod-yes-community.json` | Re-run on the same cell with `ddl-auto=validate` on every JVM (2026-11-22, 17 PASS / 0 FAIL) — basis of the owner-extended **Prod Yes (B1)** cell, MySQL Community Server 8.4.x + MariaDB Connector/J |
+| `gate-evidence.ps1` | Gate collector (20 items) against that stand; writes only what it measured to `-Out` |
+| `gate-evidence-lab-community.json` | Collector output, signed Lab-green run: MySQL 8.4.13 Community, 2026-11-22, 17 PASS / 0 FAIL (the 17 items of that version) — [checklist](../../docs/en/mysql-sku-promotion-checklist.md) |
+| `gate-evidence-validate-community.json` | Collector output, re-run on the same cell: `ddl-auto=validate` on the stand JVM and the second JVM (`docker inspect`), `lower_case_table_names` read, platform metrics and the job queue (2026-11-22, 20 PASS / 0 FAIL) |
+| `gate-evidence-prod-yes-community.json` | Owner decision, no measured items: the owner-extended **Prod Yes (B1)** cell, MySQL Community Server 8.4.x + MariaDB Connector/J, with its tech debt and non-claims |
 | `mysql-b1-cert-bundle.json` | Tree-only cert bundle; mirrors `packages/ispf-server/src/test/resources/mysql-b1-cert-bundle.json` — keep them in sync |
 
 ```powershell
 $env:MYSQL_LAB_PASSWORD = "<lab throwaway>"
 .\gradlew.bat :packages:ispf-server:bootJar
 powershell -File tools/mysql-b1-lab/stand-local.ps1
-powershell -File tools/mysql-b1-lab/gate-evidence.ps1 -Out tools/mysql-b1-lab/gate-evidence-lab-community.json -EngineNote "<named cell>"
+powershell -File tools/mysql-b1-lab/gate-evidence.ps1 -Out tools/mysql-b1-lab/gate-evidence-<cell>.json -EngineNote "<named cell>"
 ```
 
 CI-side TCKs (Docker, opt-in): `.\gradlew.bat :packages:ispf-server:test --tests "com.ispf.server.relational.Mysql*" -Dispf.test.mysqlDocker=true`.
@@ -39,7 +40,8 @@ Boot refuses each of these otherwise, and refuses a MariaDB server under any kin
 
 ## Notes
 
-- `SPRING_PROFILES_ACTIVE=local` sets `ddl-auto=none`; every stand and gate JVM overrides it with `SPRING_JPA_HIBERNATE_DDL_AUTO=validate`, the production default, so a boot also proves Hibernate schema validation on MySQL.
+- `SPRING_PROFILES_ACTIVE=local` sets `ddl-auto=none`; every stand and gate JVM overrides it with `SPRING_JPA_HIBERNATE_DDL_AUTO=validate`, the production default, so a boot also proves Hibernate schema validation on MySQL. The gate reads that variable back from the stand JVM and the second JVM with `docker inspect`.
+- Do not edit collector output. An owner decision goes in its own JSON (`gate-evidence-prod-yes-community.json`), as in `tools/mssql-b1-lab`.
 - ISPF pins `MysqlHibernateDialect` (a `MySQLDialect` subclass) because the MariaDB driver name would select `MariaDBDialect`; the app log shows `Database dialect: MysqlHibernateDialect`. Do not set `hibernate.dialect`: plain `MySQLDialect` fails `ddl-auto=validate` on `lower_case_table_names=0` ("missing table").
 - MySQL DDL is not transactional. If Flyway V1 fails, drop and recreate `ispf`, then restart.
 - PowerShell splits an unquoted `-h127.0.0.1` at the first dot; the scripts pass `--host=127.0.0.1` quoted.

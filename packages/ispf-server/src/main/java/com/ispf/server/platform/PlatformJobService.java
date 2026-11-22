@@ -119,7 +119,7 @@ public class PlatformJobService {
 
         List<UUID> candidates = jdbcTemplate.query(
                 relationalDialect.queuedPlatformJobSelectSql(),
-                (rs, rowNum) -> (UUID) rs.getObject("job_id"),
+                (rs, rowNum) -> jobId(rs),
                 JobStatus.QUEUED.name()
         );
         if (candidates.isEmpty()) {
@@ -198,8 +198,8 @@ public class PlatformJobService {
                                holder_id, created_at, started_at, completed_at, created_by
                         FROM platform_jobs
                         WHERE status = ? AND holder_id = ?
-                        ORDER BY started_at NULLS LAST, created_at
-                        """,
+                        ORDER BY %s, created_at
+                        """.formatted(relationalDialect.orderByNullsLast("started_at")),
                 (rs, rowNum) -> mapRow(rs),
                 JobStatus.RUNNING.name(),
                 holderId
@@ -210,9 +210,17 @@ public class PlatformJobService {
         return readJsonMap(job.payload());
     }
 
+    /**
+     * {@code getObject} is a {@link UUID} only on PG/H2; MySQL {@code CHAR(36)} and MSSQL
+     * {@code UNIQUEIDENTIFIER} come back as strings.
+     */
+    private static UUID jobId(java.sql.ResultSet rs) throws java.sql.SQLException {
+        return UUID.fromString(rs.getString("job_id"));
+    }
+
     private JobView mapRow(java.sql.ResultSet rs) throws java.sql.SQLException {
         return new JobView(
-                (UUID) rs.getObject("job_id"),
+                jobId(rs),
                 rs.getString("job_type"),
                 rs.getString("status"),
                 rs.getString("payload"),

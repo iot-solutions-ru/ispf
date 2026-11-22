@@ -50,6 +50,14 @@ class MysqlDialectTest {
     }
 
     @Test
+    void nullsLastAndConcatAvoidPostgresOnlySyntax() {
+        // MySQL rejects NULLS LAST and reads || as logical OR under the default sql_mode.
+        assertThat(dialect.orderByNullsLast("started_at")).isEqualTo("started_at IS NULL, started_at");
+        assertThat(dialect.concatExpression("','", "trigger_function_name", "','"))
+                .isEqualTo("CONCAT(',', trigger_function_name, ',')");
+    }
+
+    @Test
     void bucketSqlStaysPostgresShapedUntilB2() {
         assertThat(dialect.variableSampleBucketAggregateSql()).contains("extract(epoch");
     }

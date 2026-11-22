@@ -28,7 +28,9 @@
 
 | Подсистема | Класс в коде | Особенность SQL | Метод в `RelationalDialect` |
 |------------|--------------|-----------------|-----------------------------|
-| Очередь фоновых заданий | `PlatformJobService` | Захват строки без блокировки соседей (`FOR UPDATE SKIP LOCKED`) | `queuedJobSelectSql()` |
+| Очередь фоновых заданий | `PlatformJobService` | Захват строки без блокировки соседей (`FOR UPDATE SKIP LOCKED`) | `queuedPlatformJobSelectSql()` |
+| Очередь фоновых заданий | `PlatformJobService` | `NULLS LAST`; `(UUID) getObject` на `job_id` (на MySQL / MSSQL это строка) | `orderByNullsLast()`; `job_id` читается строкой |
+| SQL-привязки | `ApplicationSqlBindingStore` | Конкатенация `\|\|` (на MySQL — логическое OR, в SQL Server до 2025 её нет) | `concatExpression()` |
 | Изоляция схем приложений | `ApplicationSchemaSession` | Переключение текущей схемы (`SET search_path`) | `activateSchemaSql()` |
 | Системный каталог таблиц | `PlatformSqlCatalog` | Префикс схемы (`public.` против `PUBLIC.`) | `platformSchemaPrefix()` |
 | Интервальная агрегация истории | `JdbcVariableHistoryQueryStore` | Вычисление временных корзин (`extract(epoch...)`, `to_timestamp`) | `variableSampleBucketAggregateSql()` |

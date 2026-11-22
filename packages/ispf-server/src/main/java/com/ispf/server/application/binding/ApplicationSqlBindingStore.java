@@ -1,6 +1,7 @@
 package com.ispf.server.application.binding;
 
 import com.ispf.server.application.data.PlatformSqlCatalog;
+import com.ispf.server.relational.RelationalDialect;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -15,10 +16,16 @@ public class ApplicationSqlBindingStore {
 
     private final JdbcTemplate jdbcTemplate;
     private final String bindingsTable;
+    private final RelationalDialect relationalDialect;
 
-    public ApplicationSqlBindingStore(JdbcTemplate jdbcTemplate, PlatformSqlCatalog platformSqlCatalog) {
+    public ApplicationSqlBindingStore(
+            JdbcTemplate jdbcTemplate,
+            PlatformSqlCatalog platformSqlCatalog,
+            RelationalDialect relationalDialect
+    ) {
         this.jdbcTemplate = jdbcTemplate;
         this.bindingsTable = platformSqlCatalog.table("application_sql_bindings");
+        this.relationalDialect = relationalDialect;
     }
 
     public void upsert(SqlBinding binding) {
@@ -148,9 +155,13 @@ public class ApplicationSqlBindingStore {
                     OR (trigger_object_path IS NULL AND trigger_function_name = ?)
                     OR (trigger_object_path = ? AND trigger_function_name = ?)
                     OR (trigger_object_path = ? AND trigger_function_name IS NOT NULL
-                        AND (',' || trigger_function_name || ',') LIKE ('%%,' || ? || ',%%'))
+                        AND %s LIKE %s)
                   )
-                """.formatted(bindingsTable),
+                """.formatted(
+                        bindingsTable,
+                        relationalDialect.concatExpression("','", "trigger_function_name", "','"),
+                        relationalDialect.concatExpression("'%,'", "?", "',%'")
+                ),
                 this::mapRow,
                 true,
                 appId,

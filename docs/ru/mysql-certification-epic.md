@@ -23,11 +23,11 @@
 
 - Hibernate `ddl-auto=validate` на MySQL — **сделано**: закреплён `MysqlHibernateDialect` (регистр идентификаторов, когда MariaDB Connector/J его не сообщает; `BINARY` против `LONGBLOB`); TCK стартует с validate при `lower_case_table_names=0`
 - TLS на соединении `ISPF_DB` — зафиксирован как обязанность оператора, этой подписью **не сертифицирован**; `allowPublicKeyRetrieval` — настройка только lab-стенда (**P-MYSQL-TLS**)
-- PG-only SQL на не покрытых gate путях (platform jobs, триггеры SQL-binding) — зафиксирован как известный non-claim, полного паритета SQL нет (**P-MYSQL-PG-SQL**)
-- Owner extension из Lab-green ячейки вместо named self-managed хоста — **сделано**: повтор gate с validate на каждом JVM, 17 PASS / 0 FAIL (`gate-evidence-prod-yes-community.json`); повтор на named хосте рекомендуется, не блокирует; **P-MYSQL-SKU-RERUN** для Enterprise / managed / non-Community
+- PG-only SQL, найденный при подписи (platform jobs, триггеры SQL-binding) — **исправлен** через `RelationalDialect`, проверен на MySQL в `MysqlFlywayBaselineTckTest`, `MysqlLiveBundleImportTckTest` и пунктах gate `g9_metrics` / `g9_job_queue`; полного паритета SQL нет (**P-MYSQL-PG-SQL**)
+- Owner extension из Lab-green ячейки вместо named self-managed хоста — **сделано**: повтор gate с validate на JVM стенда и втором JVM, 20 PASS / 0 FAIL (`gate-evidence-validate-community.json`); решение владельца — `gate-evidence-prod-yes-community.json`; повтор на named хосте рекомендуется, не блокирует; **P-MYSQL-SKU-RERUN** для Enterprise / managed / non-Community
 
 ## Tech debt после подписи
 
 - **P-MYSQL-TLS** — повтор gate по TLS (`sslMode=verify-full`), рекомендуется на первом named хосте
-- **P-MYSQL-PG-SQL** — портировать или закрыть fence PG-only SQL на путях вне gate: отчёты через очередь задач и `GET /api/v1/platform/metrics` (`PlatformJobService`), триггеры SQL-binding по успеху функции (`ApplicationSqlBindingStore`) ([checklist](../en/mysql-sku-promotion-checklist.md#known-gaps-tracked-tech-debt))
+- **P-MYSQL-PG-SQL** — проверить остальной JDBC SQL на PG-only конструкции и портировать или закрыть fence то, что найдёт проверка; пути, найденные при подписи, исправлены ([checklist](../en/mysql-sku-promotion-checklist.md#known-gaps-tracked-tech-debt))
 - **P-MYSQL-SKU-RERUN** — повтор checklist на каждой named Enterprise / managed / non-Community ячейке

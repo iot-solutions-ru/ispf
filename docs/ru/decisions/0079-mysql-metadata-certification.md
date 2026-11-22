@@ -36,20 +36,20 @@
 
 ### Amendment 3 — Lab-green gate
 
-Flyway TCK + concurrent audit + lease failover (`MysqlFlywayBaselineTckTest`), live boot + import (`MysqlLiveBundleImportTckTest`), lab-стенд `tools/mysql-b1-lab` (health, login, Flyway, dialect, import, второй JVM, аудит) и boot refuse для row isolation, `HARD`, JDBC history, dual-write, JDBC journal, cluster и сервера MariaDB. Evidence: `tools/mysql-b1-lab/gate-evidence-lab-community.json` — 2026-11-22, 17 PASS / 0 FAIL.
+Flyway TCK + concurrent audit + lease failover, после исправления P-MYSQL-PG-SQL также очередь задач и триггеры SQL-binding (`MysqlFlywayBaselineTckTest`), live boot + import (`MysqlLiveBundleImportTckTest`), lab-стенд `tools/mysql-b1-lab` (health, login, Flyway, dialect, import, второй JVM, аудит) и boot refuse для row isolation, `HARD`, JDBC history, dual-write, JDBC journal, cluster и сервера MariaDB. Evidence: `tools/mysql-b1-lab/gate-evidence-lab-community.json` — 2026-11-22, 17 PASS / 0 FAIL.
 
 Закрыто после Lab green (2026-11-22): Hibernate `ddl-auto=validate`. MariaDB Connector/J при `lower_case_table_names=0` не сообщает регистр хранения идентификаторов, и Hibernate искал таблицы в верхнем регистре; затем `report_templates.content` (маппинг `BINARY`, колонка `LONGBLOB`) не проходил проверку типа. `MysqlHibernateDialect` ищет имена как написаны, если драйвер регистр не сообщает (сообщённый регистр по-прежнему главнее), и принимает `LONGBLOB` для `BINARY`. `MysqlLiveBundleImportTckTest` стартует с validate на MySQL 8.4.13 при `lower_case_table_names=0`. Свойство оператору не нужно; явный `hibernate.dialect` заменяет закреплённый диалект и возвращает сбой.
 
 ### Amendment 4 (2026-11-22) — Prod Yes (B1), owner extension
 
 - Ячейка: self-managed **MySQL Community Server 8.4.x** LTS, единственный клиент `ISPF_DB` — **MariaDB Connector/J**.
-- Основание: Lab-green ячейка Amendment 3 (8.4.13 Community, локальный Docker), повтор 2026-11-22 с `ddl-auto=validate` на каждом JVM — 17 PASS / 0 FAIL (`tools/mysql-b1-lab/gate-evidence-prod-yes-community.json`).
+- Основание: Lab-green ячейка Amendment 3 (8.4.13 Community, локальный Docker), повтор 2026-11-22 с `ddl-auto=validate` на JVM стенда и втором JVM, плюс platform metrics и очередь задач — 20 PASS / 0 FAIL (`tools/mysql-b1-lab/gate-evidence-validate-community.json`, вывод collector). Решение владельца — `tools/mysql-b1-lab/gate-evidence-prod-yes-community.json`.
 - Owner extension: lab Docker-ячейка заменяет named self-managed хост (исключение из правила checklist «не lab Docker-стенд» только для этой ячейки). Повтор gate на первом named хосте рекомендуется, но не блокирует.
 - Fences без изменений: boot отказывает JDBC history / journal, dual-write, cluster, row isolation, `HARD` и серверу MariaDB.
 - Tech debt **P-MYSQL-SKU-RERUN**: MySQL Enterprise, HeatWave, Amazon RDS / Aurora MySQL, Azure Database for MySQL и любая другая non-Community ячейка — свой прогон checklist до любого claim.
 - TLS: обязанность оператора, этой подписью **не сертифицирован**. Ячейка evidence работала без TLS, с `allowPublicKeyRetrieval=true` — только для lab. Tech debt **P-MYSQL-TLS**.
-- Покрытие SQL: только пути gate; полного паритета SQL с PostgreSQL **нет**. По коду, не запускалось: PG-only SQL в `PlatformJobService` (`(UUID) getObject` на `CHAR(36)`, `NULLS LAST`) ожидаемо ломает отчёты через очередь задач и `GET /api/v1/platform/metrics`, а `||` в `ApplicationSqlBindingStore` ожидаемо даёт лишние срабатывания триггеров SQL-binding по успеху функции. Tech debt **P-MYSQL-PG-SQL** ([checklist](../../en/mysql-sku-promotion-checklist.md#known-gaps-tracked-tech-debt)).
-- Non-claims: MySQL 8.0 и 9.x; сервер MariaDB; другие JDBC-клиенты (GPL `mysql-connector-j` в classpath не бывает); B2 history / journal; active-active; tenant row isolation; `HARD` и per-app схемы.
+- Покрытие SQL: пути gate и MySQL TCK; полного паритета SQL с PostgreSQL **нет**. PG-only SQL, найденный при подписи, исправлен через `RelationalDialect` и работает на MySQL 8.4: `PlatformJobService` читает `job_id` строкой вместо приведения `getObject` на `CHAR(36)` к `UUID` и сортирует выполняющиеся задачи через `orderByNullsLast` вместо `NULLS LAST` (отчёты через очередь задач, `GET /api/v1/platform/metrics`); `ApplicationSqlBindingStore` собирает список триггеров по успеху функции через `concatExpression` (`CONCAT`) вместо `||`, который MySQL читает как OR. Остальной SQL полностью не проверялся. Tech debt **P-MYSQL-PG-SQL** ([checklist](../../en/mysql-sku-promotion-checklist.md#known-gaps-tracked-tech-debt)).
+- Non-claims: MySQL 8.0 и 9.x; сервер MariaDB; другие JDBC-клиенты (GPL `mysql-connector-j` в classpath не бывает); B2 history / journal; active-active; tenant row isolation; `HARD` и per-app схемы; TLS на соединении `ISPF_DB` (**P-MYSQL-TLS**); полный паритет SQL с PostgreSQL (**P-MYSQL-PG-SQL**).
 
 ## Последствия
 

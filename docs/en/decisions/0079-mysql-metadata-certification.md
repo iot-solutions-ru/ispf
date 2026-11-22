@@ -50,7 +50,7 @@ Lab green means every item below passed on one named lab cell. It is **not** Pro
 
 | # | Gate | Evidence |
 |---|------|----------|
-| 1 | Empty MySQL 8.4 → Flyway `mysql/V1`; tables on `utf8mb4_0900_bin`; case-sensitive paths; role seed; `SKIP LOCKED` job SQL | `MysqlFlywayBaselineTckTest` (`mysql-docker`) |
+| 1 | Empty MySQL 8.4 → Flyway `mysql/V1`; tables on `utf8mb4_0900_bin`; case-sensitive paths; role seed; `SKIP LOCKED` job SQL; job queue round trip and function-success SQL-binding triggers (since the P-MYSQL-PG-SQL fix) | `MysqlFlywayBaselineTckTest` (`mysql-docker`) |
 | 2 | Concurrent audit-chain append (8 writers) + hash verify; driver lease failover between two owners | `MysqlFlywayBaselineTckTest` |
 | 3 | Spring Boot boot on MySQL with a pinned Hibernate `MySQLDialect` + cert-bundle import + `by-path` (since the validate fix: `MysqlHibernateDialect` with `ddl-auto=validate`) | `MysqlLiveBundleImportTckTest` (`mysql-docker`) |
 | 4 | Lab stand: engine cell, health, login, Flyway V1, dialect, cert import + 4 paths, second JVM, serial re-import + audit chain | [`tools/mysql-b1-lab`](../../../tools/mysql-b1-lab/README.md) |
@@ -65,13 +65,13 @@ Closed after Lab green (2026-11-22): Hibernate `ddl-auto=validate` (default prof
 | Item | Decision |
 |------|----------|
 | Cell | **MySQL Community Server 8.4.x** LTS, self-managed, with **MariaDB Connector/J** as the only `ISPF_DB` client |
-| Basis | The § Amendment 3 Lab-green cell (8.4.13 Community, local Docker), re-run 2026-11-22 with `ddl-auto=validate` on every JVM: 17 PASS / 0 FAIL ([`gate-evidence-prod-yes-community.json`](../../../tools/mysql-b1-lab/gate-evidence-prod-yes-community.json)) |
+| Basis | The § Amendment 3 Lab-green cell (8.4.13 Community, local Docker), re-run 2026-11-22 with `ddl-auto=validate` on the stand JVM and the second JVM, plus platform metrics and the job queue: 20 PASS / 0 FAIL ([`gate-evidence-validate-community.json`](../../../tools/mysql-b1-lab/gate-evidence-validate-community.json), collector output). Owner decision: [`gate-evidence-prod-yes-community.json`](../../../tools/mysql-b1-lab/gate-evidence-prod-yes-community.json) |
 | Owner extension | The lab Docker cell stands in for a named self-managed host, overriding the checklist's "not the lab Docker stand" rule for this cell only. A gate re-run on the first named host is recommended, not blocking |
 | Fences | Unchanged: boot refuses JDBC history / journal, dual-write, cluster, row isolation, `HARD`, and MariaDB servers |
 | TLS | Operator-required; **not certified** by this signature. The evidence cell ran without TLS, with `allowPublicKeyRetrieval=true`, which is lab-only. Tech debt **P-MYSQL-TLS** ([checklist](../mysql-sku-promotion-checklist.md#known-gaps-tracked-tech-debt)) |
-| SQL coverage | The gate's paths only; **no** full SQL parity with PostgreSQL. Read from the code, not run: PostgreSQL-only SQL in `PlatformJobService` (`(UUID) getObject` on `CHAR(36)`, `NULLS LAST`) is expected to break queued report runs and `GET /api/v1/platform/metrics`, and `ApplicationSqlBindingStore` `\|\|` concat is expected to over-match function-success SQL-binding triggers. Tech debt **P-MYSQL-PG-SQL** ([checklist](../mysql-sku-promotion-checklist.md#known-gaps-tracked-tech-debt)) |
+| SQL coverage | The paths the gate and the MySQL TCKs exercise; **no** full SQL parity with PostgreSQL. The PostgreSQL-only SQL found at signing is fixed through `RelationalDialect` and runs on MySQL 8.4: `PlatformJobService` reads `job_id` as a string instead of casting `getObject` on `CHAR(36)` to `UUID`, and orders running jobs with `orderByNullsLast` instead of `NULLS LAST` (queued report runs, `GET /api/v1/platform/metrics`); `ApplicationSqlBindingStore` builds function-success trigger lists with `concatExpression` (`CONCAT`) instead of `\|\|`, which MySQL reads as OR. The remaining SQL is not reviewed in full. Tech debt **P-MYSQL-PG-SQL** ([checklist](../mysql-sku-promotion-checklist.md#known-gaps-tracked-tech-debt)) |
 | Tech debt | **P-MYSQL-SKU-RERUN** — MySQL Enterprise, HeatWave, Amazon RDS / Aurora MySQL, Azure Database for MySQL, and every other non-Community cell need their own checklist run before a claim names them |
-| Non-claims | MySQL 8.0 and 9.x; MariaDB Server; any other JDBC client (GPL `mysql-connector-j` is never on the classpath); B2 history / journal; active-active; tenant row isolation; `HARD` and per-app schemas |
+| Non-claims | MySQL 8.0 and 9.x; MariaDB Server; any other JDBC client (GPL `mysql-connector-j` is never on the classpath); B2 history / journal; active-active; tenant row isolation; `HARD` and per-app schemas; TLS on the `ISPF_DB` connection (**P-MYSQL-TLS**); full SQL parity with PostgreSQL (**P-MYSQL-PG-SQL**) |
 
 ## Consequences
 

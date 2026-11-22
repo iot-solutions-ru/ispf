@@ -25,7 +25,9 @@ Before v1.0: new install = new DB; changing `ISPF_METADATA_DB_KIND` = empty DB +
 
 | Area | File | Construct | Dialect method |
 |---------|------|-------------|----------------|
-| Job queue | `PlatformJobService` | `FOR UPDATE SKIP LOCKED` | `queuedJobSelectSql()` |
+| Job queue | `PlatformJobService` | `FOR UPDATE SKIP LOCKED` | `queuedPlatformJobSelectSql()` |
+| Job queue | `PlatformJobService` | `NULLS LAST`; `(UUID) getObject` on `job_id` (a string on MySQL / MSSQL) | `orderByNullsLast()`; `job_id` read as a string |
+| SQL bindings | `ApplicationSqlBindingStore` | `\|\|` concat (logical OR on MySQL, none on SQL Server before 2025) | `concatExpression()` |
 | App schemas | `ApplicationSchemaSession` | `SET search_path` | `activateSchemaSql()` |
 | Platform catalog | `PlatformSqlCatalog` | `public.` vs `PUBLIC.` | `platformSchemaPrefix()` |
 | Historian buckets | `JdbcVariableHistoryQueryStore` | `extract(epoch...)`, `to_timestamp` | `variableSampleBucketAggregateSql()` |
