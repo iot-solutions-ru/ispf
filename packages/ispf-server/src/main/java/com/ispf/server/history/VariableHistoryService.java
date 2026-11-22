@@ -65,6 +65,7 @@ public class VariableHistoryService {
     private final ObjectProvider<AnalyticsOnChangeTrigger> analyticsOnChangeTrigger;
     private final ObjectProvider<HistorianRollupQueryService> rollupQueryService;
     private final ObjectProvider<HistorianRollupMaterializerService> rollupMaterializer;
+    private final ObjectProvider<JdbcMssqlObservedAtRollupQueryService> observedAtRollupQueryService;
     private final HistorianIngressCompressor ingressCompressor;
     private final HistoryParquetExportGateway parquetExport;
     private final ObjectProvider<com.ispf.server.config.MssqlRelationalProperties> mssqlRelationalProperties;
@@ -93,11 +94,13 @@ public class VariableHistoryService {
             ObjectProvider<AnalyticsOnChangeTrigger> analyticsOnChangeTrigger,
             ObjectProvider<HistorianRollupQueryService> rollupQueryService,
             ObjectProvider<HistorianRollupMaterializerService> rollupMaterializer,
+            ObjectProvider<JdbcMssqlObservedAtRollupQueryService> observedAtRollupQueryService,
             HistoryParquetExportGateway parquetExport,
             ObjectProvider<com.ispf.server.config.MssqlRelationalProperties> mssqlRelationalProperties
     ) {
         this.parquetExport = parquetExport;
         this.rollupMaterializer = rollupMaterializer;
+        this.observedAtRollupQueryService = observedAtRollupQueryService;
         this.ingressCompressor = new HistorianIngressCompressor(
                 properties.getExceptionDeadband(),
                 properties.getSwingPerSecond()
@@ -691,15 +694,32 @@ public class VariableHistoryService {
                 result = rollup.orElseThrow().buckets();
                 dataSource = rollup.orElseThrow().dataSource();
             } else {
-                result = queryStore.aggregateBuckets(
-                        objectPath,
-                        variableName,
-                        field,
-                        resolvedFrom,
-                        resolvedTo,
-                        bucket,
-                        cappedBuckets
-                );
+                JdbcMssqlObservedAtRollupQueryService observedSvc = observedAtRollupQueryService.getIfAvailable();
+                Optional<HistorianRollupQueryService.RollupQueryResult> observed = observedSvc != null
+                        ? observedSvc.tryAggregate(
+                                objectPath,
+                                variableName,
+                                field,
+                                resolvedFrom,
+                                resolvedTo,
+                                bucket,
+                                cappedBuckets
+                        )
+                        : Optional.empty();
+                if (observed.isPresent()) {
+                    result = observed.orElseThrow().buckets();
+                    dataSource = observed.orElseThrow().dataSource();
+                } else {
+                    result = queryStore.aggregateBuckets(
+                            objectPath,
+                            variableName,
+                            field,
+                            resolvedFrom,
+                            resolvedTo,
+                            bucket,
+                            cappedBuckets
+                    );
+                }
             }
         } finally {
             queryMetricsRecorder.recordAggregateQuery(

@@ -97,7 +97,44 @@ public class JdbcVariableSampleRollupStore {
             long bucketSeconds,
             int limit
     ) {
-        return queryBucketsRange(objectPath, variableName, fieldName, from, toExclusive, bucketSeconds, false, limit);
+        return queryBucketsRange(
+                "variable_sample_rollups",
+                objectPath,
+                variableName,
+                fieldName,
+                from,
+                toExclusive,
+                bucketSeconds,
+                false,
+                limit
+        );
+    }
+
+    /**
+     * Closed {@code observed_at} buckets from {@code variable_sample_observed_rollups}
+     * with {@code bucket_start} in {@code [from, toExclusive)}.
+     */
+    @Transactional(readOnly = true)
+    public List<VariableHistoryService.VariableHistoryBucket> queryObservedBucketsBefore(
+            String objectPath,
+            String variableName,
+            String fieldName,
+            Instant from,
+            Instant toExclusive,
+            long bucketSeconds,
+            int limit
+    ) {
+        return queryBucketsRange(
+                "variable_sample_observed_rollups",
+                objectPath,
+                variableName,
+                fieldName,
+                from,
+                toExclusive,
+                bucketSeconds,
+                false,
+                limit
+        );
     }
 
     private List<VariableHistoryService.VariableHistoryBucket> queryBucketsRange(
@@ -110,8 +147,36 @@ public class JdbcVariableSampleRollupStore {
             boolean toInclusive,
             int limit
     ) {
+        return queryBucketsRange(
+                "variable_sample_rollups",
+                objectPath,
+                variableName,
+                fieldName,
+                from,
+                toBound,
+                bucketSeconds,
+                toInclusive,
+                limit
+        );
+    }
+
+    private List<VariableHistoryService.VariableHistoryBucket> queryBucketsRange(
+            String table,
+            String objectPath,
+            String variableName,
+            String fieldName,
+            Instant from,
+            Instant toBound,
+            long bucketSeconds,
+            boolean toInclusive,
+            int limit
+    ) {
         if (limit <= 0) {
             return List.of();
+        }
+        if (!"variable_sample_rollups".equals(table)
+                && !"variable_sample_observed_rollups".equals(table)) {
+            throw new IllegalArgumentException("Unsupported rollup table: " + table);
         }
         String toPredicate = toInclusive ? "AND bucket_start <= ?" : "AND bucket_start < ?";
         // Newest-first TOP, then ASC — matches /history/aggregate truncation when limit binds.
@@ -123,7 +188,7 @@ public class JdbcVariableSampleRollupStore {
                                     FROM (
                                         SELECT TOP (?)
                                             bucket_start, avg_val, min_val, max_val, sample_count
-                                        FROM variable_sample_rollups
+                                        FROM %s
                                         WHERE object_path = ?
                                           AND variable_name = ?
                                           AND field_name = ?
@@ -133,7 +198,7 @@ public class JdbcVariableSampleRollupStore {
                                         ORDER BY bucket_start DESC
                                     ) newest
                                     ORDER BY bucket_start ASC
-                                    """.formatted(toPredicate));
+                                    """.formatted(table, toPredicate));
                     statement.setInt(1, limit);
                     statement.setString(2, objectPath);
                     statement.setString(3, variableName);

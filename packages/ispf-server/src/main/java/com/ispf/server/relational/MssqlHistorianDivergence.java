@@ -33,11 +33,11 @@ public final class MssqlHistorianDivergence {
             "mssql_historian_rollup_cursor + JDBC sampled_at rollup materializer (opt-in)";
 
     /**
-     * Chart-prep: {@code variable_sample_observed_rollups} + arrival cursor. Default-off writer.
-     * Does not cut over charts; not a SWITCH seal.
+     * {@code variable_sample_observed_rollups} + arrival cursor. Default-off writer and default-off
+     * aggregate stitch ({@code ISPF_MSSQL_OBSERVED_ROLLUP_READ}). Not a SWITCH seal.
      */
     public static final String V101_4_OBSERVED_ROLLUPS =
-            "variable_sample_observed_rollups + mssql_historian_observed_rollup_cursor (opt-in writer)";
+            "variable_sample_observed_rollups + cursor + opt-in aggregate stitch (default off)";
 
     /**
      * ADR-0081 empty SWITCH staging on PRIMARY only. No SWITCH/TRUNCATE in Flyway. Lab script is the
