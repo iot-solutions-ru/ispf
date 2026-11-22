@@ -6,7 +6,7 @@
 
 Канонический текст: [EN ADR-0081](../../en/decisions/0081-mssql-historian-switch-retention.md).
 
-Lab helper: `tools/mssql-b1-lab/switch-variable-samples-month.sql`. Mutation — только maintenance login с `ConfirmSwitch=YES`. Retention продукта — app `DELETE` + `max-retention-days`. §2b / Prod Yes B2 не открываются.
+Lab helper: `tools/mssql-b1-lab/switch-variable-samples-month.sql`. Lab confirm (mutation) на disposable Evaluation: `gate-evidence-switch-confirm-evaluation.json` (2026-11-22). Retention продукта — app `DELETE` + `max-retention-days`. §2b / Prod Yes B2 не открываются.
 
 ## Контекст
 

@@ -4,7 +4,7 @@
 
 **Accepted as design** (2026-11-20). **Amended** (2026-11-21): empty Flyway staging DDL is allowed; JVM / scheduled `SWITCH` remain forbidden.
 
-Lab script **exists** (`tools/mssql-b1-lab/switch-variable-samples-month.sql`, dry-run by default; requires explicit `MaxRetentionDays` and `ConfirmSwitch=YES`). Product retention **in force** remains application `DELETE` plus `ispf.relational.mssql.max-retention-days` (default 90). Charts stay on raw `observed_at`. ADR-0078 §2b stays empty. ADR-0037 **Prod Yes (B2)** stays closed.
+Lab script **exists** (`tools/mssql-b1-lab/switch-variable-samples-month.sql`, dry-run by default; requires explicit `MaxRetentionDays` and `ConfirmSwitch=YES`). Lab **confirm** evidence on disposable Evaluation: `tools/mssql-b1-lab/gate-evidence-switch-confirm-evaluation.json` (2026-11-22; one July month SWITCH+TRUNCATE). Product retention **in force** remains application `DELETE` plus `ispf.relational.mssql.max-retention-days` (default 90). Opt-in aggregate stitch does not change that. ADR-0078 §2b stays empty. ADR-0037 **Prod Yes (B2)** stays closed.
 
 ### Amendment (2026-11-21) — staging DDL only
 

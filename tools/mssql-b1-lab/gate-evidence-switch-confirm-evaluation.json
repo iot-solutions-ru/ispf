@@ -1,0 +1,42 @@
+{
+  "gate": "ADR-0081 lab SWITCH confirm (mutation)",
+  "sku": "SQL Server 2022 Enterprise Evaluation",
+  "mssql_pid": "Evaluation",
+  "edition": "Enterprise Evaluation Edition (64-bit)",
+  "product_version": "16.0.4325.4",
+  "container": "ispf-mssql-b1-stand",
+  "database": "ispf_switch_confirm",
+  "recovery_model": "FULL",
+  "login_class": "sa (lab maintenance; not ISPF runtime)",
+  "flyway_tip": "V101.5 (V1 + V101.1–V101.5)",
+  "partition_status": "APPLIED",
+  "staging": "dbo.variable_samples_switch_staging present empty on PRIMARY (V101.5)",
+  "ran_at_utc": "2026-11-22T07:53:55Z",
+  "confirm": true,
+  "max_retention_days": 90,
+  "cutoff_utc": "2026-08-24T07:53:55.1090274",
+  "chosen_range": ["2026-07-01T00:00:00", "2026-08-01T00:00:00"],
+  "chosen_partition_number": 32,
+  "rows_before_in_range": 4,
+  "rows_after_total": 1,
+  "rows_after_remaining_month": {"2026-08-10": 1},
+  "staging_rows_after": 0,
+  "seed": [
+    {"sampled_at": "2026-07-15T12:00:00", "kind": "numeric GOOD"},
+    {"sampled_at": "2026-07-15T13:00:00", "kind": "value_text"},
+    {"sampled_at": "2026-07-16T10:00:00", "kind": "field_name=$record"},
+    {"sampled_at": "2026-07-20T08:00:00", "kind": "observed_at month mismatch + BAD quality"},
+    {"sampled_at": "2026-08-10T12:00:00", "kind": "in-window August (not eligible)"}
+  ],
+  "proves": [
+    "DryRun=0 + ConfirmSwitch=YES SWITCH+TRUNCATE one oldest eligible UTC month on APPLIED disposable Evaluation DB",
+    "August month overlapping retention window retained",
+    "Staging empty after TRUNCATE; status remains APPLIED; boundaries not MERGED"
+  ],
+  "notes": [
+    "Lab mutation only. Product retention remains app DELETE + max-retention-days.",
+    "Not ADR-0078 §2b. Not Prod Yes B2. Not JVM/schedule SWITCH. Not CI TCK.",
+    "Not FULL-vs-DELETE log comparison. Not Standard / Azure SQL signature.",
+    "SKIPPED_NONEMPTY path not exercised."
+  ]
+}
