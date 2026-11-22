@@ -41,7 +41,7 @@ MySQL certification does **not** imply MariaDB certification. They have distinct
 | Tests | `org.testcontainers:testcontainers-mysql:2.0.5`, `testImplementation` |
 | GPL `mysql-connector-j` | Not on any classpath |
 | MariaDB **server** | Still refused. Config `mariadb`, product-name MariaDB, and an explicit `ISPF_METADATA_DB_KIND=mysql` against a MariaDB server all fail closed (`RelationalDialectDetector`). A MariaDB-made client does not make the server MariaDB, and a MySQL result says nothing about a MariaDB server |
-| Hibernate | `MySQLDialect` is pinned on a MySQL `ISPF_DB` (`RelationalConfiguration`). Hibernate maps any driver named "MariaDB…" to `MariaDBDialect`, even against a MySQL server |
+| Hibernate | A `MySQLDialect` is pinned on a MySQL `ISPF_DB` (`RelationalConfiguration`). Hibernate maps any driver named "MariaDB…" to `MariaDBDialect`, even against a MySQL server. The pin is `MysqlHibernateDialect`, which also makes `ddl-auto=validate` pass (§ Amendment 3) |
 | Audit / script locks | `MysqlDialect.ensureLockRow` uses `INSERT … ON DUPLICATE KEY UPDATE`: the portable `INSERT … WHERE NOT EXISTS` deadlocked (1213) under 8 concurrent first-time lockers |
 
 ### Amendment 3 (2026-11-22) — Lab-green gate
@@ -52,15 +52,16 @@ Lab green means every item below passed on one named lab cell. It is **not** Pro
 |---|------|----------|
 | 1 | Empty MySQL 8.4 → Flyway `mysql/V1`; tables on `utf8mb4_0900_bin`; case-sensitive paths; role seed; `SKIP LOCKED` job SQL | `MysqlFlywayBaselineTckTest` (`mysql-docker`) |
 | 2 | Concurrent audit-chain append (8 writers) + hash verify; driver lease failover between two owners | `MysqlFlywayBaselineTckTest` |
-| 3 | Spring Boot boot on MySQL with Hibernate `MySQLDialect` + cert-bundle import + `by-path` | `MysqlLiveBundleImportTckTest` (`mysql-docker`) |
+| 3 | Spring Boot boot on MySQL with a pinned Hibernate `MySQLDialect` + cert-bundle import + `by-path` (since the validate fix: `MysqlHibernateDialect` with `ddl-auto=validate`) | `MysqlLiveBundleImportTckTest` (`mysql-docker`) |
 | 4 | Lab stand: engine cell, health, login, Flyway V1, dialect, cert import + 4 paths, second JVM, serial re-import + audit chain | [`tools/mysql-b1-lab`](../../../tools/mysql-b1-lab/README.md) |
 | 5 | Boot refusals: row isolation, `HARD`, JDBC history, dual-write, JDBC journal, cluster, MariaDB server (explicit kind and auto-detect) | Lab stand + `MysqlCertificationBootGuardTest`, `FlywayDialectConfigurationMysqlTest`, `RelationalDialectDetectorTest` |
 
 Lab cell: MySQL **8.4.13 Community** (`mysql:8.4`), `transaction_isolation=READ-COMMITTED`, database `ispf` on `utf8mb4_0900_bin`, single JVM, `local` profile (`ddl-auto=none`, same as the MSSQL B1 stand). Signed run: [`gate-evidence-lab-community.json`](../../../tools/mysql-b1-lab/gate-evidence-lab-community.json) — 2026-11-22, 17 PASS / 0 FAIL. Checklist: [mysql-sku-promotion-checklist](../mysql-sku-promotion-checklist.md).
 
+Closed after Lab green (2026-11-22): Hibernate `ddl-auto=validate` (default profile). MariaDB Connector/J reports neither lower-, upper- nor mixed-case identifier storage for a MySQL server with `lower_case_table_names=0`, so Hibernate looked tables up in upper case and reported them missing; with names resolved, `report_templates.content` (`BINARY` mapping, `LONGBLOB` column) failed the type check. `RelationalConfiguration` now pins `MysqlHibernateDialect`, which keeps names as written when the driver reports no case (a reported case still wins) and accepts `LONGBLOB` for `BINARY` mappings. `MysqlLiveBundleImportTckTest` boots with validate on MySQL 8.4.13 with `lower_case_table_names=0`. No operator property is needed; an explicit `hibernate.dialect` replaces the pin and brings the failure back.
+
 Open on the way to Prod Yes (not claimed by Lab green):
 
-- Hibernate `ddl-auto=validate` (default profile) fails on this cell: MariaDB Connector/J reports neither lower-, upper- nor mixed-case identifier storage for a MySQL server with `lower_case_table_names=0`, so Hibernate looks tables up in upper case and reports them missing. Non-`local` deployments must set `SPRING_JPA_HIBERNATE_DDL_AUTO=none` until this is fixed.
 - PostgreSQL-only SQL on paths the gate does not exercise (for example `PlatformJobService` `NULLS LAST` and `(UUID) getObject` on `CHAR(36)`, `ApplicationSqlBindingStore` `||` concat).
 - TLS: the lab uses `allowPublicKeyRetrieval=true`; a production host uses TLS (`sslMode=verify-full`).
 - B2 JDBC history/journal, active-active, tenant row isolation, `HARD` schemas, and per-app schemas stay refused or unsupported.

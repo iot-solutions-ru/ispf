@@ -79,7 +79,7 @@ db/migration/oracle/       — README + Phase 1 lab (Prod: No; boot refuse; ADR-
 | 1 | PG-compatible (Yugabyte, Cockroach) | On request | `postgresql/` | Тестировать per vendor |
 | 2 | H2 (edge/dev) | Edge only | `postgresql/` + PG compat mode | `application-local.yml` |
 | 3 | MS SQL Server | **Prod Yes (B1 + B2 + A-A)** | Generated greenfield `mssql/V1` | Evaluation `16.0.4325.4` + owner-extended licensed SKUs (2026-11-22). B2 не сертифицирует product SWITCH / ≤20 с. A-A fence снят; AG soak tech-debt. Контракт [0078](0078-mssql-metadata-certification.md) |
-| 4 | MySQL | **No — Lab green** | Generated greenfield `mysql/V1` | B1 metadata Lab green на MySQL 8.4.13 Community, 2026-11-22 ([checklist](../../en/mysql-sku-promotion-checklist.md)); клиент MariaDB Connector/J (LGPL), серверы MariaDB — refuse. Boot только под B1 fences. Named-SKU Prod Yes нет; `ddl-auto=validate` открыт. Контракт [0079](0079-mysql-metadata-certification.md) |
+| 4 | MySQL | **No — Lab green** | Generated greenfield `mysql/V1` | B1 metadata Lab green на MySQL 8.4.13 Community, 2026-11-22 ([checklist](../../en/mysql-sku-promotion-checklist.md)); клиент MariaDB Connector/J (LGPL), серверы MariaDB — refuse. Boot только под B1 fences. Named-SKU Prod Yes нет; `ddl-auto=validate` проходит (`MysqlHibernateDialect`). Контракт [0079](0079-mysql-metadata-certification.md) |
 | 4 | Oracle | **No — Phase 1 lab** | README + fences | Честность dialect и заранее подключённые B1 fences ([0080](0080-oracle-metadata-certification.md), [эпик](../oracle-certification-epic.md)); без driver и Flyway SQL. B1 pack ждёт MySQL B1 Prod Yes; boot запрещён до готовности Flyway pack и gate |
 
 ## Последствия

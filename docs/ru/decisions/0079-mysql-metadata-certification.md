@@ -31,14 +31,16 @@
 - Клиент `ISPF_DB` для серверов MySQL 8.4 — **MariaDB Connector/J** (LGPL-2.1-or-later), `runtimeOnly`, неизменённый JAR. URL `jdbc:mysql://…/ispf?permitMysqlScheme=true` + `driver-class-name=org.mariadb.jdbc.Driver`.
 - `flyway-mysql` (`runtimeOnly`), `testcontainers-mysql:2.0.5` (`testImplementation`). GPL `mysql-connector-j` — **нет**.
 - **Сервер MariaDB** по-прежнему refuse, в том числе при явном `ISPF_METADATA_DB_KIND=mysql`.
-- Hibernate: `MySQLDialect` закреплён (иначе драйвер MariaDB даёт `MariaDBDialect` даже на MySQL).
+- Hibernate: закреплён `MySQLDialect` (иначе драйвер MariaDB даёт `MariaDBDialect` даже на MySQL) — подкласс `MysqlHibernateDialect`, с которым проходит `ddl-auto=validate`.
 - Блокировки аудита: `INSERT … ON DUPLICATE KEY UPDATE` (portable вариант давал deadlock 1213).
 
 ### Amendment 3 — Lab-green gate
 
 Flyway TCK + concurrent audit + lease failover (`MysqlFlywayBaselineTckTest`), live boot + import (`MysqlLiveBundleImportTckTest`), lab-стенд `tools/mysql-b1-lab` (health, login, Flyway, dialect, import, второй JVM, аудит) и boot refuse для row isolation, `HARD`, JDBC history, dual-write, JDBC journal, cluster и сервера MariaDB. Evidence: `tools/mysql-b1-lab/gate-evidence-lab-community.json` — 2026-11-22, 17 PASS / 0 FAIL.
 
-Открыто до Prod Yes: Hibernate `ddl-auto=validate` не проходит на этой ячейке (вне `local` нужен `SPRING_JPA_HIBERNATE_DDL_AUTO=none`), PG-only SQL на не покрытых путях, TLS вместо `allowPublicKeyRetrieval`. Owner-extended Prod Yes — только после повторного checklist на named self-managed хосте и с tech debt **P-MYSQL-SKU-RERUN** для Enterprise / managed / non-Community ячеек.
+Закрыто после Lab green (2026-11-22): Hibernate `ddl-auto=validate`. MariaDB Connector/J при `lower_case_table_names=0` не сообщает регистр хранения идентификаторов, и Hibernate искал таблицы в верхнем регистре; затем `report_templates.content` (маппинг `BINARY`, колонка `LONGBLOB`) не проходил проверку типа. `MysqlHibernateDialect` ищет имена как написаны, если драйвер регистр не сообщает (сообщённый регистр по-прежнему главнее), и принимает `LONGBLOB` для `BINARY`. `MysqlLiveBundleImportTckTest` стартует с validate на MySQL 8.4.13 при `lower_case_table_names=0`. Свойство оператору не нужно; явный `hibernate.dialect` заменяет закреплённый диалект и возвращает сбой.
+
+Открыто до Prod Yes: PG-only SQL на не покрытых путях, TLS вместо `allowPublicKeyRetrieval`. Owner-extended Prod Yes — только после повторного checklist на named self-managed хосте и с tech debt **P-MYSQL-SKU-RERUN** для Enterprise / managed / non-Community ячеек.
 
 ## Последствия
 

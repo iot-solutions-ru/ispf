@@ -4,7 +4,7 @@ Operator scripts for a **single-node** MySQL 8.4 lab stand. Not a production dep
 
 | Script / file | Role |
 |---------------|------|
-| `stand-local.ps1` | MySQL 8.4 Community (`mysql:8.4`, `:13306`) + branch `bootJar` (`:18090`); history/journal off |
+| `stand-local.ps1` | MySQL 8.4 Community (`mysql:8.4`, `:13306`) + branch `bootJar` (`:18090`); Hibernate `ddl-auto=validate`; history/journal off |
 | `gate-evidence.ps1` | Lab-green gate collector (17 items) against that stand; writes JSON (`-Out`) |
 | `gate-evidence-lab-community.json` | Signed Lab-green run: MySQL 8.4.13 Community, 2026-11-22, 17 PASS / 0 FAIL — [checklist](../../docs/en/mysql-sku-promotion-checklist.md) |
 | `mysql-b1-cert-bundle.json` | Tree-only cert bundle; mirrors `packages/ispf-server/src/test/resources/mysql-b1-cert-bundle.json` — keep them in sync |
@@ -38,8 +38,8 @@ Boot refuses each of these otherwise, and refuses a MariaDB server under any kin
 
 ## Notes
 
-- `SPRING_PROFILES_ACTIVE=local` keeps `ddl-auto=none`, as on the MSSQL B1 stand. Hibernate `ddl-auto=validate` does not pass on MySQL yet (identifier-case metadata from MariaDB Connector/J); outside `local` set `SPRING_JPA_HIBERNATE_DDL_AUTO=none`.
-- Hibernate logs HHH90000025 ("MySQLDialect does not need to be specified") — expected: ISPF pins `MySQLDialect` because the MariaDB driver name would select `MariaDBDialect`.
+- `SPRING_PROFILES_ACTIVE=local` sets `ddl-auto=none`; every stand and gate JVM overrides it with `SPRING_JPA_HIBERNATE_DDL_AUTO=validate`, the production default, so a boot also proves Hibernate schema validation on MySQL.
+- ISPF pins `MysqlHibernateDialect` (a `MySQLDialect` subclass) because the MariaDB driver name would select `MariaDBDialect`; the app log shows `Database dialect: MysqlHibernateDialect`. Do not set `hibernate.dialect`: plain `MySQLDialect` fails `ddl-auto=validate` on `lower_case_table_names=0` ("missing table").
 - MySQL DDL is not transactional. If Flyway V1 fails, drop and recreate `ispf`, then restart.
 - PowerShell splits an unquoted `-h127.0.0.1` at the first dot; the scripts pass `--host=127.0.0.1` quoted.
 - Ports bind to `127.0.0.1` by default (`BIND_HOST` to override). The gate also uses `:18091` (second JVM) and a throwaway `mariadb:11.4` container.

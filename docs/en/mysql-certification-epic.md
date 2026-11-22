@@ -23,7 +23,7 @@
 
 ## Next train (Prod Yes — not started)
 
-- [ ] Hibernate `ddl-auto=validate` on MySQL (identifier-case metadata from MariaDB Connector/J)
+- [x] Hibernate `ddl-auto=validate` on MySQL — pinned `MysqlHibernateDialect` (identifier case when MariaDB Connector/J reports none; `BINARY` mapping vs `LONGBLOB`); `MysqlLiveBundleImportTckTest` boots with validate on `lower_case_table_names=0`
 - [ ] TLS on the ISPF_DB connection instead of `allowPublicKeyRetrieval`
 - [ ] Review / fence PostgreSQL-only SQL on paths the gate does not exercise (platform jobs, SQL-binding triggers)
 - [ ] Named self-managed host signature; **P-MYSQL-SKU-RERUN** for Enterprise / managed / non-Community cells

@@ -37,7 +37,7 @@ Evidence: [`tools/mysql-b1-lab/gate-evidence-lab-community.json`](../../tools/my
 | Item | State |
 |------|-------|
 | Named host | A self-managed MySQL 8.4.x host the operator runs (not Testcontainers, not the lab Docker stand) |
-| Hibernate validate | `ddl-auto=validate` fails on this cell (MariaDB Connector/J reports no identifier case for `lower_case_table_names=0`; Hibernate looks tables up in upper case). Fix or waive in writing; until then non-`local` deployments set `SPRING_JPA_HIBERNATE_DDL_AUTO=none` |
+| Hibernate validate | **Fixed 2026-11-22.** ISPF pins `MysqlHibernateDialect`, a `MySQLDialect` subclass: it looks names up as written when MariaDB Connector/J reports no identifier case (`lower_case_table_names=0`, the Linux default), and accepts the baseline's `LONGBLOB` for `BINARY` mappings. The default `ddl-auto=validate` passes on MySQL 8.4.13 with `lower_case_table_names=0` (`MysqlLiveBundleImportTckTest`); no operator property is needed. Leave `hibernate.dialect` unset: plain `MySQLDialect` fails validation with "missing table" |
 | TLS | Replace `allowPublicKeyRetrieval=true` with TLS (`sslMode=verify-full`) |
 | Uncovered SQL | PostgreSQL-only SQL on paths this gate does not exercise (platform jobs `NULLS LAST` / `(UUID) getObject`, SQL-binding `||` triggers) reviewed or fenced |
 | Re-run | All eight gates above on the named host |

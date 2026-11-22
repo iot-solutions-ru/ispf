@@ -21,7 +21,7 @@
 
 ## Дальше (Prod Yes — не начато)
 
-- Hibernate `ddl-auto=validate` на MySQL
+- Hibernate `ddl-auto=validate` на MySQL — **сделано**: закреплён `MysqlHibernateDialect` (регистр идентификаторов, когда MariaDB Connector/J его не сообщает; `BINARY` против `LONGBLOB`); TCK стартует с validate при `lower_case_table_names=0`
 - TLS вместо `allowPublicKeyRetrieval`
 - PG-only SQL на не покрытых gate путях
 - Named self-managed хост; **P-MYSQL-SKU-RERUN** для Enterprise / managed / non-Community

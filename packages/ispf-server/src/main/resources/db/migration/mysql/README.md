@@ -24,9 +24,9 @@ ISPF_METADATA_DB_KIND=mysql
 ```
 
 Database: `CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_bin`; server `transaction_isolation=READ-COMMITTED`.
-Hibernate runs `MySQLDialect` (pinned in `RelationalConfiguration`; the HHH90000025 "does not need to be specified"
-warning is expected). `ddl-auto=validate` does not pass on MySQL yet — outside the `local` profile set
-`SPRING_JPA_HIBERNATE_DDL_AUTO=none`.
+Hibernate runs `MysqlHibernateDialect`, a `MySQLDialect` subclass pinned in `RelationalConfiguration`. The default
+`ddl-auto=validate` passes, including on `lower_case_table_names=0`; no property is needed. Do not set
+`hibernate.dialect`: plain `MySQLDialect` looks tables up in upper case there and validation fails.
 
 MySQL DDL is not transactional: if V1 fails, drop the database and retry. An applied V1 is frozen — new PG
 `Vnn` scripts need a `mysql/Vnn` twin or an exception line. Per-app schemas and in-DB PG-flavored solution SQL are

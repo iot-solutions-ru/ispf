@@ -74,6 +74,7 @@ function Start-Ispf([string]$name, [hashtable]$envExtra, [string]$jdbcUrl = $Jdb
     docker rm -f $name 2>$null | Out-Null
     $envBase = [ordered]@{
         "SPRING_PROFILES_ACTIVE" = "local"
+        "SPRING_JPA_HIBERNATE_DDL_AUTO" = "validate"
         "ISPF_METADATA_DB_KIND" = "mysql"
         "SPRING_DATASOURCE_URL" = $jdbcUrl
         "SPRING_DATASOURCE_USERNAME" = "ispf"
@@ -155,10 +156,10 @@ $flyway = Invoke-Sql "SELECT COUNT(*) FROM ispf.flyway_schema_history WHERE vers
 if ($flyway -eq "1") { Pass "g1_flyway" "flyway mysql/V1 success=1" } else { Fail "g1_flyway" "flyway V1 rows=$flyway" }
 
 $appLog = docker logs $NameApp 2>&1 | Out-String
-if ($appLog.Contains("Database dialect: MySQLDialect") -and -not $appLog.Contains("MariaDBDialect")) {
-    Pass "g1_dialect" "Hibernate MySQLDialect (pinned; MariaDB Connector/J would auto-select MariaDBDialect)"
+if ($appLog.Contains("Database dialect: MysqlHibernateDialect") -and -not $appLog.Contains("MariaDBDialect")) {
+    Pass "g1_dialect" "Hibernate MysqlHibernateDialect (pinned MySQLDialect subclass; MariaDB Connector/J would auto-select MariaDBDialect)"
 } else {
-    Fail "g1_dialect" "Hibernate dialect is not MySQLDialect"
+    Fail "g1_dialect" "Hibernate dialect is not MysqlHibernateDialect"
 }
 
 Write-Host "== 2 bundle import + paths =="
