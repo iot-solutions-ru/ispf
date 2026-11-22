@@ -17,11 +17,13 @@ class UncertifiedRelationalEngineBootGuardTest {
         assertThatThrownBy(() -> new UncertifiedRelationalEngineBootGuard(new MysqlDialect())
                 .refuseUncertifiedEngines())
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("mysql");
+                .hasMessageContaining("mysql")
+                .hasMessageContaining("ADR-0079");
         assertThatThrownBy(() -> new UncertifiedRelationalEngineBootGuard(new OracleDialect())
                 .refuseUncertifiedEngines())
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("oracle");
+                .hasMessageContaining("oracle")
+                .hasMessageContaining("ADR-0080");
     }
 
     @Test

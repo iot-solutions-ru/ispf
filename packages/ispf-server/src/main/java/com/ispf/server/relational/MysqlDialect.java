@@ -1,5 +1,11 @@
 package com.ispf.server.relational;
 
+import java.sql.SQLException;
+
+/**
+ * MySQL 8.x dialect (ADR-0079). Metadata boot remains refused until the B1 gate
+ * ({@code MetadataDialectBootPolicy.assertEngineCertified}). MariaDB is not this dialect.
+ */
 public class MysqlDialect extends AbstractRelationalDialect {
 
     @Override
@@ -38,20 +44,20 @@ public class MysqlDialect extends AbstractRelationalDialect {
     @Override
     public String activateSchemaSql(String quotedSchema) {
         throw new UnsupportedOperationException(
-                "MySQL per-application schema switching is not certified (ADR-0037). "
+                "MySQL per-application schema switching is not certified (ADR-0079). "
                         + "External DATA_SOURCE remains the supported path."
         );
     }
 
     @Override
     public String resetPlatformSchemaSql() {
-        return null;
+        return "SELECT 1";
     }
 
     @Override
     public String createSchemaIfNotExistsSql(String quotedSchema) {
         throw new UnsupportedOperationException(
-                "MySQL schema/database create for app isolation is not certified (ADR-0037)."
+                "MySQL schema/database create for app isolation is not certified (ADR-0079)."
         );
     }
 
@@ -67,6 +73,10 @@ public class MysqlDialect extends AbstractRelationalDialect {
                 """;
     }
 
+    /**
+     * Still the PostgreSQL-shaped string — invalid on MySQL. B2 must replace this;
+     * do not treat it as a historian claim.
+     */
     @Override
     public String variableSampleBucketAggregateSql() {
         return bucketAggregateSqlPostgresStyle();
@@ -75,6 +85,25 @@ public class MysqlDialect extends AbstractRelationalDialect {
     @Override
     public boolean supportsTimescaleHypertables() {
         return false;
+    }
+
+    @Override
+    public boolean isUniqueViolation(SQLException ex) {
+        if (ex == null) {
+            return false;
+        }
+        // 1062 ER_DUP_ENTRY only — not bare SQLSTATE 23000 (FK 1452 / NOT NULL 1048).
+        return ex.getErrorCode() == 1062;
+    }
+
+    @Override
+    public String nowPlusSecondsExpression() {
+        return com.ispf.server.spi.JdbcExpirySql.MYSQL_STYLE;
+    }
+
+    @Override
+    public String booleanLiteral(boolean value) {
+        return value ? "1" : "0";
     }
 
     @Override

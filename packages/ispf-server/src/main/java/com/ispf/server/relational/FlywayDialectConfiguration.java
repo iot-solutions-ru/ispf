@@ -45,6 +45,13 @@ public class FlywayDialectConfiguration {
                     historianTierProperties.warmTier().isEnabled(),
                     coldArchiveProperties.enabled()
             );
+            MetadataDialectBootPolicy.assertMysqlB1Fences(
+                    dialect,
+                    tenantIsolationProperties,
+                    variableHistoryProperties,
+                    eventJournalProperties,
+                    clusterProperties
+            );
             configuration.locations(dialect.flywayLocations());
             // PostgreSQL-only bodies (V86 RLS, V89 random_uuid, …): H2 also loads the
             // postgresql pack, so wrap those sections in placeholders → block comments on H2.

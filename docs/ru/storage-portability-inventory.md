@@ -44,7 +44,7 @@
 | Переменная | Назначение |
 |------------|------------|
 | `ISPF_DB_URL` | JDBC-строка подключения к основной реляционной базе метаданных |
-| `ISPF_METADATA_DB_KIND` | Явное указание диалекта: `postgresql`, `h2`, `mssql`, … (если не указано — по JDBC URL). **`mssql` — Prod Yes (B1 + B2)** на Enterprise Evaluation `16.0.4325.4` ([0078](decisions/0078-mssql-metadata-certification.md), [B2](../en/mssql-b2-sku-promotion-checklist.md)); A-A не сертифицирован. **`mysql` / `oracle` — не prod** до своих gate |
+| `ISPF_METADATA_DB_KIND` | Явное указание диалекта: `postgresql`, `h2`, `mssql`, `mysql`, `oracle` (если не указано — по JDBC URL). **`mssql` — Prod Yes (B1 + B2)** на Enterprise Evaluation `16.0.4325.4` ([0078](decisions/0078-mssql-metadata-certification.md), [B2](../en/mssql-b2-sku-promotion-checklist.md)); A-A не сертифицирован. **`mysql` — Phase 1 lab, Prod No, boot refuse** ([0079](decisions/0079-mysql-metadata-certification.md)); **`mariadb` refuse** (не MySQL). **`oracle` — boot refuse** до MySQL B1 ([0080](decisions/0080-oracle-metadata-certification.md)) |
 | `ISPF_EVENT_JOURNAL_STORE` | Хранилище журнала событий: `jdbc` (та же реляционная БД) или `clickhouse` |
 | `ISPF_VARIABLE_HISTORY_STORE` | Хранилище истории переменных: `jdbc` (та же реляционная БД) или `clickhouse` |
 
