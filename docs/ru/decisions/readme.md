@@ -54,6 +54,6 @@
 | [0078-mssql-metadata-certification](0078-mssql-metadata-certification.md) | Сертификация метаданных MS SQL Server B1/B2 (amends 0037) — **Accepted** (B1 Prod Yes на Evaluation; B2/A-A boot refuse, не Prod Yes) |
 | [0079-mysql-metadata-certification](0079-mysql-metadata-certification.md) | Charter сертификации метаданных MySQL 8.x B1 (amends 0037) — **Accepted** (impl Not started) |
 | [0080-oracle-metadata-certification](0080-oracle-metadata-certification.md) | Charter сертификации метаданных Oracle B1 (amends 0037) — **Accepted** (impl Not started) |
-| [0081-mssql-historian-switch-retention](0081-mssql-historian-switch-retention.md) | Месячный SWITCH retention историка MSSQL — **Accepted as design** (lab + dry-run evidence; amend staging DDL; JVM/schedule запрещены) |
+| [0081-mssql-historian-switch-retention](0081-mssql-historian-switch-retention.md) | Месячный SWITCH retention историка MSSQL — **Accepted as design** (lab dry-run + confirm; staging DDL; JVM/schedule запрещены; Prod Yes B2 закрыт) |
 
 **Цепочки тем (порядок чтения):** [en/decisions/readme.md § Topic chains](../../en/decisions/readme.md#topic-chains-read-in-order).

@@ -9,7 +9,8 @@ Operator scripts for a **single-node** stand. Not a production deploy path.
 | `stand-b2-local.ps1` | AMD64 Gate B: same SQL + `ISPF_MSSQL_SINGLE_ENGINE=true` on DB `ispf_b2` (:18082) |
 | `gate-evidence.sh` | B1 §8 evidence collector (`MSSQL_SA_PASSWORD` required). Signed B1: `gate-evidence-local-evaluation.json` |
 | `gate-b2-core.ps1` | Gate B evidence (history write, DATE_BUCKET, journal JDBC, purge). Output: `gate-evidence-b2-core-evaluation.json` |
-| `gate-evidence-switch-dryrun-evaluation.json` | ADR-0081 lab SWITCH dry-run on Evaluation (APPLIED plan + pre-V101.2 refuse). Confirm not run. Not §2b / Prod Yes B2 |
+| `gate-evidence-switch-dryrun-evaluation.json` | ADR-0081 lab SWITCH dry-run on Evaluation (APPLIED plan + pre-V101.2 refuse). Not §2b / Prod Yes B2 |
+| `gate-evidence-switch-confirm-evaluation.json` | ADR-0081 lab SWITCH **confirm** on disposable `ispf_switch_confirm` (Evaluation `16.0.4325.4`, V101.5, July dropped / August kept). Product retention still DELETE. Not §2b / Prod Yes B2 |
 | `split-variable-samples-horizon.sql` | Gate C1: SPLIT empty monthly horizon + alignment check (no SWITCH) |
 | `switch-variable-samples-month.sql` | ADR-0081 lab: dry-run-default SWITCH+TRUNCATE of one oldest eligible UTC month (maintenance login; not product retention) |
 | `load.sh` | Cert-bundle import + concurrent `by-path` soak |
