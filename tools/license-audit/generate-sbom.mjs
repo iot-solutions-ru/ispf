@@ -339,6 +339,7 @@ const JAVA_LICENSE_HINTS = {
   "io.dropwizard.metrics": "Apache-2.0",
   "org.flywaydb": "Apache-2.0",
   "org.postgresql": "BSD-2-Clause",
+  "org.mariadb.jdbc": "LGPL-2.1-or-later",
   "com.h2database": "MPL-2.0 OR EPL-1.0",
   "com.haulmont.yarg": "Apache-2.0",
   "org.apache": "Apache-2.0",

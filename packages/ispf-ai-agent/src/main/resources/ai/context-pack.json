@@ -1,6 +1,6 @@
 {
   "contextPackVersion": "ispf-1.0.0",
-  "generatedAt": "2026-11-22T08:52:08.799480+00:00",
+  "generatedAt": "2026-11-22T11:33:51.777528+00:00",
   "platformVersion": "1.0.0",
   "bundleManifest": {
     "fields": [
@@ -18794,6 +18794,12 @@
       "keywords": "messaging Messaging Channels: REST/BFF, WebSocket, Event Journal, and NATS"
     },
     {
+      "id": "mssql-b2-sku-promotion-checklist",
+      "path": "docs/en/mssql-b2-sku-promotion-checklist.md",
+      "title": "MSSQL B2 SKU promotion checklist (ADR-0078 single-engine)",
+      "keywords": "mssql-b2-sku-promotion-checklist MSSQL B2 SKU promotion checklist (ADR-0078 single-engine)"
+    },
+    {
       "id": "mssql-certification-epic",
       "path": "docs/en/mssql-certification-epic.md",
       "title": "Epic: MS SQL Server relational certification (ADR-0078)",
@@ -18822,6 +18828,12 @@
       "path": "docs/en/mysql-certification-epic.md",
       "title": "Epic: MySQL relational certification (ADR-0079)",
       "keywords": "mysql-certification-epic Epic: MySQL relational certification (ADR-0079)"
+    },
+    {
+      "id": "mysql-sku-promotion-checklist",
+      "path": "docs/en/mysql-sku-promotion-checklist.md",
+      "title": "MySQL B1 SKU promotion checklist (ADR-0079)",
+      "keywords": "mysql-sku-promotion-checklist MySQL B1 SKU promotion checklist (ADR-0079)"
     },
     {
       "id": "object-functions",
@@ -71659,5 +71671,5 @@
   "embeddingModel": "ispf-hash-v1",
   "embeddingDims": 384,
   "embeddingCoverage": 41,
-  "contentSha256": "845e950fb6dab6fde1f0bf7cb721b02991230281d7ca04ee51fbeec79dc92e9e"
+  "contentSha256": "2f9729d552b8096d6da0d698df48fd7777d1cb2bf9d2c27ed2d17c2e308a2425"
 }

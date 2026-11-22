@@ -34,7 +34,7 @@
 | Интервальная агрегация истории | `JdbcVariableHistoryQueryStore` | Вычисление временных корзин (`extract(epoch...)`, `to_timestamp`) | `variableSampleBucketAggregateSql()` |
 | Гипертаблицы TimescaleDB | `TimescaleHypertableInitializer` | Вызов `create_hypertable` (только при наличии расширения) | `supportsTimescale()` |
 | Leader locks | `PlatformLeaderLockService` | Table leases (`platform_leader_locks`), не `pg_advisory_lock` | На MSSQL оставлять table leases ([0078](decisions/0078-mssql-metadata-certification.md)) |
-| Audit / script locks | `AuditChainStore`, function `advisoryLock` | `pg_advisory_xact_lock` (+ SQLSTATE `23505`) | Dialect / table lock для B1 ([0078](decisions/0078-mssql-metadata-certification.md)) |
+| Audit / script locks | `AuditChainStore`, function `advisoryLock` | `pg_advisory_xact_lock` (+ SQLSTATE `23505`) | Dialect / table lock для B1 ([0078](decisions/0078-mssql-metadata-certification.md)); MySQL — lock row через `INSERT … ON DUPLICATE KEY UPDATE` ([0079](decisions/0079-mysql-metadata-certification.md)) |
 | JDBC `LIMIT` stores | Audit/config + event journal | Dialect `limitClause()` для audit/config и journal | Lab/CI на MSSQL Evaluation; B2 Prod Yes подписан на Evaluation — [0078](decisions/0078-mssql-metadata-certification.md), [B2 checklist](../en/mssql-b2-sku-promotion-checklist.md) |
 
 ---
@@ -44,7 +44,7 @@
 | Переменная | Назначение |
 |------------|------------|
 | `ISPF_DB_URL` | JDBC-строка подключения к основной реляционной базе метаданных |
-| `ISPF_METADATA_DB_KIND` | Явное указание диалекта: `postgresql`, `h2`, `mssql`, `mysql`, `oracle` (если не указано — по JDBC URL). **`mssql` — Prod Yes (B1 + B2)** на Enterprise Evaluation `16.0.4325.4` ([0078](decisions/0078-mssql-metadata-certification.md), [B2](../en/mssql-b2-sku-promotion-checklist.md)); A-A не сертифицирован. **`mysql` — Phase 1 lab, Prod No, boot refuse** ([0079](decisions/0079-mysql-metadata-certification.md)); **`mariadb` refuse** (не MySQL). **`oracle` — boot refuse** до MySQL B1 ([0080](decisions/0080-oracle-metadata-certification.md)) |
+| `ISPF_METADATA_DB_KIND` | Явное указание диалекта: `postgresql`, `h2`, `mssql`, `mysql`, `oracle` (если не указано — по JDBC URL). **`mssql` — Prod Yes (B1 + B2)** на Enterprise Evaluation `16.0.4325.4` ([0078](decisions/0078-mssql-metadata-certification.md), [B2](../en/mssql-b2-sku-promotion-checklist.md)); A-A не сертифицирован. **`mysql` — B1 Lab green, Prod No** на MySQL 8.4 Community; boot только под B1 fences; клиент MariaDB Connector/J, `jdbc:mysql://…?permitMysqlScheme=true` + `SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.mariadb.jdbc.Driver` ([0079](decisions/0079-mysql-metadata-certification.md), [checklist](../en/mysql-sku-promotion-checklist.md)); **`mariadb` refuse** (не MySQL), сервер MariaDB refuse и при `mysql`. **`oracle` — boot refuse** до MySQL B1 Prod Yes ([0080](decisions/0080-oracle-metadata-certification.md)) |
 | `ISPF_EVENT_JOURNAL_STORE` | Хранилище журнала событий: `jdbc` (та же реляционная БД) или `clickhouse` |
 | `ISPF_VARIABLE_HISTORY_STORE` | Хранилище истории переменных: `jdbc` (та же реляционная БД) или `clickhouse` |
 

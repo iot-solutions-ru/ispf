@@ -24,6 +24,10 @@ public class RelationalDialectDetector {
     public RelationalDialect resolve(DataSource dataSource) {
         RelationalDbKind configured = RelationalDbKind.fromConfig(metadataDbProperties.getKind());
         if (configured != null) {
+            if (configured == RelationalDbKind.MYSQL && dataSource != null) {
+                // ADR-0079: an explicit mysql kind must not admit a MariaDB server (throws on MariaDB).
+                detectFromDataSource(dataSource);
+            }
             return require(configured);
         }
         if (dataSource == null) {

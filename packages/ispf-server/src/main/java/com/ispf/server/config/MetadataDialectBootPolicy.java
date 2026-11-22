@@ -4,7 +4,7 @@ import com.ispf.server.relational.RelationalDbKind;
 import com.ispf.server.relational.RelationalDialect;
 
 /**
- * Shared ADR-0078 / 0037 boot fences. Invoked before Flyway locations are applied and again
+ * Shared ADR-0078 / 0079 / 0037 boot fences. Invoked before Flyway locations are applied and again
  * on {@code ContextRefreshedEvent} so disallowed engines never migrate.
  */
 public final class MetadataDialectBootPolicy {
@@ -12,16 +12,12 @@ public final class MetadataDialectBootPolicy {
     private MetadataDialectBootPolicy() {
     }
 
+    /**
+     * Hard engine refuse. MySQL is not refused here: like MSSQL it boots only under its B1 fences
+     * ({@link #assertMysqlB1Fences}), which every caller of this method also runs.
+     */
     public static void assertEngineCertified(RelationalDialect dialect) {
         RelationalDbKind kind = dialect.kind();
-        if (kind == RelationalDbKind.MYSQL) {
-            throw new IllegalStateException(
-                    "ISPF_METADATA_DB_KIND=mysql is not certified (ADR-0037 tier 4 / ADR-0079). "
-                            + "Phase 1 lab only; boot remains refused until the B1 gate. "
-                            + "Use postgresql, h2, or mssql under ADR-0078. "
-                            + "External DATA_SOURCE JDBC to MySQL for reports remains supported."
-            );
-        }
         if (kind == RelationalDbKind.ORACLE) {
             throw new IllegalStateException(
                     "ISPF_METADATA_DB_KIND=oracle is not certified (ADR-0037 tier 4 / ADR-0080). "
@@ -33,9 +29,9 @@ public final class MetadataDialectBootPolicy {
     }
 
     /**
-     * MySQL B1 fences (ADR-0079). No single-engine bypass — that is a later B2 decision.
-     * Still unreachable in production while {@link #assertEngineCertified} refuses MySQL;
-     * unit-tested and pre-wired for the pack PR.
+     * MySQL B1 fences (ADR-0079 Lab green). No single-engine bypass — JDBC history/journal on
+     * ISPF_DB is a later B2 decision. These fences are the only thing between a MySQL ISPF_DB and
+     * an uncertified mode; keep them before Flyway and on context refresh.
      */
     public static void assertMysqlB1Fences(
             RelationalDialect dialect,

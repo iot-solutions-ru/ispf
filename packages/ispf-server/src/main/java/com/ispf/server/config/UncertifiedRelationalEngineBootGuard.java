@@ -8,8 +8,9 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 /**
- * ADR-0037 / 0078: MySQL and Oracle metadata packs are not certified
+ * ADR-0037 / 0080: the Oracle metadata pack is not certified
  * (also enforced pre-Flyway via {@link MetadataDialectBootPolicy}).
+ * MySQL boots only under ADR-0079 B1 fences ({@link MysqlCertificationBootGuard}).
  */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE + 19)

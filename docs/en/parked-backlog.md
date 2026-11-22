@@ -12,6 +12,7 @@
 | P-ERP | Live ERP connector (BL-169) | **Parked** | Named 1C/SAP integration | Sandbox / simulate catalog may exist; **live** round-trip is not claimed. |
 | P-BPMN | BPMN/DMN depth beyond ADR-0047 | **Parked** | Named customer blocker + ADR | Freeze holds. |
 | P-WEBAUTHN | WebAuthn / passkeys (BL-194) | **Parked** | Tender / customer MFA requirement | TOTP MFA GA remains the shipped path. ADR [0056](decisions/0056-webauthn-idp-mfa.md) explicitly **Parked** (2026-11-15). |
+| P-MYSQL-SKU-RERUN | MySQL B1 checklist re-run per named non-Community cell (Enterprise, HeatWave, RDS / Aurora MySQL, Azure Database for MySQL) | **Parked** | Named customer cell + host to run the [checklist](mysql-sku-promotion-checklist.md) on | MySQL is **Lab green** on 8.4 Community only ([ADR-0079](decisions/0079-mysql-metadata-certification.md)). Any owner-extended Prod Yes covers self-managed 8.4.x Community and carries this debt. MariaDB is never covered. |
 | P-PENTEST | Third-party pen-test report (G-01) | **Parked** (vendor-pack ready) | Hired assessment + dated report + retest | **Send:** [outreach draft](pen-test-vendor-outreach-draft.md) · [vendor pack](pen-test-vendor-pack.md). SOW/RoE/RFP/prep/cases linked from pack; lab pin [2026-09-09 preflight](../evidence/security-pentest/2026-09-09-lab-192.168.100.10-preflight.md). Dogfood hold: [web-console-dogfood-checklist.md](web-console-dogfood-checklist.md). Docs ≠ cert. |
 
 ## Lab access (operators)

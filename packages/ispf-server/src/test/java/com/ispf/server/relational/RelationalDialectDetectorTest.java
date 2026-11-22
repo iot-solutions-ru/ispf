@@ -3,6 +3,7 @@ package com.ispf.server.relational;
 import com.ispf.server.config.MetadataDbProperties;
 import org.junit.jupiter.api.Test;
 
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
@@ -63,6 +64,26 @@ class RelationalDialectDetectorTest {
                 .hasMessageContaining("ADR-0079");
         assertThat(RelationalDialectDetector.detectFromConnection(metaConnection("MySQL")))
                 .isEqualTo(RelationalDbKind.MYSQL);
+    }
+
+    @Test
+    void configuredMysqlStillRefusesMariadbServer() throws SQLException {
+        MetadataDbProperties properties = new MetadataDbProperties();
+        properties.setKind("mysql");
+        RelationalDialectDetector detector = new RelationalDialectDetector(
+                Map.of(RelationalDbKind.MYSQL, new MysqlDialect()), properties);
+
+        assertThatThrownBy(() -> detector.resolve(metaDataSource("MariaDB")))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("ADR-0079");
+        assertThat(detector.resolve(metaDataSource("MySQL")).kind()).isEqualTo(RelationalDbKind.MYSQL);
+    }
+
+    private static DataSource metaDataSource(String productName) throws SQLException {
+        Connection connection = metaConnection(productName);
+        DataSource dataSource = mock(DataSource.class);
+        when(dataSource.getConnection()).thenReturn(connection);
+        return dataSource;
     }
 
     private static Connection metaConnection(String productName) throws SQLException {

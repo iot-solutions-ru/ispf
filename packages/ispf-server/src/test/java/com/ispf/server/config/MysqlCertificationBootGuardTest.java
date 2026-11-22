@@ -1,6 +1,7 @@
 package com.ispf.server.config;
 
 import com.ispf.server.relational.MysqlDialect;
+import com.ispf.server.relational.OracleDialect;
 import com.ispf.server.relational.PostgreSqlDialect;
 import org.junit.jupiter.api.Test;
 
@@ -86,11 +87,12 @@ class MysqlCertificationBootGuardTest {
     }
 
     @Test
-    void engineRefuseStillBlocksMysql() {
-        assertThatThrownBy(() -> MetadataDialectBootPolicy.assertEngineCertified(new MysqlDialect()))
+    void engineGatePassesMysqlSoFencesDecide() {
+        assertThatCode(() -> MetadataDialectBootPolicy.assertEngineCertified(new MysqlDialect()))
+                .doesNotThrowAnyException();
+        assertThatThrownBy(() -> MetadataDialectBootPolicy.assertEngineCertified(new OracleDialect()))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("ADR-0079")
-                .hasMessageContaining("mysql");
+                .hasMessageContaining("ADR-0080");
     }
 
     private static MysqlCertificationBootGuard newGuard(

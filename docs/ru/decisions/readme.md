@@ -52,7 +52,7 @@
 | [0075-observability-slo-otel](0075-observability-slo-otel.md) | SLO / OTel taxonomy — **Accepted** |
 | [0076-external-secrets-providers](0076-external-secrets-providers.md) | KMS/HSM/Vault/GOST non-claims — **Accepted** |
 | [0078-mssql-metadata-certification](0078-mssql-metadata-certification.md) | Сертификация метаданных MS SQL Server B1/B2 (amends 0037) — **Accepted** (B1+B2 Prod Yes на Evaluation; B2 = capped JDBC DELETE+90д; A-A по-прежнему refuse) |
-| [0079-mysql-metadata-certification](0079-mysql-metadata-certification.md) | Charter сертификации метаданных MySQL 8.x B1 (amends 0037) — **Accepted** (Phase 1 lab; Prod: No) |
+| [0079-mysql-metadata-certification](0079-mysql-metadata-certification.md) | Charter сертификации метаданных MySQL 8.x B1 (amends 0037) — **Accepted** (B1 Lab green на 8.4 Community; Prod: No; клиент MariaDB Connector/J (LGPL), серверы MariaDB — refuse) |
 | [0080-oracle-metadata-certification](0080-oracle-metadata-certification.md) | Charter сертификации метаданных Oracle B1 (amends 0037) — **Accepted** (impl Not started) |
 | [0081-mssql-historian-switch-retention](0081-mssql-historian-switch-retention.md) | Месячный SWITCH retention историка MSSQL — **Accepted as design** (lab dry-run + confirm; staging DDL; JVM/schedule запрещены; capped Prod Yes B2 не использует это как product retention) |
 

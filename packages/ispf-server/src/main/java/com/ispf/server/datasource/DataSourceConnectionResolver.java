@@ -8,6 +8,7 @@ import com.ispf.server.application.data.ApplicationSchemaSupport;
 import com.ispf.server.config.ExternalDataSourceProperties;
 import com.ispf.server.object.ObjectManager;
 import org.springframework.stereotype.Component;
+import org.springframework.util.ClassUtils;
 
 import java.util.Optional;
 
@@ -17,6 +18,9 @@ public class DataSourceConnectionResolver {
 
     public static final String MODE_INTERNAL = "internal";
     public static final String MODE_EXTERNAL = "external";
+
+    private static final String MYSQL_CONNECTOR_J = "com.mysql.cj.jdbc.Driver";
+    private static final String MARIADB_DRIVER = "org.mariadb.jdbc.Driver";
 
     private final ObjectManager objectManager;
     private final ApplicationDataStore legacyAppStore;
@@ -100,6 +104,7 @@ public class DataSourceConnectionResolver {
             driverClass = inferDriverClass(jdbcUrl);
         }
         validateDriverClass(driverClass);
+        jdbcUrl = permitMysqlSchemeForMariaDb(jdbcUrl, driverClass);
         int poolSize = probe != null && probe.poolSize() != null
                 ? probe.poolSize()
                 : readInteger(dataSourcePath, "poolSize").orElse(externalProperties.getDefaultPoolSize());
@@ -151,10 +156,13 @@ public class DataSourceConnectionResolver {
             return "com.microsoft.sqlserver.jdbc.SQLServerDriver";
         }
         if (url.startsWith("jdbc:mysql:")) {
-            return "com.mysql.cj.jdbc.Driver";
+            // ADR-0079: GPL Connector/J is never shipped — use it only when an operator added it.
+            return ClassUtils.isPresent(MYSQL_CONNECTOR_J, DataSourceConnectionResolver.class.getClassLoader())
+                    ? MYSQL_CONNECTOR_J
+                    : MARIADB_DRIVER;
         }
         if (url.startsWith("jdbc:mariadb:")) {
-            return "org.mariadb.jdbc.Driver";
+            return MARIADB_DRIVER;
         }
         if (url.startsWith("jdbc:oracle:")) {
             return "oracle.jdbc.OracleDriver";
@@ -163,6 +171,16 @@ public class DataSourceConnectionResolver {
             return "org.h2.Driver";
         }
         throw new IllegalArgumentException("Cannot infer JDBC driver for URL: " + jdbcUrl);
+    }
+
+    /** MariaDB Connector/J 3.x refuses {@code jdbc:mysql:} unless the URL carries {@code permitMysqlScheme}. */
+    static String permitMysqlSchemeForMariaDb(String jdbcUrl, String driverClass) {
+        if (!MARIADB_DRIVER.equals(driverClass)
+                || !jdbcUrl.toLowerCase(Locale.ROOT).startsWith("jdbc:mysql:")
+                || jdbcUrl.contains("permitMysqlScheme")) {
+            return jdbcUrl;
+        }
+        return jdbcUrl + (jdbcUrl.contains("?") ? "&" : "?") + "permitMysqlScheme=true";
     }
 
     private String requireString(String path, String variable) {

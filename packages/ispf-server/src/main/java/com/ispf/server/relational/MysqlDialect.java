@@ -1,10 +1,12 @@
 package com.ispf.server.relational;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 /**
- * MySQL 8.x dialect (ADR-0079). Metadata boot remains refused until the B1 gate
- * ({@code MetadataDialectBootPolicy.assertEngineCertified}). MariaDB is not this dialect.
+ * MySQL 8.4 dialect (ADR-0079 B1 lab). Boot runs only under
+ * {@code MetadataDialectBootPolicy.assertMysqlB1Fences}. MariaDB is not this dialect.
  */
 public class MysqlDialect extends AbstractRelationalDialect {
 
@@ -94,6 +96,21 @@ public class MysqlDialect extends AbstractRelationalDialect {
         }
         // 1062 ER_DUP_ENTRY only — not bare SQLSTATE 23000 (FK 1452 / NOT NULL 1048).
         return ex.getErrorCode() == 1062;
+    }
+
+    /**
+     * The portable {@code INSERT … WHERE NOT EXISTS} leaves racing first-time callers holding a
+     * shared lock after 1062, and their {@code FOR UPDATE} upgrades deadlock (1213).
+     * {@code ON DUPLICATE KEY UPDATE} takes the exclusive row lock on insert and duplicate alike.
+     */
+    @Override
+    protected void ensureLockRow(Connection connection, String lockKey, String locksTable) throws SQLException {
+        try (PreparedStatement insert = connection.prepareStatement(
+                "INSERT INTO " + locksTable + " (lock_key) VALUES (?) ON DUPLICATE KEY UPDATE lock_key = lock_key"
+        )) {
+            insert.setString(1, lockKey);
+            insert.executeUpdate();
+        }
     }
 
     @Override

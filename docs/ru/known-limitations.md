@@ -18,9 +18,10 @@
 | Встроенный AI-агент видит **загруженные** драйверы (и пишет об этом, если в pack каталог больше) | Ответ, который выдумывает полный список 160+ на ноутбуке без этих пакетов |
 | Локальный профиль: встроенный H2 и учётные записи `admin` / `admin`, `developer` / `developer`, `operator` / `operator` | Эти пароли на сервере `prod` или с OIDC. Смените их до того, как машина станет доступна в сети |
 | История на ноутбуке — эта локальная база | Кластер ClickHouse, который создаёт ISPF, или вторая копия буфера историка на другом узле ISPF |
-| Relational core на PostgreSQL, H2 local или MSSQL **B1 + B2** (Prod Yes на Evaluation; B2 = opt-in single-engine JDBC). См. EN [known-limitations](../en/known-limitations.md), [B2 checklist](../en/mssql-b2-sku-promotion-checklist.md) | Бессрочная лицензия из Evaluation, product/scheduled monthly `SWITCH`, active-active на MSSQL, 10 лет raw, multi-year ≤20 с, AG failover soak, MySQL/Oracle ([0078](decisions/0078-mssql-metadata-certification.md)) |
-| App SQL-схемы / `search_path` на PostgreSQL | Переключение per-app schema на MSSQL (`ApplicationSchemaSession`) — **не поддерживается**, fail-closed ([0078](decisions/0078-mssql-metadata-certification.md)) |
-| PG-скрипты solution `exec` / `ON CONFLICT` против `ISPF_DB` | Те же скрипты на MSSQL metadata — **не поддерживаются**; внешний `DATA_SOURCE` или dialect-safe SQL |
+| Relational core на PostgreSQL, H2 local или MSSQL **B1 + B2** (Prod Yes на Evaluation; B2 = opt-in single-engine JDBC). См. EN [known-limitations](../en/known-limitations.md), [B2 checklist](../en/mssql-b2-sku-promotion-checklist.md) | Бессрочная лицензия из Evaluation, product/scheduled monthly `SWITCH`, active-active на MSSQL, 10 лет raw, multi-year ≤20 с, AG failover soak, Oracle ([0078](decisions/0078-mssql-metadata-certification.md)) |
+| MySQL 8.4 Community **B1 metadata — Lab green** под B1 fences; клиент MariaDB Connector/J, `jdbc:mysql://…?permitMysqlScheme=true` ([checklist](../en/mysql-sku-promotion-checklist.md)) | Prod Yes MySQL на любом named SKU, Hibernate `ddl-auto=validate` на MySQL (вне `local` — `SPRING_JPA_HIBERNATE_DDL_AUTO=none`), JDBC history/journal, cluster и row isolation на MySQL, MariaDB как `ISPF_DB`, Enterprise / managed ячейки MySQL (**P-MYSQL-SKU-RERUN**) ([0079](decisions/0079-mysql-metadata-certification.md)) |
+| App SQL-схемы / `search_path` на PostgreSQL | Переключение per-app schema на MSSQL или MySQL (`ApplicationSchemaSession`) — **не поддерживается**, fail-closed ([0078](decisions/0078-mssql-metadata-certification.md), [0079](decisions/0079-mysql-metadata-certification.md)) |
+| PG-скрипты solution `exec` / `ON CONFLICT` против `ISPF_DB` | Те же скрипты на MSSQL или MySQL metadata — **не поддерживаются**; внешний `DATA_SOURCE` или dialect-safe SQL |
 | Дисковый буфер перед единственным хранилищем ClickHouse есть и выключен | Буфер сам не включается и не работает для JDBC и двойной записи |
 | `ispf validate` предупреждает, если логика лежит на `DEVICE` | `--strict` и каталог marketplace такой бандл не примут |
 | Одноразовые коды TOTP для входа можно включить | WebAuthn и ключи доступа как способ входа |
@@ -75,6 +76,7 @@
 | **P-BPMN** | Глубина BPMN/DMN дальше заморозки [ADR-0047](decisions/0047-custom-bpmn-subset-engine.md) |
 | **P-WEBAUTHN** | WebAuthn и MFA у поставщика идентификации |
 | **P-PENTEST** | Заказной тест на проникновение и повторная проверка |
+| **P-MYSQL-SKU-RERUN** | Повтор checklist MySQL на каждой named Enterprise / managed / non-Community ячейке |
 
 Доска: [parked-backlog](parked-backlog.md).
 
