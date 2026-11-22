@@ -92,10 +92,12 @@ $Jdbc = "jdbc:mysql://${NameSql}:3306/ispf?permitMysqlScheme=true&allowPublicKey
 
 docker rm -f $NameApp 2>$null | Out-Null
 Write-Host "== start ISPF =="
+# local turns Hibernate validation off; validate is the production default and must pass on MySQL.
 docker run -d --name $NameApp --network $Net `
     -p "${BindHost}:18090:8080" `
     -v "${Jar}:/app/ispf-server.jar:ro" `
     -e "SPRING_PROFILES_ACTIVE=local" `
+    -e "SPRING_JPA_HIBERNATE_DDL_AUTO=validate" `
     -e "ISPF_METADATA_DB_KIND=mysql" `
     -e "SPRING_DATASOURCE_URL=$Jdbc" `
     -e "SPRING_DATASOURCE_USERNAME=ispf" `

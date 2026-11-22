@@ -25,7 +25,9 @@ Before v1.0: new install = new DB; changing `ISPF_METADATA_DB_KIND` = empty DB +
 
 | Area | File | Construct | Dialect method |
 |---------|------|-------------|----------------|
-| Job queue | `PlatformJobService` | `FOR UPDATE SKIP LOCKED` | `queuedJobSelectSql()` |
+| Job queue | `PlatformJobService` | `FOR UPDATE SKIP LOCKED` | `queuedPlatformJobSelectSql()` |
+| Job queue | `PlatformJobService` | `NULLS LAST`; `(UUID) getObject` on `job_id` (a string on MySQL / MSSQL) | `orderByNullsLast()`; `job_id` read as a string |
+| SQL bindings | `ApplicationSqlBindingStore` | `\|\|` concat (logical OR on MySQL, none on SQL Server before 2025) | `concatExpression()` |
 | App schemas | `ApplicationSchemaSession` | `SET search_path` | `activateSchemaSql()` |
 | Platform catalog | `PlatformSqlCatalog` | `public.` vs `PUBLIC.` | `platformSchemaPrefix()` |
 | Historian buckets | `JdbcVariableHistoryQueryStore` | `extract(epoch...)`, `to_timestamp` | `variableSampleBucketAggregateSql()` |
@@ -43,7 +45,7 @@ Before v1.0: new install = new DB; changing `ISPF_METADATA_DB_KIND` = empty DB +
 | Env | Purpose |
 |-----|------------|
 | `ISPF_DB_URL` | JDBC URL metadata + jdbc time-series |
-| `ISPF_METADATA_DB_KIND` | `postgresql`, `h2`, `mssql`, `mysql`, `oracle` (optional, auto-detect if empty). **`mssql` — Prod Yes (B1 + B2 + A-A)** on Evaluation + owner-extended licensed Standard / Enterprise / Azure SQL DB\|MI ([0078](decisions/0078-mssql-metadata-certification.md), [A-A](mssql-aa-sku-promotion-checklist.md)). **`mysql` — B1 Lab green, Prod No** on MySQL 8.4 Community; boots only under B1 fences; client MariaDB Connector/J with `jdbc:mysql://…?permitMysqlScheme=true` + `SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.mariadb.jdbc.Driver` ([0079](decisions/0079-mysql-metadata-certification.md), [checklist](mysql-sku-promotion-checklist.md)); **`mariadb` refused** (not MySQL), and a MariaDB server is refused under `mysql` too. **`oracle` — Phase 1 lab, Prod No, boot refused**; the B1 pack follows MySQL B1 Prod Yes ([0080](decisions/0080-oracle-metadata-certification.md)) |
+| `ISPF_METADATA_DB_KIND` | `postgresql`, `h2`, `mssql`, `mysql`, `oracle` (optional, auto-detect if empty). **`mssql` — Prod Yes (B1 + B2 + A-A)** on Evaluation + owner-extended licensed Standard / Enterprise / Azure SQL DB\|MI ([0078](decisions/0078-mssql-metadata-certification.md), [A-A](mssql-aa-sku-promotion-checklist.md)). **`mysql` — Prod Yes (B1)** on MySQL Community Server 8.4.x with MariaDB Connector/J only; boots only under B1 fences; `jdbc:mysql://…?permitMysqlScheme=true` + `SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.mariadb.jdbc.Driver` ([0079](decisions/0079-mysql-metadata-certification.md), [checklist](mysql-sku-promotion-checklist.md)); other MySQL cells **P-MYSQL-SKU-RERUN**; TLS and SQL outside the gate's paths not certified (**P-MYSQL-TLS**, **P-MYSQL-PG-SQL**); **`mariadb` refused** (not MySQL), and a MariaDB server is refused under `mysql` too. **`oracle` — Phase 1 lab, Prod No, boot refused**; MySQL B1 Prod Yes is signed, so the B1 pack may start ([0080](decisions/0080-oracle-metadata-certification.md)) |
 | `ISPF_EVENT_JOURNAL_STORE` | `jdbc` = same DB |
 | `ISPF_VARIABLE_HISTORY_STORE` | `jdbc` = same DB |
 

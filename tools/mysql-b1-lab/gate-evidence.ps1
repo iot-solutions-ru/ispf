@@ -1,5 +1,6 @@
 # ADR-0079 B1 lab-green evidence collector against the stand from stand-local.ps1 (default :18090).
 # Records results to -Out. Lab evidence only: it does not sign a named-SKU Prod Yes cell.
+# Writes only what it measured; owner decisions go in a separate JSON, never into -Out.
 param(
     [string]$Base = "http://127.0.0.1:18090",
     [string]$Jar = "",
@@ -63,6 +64,14 @@ function Invoke-Http([string]$Method, [string]$Url, [string]$Token = "", [string
     }
 }
 
+function Get-ContainerEnv([string]$name, [string]$key) {
+    $lines = docker inspect --format "{{range .Config.Env}}{{println .}}{{end}}" $name 2>$null
+    foreach ($line in $lines) {
+        if ($line.StartsWith("$key=")) { return $line.Substring($key.Length + 1) }
+    }
+    return $null
+}
+
 function Invoke-Sql([string]$query) {
     # Quote --host: PowerShell splits an unquoted -h127.0.0.1 at the first dot.
     $out = docker exec $NameSql mysql "--host=127.0.0.1" -uroot "-p$Password" -N -B -e $query 2>&1 |
@@ -74,6 +83,7 @@ function Start-Ispf([string]$name, [hashtable]$envExtra, [string]$jdbcUrl = $Jdb
     docker rm -f $name 2>$null | Out-Null
     $envBase = [ordered]@{
         "SPRING_PROFILES_ACTIVE" = "local"
+        "SPRING_JPA_HIBERNATE_DDL_AUTO" = "validate"
         "ISPF_METADATA_DB_KIND" = "mysql"
         "SPRING_DATASOURCE_URL" = $jdbcUrl
         "SPRING_DATASOURCE_USERNAME" = "ispf"
@@ -132,19 +142,22 @@ function Run-Fence([string]$id, [hashtable]$overrides, [string]$expect) {
 }
 
 Write-Host "== 0 engine identity =="
-$engine = Invoke-Sql "SELECT CONCAT(VERSION(), ' | ', @@version_comment, ' | ', @@transaction_isolation, ' | ', (SELECT default_collation_name FROM information_schema.schemata WHERE schema_name='ispf'))"
+$engine = Invoke-Sql "SELECT CONCAT(VERSION(), ' | ', @@version_comment, ' | ', @@transaction_isolation, ' | ', (SELECT default_collation_name FROM information_schema.schemata WHERE schema_name='ispf'), ' | ', @@lower_case_table_names)"
 Write-Host "engine=$engine"
 $parts = $engine -split " \| "
-if ($parts.Count -eq 4 -and $parts[0].StartsWith("8.4.") -and $parts[1] -like "MySQL Community Server*" `
-        -and $parts[2] -eq "READ-COMMITTED" -and $parts[3] -eq "utf8mb4_0900_bin") {
-    Pass "g0_engine" "MySQL $($parts[0]) ($($parts[1])), READ-COMMITTED, ispf utf8mb4_0900_bin"
+$lowerCaseTableNames = $null
+if ($parts.Count -eq 5 -and $parts[4] -match '^[012]$') { $lowerCaseTableNames = [int]$parts[4] }
+if ($parts.Count -eq 5 -and $parts[0].StartsWith("8.4.") -and $parts[1] -like "MySQL Community Server*" `
+        -and $parts[2] -eq "READ-COMMITTED" -and $parts[3] -eq "utf8mb4_0900_bin" -and $null -ne $lowerCaseTableNames) {
+    Pass "g0_engine" "MySQL $($parts[0]) ($($parts[1])), READ-COMMITTED, ispf utf8mb4_0900_bin, lower_case_table_names=$lowerCaseTableNames"
 } else {
     Fail "g0_engine" "unexpected engine cell: $engine"
 }
 
 Write-Host "== 1 health / login / flyway / dialect =="
 $h = Invoke-Http "GET" "$Base/actuator/health"
-if ($h.Code -eq 200 -and $h.Body -match '"status":"UP"') { Pass "g1_health" "actuator health UP" } else { Fail "g1_health" "health code=$($h.Code)" }
+$healthUp = $h.Code -eq 200 -and $h.Body -match '"status":"UP"'
+if ($healthUp) { Pass "g1_health" "actuator health UP" } else { Fail "g1_health" "health code=$($h.Code)" }
 
 $login = Invoke-Http "POST" "$Base/api/v1/auth/login" "" '{"username":"admin","password":"admin"}'
 $token = ""
@@ -155,10 +168,18 @@ $flyway = Invoke-Sql "SELECT COUNT(*) FROM ispf.flyway_schema_history WHERE vers
 if ($flyway -eq "1") { Pass "g1_flyway" "flyway mysql/V1 success=1" } else { Fail "g1_flyway" "flyway V1 rows=$flyway" }
 
 $appLog = docker logs $NameApp 2>&1 | Out-String
-if ($appLog.Contains("Database dialect: MySQLDialect") -and -not $appLog.Contains("MariaDBDialect")) {
-    Pass "g1_dialect" "Hibernate MySQLDialect (pinned; MariaDB Connector/J would auto-select MariaDBDialect)"
+if ($appLog.Contains("Database dialect: MysqlHibernateDialect") -and -not $appLog.Contains("MariaDBDialect")) {
+    Pass "g1_dialect" "Hibernate MysqlHibernateDialect (pinned MySQLDialect subclass; MariaDB Connector/J would auto-select MariaDBDialect)"
 } else {
-    Fail "g1_dialect" "Hibernate dialect is not MySQLDialect"
+    Fail "g1_dialect" "Hibernate dialect is not MysqlHibernateDialect"
+}
+
+# The stand's local profile sets ddl-auto=none; the container env must override it with validate.
+$appDdlAuto = Get-ContainerEnv $NameApp "SPRING_JPA_HIBERNATE_DDL_AUTO"
+if ($appDdlAuto -eq "validate" -and $healthUp) {
+    Pass "g1_validate" "primary JVM $NameApp has SPRING_JPA_HIBERNATE_DDL_AUTO=validate (docker inspect) and is UP, so Hibernate schema validation passed at boot"
+} else {
+    Fail "g1_validate" "primary JVM $NameApp SPRING_JPA_HIBERNATE_DDL_AUTO=$appDdlAuto, health UP=$healthUp"
 }
 
 Write-Host "== 2 bundle import + paths =="
@@ -193,8 +214,11 @@ if (Start-Ispf $lease $leaseEnv $Jdbc "127.0.0.1:18091:8080") {
         if ($r.Code -eq 200 -and $r.Body -match '"status":"UP"') { $up = $true; break }
         Start-Sleep 3
     }
-    if ($up) {
-        Pass "g3_dual_jvm" "second non-clustered JVM health UP on :18091 against shared ispf; live lease reclaim not asserted (cluster off). Lease failover is CI: MysqlFlywayBaselineTckTest"
+    $leaseDdlAuto = Get-ContainerEnv $lease "SPRING_JPA_HIBERNATE_DDL_AUTO"
+    if ($up -and $leaseDdlAuto -eq "validate") {
+        Pass "g3_dual_jvm" "second non-clustered JVM (SPRING_JPA_HIBERNATE_DDL_AUTO=validate, docker inspect) health UP on :18091 against shared ispf; live lease reclaim not asserted (cluster off). Lease failover is CI: MysqlFlywayBaselineTckTest"
+    } elseif ($up) {
+        Fail "g3_dual_jvm" "second JVM UP but SPRING_JPA_HIBERNATE_DDL_AUTO=$leaseDdlAuto"
     } else {
         Fail "g3_dual_jvm" "second JVM did not become healthy"
     }
@@ -214,6 +238,41 @@ if ($token) {
     }
 } else {
     Fail "g4_audit" "no token"
+}
+
+Write-Host "== 9 platform metrics + job queue =="
+if ($token) {
+    $metrics = Invoke-Http "GET" "$Base/api/v1/platform/metrics" $token
+    if ($metrics.Code -eq 200 -and $metrics.Body.Contains('"runningJobs"')) {
+        Pass "g9_metrics" "GET /api/v1/platform/metrics 200 with runningJobs (running-job list ordered NULLs last without NULLS LAST)"
+    } else {
+        Fail "g9_metrics" "metrics code=$($metrics.Code)"
+    }
+
+    # Tree-variables reports read the object tree, so the run needs no app schema (unsupported on MySQL).
+    $jobReport = "root.platform.reports.mysql-b1-cert-jobs"
+    $create = Invoke-Http "POST" "$Base/api/v1/objects" $token '{"parentPath":"root.platform.reports","name":"mysql-b1-cert-jobs","type":"REPORT","displayName":"MySQL B1 cert job queue","templateId":"report-v1"}'
+    $def = Invoke-Http "PUT" "$Base/api/v1/reports/by-path/tree-variables-definition?path=$jobReport" $token '{"title":"MySQL B1 cert job queue","devicePathPattern":"root.platform.devices.mysql-b1-cert-*","variableName":"value"}'
+    $run = Invoke-Http "POST" "$Base/api/v1/reports/by-path/run-async?path=$jobReport" $token '{}'
+    $jobId = ""
+    if ($run.Code -eq 202) { try { $jobId = ($run.Body | ConvertFrom-Json).jobId } catch {} }
+    $jobStatus = ""
+    if ($jobId) {
+        for ($i = 1; $i -le 60; $i++) {
+            $job = Invoke-Http "GET" "$Base/api/v1/platform/jobs/$jobId" $token
+            if ($job.Code -eq 200) { try { $jobStatus = ($job.Body | ConvertFrom-Json).status } catch {} }
+            if ($jobStatus -eq "COMPLETED" -or $jobStatus -eq "FAILED") { break }
+            Start-Sleep 1
+        }
+    }
+    if ($jobStatus -eq "COMPLETED") {
+        Pass "g9_job_queue" "report run-async job $jobId QUEUED -> COMPLETED through the platform job worker (claim reads job_id from CHAR(36)); GET /api/v1/platform/jobs/{id} 200"
+    } else {
+        Fail "g9_job_queue" "create=$($create.Code) definition=$($def.Code) run=$($run.Code) job=$jobId status=$jobStatus"
+    }
+} else {
+    Fail "g9_metrics" "no token"
+    Fail "g9_job_queue" "no token"
 }
 
 Write-Host "== 5-7 fence boots =="
@@ -268,6 +327,8 @@ $doc = [ordered]@{
     base = $Base
     engine_note = $EngineNote
     edition = $engine
+    lower_case_table_names = $lowerCaseTableNames
+    primary_jvm_ddl_auto = $appDdlAuto
     jdbc_client = "MariaDB Connector/J (LGPL-2.1) org.mariadb.jdbc.Driver, jdbc:mysql: + permitMysqlScheme"
     fail_count = $fails
     pass_count = @($items | Where-Object { $_.status -eq "PASS" }).Count

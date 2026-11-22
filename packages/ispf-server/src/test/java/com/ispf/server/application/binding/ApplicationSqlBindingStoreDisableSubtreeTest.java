@@ -1,6 +1,7 @@
 package com.ispf.server.application.binding;
 
 import com.ispf.server.application.data.PlatformSqlCatalog;
+import com.ispf.server.relational.PostgreSqlDialect;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -30,7 +31,7 @@ class ApplicationSqlBindingStoreDisableSubtreeTest {
     @BeforeEach
     void setUp() {
         when(platformSqlCatalog.table("application_sql_bindings")).thenReturn("application_sql_bindings");
-        store = new ApplicationSqlBindingStore(jdbcTemplate, platformSqlCatalog);
+        store = new ApplicationSqlBindingStore(jdbcTemplate, platformSqlCatalog, new PostgreSqlDialect());
     }
 
     @Test

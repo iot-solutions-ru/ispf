@@ -202,4 +202,18 @@ public class MssqlDialect extends AbstractRelationalDialect {
     public String booleanLiteral(boolean value) {
         return value ? "1" : "0";
     }
+
+    @Override
+    public String orderByNullsLast(String expression) {
+        return "CASE WHEN " + expression + " IS NULL THEN 1 ELSE 0 END, " + expression;
+    }
+
+    /**
+     * {@code +} keeps PG {@code ||} NULL semantics under {@code CONCAT_NULL_YIELDS_NULL ON} (the default;
+     * OFF is deprecated); T-SQL {@code CONCAT} turns NULL into an empty string.
+     */
+    @Override
+    public String concatExpression(String... operands) {
+        return "(" + String.join(" + ", operands) + ")";
+    }
 }

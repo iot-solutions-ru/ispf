@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Production claim | **No — B1 Lab green** on MySQL 8.4.13 Community ([checklist](../../../../../../../../docs/en/mysql-sku-promotion-checklist.md)); no named-SKU Prod Yes |
+| Production claim | **Prod Yes (B1)** on MySQL Community Server 8.4.x + MariaDB Connector/J only — owner extension from the 8.4.13 Lab-green cell ([checklist](../../../../../../../../docs/en/mysql-sku-promotion-checklist.md)). Other MySQL cells: **P-MYSQL-SKU-RERUN** |
 | Baseline | `V1__baseline.sql`, generated: `python tools/mysql-baseline-generate.py` (greenfield only) |
 | Lockstep | `python tools/mysql-flyway-lockstep-check.py` + `docs/en/mysql-flyway-exceptions.txt` (CI) |
 
@@ -23,15 +23,20 @@ SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.mariadb.jdbc.Driver
 ISPF_METADATA_DB_KIND=mysql
 ```
 
+TLS (`sslMode=verify-full` above) is the operator's responsibility: Prod Yes (B1) did not run a gate over TLS
+(**P-MYSQL-TLS**). The lab stand's `allowPublicKeyRetrieval=true` is lab-only.
+
 Database: `CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_bin`; server `transaction_isolation=READ-COMMITTED`.
-Hibernate runs `MySQLDialect` (pinned in `RelationalConfiguration`; the HHH90000025 "does not need to be specified"
-warning is expected). `ddl-auto=validate` does not pass on MySQL yet — outside the `local` profile set
-`SPRING_JPA_HIBERNATE_DDL_AUTO=none`.
+Hibernate runs `MysqlHibernateDialect`, a `MySQLDialect` subclass pinned in `RelationalConfiguration`. The default
+`ddl-auto=validate` passes, including on `lower_case_table_names=0`; no property is needed. Do not set
+`hibernate.dialect`: plain `MySQLDialect` looks tables up in upper case there and validation fails.
 
 MySQL DDL is not transactional: if V1 fails, drop the database and retry. An applied V1 is frozen — new PG
 `Vnn` scripts need a `mysql/Vnn` twin or an exception line. Per-app schemas and in-DB PG-flavored solution SQL are
-unsupported; external `DATA_SOURCE` JDBC to MySQL for reports remains supported. GPL `mysql-connector-j` is never
-on the classpath.
+unsupported; external `DATA_SOURCE` JDBC to MySQL for reports remains supported. Queued report runs,
+`GET /api/v1/platform/metrics` and function-success SQL-binding triggers go through `RelationalDialect` and run on
+MySQL; the rest of the platform SQL has not been reviewed in full for PostgreSQL-only constructs (**P-MYSQL-PG-SQL**).
+GPL `mysql-connector-j` is never on the classpath.
 
 Charter: [0079-mysql-metadata-certification](../../../../../../../../docs/en/decisions/0079-mysql-metadata-certification.md).  
 Epic: [mysql-certification-epic](../../../../../../../../docs/en/mysql-certification-epic.md).  

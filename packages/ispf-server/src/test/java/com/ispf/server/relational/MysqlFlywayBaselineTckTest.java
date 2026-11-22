@@ -36,7 +36,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
- * ADR-0079 B1 lab gate: empty MySQL 8.4 → Flyway → CRUD smoke → concurrent audit → lock failover.
+ * ADR-0079 B1 lab gate: empty MySQL 8.4 → Flyway → CRUD smoke → job queue + SQL-binding triggers
+ * → concurrent audit → lock failover.
  *
  * <p>Skips when Docker is unavailable so default CI stays green without MySQL.
  */
@@ -122,6 +123,8 @@ class MysqlFlywayBaselineTckTest {
             assertThat(sampleCount).isEqualTo(1);
 
             queuedJobSelectIsValid(jdbc, dialect);
+            PlatformSqlPathsTck.jobQueueRoundTrip(jdbc, dialect, cluster(), nats("mysql-tck-jobs"));
+            PlatformSqlPathsTck.functionSuccessTriggers(jdbc, dialect);
             concurrentAuditChainHolds(jdbc, dialect);
             driverLockFailover(jdbc);
         }
@@ -195,12 +198,7 @@ class MysqlFlywayBaselineTckTest {
 
     private static void driverLockFailover(JdbcTemplate jdbc) {
         jdbc.update("DELETE FROM platform_driver_locks WHERE device_path = ?", DEVICE);
-        // enabled + io profile → DRIVERS capability (ADR-0032)
-        ClusterProperties cluster = new ClusterProperties(
-                true, true, 60, 10, 15, 10, 30, true, 2, 8, 4, 6, 500,
-                true, true, 500, true, "io", "", "all",
-                true, 2000, 2, true, 1, 8, 50, 6, 500, 1800
-        );
+        ClusterProperties cluster = cluster();
 
         DriverOwnershipService primary = new DriverOwnershipService(
                 jdbc,
@@ -225,6 +223,15 @@ class MysqlFlywayBaselineTckTest {
         assertTrue(standby.tryAcquire(DEVICE));
         assertEquals("mysql-tck-b", standby.findOwner(DEVICE).orElseThrow());
         assertFalse(primary.holdsLock(DEVICE));
+    }
+
+    private static ClusterProperties cluster() {
+        // enabled + io profile → DRIVERS capability (ADR-0032)
+        return new ClusterProperties(
+                true, true, 60, 10, 15, 10, 30, true, 2, 8, 4, 6, 500,
+                true, true, 500, true, "io", "", "all",
+                true, 2000, 2, true, 1, 8, 50, 6, 500, 1800
+        );
     }
 
     private static NatsProperties nats(String replicaId) {

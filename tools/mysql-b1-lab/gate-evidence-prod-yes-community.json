@@ -1,0 +1,33 @@
+{
+  "status": "Prod Yes (B1) signed: owner extension from the Lab-green cell with ddl-auto=validate fixed",
+  "record": "Owner decision only; this file holds no measured items. Measurements are the collector outputs under evidence, written by gate-evidence.ps1 and not edited by hand",
+  "signed_on": "2026-11-22",
+  "cell": "MySQL Community Server 8.4.x LTS (self-managed) + MariaDB Connector/J only",
+  "basis": "Lab-green cell MySQL 8.4.13 Community (Docker mysql:8.4, local AMD64)",
+  "evidence": [
+    "gate-evidence-lab-community.json: Lab green, ddl-auto=none, 17 PASS / 0 FAIL",
+    "gate-evidence-validate-community.json: re-run with SPRING_JPA_HIBERNATE_DDL_AUTO=validate on the primary and second JVM (docker inspect), lower_case_table_names collected (0), platform metrics and the job queue, 20 PASS / 0 FAIL",
+    "CI, -Dispf.test.mysqlDocker=true: MysqlFlywayBaselineTckTest (job queue, NULLs-last order, SQL-binding triggers), MysqlLiveBundleImportTckTest (validate boot, platform metrics, job worker)"
+  ],
+  "validate_fix": "MysqlHibernateDialect (pinned MySQLDialect subclass): looks names up as written when MariaDB Connector/J reports no identifier case, and accepts LONGBLOB for BINARY mappings",
+  "owner_override": "2026-11-22: the Lab-green Docker cell stands in for a named self-managed MySQL Community Server 8.4.x host; a gate re-run on the first named host is recommended, not blocking",
+  "sign_items": [
+    "TLS: recorded as a non-claim, not verified. Operator-required on a production host (sslMode=verify-full); the evidence cell ran without TLS, and its allowPublicKeyRetrieval=true is lab-only. Tech debt P-MYSQL-TLS",
+    "PostgreSQL-only SQL found at signing: fixed through RelationalDialect and run on MySQL 8.4 (PlatformJobService job_id read and running-job order, ApplicationSqlBindingStore trigger-list concat). No full SQL parity is claimed; the remaining SQL is not reviewed in full. Tech debt P-MYSQL-PG-SQL"
+  ],
+  "tech_debt": [
+    "P-MYSQL-SKU-RERUN: MySQL Enterprise, HeatWave, Amazon RDS / Aurora MySQL, Azure Database for MySQL and every other non-Community cell need their own checklist run before a claim names them",
+    "P-MYSQL-TLS: re-run the gate over TLS (sslMode=verify-full), recommended on the first named host",
+    "P-MYSQL-PG-SQL: review the remaining JDBC SQL for PostgreSQL-only constructs; port or fence what the review finds"
+  ],
+  "non_claims": [
+    "MySQL Enterprise, HeatWave, Amazon RDS / Aurora MySQL, Azure Database for MySQL, or any other non-Community cell",
+    "MySQL 8.0 and 9.x Innovation releases",
+    "MariaDB Server (boot refuses it) and any JDBC client other than MariaDB Connector/J; GPL mysql-connector-j is not on any classpath",
+    "B2 JDBC history / journal and historian dual-write on MySQL (boot refuses them)",
+    "Active-active (ispf.cluster.enabled), tenant row isolation, HARD schemas, per-app schema switch",
+    "TLS on the ISPF_DB connection (operator-required; no gate ran over TLS)",
+    "Full SQL parity with PostgreSQL outside the paths the gate and the MySQL TCKs exercise"
+  ],
+  "checklist": "docs/en/mysql-sku-promotion-checklist.md"
+}

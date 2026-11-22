@@ -91,4 +91,17 @@ public interface RelationalDialect {
      * Prefer bound {@code ?} parameters when practical.
      */
     String booleanLiteral(boolean value);
+
+    /**
+     * ORDER BY item(s) sorting {@code expression} ascending with NULLs last. PG, H2 and Oracle take
+     * {@code NULLS LAST}; MySQL and MSSQL reject it and sort NULLs first by default.
+     */
+    String orderByNullsLast(String expression);
+
+    /**
+     * String concatenation of SQL operands, NULL when any operand is NULL (PG {@code ||} semantics).
+     * MySQL reads {@code ||} as logical OR under the default {@code sql_mode}; SQL Server before 2025 has no
+     * {@code ||}.
+     */
+    String concatExpression(String... operands);
 }

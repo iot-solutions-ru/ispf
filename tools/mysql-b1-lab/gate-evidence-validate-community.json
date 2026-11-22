@@ -1,0 +1,113 @@
+{
+  "generated_at": "2026-11-22T17:41:31.153Z",
+  "base": "http://127.0.0.1:18090",
+  "engine_note": "MySQL 8.4 LTS Community (Docker mysql:8.4, local AMD64). ADR-0079 B1 gate re-run on the PR #843 tree: SPRING_JPA_HIBERNATE_DDL_AUTO=validate on the primary and second JVM, MysqlHibernateDialect, dialect SQL for the platform job queue, platform metrics and SQL-binding triggers. ISPF client: MariaDB Connector/J 3.5.10 (LGPL).",
+  "edition": "8.4.13 | MySQL Community Server - GPL | READ-COMMITTED | utf8mb4_0900_bin | 0",
+  "lower_case_table_names": 0,
+  "primary_jvm_ddl_auto": "validate",
+  "jdbc_client": "MariaDB Connector/J (LGPL-2.1) org.mariadb.jdbc.Driver, jdbc:mysql: + permitMysqlScheme",
+  "fail_count": 0,
+  "pass_count": 20,
+  "items": [
+    {
+      "id": "g0_engine",
+      "status": "PASS",
+      "detail": "MySQL 8.4.13 (MySQL Community Server - GPL), READ-COMMITTED, ispf utf8mb4_0900_bin, lower_case_table_names=0"
+    },
+    {
+      "id": "g1_health",
+      "status": "PASS",
+      "detail": "actuator health UP"
+    },
+    {
+      "id": "g1_login",
+      "status": "PASS",
+      "detail": "admin login ok"
+    },
+    {
+      "id": "g1_flyway",
+      "status": "PASS",
+      "detail": "flyway mysql/V1 success=1"
+    },
+    {
+      "id": "g1_dialect",
+      "status": "PASS",
+      "detail": "Hibernate MysqlHibernateDialect (pinned MySQLDialect subclass; MariaDB Connector/J would auto-select MariaDBDialect)"
+    },
+    {
+      "id": "g1_validate",
+      "status": "PASS",
+      "detail": "primary JVM ispf-mysql-b1-app has SPRING_JPA_HIBERNATE_DDL_AUTO=validate (docker inspect) and is UP, so Hibernate schema validation passed at boot"
+    },
+    {
+      "id": "g2_import",
+      "status": "PASS",
+      "detail": "cert bundle import 200"
+    },
+    {
+      "id": "g2_paths",
+      "status": "PASS",
+      "detail": "all cert paths 200"
+    },
+    {
+      "id": "g3_dual_jvm",
+      "status": "PASS",
+      "detail": "second non-clustered JVM (SPRING_JPA_HIBERNATE_DDL_AUTO=validate, docker inspect) health UP on :18091 against shared ispf; live lease reclaim not asserted (cluster off). Lease failover is CI: MysqlFlywayBaselineTckTest"
+    },
+    {
+      "id": "g4_audit",
+      "status": "PASS",
+      "detail": "serial reimport 200; audit_event_chain rows=1. Concurrent append + verify is CI: MysqlFlywayBaselineTckTest (8 writers)"
+    },
+    {
+      "id": "g9_metrics",
+      "status": "PASS",
+      "detail": "GET /api/v1/platform/metrics 200 with runningJobs (running-job list ordered NULLs last without NULLS LAST)"
+    },
+    {
+      "id": "g9_job_queue",
+      "status": "PASS",
+      "detail": "report run-async job 7ea40a1c-0208-409a-a3ed-58fcdd04acfb QUEUED -> COMPLETED through the platform job worker (claim reads job_id from CHAR(36)); GET /api/v1/platform/jobs/{id} 200"
+    },
+    {
+      "id": "g5_rls",
+      "status": "PASS",
+      "detail": "refused with: db-row-isolation=true is unsupported on MySQL"
+    },
+    {
+      "id": "g6_hard",
+      "status": "PASS",
+      "detail": "refused with: isolation-mode=HARD is unsupported on MySQL"
+    },
+    {
+      "id": "g7_hist",
+      "status": "PASS",
+      "detail": "refused with: variable-history store falls back to ISPF_DB JDBC on MySQL"
+    },
+    {
+      "id": "g7_dual",
+      "status": "PASS",
+      "detail": "refused with: dual-write-enabled=true is refused on MySQL"
+    },
+    {
+      "id": "g7_journal",
+      "status": "PASS",
+      "detail": "refused with: event-journal store falls back to ISPF_DB JDBC on MySQL"
+    },
+    {
+      "id": "g7_cluster",
+      "status": "PASS",
+      "detail": "refused with: ispf.cluster.enabled=true is not certified on MySQL"
+    },
+    {
+      "id": "g8_mariadb_kind",
+      "status": "PASS",
+      "detail": "MariaDB 11.4.13-MariaDB-ubu2404 refused (ISPF_METADATA_DB_KIND=mysql): MariaDB is not a certified ISPF_DB engine"
+    },
+    {
+      "id": "g8_mariadb_detect",
+      "status": "PASS",
+      "detail": "MariaDB 11.4.13-MariaDB-ubu2404 refused (auto-detect): MariaDB is not a certified ISPF_DB engine"
+    }
+  ]
+}

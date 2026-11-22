@@ -2,7 +2,7 @@
 
 ## Статус
 
-**Accepted** (2026-11-20) — политика и charter. **Amended 2026-11-22 — B1 pack + Lab green:** lab Flyway SQL авторизован, драйвер выбран, Lab-green gate пройден на MySQL 8.4.13 Community. **Prod: No — Lab green.** MySQL `ISPF_DB` стартует только под B1 fences (`assertMysqlB1Fences`); named-SKU Prod Yes не подписан.
+**Accepted** (2026-11-20) — политика и charter. **Amended 2026-11-22 — B1 pack + Lab green:** lab Flyway SQL авторизован, драйвер выбран, Lab-green gate пройден на MySQL 8.4.13 Community. **Prod Yes (B1)** 2026-11-22 — owner extension (§ Amendment 4) на одной ячейке: **MySQL Community Server 8.4.x + MariaDB Connector/J** (только этот клиент) ([checklist](../../en/mysql-sku-promotion-checklist.md)). MySQL `ISPF_DB` стартует только под B1 fences (`assertMysqlB1Fences`). Остальные ячейки MySQL — не Prod Yes (**P-MYSQL-SKU-RERUN**); MariaDB не покрывается никогда. TLS и SQL вне путей gate не сертифицированы (**P-MYSQL-TLS**, **P-MYSQL-PG-SQL**).
 
 Канонический текст: [EN ADR-0079](../../en/decisions/0079-mysql-metadata-certification.md).
 
@@ -15,8 +15,8 @@
 - Scope — **B1 metadata**; lab-ячейка — **MySQL 8.4 LTS Community** (8.0 не подписывается).
 - Journal/history вне B1; **нет** single-engine bypass в fences.
 - `assertEngineCertified` больше не отказывает `mysql`: как MSSQL, MySQL стартует только под B1 fences (до Flyway и на context refresh). Oracle — по-прежнему hard refuse.
-- Testcontainers и dev-lab — только lab-сигнал, не production-сертификация.
-- B1 pack Oracle ([0080](0080-oracle-metadata-certification.md)) — только после MySQL B1 Prod Yes. Oracle Phase 1 (честность dialect и fences; boot refuse) начат раньше решением владельца.
+- Testcontainers и dev-lab — только lab-сигнал, не production-сертификация. § Amendment 4 — явное исключение владельца для одной ячейки.
+- MySQL B1 Prod Yes подписан (§ Amendment 4), поэтому B1 pack Oracle ([0080](0080-oracle-metadata-certification.md)) может начинаться; Oracle остаётся **Prod: No** до своего gate. Oracle Phase 1 (честность dialect и fences; boot refuse) начат раньше решением владельца.
 
 ### Amendment 1 — lab Flyway SQL
 
@@ -31,18 +31,29 @@
 - Клиент `ISPF_DB` для серверов MySQL 8.4 — **MariaDB Connector/J** (LGPL-2.1-or-later), `runtimeOnly`, неизменённый JAR. URL `jdbc:mysql://…/ispf?permitMysqlScheme=true` + `driver-class-name=org.mariadb.jdbc.Driver`.
 - `flyway-mysql` (`runtimeOnly`), `testcontainers-mysql:2.0.5` (`testImplementation`). GPL `mysql-connector-j` — **нет**.
 - **Сервер MariaDB** по-прежнему refuse, в том числе при явном `ISPF_METADATA_DB_KIND=mysql`.
-- Hibernate: `MySQLDialect` закреплён (иначе драйвер MariaDB даёт `MariaDBDialect` даже на MySQL).
+- Hibernate: закреплён `MySQLDialect` (иначе драйвер MariaDB даёт `MariaDBDialect` даже на MySQL) — подкласс `MysqlHibernateDialect`, с которым проходит `ddl-auto=validate`.
 - Блокировки аудита: `INSERT … ON DUPLICATE KEY UPDATE` (portable вариант давал deadlock 1213).
 
 ### Amendment 3 — Lab-green gate
 
-Flyway TCK + concurrent audit + lease failover (`MysqlFlywayBaselineTckTest`), live boot + import (`MysqlLiveBundleImportTckTest`), lab-стенд `tools/mysql-b1-lab` (health, login, Flyway, dialect, import, второй JVM, аудит) и boot refuse для row isolation, `HARD`, JDBC history, dual-write, JDBC journal, cluster и сервера MariaDB. Evidence: `tools/mysql-b1-lab/gate-evidence-lab-community.json` — 2026-11-22, 17 PASS / 0 FAIL.
+Flyway TCK + concurrent audit + lease failover, после исправления P-MYSQL-PG-SQL также очередь задач и триггеры SQL-binding (`MysqlFlywayBaselineTckTest`), live boot + import (`MysqlLiveBundleImportTckTest`), lab-стенд `tools/mysql-b1-lab` (health, login, Flyway, dialect, import, второй JVM, аудит) и boot refuse для row isolation, `HARD`, JDBC history, dual-write, JDBC journal, cluster и сервера MariaDB. Evidence: `tools/mysql-b1-lab/gate-evidence-lab-community.json` — 2026-11-22, 17 PASS / 0 FAIL.
 
-Открыто до Prod Yes: Hibernate `ddl-auto=validate` не проходит на этой ячейке (вне `local` нужен `SPRING_JPA_HIBERNATE_DDL_AUTO=none`), PG-only SQL на не покрытых путях, TLS вместо `allowPublicKeyRetrieval`. Owner-extended Prod Yes — только после повторного checklist на named self-managed хосте и с tech debt **P-MYSQL-SKU-RERUN** для Enterprise / managed / non-Community ячеек.
+Закрыто после Lab green (2026-11-22): Hibernate `ddl-auto=validate`. MariaDB Connector/J при `lower_case_table_names=0` не сообщает регистр хранения идентификаторов, и Hibernate искал таблицы в верхнем регистре; затем `report_templates.content` (маппинг `BINARY`, колонка `LONGBLOB`) не проходил проверку типа. `MysqlHibernateDialect` ищет имена как написаны, если драйвер регистр не сообщает (сообщённый регистр по-прежнему главнее), и принимает `LONGBLOB` для `BINARY`. `MysqlLiveBundleImportTckTest` стартует с validate на MySQL 8.4.13 при `lower_case_table_names=0`. Свойство оператору не нужно; явный `hibernate.dialect` заменяет закреплённый диалект и возвращает сбой.
+
+### Amendment 4 (2026-11-22) — Prod Yes (B1), owner extension
+
+- Ячейка: self-managed **MySQL Community Server 8.4.x** LTS, единственный клиент `ISPF_DB` — **MariaDB Connector/J**.
+- Основание: Lab-green ячейка Amendment 3 (8.4.13 Community, локальный Docker), повтор 2026-11-22 с `ddl-auto=validate` на JVM стенда и втором JVM, плюс platform metrics и очередь задач — 20 PASS / 0 FAIL (`tools/mysql-b1-lab/gate-evidence-validate-community.json`, вывод collector). Решение владельца — `tools/mysql-b1-lab/gate-evidence-prod-yes-community.json`.
+- Owner extension: lab Docker-ячейка заменяет named self-managed хост (исключение из правила checklist «не lab Docker-стенд» только для этой ячейки). Повтор gate на первом named хосте рекомендуется, но не блокирует.
+- Fences без изменений: boot отказывает JDBC history / journal, dual-write, cluster, row isolation, `HARD` и серверу MariaDB.
+- Tech debt **P-MYSQL-SKU-RERUN**: MySQL Enterprise, HeatWave, Amazon RDS / Aurora MySQL, Azure Database for MySQL и любая другая non-Community ячейка — свой прогон checklist до любого claim.
+- TLS: обязанность оператора, этой подписью **не сертифицирован**. Ячейка evidence работала без TLS, с `allowPublicKeyRetrieval=true` — только для lab. Tech debt **P-MYSQL-TLS**.
+- Покрытие SQL: пути gate и MySQL TCK; полного паритета SQL с PostgreSQL **нет**. PG-only SQL, найденный при подписи, исправлен через `RelationalDialect` и работает на MySQL 8.4: `PlatformJobService` читает `job_id` строкой вместо приведения `getObject` на `CHAR(36)` к `UUID` и сортирует выполняющиеся задачи через `orderByNullsLast` вместо `NULLS LAST` (отчёты через очередь задач, `GET /api/v1/platform/metrics`); `ApplicationSqlBindingStore` собирает список триггеров по успеху функции через `concatExpression` (`CONCAT`) вместо `||`, который MySQL читает как OR. Остальной SQL полностью не проверялся. Tech debt **P-MYSQL-PG-SQL** ([checklist](../../en/mysql-sku-promotion-checklist.md#known-gaps-tracked-tech-debt)).
+- Non-claims: MySQL 8.0 и 9.x; сервер MariaDB; другие JDBC-клиенты (GPL `mysql-connector-j` в classpath не бывает); B2 history / journal; active-active; tenant row isolation; `HARD` и per-app схемы; TLS на соединении `ISPF_DB` (**P-MYSQL-TLS**); полный паритет SQL с PostgreSQL (**P-MYSQL-PG-SQL**).
 
 ## Последствия
 
-MySQL — **Lab green, Prod: No**; смена движка — новая БД и импорт bundle. В продажах — «MySQL 8.4 B1 metadata (lab)», не «MySQL/MariaDB».
+MySQL — **Prod Yes (B1)** на одной ячейке: self-managed MySQL Community Server 8.4.x с MariaDB Connector/J, под B1 fences; остальные ячейки MySQL — lab до своего прогона checklist (**P-MYSQL-SKU-RERUN**). TLS — обязанность оператора, не сертифицирован (**P-MYSQL-TLS**); SQL вне путей gate не заявлен (**P-MYSQL-PG-SQL**). Смена движка — новая БД и импорт bundle. В продажах — «MySQL Community Server 8.4 B1 metadata» с клиентом MariaDB Connector/J, не «MySQL/MariaDB» и не Enterprise / managed MySQL.
 
 ## Связанные
 

@@ -13,4 +13,4 @@ Epic: [oracle-certification-epic](../../../../../../../../docs/en/oracle-certifi
 
 No `V1__baseline.sql` in this directory yet — ADR-0080 has not authorized lab Flyway SQL.
 No Oracle JDBC driver (`ojdbc*`) is on any classpath until counsel signs the driver license.
-The Oracle B1 pack still waits for MySQL B1 Prod Yes (ADR-0079).
+MySQL B1 Prod Yes is signed (ADR-0079), so the Oracle B1 pack may start.

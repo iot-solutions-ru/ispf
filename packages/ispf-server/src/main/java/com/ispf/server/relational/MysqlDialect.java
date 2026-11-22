@@ -5,7 +5,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 /**
- * MySQL 8.4 dialect (ADR-0079 B1 lab). Boot runs only under
+ * MySQL 8.4 dialect (ADR-0079 B1). Boot runs only under
  * {@code MetadataDialectBootPolicy.assertMysqlB1Fences}. MariaDB is not this dialect.
  */
 public class MysqlDialect extends AbstractRelationalDialect {
@@ -121,6 +121,17 @@ public class MysqlDialect extends AbstractRelationalDialect {
     @Override
     public String booleanLiteral(boolean value) {
         return value ? "1" : "0";
+    }
+
+    @Override
+    public String orderByNullsLast(String expression) {
+        return expression + " IS NULL, " + expression;
+    }
+
+    /** {@code CONCAT} returns NULL when any argument is NULL, the same as PG {@code ||}. */
+    @Override
+    public String concatExpression(String... operands) {
+        return "CONCAT(" + String.join(", ", operands) + ")";
     }
 
     @Override

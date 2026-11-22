@@ -2,7 +2,6 @@ package com.ispf.server.relational;
 
 import com.ispf.server.config.MetadataDbProperties;
 import org.hibernate.cfg.AvailableSettings;
-import org.hibernate.dialect.MySQLDialect;
 import org.springframework.boot.hibernate.autoconfigure.HibernatePropertiesCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -40,13 +39,14 @@ public class RelationalConfiguration {
 
     /**
      * ADR-0079: Hibernate resolves any driver named "MariaDB…" to MariaDBDialect, even against a
-     * MySQL server (client != server), so pin MySQLDialect on a MySQL ISPF_DB.
+     * MySQL server (client != server), so pin a MySQLDialect on a MySQL ISPF_DB. The pinned subclass
+     * also makes {@code ddl-auto=validate} pass ({@link MysqlHibernateDialect}).
      */
     @Bean
     HibernatePropertiesCustomizer mysqlHibernateDialect(RelationalDialect relationalDialect) {
         return properties -> {
             if (relationalDialect.kind() == RelationalDbKind.MYSQL) {
-                properties.putIfAbsent(AvailableSettings.DIALECT, MySQLDialect.class.getName());
+                properties.putIfAbsent(AvailableSettings.DIALECT, MysqlHibernateDialect.class.getName());
             }
         };
     }

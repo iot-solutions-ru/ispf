@@ -35,6 +35,14 @@ class MssqlDialectTest {
     }
 
     @Test
+    void nullsLastAndConcatUseTSql() {
+        assertThat(dialect.orderByNullsLast("started_at"))
+                .isEqualTo("CASE WHEN started_at IS NULL THEN 1 ELSE 0 END, started_at");
+        assertThat(dialect.concatExpression("','", "trigger_function_name", "','"))
+                .isEqualTo("(',' + trigger_function_name + ',')");
+    }
+
+    @Test
     void uniqueViolationUsesSqlServerErrorCodesOnly() {
         assertThat(dialect.isUniqueViolation(sqlEx(2627, "23000"))).isTrue();
         assertThat(dialect.isUniqueViolation(sqlEx(2601, "23000"))).isTrue();
