@@ -33,7 +33,7 @@ ISPF хранит конфигурацию платформы (дерево об
 db/migration/postgresql/   — V1__baseline.sql + инкрементальные V71+ (prod-путь)
 db/migration/h2/           — только README; по умолчанию H2 использует postgresql pack в MODE=PostgreSQL
 db/migration/mssql/        — generated greenfield baseline (Prod Yes B1 на подписанной ячейке Evaluation; B2/A-A не сертифицированы)
-db/migration/mysql/        — только README (план)
+db/migration/mysql/        — README + Phase 1 lab (Prod: No; ADR-0079)
 db/migration/oracle/       — только README (план)
 ```
 
@@ -50,7 +50,7 @@ db/migration/oracle/       — только README (план)
 | Смена `ISPF_METADATA_DB_KIND` | Новая пустая БД/схема; конфигурация через **бандлы** (`package import`) — **без** in-place смены движка |
 | Legacy DB всё ещё на истории V1–V70 до squash | Однократно `deploy/vps-flyway-repair.sh` — squash history до V1 + repair checksum, затем применить `V71+` |
 | MSSQL | **Prod Yes (B1)** на SQL Server 2022 Enterprise Evaluation `16.0.4325.4` ([checklist](../../en/mssql-sku-promotion-checklist.md)). B2 jdbc history/journal и A-A не сертифицированы. Scope: [0078](0078-mssql-metadata-certification.md) |
-| MySQL / Oracle | **Запланированы после MSSQL** — charters [0079](0079-mysql-metadata-certification.md) и [0080](0080-oracle-metadata-certification.md). Boot запрещён для каждого движка до готовности его Flyway pack и certification gate |
+| MySQL / Oracle | MySQL **Phase 1 lab** ([0079](0079-mysql-metadata-certification.md)); Oracle после MySQL B1 ([0080](0080-oracle-metadata-certification.md)). Boot refuse; MariaDB не алиасится в MySQL |
 
 Конфигурация решения (объекты, приложения, мимики) живёт в **export/import бандлов**, не в «переносе» строк metadata между СУБД.
 
@@ -79,7 +79,7 @@ db/migration/oracle/       — только README (план)
 | 1 | PG-compatible (Yugabyte, Cockroach) | On request | `postgresql/` | Тестировать per vendor |
 | 2 | H2 (edge/dev) | Edge only | `postgresql/` + PG compat mode | `application-local.yml` |
 | 3 | MS SQL Server | **Prod Yes (B1)** | Generated greenfield `mssql/V1` | Подписанная ячейка: Enterprise Evaluation `16.0.4325.4` ([checklist](../../en/mssql-sku-promotion-checklist.md)). Для прода нужен лицензированный Standard/Enterprise или Azure SQL DB/MI. B2 и A-A — не эта ячейка. Контракт [0078](0078-mssql-metadata-certification.md) |
-| 4 | MySQL, Oracle | **No — Scheduled** | только README | После MSSQL: MySQL 8.x B1 [0079](0079-mysql-metadata-certification.md), затем Oracle B1 [0080](0080-oracle-metadata-certification.md); boot запрещён до готовности Flyway pack и certification gate |
+| 4 | MySQL, Oracle | **No — MySQL Phase 1 lab / Oracle scheduled** | MySQL README + fences; Oracle README | MySQL lab после MSSQL B1 ([0079](0079-mysql-metadata-certification.md)); Oracle после MySQL B1 ([0080](0080-oracle-metadata-certification.md)) |
 
 ## Последствия
 

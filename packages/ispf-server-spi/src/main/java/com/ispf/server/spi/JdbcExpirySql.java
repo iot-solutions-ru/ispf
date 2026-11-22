@@ -22,6 +22,9 @@ public final class JdbcExpirySql {
      */
     public static final String MSSQL_STYLE = "DATEADD(SECOND, ?, CURRENT_TIMESTAMP)";
 
+    /** MySQL 8.x — do not map product name MariaDB here (ADR-0079: separate charter). */
+    public static final String MYSQL_STYLE = "DATE_ADD(CURRENT_TIMESTAMP, INTERVAL ? SECOND)";
+
     public static String nowPlusSecondsExpression(String databaseProductName) {
         if (databaseProductName == null || databaseProductName.isBlank()) {
             return POSTGRES_STYLE;
@@ -29,6 +32,10 @@ public final class JdbcExpirySql {
         String lower = databaseProductName.toLowerCase(Locale.ROOT);
         if (lower.contains("microsoft") || lower.contains("sql server")) {
             return MSSQL_STYLE;
+        }
+        // Explicit MySQL only — MariaDB product names stay on POSTGRES_STYLE until a MariaDB charter.
+        if (lower.contains("mysql") && !lower.contains("mariadb")) {
+            return MYSQL_STYLE;
         }
         return POSTGRES_STYLE;
     }
