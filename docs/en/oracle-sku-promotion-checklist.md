@@ -45,16 +45,18 @@ Without the driver, boot stops before the DataSource is built: `ISPF_METADATA_DB
 
 ## Gate evidence
 
-1. Empty schema → Flyway `oracle/V1` → boot + health + login — **PASS** (stand `:18092`; CI `OracleFlywayBaselineTckTest`, `OracleLiveBundleImportTckTest`)
+1. Empty schema → Flyway `oracle/V1` → boot + health + login — **PASS** (stand `:18092`; Docker TCKs `OracleFlywayBaselineTckTest`, `OracleLiveBundleImportTckTest`)
 2. Hibernate `OracleDialect`; no ojdbc inside `bootJar`, driver loaded from `loader.path`; boot without the driver refused with the remedy — **PASS**
-3. Cert bundle import (`oracle-b1-cert`) + `by-path` resolves — **PASS** (4 paths; CI imports twice and checks one deployment row)
-4. Two JVMs on one schema — second non-clustered JVM **PASS** (`:18093` health UP). Live lease reclaim is not asserted with cluster off; lease failover stays on CI (`OracleFlywayBaselineTckTest`)
-5. Audit chain — serial re-import **PASS** (`audit_event_chain` rows > 0). Concurrent append (8 writers) + hash verify is CI (`OracleFlywayBaselineTckTest`)
-6. Job claim with `SKIP LOCKED` through `PlatformJobService` (two concurrent claimers get different jobs) — **PASS** (CI)
+3. Cert bundle import (`oracle-b1-cert`) + `by-path` resolves — **PASS** (4 paths; the live Docker TCK imports twice and checks one deployment row)
+4. Two JVMs on one schema — second non-clustered JVM **PASS** (`:18093` health UP). Live lease reclaim is not asserted with cluster off; lease failover is in the Docker TCK (`OracleFlywayBaselineTckTest`)
+5. Audit chain — serial re-import **PASS** (`audit_event_chain` rows > 0). Concurrent append (8 writers) + hash verify is in the Docker TCK (`OracleFlywayBaselineTckTest`)
+6. Job claim with `SKIP LOCKED` through `PlatformJobService` (two concurrent claimers get different jobs) — **PASS** (Docker TCK)
 7. Boot refuse for row isolation, `HARD`, JDBC history, dual-write, JDBC journal, cluster on Oracle — **PASS**; app schema switch fail-closed (`OracleDialect.supportsSessionSchemaSwitch=false`)
 8. Runtime-settings `PATCH` cannot hot-enable the JDBC event journal — **PASS**
 
 Evidence: [`tools/oracle-b1-lab/gate-evidence-lab-free.json`](../../tools/oracle-b1-lab/gate-evidence-lab-free.json) — 18 PASS / 0 FAIL.
+
+The Docker TCKs are tagged `oracle-docker` and run only with `-Dispf.test.oracleDocker=true` (Docker plus the lab driver); default CI does not run them. Default CI runs the boot-fence unit tests and the Oracle lockstep check.
 
 ## Before any Prod Yes signature
 
@@ -64,7 +66,7 @@ Evidence: [`tools/oracle-b1-lab/gate-evidence-lab-free.json`](../../tools/oracle
 | 19c | DDL and dialect SQL follow 19c rules (no `BOOLEAN`, `FROM DUAL`, no row limit with `FOR UPDATE`) but have only run on 23.26 Free |
 | Hibernate validate | `ddl-auto=validate` not run on Oracle; until it is fixed or waived in writing, non-`local` deployments set `SPRING_JPA_HIBERNATE_DDL_AUTO=none` |
 | Empty strings | Oracle stores `''` as `NULL`; a `''` write into a `NOT NULL` text column fails with ORA-01400. Review paths the gate does not exercise |
-| Uncovered SQL | PostgreSQL-only SQL on paths this gate does not exercise (bucket aggregate, `CLOB` compared with `=`, SQL-binding concatenation) reviewed or fenced |
+| Uncovered SQL | PostgreSQL-only SQL on paths this gate does not exercise (bucket aggregate, `CLOB` compared with `=`) reviewed or fenced. `concatExpression` on Oracle is `||`, where a NULL operand counts as empty text: new callers guard NULL operands, as the SQL-binding trigger query does |
 | Network | Oracle Net encryption / TLS and wallet on the named host |
 | Re-run | All eight gates above on the named cell |
 
@@ -74,7 +76,7 @@ Evidence: [`tools/oracle-b1-lab/gate-evidence-lab-free.json`](../../tools/oracle
 
 | Evidence | Where |
 |----------|--------|
-| CI TCK / boot fences | `Oracle*` tests (`-Dispf.test.oracleDocker=true` adds the lab driver and runs the Docker TCKs) |
+| Boot fences / Docker TCKs | `Oracle*` tests: boot-fence unit tests run in default CI; the `oracle-docker` TCKs run only with `-Dispf.test.oracleDocker=true` (adds the lab driver) |
 | Local Oracle Free stand | [`tools/oracle-b1-lab/stand-local.ps1`](../../tools/oracle-b1-lab/stand-local.ps1) |
 | Gate collector | [`tools/oracle-b1-lab/gate-evidence.ps1`](../../tools/oracle-b1-lab/gate-evidence.ps1) |
 

@@ -174,7 +174,7 @@ if (Start-OracleIspf -Name $lease -Net $Net -Jar $Jar -OjdbcJar $OjdbcJar -Passw
         Start-Sleep 3
     }
     if ($up) {
-        Pass "g3_dual_jvm" "second non-clustered JVM health UP on :18093 against shared ispf schema; live lease reclaim not asserted (cluster off). Lease failover is CI: OracleFlywayBaselineTckTest"
+        Pass "g3_dual_jvm" "second non-clustered JVM health UP on :18093 against shared ispf schema; live lease reclaim not asserted (cluster off). Lease failover: OracleFlywayBaselineTckTest (opt-in Docker TCK, -Dispf.test.oracleDocker=true; not default CI)"
     } else {
         Fail "g3_dual_jvm" "second JVM did not become healthy"
     }
@@ -188,7 +188,7 @@ if ($token) {
     $ser = Invoke-Http "POST" "$Base/api/v1/platform/packages/import?packageId=oracle-b1-cert" $token ([System.IO.File]::ReadAllText($Bundle))
     $auditRows = Invoke-OracleSql $NameSql "ispf" $Password "SELECT COUNT(*) FROM audit_event_chain;"
     if ($ser.Code -eq 200 -and [int]$auditRows -gt 0) {
-        Pass "g4_audit" "serial reimport 200; audit_event_chain rows=$auditRows. Concurrent append + verify is CI: OracleFlywayBaselineTckTest (8 writers)"
+        Pass "g4_audit" "serial reimport 200; audit_event_chain rows=$auditRows. Concurrent append (8 writers) + verify: OracleFlywayBaselineTckTest (opt-in Docker TCK, -Dispf.test.oracleDocker=true; not default CI)"
     } else {
         Fail "g4_audit" "serial=$($ser.Code) audit_rows=$auditRows"
     }

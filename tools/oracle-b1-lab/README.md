@@ -17,7 +17,7 @@ powershell -File tools/oracle-b1-lab/stand-local.ps1
 powershell -File tools/oracle-b1-lab/gate-evidence.ps1 -Out tools/oracle-b1-lab/gate-evidence-lab-free.json -EngineNote "<named cell>"
 ```
 
-CI-side TCKs (Docker, opt-in; the flag also puts the lab driver on the test classpath): `.\gradlew.bat :packages:ispf-server:test --tests "*Oracle*" -Dispf.test.oracleDocker=true`.
+Docker TCKs (opt-in, not run by default CI; the flag also puts the lab driver on the test classpath): `.\gradlew.bat :packages:ispf-server:test --tests "*Oracle*" -Dispf.test.oracleDocker=true`.
 
 ## Driver
 

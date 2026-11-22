@@ -60,6 +60,8 @@ Lab green means every item below passed on one named lab cell. It is **not** Pro
 | 4 | Lab stand: engine cell, health, login, Flyway V1, dialect, no ojdbc inside `bootJar` with the driver on `loader.path`, refusal without the driver, cert import + 4 paths, second JVM, serial re-import + audit chain | [`tools/oracle-b1-lab`](../../../tools/oracle-b1-lab/README.md) |
 | 5 | Boot refusals: row isolation, `HARD`, JDBC history, dual-write, JDBC journal, cluster; hot-reload of the JDBC journal refused | Lab stand + `OracleCertificationBootGuardTest`, `FlywayDialectConfigurationOracleTest`, `PlatformRuntimeSettingsServiceTest` |
 
+Rows 1–3 are the `oracle-docker` Testcontainers TCKs. They run only in the opt-in lane (`-Dispf.test.oracleDocker=true`, which needs Docker and adds the lab driver), not in default CI. Default CI runs the row 5 unit tests and the lockstep check.
+
 Lab cell: Oracle AI Database 26ai **Free** 23.26.4.0.0 (`gvenzl/oracle-free:23-slim-faststart`), `AL32UTF8`, `MAX_STRING_SIZE=STANDARD`, 8 KiB blocks, schema user `ispf` in `FREEPDB1`, ojdbc17 23.26.3.0.0 on `loader.path`, single JVM, `local` profile (`ddl-auto=none`). Signed run: [`gate-evidence-lab-free.json`](../../../tools/oracle-b1-lab/gate-evidence-lab-free.json) — 2026-11-22, 18 PASS / 0 FAIL. Checklist: [oracle-sku-promotion-checklist](../oracle-sku-promotion-checklist.md).
 
 Open on the way to Prod Yes (not claimed by Lab green):
@@ -68,7 +70,8 @@ Open on the way to Prod Yes (not claimed by Lab green):
 - 19c: the DDL and dialect SQL follow 19c rules but have only run on 23.26 Free.
 - Hibernate `ddl-auto=validate` has not run on Oracle (`NUMBER(1)` columns against Hibernate's 23ai `BOOLEAN` mapping). Non-`local` deployments set `SPRING_JPA_HIBERNATE_DDL_AUTO=none`.
 - `''` → `NULL`: code that writes `''` into a `NOT NULL` text column fails with ORA-01400. Paths the gate does not exercise are not audited for it.
-- PostgreSQL-only SQL on paths the gate does not exercise, for example the bucket aggregate, `CLOB` columns compared with `=` (ORA-22848), and `ApplicationSqlBindingStore` concatenation.
+- PostgreSQL-only SQL on paths the gate does not exercise, for example the bucket aggregate and `CLOB` columns compared with `=` (ORA-22848).
+- `concatExpression` is Oracle's `||`, which treats a NULL operand as an empty string instead of returning NULL. Callers must guard NULL operands themselves; the SQL-binding trigger query does, and runs in the Oracle Docker TCK.
 - Oracle Net encryption / TLS and wallet setup on the named host.
 - B2 JDBC history/journal, active-active, tenant row isolation, `HARD` schemas, and per-app schemas stay refused or unsupported.
 
