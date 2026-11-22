@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-11-22T18:39:58.146Z",
+  "generated_at": "2026-11-22T19:09:51.683Z",
   "base": "http://127.0.0.1:18092",
-  "engine_note": "Oracle AI Database 26ai Free 23.26.4.0.0 (gvenzl/oracle-free:23-slim-faststart, local AMD64 Docker); ojdbc17 23.26.3.0.0 on loader.path",
+  "engine_note": "Oracle AI Database 26ai Free 23.26.4.0.0 (gvenzl/oracle-free:23-slim-faststart, local AMD64 Docker); ojdbc17 23.26.3.0.0 on loader.path; branch head after rebase onto main e70e8739e",
   "edition": "Oracle AI Database 26ai Free Release 23.26.4.0.0 - Develop, Learn, and Run for Free | AL32UTF8 | STANDARD | 8192",
   "jdbc_client": "Oracle JDBC thin ojdbc17-23.26.3.0.0.jar (lab classpath via loader.path; not shipped by ISPF)",
   "fail_count": 0,
