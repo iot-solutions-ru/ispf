@@ -3,6 +3,8 @@ package com.ispf.server.config;
 import com.ispf.server.relational.RelationalDbKind;
 import com.ispf.server.relational.RelationalDialect;
 
+import java.util.Objects;
+
 /**
  * Shared ADR-0078 / 0037 boot fences. Invoked before Flyway locations are applied and again
  * on {@code ContextRefreshedEvent} so disallowed engines never migrate.
@@ -56,12 +58,10 @@ public final class MetadataDialectBootPolicy {
                             + "Single-engine mode keeps one JDBC store. Disable dual-write."
             );
         }
-        if (clusterProperties.enabled()) {
-            throw new IllegalStateException(
-                    "ispf.cluster.enabled=true is not certified on MSSQL (ADR-0078 Phase 6). "
-                            + "Run a single JVM, or use PostgreSQL for active-active until an MSSQL soak passes."
-            );
-        }
+        // A-A on MSSQL is Prod Yes (ADR-0078 Phase 6): dialect no longer refuses cluster.
+        // ClusterDependencyValidator still fail-closes without NATS JetStream (+ Redis when live sync).
+        // Residual tech-debt: AG failover soak / dual-JVM chaos journal — docs/en/parked-backlog.md P-MSSQL-AA-SOAK.
+        Objects.requireNonNull(clusterProperties, "clusterProperties");
         if (singleEngine) {
             assertSingleEngineStores(variableHistoryProperties, eventJournalProperties, warmEnabled, coldArchiveEnabled);
             return;

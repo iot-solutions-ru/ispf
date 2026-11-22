@@ -1,6 +1,6 @@
 {
   "contextPackVersion": "ispf-1.0.0",
-  "generatedAt": "2026-11-21T18:10:09.504339+00:00",
+  "generatedAt": "2026-11-22T08:35:10.347798+00:00",
   "platformVersion": "1.0.0",
   "bundleManifest": {
     "fields": [
@@ -18792,6 +18792,18 @@
       "path": "docs/en/messaging.md",
       "title": "Messaging Channels: REST/BFF, WebSocket, Event Journal, and NATS",
       "keywords": "messaging Messaging Channels: REST/BFF, WebSocket, Event Journal, and NATS"
+    },
+    {
+      "id": "mssql-aa-sku-promotion-checklist",
+      "path": "docs/en/mssql-aa-sku-promotion-checklist.md",
+      "title": "MSSQL active-active (A-A) promotion checklist",
+      "keywords": "mssql-aa-sku-promotion-checklist MSSQL active-active (A-A) promotion checklist"
+    },
+    {
+      "id": "mssql-b2-sku-promotion-checklist",
+      "path": "docs/en/mssql-b2-sku-promotion-checklist.md",
+      "title": "MSSQL B2 SKU promotion checklist (ADR-0078 single-engine)",
+      "keywords": "mssql-b2-sku-promotion-checklist MSSQL B2 SKU promotion checklist (ADR-0078 single-engine)"
     },
     {
       "id": "mssql-certification-epic",
@@ -71659,5 +71671,5 @@
   "embeddingModel": "ispf-hash-v1",
   "embeddingDims": 384,
   "embeddingCoverage": 41,
-  "contentSha256": "c0d971823b9264ef3b5a7cc5b451ee54866358edf09904cfd471d4e24ab58744"
+  "contentSha256": "ca4f8c0ff418cbfe8dca18f058fbc654f4843e3758feeaa7fbeec05d2cd2b423"
 }

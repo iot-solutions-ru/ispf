@@ -13,6 +13,8 @@
 | P-BPMN | BPMN/DMN depth beyond ADR-0047 | **Parked** | Named customer blocker + ADR | Freeze holds. |
 | P-WEBAUTHN | WebAuthn / passkeys (BL-194) | **Parked** | Tender / customer MFA requirement | TOTP MFA GA remains the shipped path. ADR [0056](decisions/0056-webauthn-idp-mfa.md) explicitly **Parked** (2026-11-15). |
 | P-PENTEST | Third-party pen-test report (G-01) | **Parked** (vendor-pack ready) | Hired assessment + dated report + retest | **Send:** [outreach draft](pen-test-vendor-outreach-draft.md) · [vendor pack](pen-test-vendor-pack.md). SOW/RoE/RFP/prep/cases linked from pack; lab pin [2026-09-09 preflight](../evidence/security-pentest/2026-09-09-lab-192.168.100.10-preflight.md). Dogfood hold: [web-console-dogfood-checklist.md](web-console-dogfood-checklist.md). Docs ≠ cert. |
+| P-MSSQL-AA-SOAK | MSSQL A-A AG failover + dual-JVM chaos journal | **Parked** (Prod Yes signed; soak residual) | Named AG stand + soak journal row | Dialect fence lifted 2026-11-22 ([A-A checklist](mssql-aa-sku-promotion-checklist.md)). `ispf-lab` SSH unreachable from signer host that day; Edge ≠ AG. |
+| P-MSSQL-SKU-RERUN | Per-SKU checklist re-run (Standard / Azure SQL DB\|MI) | **Parked** (owner-extended Yes) | Named licensed / PaaS stand + gate JSON | Evaluation engine-class evidence extended by owner 2026-11-22 ([sku evidence](../../tools/mssql-b1-lab/gate-evidence-sku-extension-evaluation.json)). |
 
 ## Lab access (operators)
 

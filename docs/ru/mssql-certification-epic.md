@@ -18,7 +18,7 @@
 
 ### Фаза 6 — честность кластерного режима
 
-- [x] Active-active на MSSQL **не сертифицирован** — boot отказывает `ispf.cluster.enabled=true` (`MssqlCertificationBootGuard`).
+- [x] **Prod Yes (A-A)** 2026-11-22 — dialect fence снят; NATS обязателен; AG soak tech-debt **P-MSSQL-AA-SOAK**.
 - [x] AG listener / RCSI / выделенная БД документированы в checklist продвижения SKU и README миграций MSSQL.
 
-**Prod Yes (B1)** подписан 2026-11-20 на SQL Server 2022 Enterprise Evaluation `16.0.4325.4` ([checklist](../en/mssql-sku-promotion-checklist.md), issue #814). **Prod Yes (B2)** подписан 2026-11-22 на той же Evaluation ячейке для opt-in single-engine JDBC history/journal ([B2 checklist](../en/mssql-b2-sku-promotion-checklist.md)) — retention DELETE + 90 д; product/scheduled SWITCH и ≤20 с plant-wide не входят. A-A не подписан.
+**Prod Yes (B1 + B2 + A-A)** на Evaluation `16.0.4325.4` и owner-extended licensed Standard / Enterprise / Azure SQL DB|MI (2026-11-22). B2 retention DELETE + 90 д; product SWITCH вне claim; AG soak tech-debt.

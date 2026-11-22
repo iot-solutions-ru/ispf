@@ -104,7 +104,7 @@ echo "== load soak =="
 BASE="http://127.0.0.1:${ISPF_PORT}" ROUNDS="$ROUNDS" CONCURRENCY="$CONCURRENCY" BUNDLE="$BUNDLE" \
   bash "$SCRIPT_DIR/load.sh"
 
-echo "== fence (cluster must refuse) =="
+echo "== cluster dialect allows (NATS still required) =="
 docker rm -f ispf-mssql-b1-fence 2>/dev/null || true
 docker run -d --name ispf-mssql-b1-fence --network "$NET" \
   -v "$JAR:/app/ispf-server.jar:ro" \
@@ -123,7 +123,13 @@ docker run -d --name ispf-mssql-b1-fence --network "$NET" \
 
 fence_ok=0
 for i in $(seq 1 40); do
-  if docker logs ispf-mssql-b1-fence 2>&1 | grep -q 'not certified on MSSQL'; then
+  logs=$(docker logs ispf-mssql-b1-fence 2>&1 || true)
+  if echo "$logs" | grep -q 'not certified on MSSQL'; then
+    echo "stale_mssql_cluster_dialect_refuse" >&2
+    docker rm -f ispf-mssql-b1-fence >/dev/null 2>&1 || true
+    exit 1
+  fi
+  if echo "$logs" | grep -q 'requires ispf.nats.enabled=true'; then
     fence_ok=1
     break
   fi
@@ -132,8 +138,8 @@ done
 exit_code=$(docker inspect -f '{{.State.ExitCode}}' ispf-mssql-b1-fence 2>/dev/null || echo 1)
 docker rm -f ispf-mssql-b1-fence >/dev/null 2>&1 || true
 if [[ "$fence_ok" -ne 1 ]]; then
-  echo "fence_missing" >&2
+  echo "cluster_nats_gate_missing" >&2
   exit 1
 fi
-echo "fence_ok exit_code=$exit_code"
+echo "cluster_dialect_allows nats_gate_ok exit_code=$exit_code"
 echo "LAB_MSSQL_B1_OK"

@@ -31,7 +31,7 @@ Package `com.ispf.server.relational`:
 ```
 db/migration/postgresql/   — V1__baseline.sql + incremental V71+ (prod path)
 db/migration/h2/           — README only; default H2 uses postgresql pack in MODE=PostgreSQL
-db/migration/mssql/        — generated greenfield baseline (Prod Yes B1+B2 on signed Evaluation cell; A-A uncertified; B2 SWITCH product path deferred)
+db/migration/mssql/        — generated greenfield baseline (Prod Yes B1+B2+A-A; licensed SKUs owner-extended; B2 SWITCH product path deferred)
 db/migration/mysql/        — README only (planned)
 db/migration/oracle/       — README only (planned)
 ```
@@ -48,7 +48,7 @@ Legacy increments **V1–V70 were squashed** into `V1__baseline.sql` (2026-07-07
 | ISPF version upgrade on same PostgreSQL | Flyway applies new `Vnn__*.sql` not yet in `flyway_schema_history` |
 | Change `ISPF_METADATA_DB_KIND` | New empty DB/schema; configuration via **bundles** (`package import`) — **no** in-place engine migration |
 | Legacy DB still on pre-squash V1–V70 history | One-time `deploy/vps-flyway-repair.sh` — squash history to V1 + repair checksum, then apply `V71+` |
-| MSSQL | **Prod Yes (B1)** metadata + **Prod Yes (B2)** opt-in single-engine JDBC history/journal on SQL Server 2022 Enterprise Evaluation `16.0.4325.4` ([B1 checklist](../mssql-sku-promotion-checklist.md), [B2 checklist](../mssql-b2-sku-promotion-checklist.md)). B2 retention in force is DELETE + 90-day ceiling; product/scheduled SWITCH and A-A stay uncertified. Scope: [0078](0078-mssql-metadata-certification.md) |
+| MSSQL | **Prod Yes (B1 + B2 + A-A)** on Evaluation `16.0.4325.4` and owner-extended licensed Standard / Enterprise / Azure SQL DB\|MI ([B1](../mssql-sku-promotion-checklist.md), [B2](../mssql-b2-sku-promotion-checklist.md), [A-A](../mssql-aa-sku-promotion-checklist.md)). B2 retention = DELETE + 90 d; product SWITCH outside claim; AG soak tech-debt. Scope: [0078](0078-mssql-metadata-certification.md) |
 | MySQL / Oracle | **Scheduled after MSSQL** — charters [0079](0079-mysql-metadata-certification.md) and [0080](0080-oracle-metadata-certification.md). Boot refuses each engine until its Flyway pack and certification gate are complete |
 
 Solution configuration (objects, applications, mimics) lives in **bundle export/import**, not in «moving» metadata rows between DBMS engines.
@@ -77,7 +77,7 @@ Default mode: `ISPF_EVENT_JOURNAL_STORE=jdbc`, `ISPF_VARIABLE_HISTORY_STORE=jdbc
 | 0 | PostgreSQL 16 + Timescale | Yes | `postgresql/V1` + `V71+` | Primary; software registry |
 | 1 | PG-compatible (Yugabyte, Cockroach) | On request | `postgresql/` | Test per vendor |
 | 2 | H2 (edge/dev) | Edge only | `postgresql/` + PG compat mode | `application-local.yml` |
-| 3 | MS SQL Server | **Prod Yes (B1 + B2)** | Generated greenfield `mssql/V1` | Signed Evaluation `16.0.4325.4`: B1 metadata ([checklist](../mssql-sku-promotion-checklist.md)); B2 opt-in single-engine JDBC history/journal ([B2 checklist](../mssql-b2-sku-promotion-checklist.md), 2026-11-22). Operators still need a licensed Standard/Enterprise or Azure SQL DB/MI for perpetual hosts. B2 does **not** certify product SWITCH, ≤20 s plant-wide scans, or A-A. Contract [0078](0078-mssql-metadata-certification.md) |
+| 3 | MS SQL Server | **Prod Yes (B1 + B2 + A-A)** | Generated greenfield `mssql/V1` | Evaluation `16.0.4325.4` + owner-extended licensed Standard / Enterprise / Azure SQL DB\|MI (2026-11-22). B2 does **not** certify product SWITCH or ≤20 s plant-wide scans. A-A dialect fence lifted; AG soak tech-debt. Contract [0078](0078-mssql-metadata-certification.md) |
 | 4 | MySQL, Oracle | **No — Scheduled** | README only | After MSSQL: MySQL 8.x B1 [0079](0079-mysql-metadata-certification.md), then Oracle B1 [0080](0080-oracle-metadata-certification.md); boot refuses each engine until its Flyway pack and certification gate are complete |
 
 ## Consequences

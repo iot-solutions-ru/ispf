@@ -8,13 +8,13 @@
 
 New **single-tenant** installs can keep metadata, the event journal, and variable history in **one dedicated SQL Server instance** of a **named edition**, under fail-closed profile `mssql-single-engine`, inside **named fixtures** (tags × interval × window × query text × p95).
 
-Not this epic: Part 11 / a validated EMS, multi-tenant RLS, ISPF active-active, an unbounded 10-year raw scan ≤ 20 s, RPO = 0 if the node disk dies, disaster recovery from a `.bak` alone, live PostgreSQL → MSSQL migration.
+Not this epic: Part 11 / a validated EMS, multi-tenant RLS, multi-master writes, completed AG failover soak (tech-debt **P-MSSQL-AA-SOAK**), an unbounded 10-year raw scan ≤ 20 s, RPO = 0 if the node disk dies, disaster recovery from a `.bak` alone, live PostgreSQL → MSSQL migration.
 
 ## Locked defaults
 
 | Choice | Value |
 |--------|--------|
-| HA | One ISPF JVM + SQL Server availability-group listener. `ispf.cluster.enabled` stays refused |
+| HA | One ISPF JVM + SQL Server availability-group listener **or** A-A (N JVMs / one writable primary; NATS required). AG soak residual: **P-MSSQL-AA-SOAK** |
 | First SKU to sign | One named SQL Server 2022 Standard **or** Azure SQL MI build. Archive features that need Enterprise are called out before that gate, not assumed |
 | Partition grain | Monthly |
 | ClickHouse / Parquet | Refused while `ISPF_MSSQL_SINGLE_ENGINE=true` |
@@ -31,14 +31,14 @@ Not this epic: Part 11 / a validated EMS, multi-tenant RLS, ISPF active-active, 
 
 Engineering in repo: `V1__baseline.sql` is frozen as the greenfield squash (do not regenerate after a site has applied it). Boot preflight for RCSI + a `_CS_` collation runs only when single-engine mode is on.
 
-**Signed:** ADR-0037 **Prod Yes (B1)** on SQL Server 2022 Enterprise Evaluation `16.0.4325.4` ([checklist](mssql-sku-promotion-checklist.md)). Licensed Standard / Enterprise / Azure SQL DB|MI cells still need their own re-run.
+**Signed:** ADR-0037 **Prod Yes (B1)** on SQL Server 2022 Enterprise Evaluation `16.0.4325.4` ([checklist](mssql-sku-promotion-checklist.md)). Licensed Standard / Enterprise / Azure SQL DB|MI inherit by owner extension 2026-11-22 (tech-debt **P-MSSQL-SKU-RERUN**).
 
 ### Gate B — B2-core (capped retention)
 
 Opt-in `ISPF_MSSQL_SINGLE_ENGINE=true` plus `ISPF_HISTORIAN_DEPLOY_PROFILE=mssql-single-engine`.
 
 - JDBC journal and JDBC variable history are allowed on `ISPF_DB`.
-- Boot refuses warm tier, cold archive, dual-write, cluster, tenant row isolation, and a non-JDBC history/journal store.
+- Boot refuses warm tier, cold archive, dual-write, tenant row isolation, and a non-JDBC history/journal store. Cluster is allowed (NATS JetStream still required).
 - Bucket aggregate SQL uses `DATE_BUCKET` (SQL Server 2022+) and filters on `observed_at` (SARGable).
 - Event-history purge on MSSQL deletes in batches (`DELETE TOP`) so one transaction does not hold a multi-year table.
 - Retention cap until Gate C: do not claim 10 years.

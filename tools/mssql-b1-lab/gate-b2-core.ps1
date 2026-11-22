@@ -213,7 +213,7 @@ $doc = [pscustomobject]@{
     non_claims = @(
         "0037 Prod Yes (B2) waits for Gate C archive (monthly partitions + SWITCH)",
         "Unbounded 10y / plant-wide <=20s scan stays a non-claim",
-        "A-A / ispf.cluster.enabled still refused on MSSQL"
+        "Completed AG failover soak still tech-debt (P-MSSQL-AA-SOAK); NATS required when cluster on"
     )
 }
 $doc | ConvertTo-Json -Depth 6 | Set-Content -Path $Out -Encoding utf8

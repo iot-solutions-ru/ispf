@@ -2,7 +2,7 @@
 
 ## Status
 
-**Accepted** (2026-11-19) — policy and certification contract. **Prod Yes (B1)** signed 2026-11-20 on SQL Server 2022 Enterprise Evaluation `16.0.4325.4` ([checklist](../mssql-sku-promotion-checklist.md), issue #814). **Prod Yes (B2)** signed 2026-11-22 on the same Evaluation build for opt-in single-engine JDBC history/journal ([B2 checklist](../mssql-b2-sku-promotion-checklist.md)) — retention in force is DELETE + 90-day ceiling; product/scheduled SWITCH and ≤20 s plant-wide scans stay non-claims. Evaluation is a 180-day Enterprise-class trial: a production host still needs a licensed Standard/Enterprise or Azure SQL DB/MI. Without `ISPF_MSSQL_SINGLE_ENGINE=true`, B1 boot fences still refuse JDBC history/journal, dual-write, and `ispf.cluster.enabled=true`. A-A is not Prod Yes.
+**Accepted** (2026-11-19) — policy and certification contract. **Prod Yes (B1)** signed 2026-11-20 on SQL Server 2022 Enterprise Evaluation `16.0.4325.4` ([checklist](../mssql-sku-promotion-checklist.md), issue #814). **Prod Yes (B2)** signed 2026-11-22 on the same Evaluation build for opt-in single-engine JDBC history/journal ([B2 checklist](../mssql-b2-sku-promotion-checklist.md)) — retention in force is DELETE + 90-day ceiling; product/scheduled SWITCH and ≤20 s plant-wide scans stay non-claims. **Prod Yes (A-A)** signed 2026-11-22: dialect boot no longer refuses `ispf.cluster.enabled` on MSSQL ([A-A checklist](../mssql-aa-sku-promotion-checklist.md)); NATS JetStream (+ Redis when live sync) still required; AG failover / dual-JVM chaos soak is tech-debt (**P-MSSQL-AA-SOAK**). Licensed **Standard / Enterprise / Azure SQL DB|MI** inherit B1+B2 (and A-A topology rules) from the Evaluation engine-class evidence by owner decision 2026-11-22 — per-SKU re-run remains tech-debt (**P-MSSQL-SKU-RERUN**). Without `ISPF_MSSQL_SINGLE_ENGINE=true`, B1 boot fences still refuse JDBC history/journal and dual-write.
 
 Amends [0037-relational-core-portability](0037-relational-core-portability.md) and [0064-release-compatibility-lts](0064-release-compatibility-lts.md): MS SQL Server is the **first** non-PG production engine target. This ADR defines what “certified” means, what is explicitly **not** claimed, and the gate that must pass before operators may set `ISPF_METADATA_DB_KIND=mssql` in production.
 
@@ -57,7 +57,7 @@ The two non-claims above stay in force for **unbounded** wording (any plant-wide
 
 Marketing may quote a row only after it is filled. Delivery board: [mssql-single-engine-ems-epic](../mssql-single-engine-ems-epic.md).
 
-**Topology for that epic:** one ISPF JVM plus a SQL Server availability-group listener. ISPF active-active stays refused. Partition grain target is **monthly**. Historian DDL on MSSQL is a **named divergence**, not a Timescale twin. JDBC disk buffer in front of MSSQL is opt-in resilience, excluded from the “bytes are only in SQL” sentence, and is not a second-node copy.
+**Topology for that epic:** one ISPF JVM plus a SQL Server availability-group listener is the single-engine HA shape. ISPF active-active (N JVMs, one writable primary) is **Prod Yes** on MSSQL with residual AG soak tech-debt. Partition grain target is **monthly**. Historian DDL on MSSQL is a **named divergence**, not a Timescale twin. JDBC disk buffer in front of MSSQL is opt-in resilience, excluded from the “bytes are only in SQL” sentence, and is not a second-node copy.
 
 Cutover remains **greenfield + bundle import** (0037/0064). Bundles restore **solution configuration**, not `variable_samples`, `event_history`, users/MFA, in-flight workflows, or audit chains from a prior PostgreSQL site.
 
@@ -117,9 +117,9 @@ Lift “do not set `ISPF_METADATA_DB_KIND=mssql` in production” in 0037, both 
 5. Boot refuse when `db-row-isolation=true`
 6. Unsupported schema-switch paths fail closed
 7. For **B2 only**: history write + bucket aggregate query; retention/purge behavior documented; report SLO fixture (if any) recorded — else SLO stays a non-claim
-8. Chaos/soak checklist from [cluster-chaos-soak-runbook](../cluster-chaos-soak-runbook.md) re-run against MSSQL for the A-A cell, or mark A-A **not certified** on that engine
+8. Chaos/soak checklist from [cluster-chaos-soak-runbook](../cluster-chaos-soak-runbook.md) re-run against MSSQL for the A-A cell — **Prod Yes (A-A)** signed 2026-11-22 with dialect fence lifted; residual AG / dual-JVM journal is tech-debt (**P-MSSQL-AA-SOAK**)
 
-Testcontainers Developer edition and Azure SQL Edge are **lab** signals only. The signed cell is SQL Server 2022 Enterprise Evaluation `16.0.4325.4` (B1 2026-11-20; B2 2026-11-22). That proves the SQL Server 2022 **Enterprise** engine class; signing Standard or Azure SQL DB/MI still requires re-running the checklists on that SKU. Sales may claim **B1 metadata** and opt-in **B2** capped JDBC history/journal on the signed engine class; they may not claim a perpetual license from Evaluation, product/scheduled SWITCH retention, unbounded 10y/≤20 s plant-wide scans, or active-active.
+Testcontainers Developer edition and Azure SQL Edge are **lab** signals only. The signed Evaluation cell is SQL Server 2022 Enterprise Evaluation `16.0.4325.4` (B1 2026-11-20; B2 2026-11-22; A-A 2026-11-22). Owner extension 2026-11-22: licensed Standard / Enterprise / Azure SQL DB|MI inherit B1+B2+A-A claims; per-SKU re-run is tech-debt (**P-MSSQL-SKU-RERUN**). Sales may claim **B1 metadata**, opt-in **B2** capped JDBC, and **A-A** (N JVMs / one writable primary + NATS) on those cells; they may not claim a perpetual license from Evaluation, product/scheduled SWITCH retention, or unbounded 10y/≤20 s plant-wide scans.
 
 §8 live-vs-CI: on the Evaluation cell, lease reclaim (item 3), concurrent audit append/verify (item 4), and session schema switch (item 6) are evidenced by CI TCK in addition to the live health/import/fence run recorded in #814.
 
@@ -130,7 +130,7 @@ A plausible first slice is “empty dedicated DB, platform tables, login, one bu
 ## Consequences
 
 - Sales / EMS proposals: prefer **external MSSQL** for corporate reports today; B1 removes PG only for **platform metadata** when certified; B2 is optional and capped.
-- 0037 tier 3 is **Prod Yes (B1 + B2)** for the signed Evaluation cell. B2 is opt-in single-engine JDBC with DELETE + 90-day retention in force; product SWITCH and A-A stay outside the claim.
+- 0037 tier 3 is **Prod Yes (B1 + B2 + A-A)** for Evaluation and owner-extended licensed Standard / Enterprise / Azure SQL DB|MI. B2 retention in force is DELETE + 90 d; product SWITCH stays outside the claim; AG soak is tech-debt.
 - Risks: dual migration stream drift; pool poisoning if schema/`USE` is mishandled; noisy-neighbor if B2 shares an instance; false confidence from Developer-edition CI.
 
 ## Related

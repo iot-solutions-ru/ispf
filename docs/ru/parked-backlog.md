@@ -16,5 +16,7 @@
 | `P-BPMN` | Расширение палитры BPMN новыми конструкциями сверх базового ядра ([ADR-0047](decisions/0047-custom-bpmn-subset-engine.md)) | Текущего набора шагов достаточно для технологических регламентов и очередей смены | Подтверждённое требование заказчика и отдельное архитектурное решение (ADR) |
 | `P-WEBAUTHN` | Встроенная поддержка аппаратных ключей FIDO2 / WebAuthn внутри `ispf-server` | **Parked** (2026-11-15): TOTP GA в ядре; WebAuthn / IdP OTP — [ADR-0056](decisions/0056-webauthn-idp-mfa.md), [known-limitations](known-limitations.md) | Прямое требование тендера / именованный MFA-заказчик |
 | `P-PENTEST` | Внешний аудит защищённости (испытания на проникновение сторонней лабораторией) | Подготовлен полный пакет документации для аудиторов ([pen-test-vendor-pack.md](pen-test-vendor-pack.md)) | Заключение договора с внешней лабораторией по запросу заказчика |
+| `P-MSSQL-AA-SOAK` | MSSQL A-A AG failover + dual-JVM chaos journal | **Parked** (Prod Yes подписан; soak residual) | Именованный AG стенд + journal soak | Dialect fence снят 2026-11-22 ([A-A checklist](../en/mssql-aa-sku-promotion-checklist.md)) |
+| `P-MSSQL-SKU-RERUN` | Per-SKU checklist re-run (Standard / Azure SQL DB\|MI) | **Parked** (owner-extended Yes) | Именованный licensed / PaaS стенд + gate JSON | Evaluation engine-class extended owner 2026-11-22 |
 
 **Связанные разделы:** [Сравнительная оценка зрелости (`competitive-scorecard.md`)](competitive-scorecard.md) · [Дорожная карта (`roadmap.md`)](roadmap.md).
