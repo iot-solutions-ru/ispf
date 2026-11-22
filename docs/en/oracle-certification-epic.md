@@ -1,23 +1,30 @@
 # Epic: Oracle relational certification (ADR-0080)
 
-> **Language:** Canonical English.  
-> **Status:** Charter — delivery board for [ADR-0080](decisions/0080-oracle-metadata-certification.md).  
-> **Policy:** Starts **after** MySQL B1 gate ([0079](decisions/0079-mysql-metadata-certification.md)).
+> **Language:** Canonical English. Russian: [ru/oracle-certification-epic.md](../ru/oracle-certification-epic.md).  
+> **Status:** Phase 1 lab — delivery board for [ADR-0080](decisions/0080-oracle-metadata-certification.md). **Prod: No.**  
+> **Policy:** Phase 1 started early by owner decision. The B1 pack still starts **after** MySQL B1 Prod Yes ([0079](decisions/0079-mysql-metadata-certification.md)).
 
-## Already landed (this train)
+## Already landed
 
-- [x] Boot refuse `ISPF_METADATA_DB_KIND=oracle` (`UncertifiedRelationalEngineBootGuard`)
-- [x] Schema-switch fail-closed (`OracleDialect.supportsSessionSchemaSwitch=false`)
-- [x] README: pack not certified
+- [x] Boot refuse `ISPF_METADATA_DB_KIND=oracle` (`UncertifiedRelationalEngineBootGuard` / `assertEngineCertified` → ADR-0080)
+- [x] Schema-switch fail-closed (`OracleDialect.supportsSessionSchemaSwitch=false`; activate / create messages cite ADR-0080)
+- [x] README: pack not certified, no Flyway SQL, no driver
+- [x] Dialect honesty: unique violation **ORA-00001** only, `NUMTODSINTERVAL` expiry, `1`/`0` booleans, `SELECT 1 FROM DUAL` reset, identifiers with `"` or NUL fail closed
+- [x] `assertOracleB1Fences` + `OracleCertificationBootGuard` (no single-engine bypass; the engine refuse still wins first, pre-Flyway and on context refresh)
 
-## Next train (B1)
+## Next train (B1 pack — separate PR, after MySQL B1 Prod Yes)
 
-- [ ] Named SKU + identifier/NULL/boolean honesty
-- [ ] `db/migration/oracle/V1__baseline.sql` + lockstep
-- [ ] Testcontainers TCK matrix (mirror MSSQL/MySQL B1)
+- [ ] Counsel-approved Oracle JDBC driver (no `ojdbc*` on any classpath until signed)
+- [ ] Amend ADR-0080 to authorize lab Flyway SQL; generator + `db/migration/oracle/V1__baseline.sql` + lockstep CI
+- [ ] Named SKU (19c or 23ai, named edition); identifier length and NULL / empty-string rules on that SKU
+- [ ] Oracle SQL for the inherited helpers: `limitClause`, `selectTopOneForUpdate`, lock-row insert (`SELECT` without `FROM`), job claim (row-limiting clause with `FOR UPDATE`)
+- [ ] Runtime-settings hot-reload guard for the JDBC event journal (mirror MSSQL / MySQL B1)
+- [ ] Testcontainers TCK: Flyway → boot → cert bundle → lease/audit (Oracle Database Free = lab evidence only)
 - [ ] Lift prod ban only after named-SKU gate
 
 ## Non-goals
 
 - Bundling Oracle B1 into the MySQL first quote
 - Claiming A-A without a dedicated soak
+- B2 JDBC historian on Oracle in the first quote
+- Live PG→Oracle data migration

@@ -2,7 +2,7 @@
 
 > **Язык:** русская версия. Канон: [en/mysql-certification-epic.md](../en/mysql-certification-epic.md).  
 > **Статус:** B1 **Lab green**. **Prod: No.**  
-> **Политика:** lab после MSSQL B1 Prod Yes. MariaDB ≠ MySQL. Oracle — только после MySQL B1 Prod Yes.
+> **Политика:** lab после MSSQL B1 Prod Yes. MariaDB ≠ MySQL. B1 pack Oracle — только после MySQL B1 Prod Yes.
 
 ## Phase 1 — честность диалекта (есть)
 

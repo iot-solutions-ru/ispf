@@ -15,6 +15,9 @@ public final class JdbcExpirySql {
     public static final String POSTGRES_STYLE =
             "CURRENT_TIMESTAMP + (CAST(? AS BIGINT) * INTERVAL '1' SECOND)";
 
+    /** Oracle — no {@code BIGINT} type for the PostgreSQL cast (ADR-0080). */
+    public static final String ORACLE_STYLE = "CURRENT_TIMESTAMP + NUMTODSINTERVAL(?, 'SECOND')";
+
     /**
      * Microsoft SQL Server — use {@code CURRENT_TIMESTAMP} (same clock as
      * {@code DriverOwnershipService} comparisons), not {@code SYSUTCDATETIME()}, so locks
@@ -30,6 +33,9 @@ public final class JdbcExpirySql {
             return POSTGRES_STYLE;
         }
         String lower = databaseProductName.toLowerCase(Locale.ROOT);
+        if (lower.contains("oracle")) {
+            return ORACLE_STYLE;
+        }
         if (lower.contains("microsoft") || lower.contains("sql server")) {
             return MSSQL_STYLE;
         }

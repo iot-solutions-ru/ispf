@@ -74,7 +74,7 @@ An owner may later extend Prod Yes from the lab cell only by re-running the chec
 - MySQL is **Lab green, Prod: No**. A lab `ISPF_DB` may run on MySQL 8.4 under the B1 fences; a production claim waits for a named-SKU signature.
 - Sales and documentation must name **MySQL 8.4 B1 metadata (lab)** and must not say “MySQL/MariaDB”.
 - Engine changes remain greenfield database plus bundle import, not in-place migration.
-- Oracle ([0080](0080-oracle-metadata-certification.md)) starts only after MySQL B1 Prod Yes.
+- The Oracle B1 pack ([0080](0080-oracle-metadata-certification.md)) starts only after MySQL B1 Prod Yes. Oracle Phase 1 (dialect honesty and fences; boot refused) started early by owner decision.
 
 ## Related
 
