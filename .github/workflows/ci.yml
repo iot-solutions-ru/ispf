@@ -56,6 +56,8 @@ jobs:
               - 'tools/ship-canon-fixtures/**'
               - 'tools/mssql-*.py'
               - 'docs/en/mssql-flyway-exceptions.txt'
+              - 'tools/mysql-*.py'
+              - 'docs/en/mysql-flyway-exceptions.txt'
               - 'examples/**'
             drivers:
               - 'packages/ispf-driver-*/**'
@@ -148,6 +150,9 @@ jobs:
 
       - name: MSSQL Flyway lockstep (ADR-0078 Phase 4)
         run: python tools/mssql-flyway-lockstep-check.py
+
+      - name: MySQL Flyway lockstep (ADR-0079)
+        run: python tools/mysql-flyway-lockstep-check.py
 
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew

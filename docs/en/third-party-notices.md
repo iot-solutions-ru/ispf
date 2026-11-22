@@ -52,6 +52,7 @@ Inventory source: `packages/**/build.gradle.kts`, `:packages:ispf-server:runtime
 |-----------|--------|----------|------------|
 | Spring Boot / Spring Framework starters | via BOM | Apache-2.0 | Web, WebSocket, Security, JPA, Redis, … |
 | PostgreSQL JDBC Driver | via BOM | BSD-2-Clause | Runtime |
+| MariaDB Connector/J (`org.mariadb.jdbc:mariadb-java-client`) | via BOM | LGPL-2.1-or-later | Runtime `ISPF_DB` client for MySQL 8.4 servers ([ADR-0079](decisions/0079-mysql-metadata-certification.md)); shipped unmodified as its own JAR, so it can be replaced. GPL `mysql-connector-j` is not shipped |
 | H2 Database | via BOM | MPL-2.0 / EPL-1.0 dual | Local/test runtime |
 | Apache POI | 5.5.1 | Apache-2.0 | Spreadsheet Band1 Template Filler + table export |
 | Micrometer / OpenTelemetry | via BOM | Apache-2.0 | Observability |

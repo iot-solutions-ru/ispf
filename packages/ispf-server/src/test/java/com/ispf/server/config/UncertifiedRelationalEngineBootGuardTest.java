@@ -13,15 +13,12 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class UncertifiedRelationalEngineBootGuardTest {
 
     @Test
-    void refusesMysqlAndOracle() {
-        assertThatThrownBy(() -> new UncertifiedRelationalEngineBootGuard(new MysqlDialect())
-                .refuseUncertifiedEngines())
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("mysql");
+    void refusesOracle() {
         assertThatThrownBy(() -> new UncertifiedRelationalEngineBootGuard(new OracleDialect())
                 .refuseUncertifiedEngines())
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("oracle");
+                .hasMessageContaining("oracle")
+                .hasMessageContaining("ADR-0080");
     }
 
     @Test
@@ -31,6 +28,13 @@ class UncertifiedRelationalEngineBootGuardTest {
         assertThatCode(() -> new UncertifiedRelationalEngineBootGuard(new H2Dialect())
                 .refuseUncertifiedEngines()).doesNotThrowAnyException();
         assertThatCode(() -> new UncertifiedRelationalEngineBootGuard(new MssqlDialect())
+                .refuseUncertifiedEngines()).doesNotThrowAnyException();
+    }
+
+    @Test
+    void allowsMysqlBecauseB1FencesGuardIt() {
+        // ADR-0079 Lab green: the engine gate passes; MysqlCertificationBootGuard holds the fences.
+        assertThatCode(() -> new UncertifiedRelationalEngineBootGuard(new MysqlDialect())
                 .refuseUncertifiedEngines()).doesNotThrowAnyException();
     }
 }

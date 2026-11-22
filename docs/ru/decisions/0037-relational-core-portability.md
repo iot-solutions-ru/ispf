@@ -33,7 +33,7 @@ ISPF хранит конфигурацию платформы (дерево об
 db/migration/postgresql/   — V1__baseline.sql + инкрементальные V71+ (prod-путь)
 db/migration/h2/           — только README; по умолчанию H2 использует postgresql pack в MODE=PostgreSQL
 db/migration/mssql/        — generated greenfield baseline (Prod Yes B1+B2 на подписанной Evaluation; A-A не сертифицирован; product SWITCH deferred)
-db/migration/mysql/        — только README (план)
+db/migration/mysql/        — generated greenfield baseline (B1 Lab green на MySQL 8.4 Community; Prod: No; ADR-0079)
 db/migration/oracle/       — только README (план)
 ```
 
@@ -50,7 +50,7 @@ db/migration/oracle/       — только README (план)
 | Смена `ISPF_METADATA_DB_KIND` | Новая пустая БД/схема; конфигурация через **бандлы** (`package import`) — **без** in-place смены движка |
 | Legacy DB всё ещё на истории V1–V70 до squash | Однократно `deploy/vps-flyway-repair.sh` — squash history до V1 + repair checksum, затем применить `V71+` |
 | MSSQL | **Prod Yes (B1)** metadata + **Prod Yes (B2)** opt-in single-engine JDBC history/journal на SQL Server 2022 Enterprise Evaluation `16.0.4325.4` ([B1](../../en/mssql-sku-promotion-checklist.md), [B2](../../en/mssql-b2-sku-promotion-checklist.md)). B2 retention = DELETE + 90 д; product SWITCH и A-A вне claim. Scope: [0078](0078-mssql-metadata-certification.md) |
-| MySQL / Oracle | **Запланированы после MSSQL** — charters [0079](0079-mysql-metadata-certification.md) и [0080](0080-oracle-metadata-certification.md). Boot запрещён для каждого движка до готовности его Flyway pack и certification gate |
+| MySQL / Oracle | MySQL **B1 Lab green, Prod: No** ([0079](0079-mysql-metadata-certification.md), [checklist](../../en/mysql-sku-promotion-checklist.md)) — boot только под B1 fences; MariaDB не алиасится в MySQL. Oracle после MySQL B1 Prod Yes ([0080](0080-oracle-metadata-certification.md)); Oracle — boot refuse |
 
 Конфигурация решения (объекты, приложения, мимики) живёт в **export/import бандлов**, не в «переносе» строк metadata между СУБД.
 
@@ -79,7 +79,8 @@ db/migration/oracle/       — только README (план)
 | 1 | PG-compatible (Yugabyte, Cockroach) | On request | `postgresql/` | Тестировать per vendor |
 | 2 | H2 (edge/dev) | Edge only | `postgresql/` + PG compat mode | `application-local.yml` |
 | 3 | MS SQL Server | **Prod Yes (B1 + B2)** | Generated greenfield `mssql/V1` | Evaluation `16.0.4325.4`: B1 metadata ([checklist](../../en/mssql-sku-promotion-checklist.md)); B2 opt-in JDBC ([B2 checklist](../../en/mssql-b2-sku-promotion-checklist.md), 2026-11-22). Для бессрочного хоста — Standard/Enterprise или Azure SQL DB/MI. B2 не сертифицирует product SWITCH, ≤20 с plant-wide и A-A. Контракт [0078](0078-mssql-metadata-certification.md) |
-| 4 | MySQL, Oracle | **No — Scheduled** | только README | После MSSQL: MySQL 8.x B1 [0079](0079-mysql-metadata-certification.md), затем Oracle B1 [0080](0080-oracle-metadata-certification.md); boot запрещён до готовности Flyway pack и certification gate |
+| 4 | MySQL | **No — Lab green** | Generated greenfield `mysql/V1` | B1 metadata Lab green на MySQL 8.4.13 Community, 2026-11-22 ([checklist](../../en/mysql-sku-promotion-checklist.md)); клиент MariaDB Connector/J (LGPL), серверы MariaDB — refuse. Boot только под B1 fences. Named-SKU Prod Yes нет; `ddl-auto=validate` открыт. Контракт [0079](0079-mysql-metadata-certification.md) |
+| 4 | Oracle | **No — Scheduled** | только README | После MySQL B1 Prod Yes ([0080](0080-oracle-metadata-certification.md)); boot refuse до готовности pack и gate |
 
 ## Последствия
 
@@ -98,5 +99,5 @@ Risks:
 - [0028-horizontal-active-active-cluster](0028-horizontal-active-active-cluster.md), [0016-clickhouse-event-journal](0016-clickhouse-event-journal.md)
 - [0064-release-compatibility-lts](0064-release-compatibility-lts.md) — expand/contract + LTS платформы
 - [0078-mssql-metadata-certification](0078-mssql-metadata-certification.md) — контракт сертификации MSSQL B1/B2
-- [0079-mysql-metadata-certification](0079-mysql-metadata-certification.md), [0080-oracle-metadata-certification](0080-oracle-metadata-certification.md) — запланированные B1 charters без production claim
+- [0079-mysql-metadata-certification](0079-mysql-metadata-certification.md) (MySQL B1 Lab green), [0080-oracle-metadata-certification](0080-oracle-metadata-certification.md) (Oracle запланирован) — B1 charters без production claim
 - [BLUEPRINTS](../BLUEPRINTS.md) — `data-source-v1`

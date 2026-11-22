@@ -25,7 +25,12 @@ public enum RelationalDbKind {
             case "postgresql", "postgres", "pg" -> POSTGRESQL;
             case "h2" -> H2;
             case "mssql", "sqlserver", "sql-server" -> MSSQL;
-            case "mysql", "mariadb" -> MYSQL;
+            case "mysql" -> MYSQL;
+            case "mariadb" -> throw new IllegalArgumentException(
+                    "ISPF_METADATA_DB_KIND=mariadb is refused (ADR-0079). "
+                            + "MariaDB is not MySQL; use a separate charter. "
+                            + "External DATA_SOURCE jdbc:mariadb: for reports remains allowed."
+            );
             case "oracle" -> ORACLE;
             default -> throw new IllegalArgumentException("Unsupported ISPF_METADATA_DB_KIND: " + value);
         };

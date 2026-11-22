@@ -62,9 +62,13 @@ dependencies {
     runtimeOnly("org.postgresql:postgresql")
     runtimeOnly("com.h2database:h2")
     runtimeOnly("com.microsoft.sqlserver:mssql-jdbc")
+    // ADR-0079: LGPL MariaDB Connector/J is the ISPF_DB client for MySQL 8.4 servers.
+    // Never add GPL mysql-connector-j. A MariaDB *server* stays refused (client != server).
+    runtimeOnly("org.mariadb.jdbc:mariadb-java-client")
     implementation("org.springframework.boot:spring-boot-starter-flyway")
     runtimeOnly("org.flywaydb:flyway-database-postgresql")
     runtimeOnly("org.flywaydb:flyway-sqlserver")
+    runtimeOnly("org.flywaydb:flyway-mysql")
 
     implementation("io.micrometer:micrometer-registry-prometheus")
     implementation("io.micrometer:micrometer-registry-otlp")
@@ -106,6 +110,8 @@ dependencies {
     testImplementation("org.testcontainers:testcontainers-clickhouse:2.0.5")
     // ADR-0078: MSSQL Flyway baseline gate (skips when Docker unavailable).
     testImplementation("org.testcontainers:testcontainers-mssqlserver:2.0.5")
+    // ADR-0079: MySQL 8.4 Flyway baseline gate (skips when Docker unavailable).
+    testImplementation("org.testcontainers:testcontainers-mysql:2.0.5")
 }
 
 val webConsoleDistDir = rootProject.layout.projectDirectory.dir("apps/web-console/dist")
@@ -192,6 +198,10 @@ tasks.named<Test>("test") {
         // ADR-0078 MSSQL Testcontainers (~1.5GB image) — opt-in: -Dispf.test.mssqlDocker=true
         if (System.getProperty("ispf.test.mssqlDocker") != "true") {
             excludeTags("mssql-docker")
+        }
+        // ADR-0079 MySQL 8.4 Testcontainers — opt-in: -Dispf.test.mysqlDocker=true
+        if (System.getProperty("ispf.test.mysqlDocker") != "true") {
+            excludeTags("mysql-docker")
         }
     }
 }

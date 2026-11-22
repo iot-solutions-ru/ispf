@@ -24,6 +24,10 @@ public class RelationalDialectDetector {
     public RelationalDialect resolve(DataSource dataSource) {
         RelationalDbKind configured = RelationalDbKind.fromConfig(metadataDbProperties.getKind());
         if (configured != null) {
+            if (configured == RelationalDbKind.MYSQL && dataSource != null) {
+                // ADR-0079: an explicit mysql kind must not admit a MariaDB server (throws on MariaDB).
+                detectFromDataSource(dataSource);
+            }
             return require(configured);
         }
         if (dataSource == null) {
@@ -51,7 +55,13 @@ public class RelationalDialectDetector {
         if (product.contains("microsoft")) {
             return RelationalDbKind.MSSQL;
         }
-        if (product.contains("mysql") || product.contains("mariadb")) {
+        if (product.contains("mariadb")) {
+            throw new IllegalStateException(
+                    "MariaDB is not a certified ISPF_DB engine (ADR-0079). "
+                            + "Do not alias it to MySQL. External DATA_SOURCE for reports remains supported."
+            );
+        }
+        if (product.contains("mysql")) {
             return RelationalDbKind.MYSQL;
         }
         if (product.contains("oracle")) {

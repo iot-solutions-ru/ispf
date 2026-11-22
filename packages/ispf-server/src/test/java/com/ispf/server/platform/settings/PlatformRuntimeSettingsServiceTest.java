@@ -10,6 +10,7 @@ import com.ispf.server.config.ObjectChangeProperties;
 import com.ispf.server.config.RuntimeTelemetryProperties;
 import com.ispf.server.config.VariableHistoryProperties;
 import com.ispf.server.object.bus.ObjectChangeEventBus;
+import com.ispf.server.relational.MysqlDialect;
 import com.ispf.server.relational.PostgreSqlDialect;
 import com.ispf.server.relational.RelationalDialect;
 import com.ispf.server.relational.MssqlDialect;
@@ -165,6 +166,25 @@ class PlatformRuntimeSettingsServiceTest {
         );
 
         assertThat(result.errors()).anyMatch(error -> error.contains("ADR-0078 B1"));
+        assertThat(eventJournalProperties.isEnabled()).isFalse();
+
+        ArgumentCaptor<Map<String, String>> captor = ArgumentCaptor.forClass(Map.class);
+        verify(store).writeOverrides(captor.capture());
+        assertThat(captor.getValue()).doesNotContainKey("ispf.event-journal.enabled");
+    }
+
+    @Test
+    void patchRejectsEnablingJdbcEventJournalOnMysql() {
+        when(store.readOverrides()).thenReturn(Map.of());
+        EventJournalProperties eventJournalProperties = new EventJournalProperties();
+        eventJournalProperties.setStore("jdbc");
+        service = newService(eventJournalProperties, new MysqlDialect());
+
+        PlatformRuntimeSettingsPatchResult result = service.patch(
+                new PlatformRuntimeSettingsPatchRequest(Map.of("event-journal.enabled", "true"))
+        );
+
+        assertThat(result.errors()).anyMatch(error -> error.contains("ADR-0079 B1"));
         assertThat(eventJournalProperties.isEnabled()).isFalse();
 
         ArgumentCaptor<Map<String, String>> captor = ArgumentCaptor.forClass(Map.class);

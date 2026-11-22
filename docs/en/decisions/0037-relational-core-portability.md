@@ -32,7 +32,7 @@ Package `com.ispf.server.relational`:
 db/migration/postgresql/   — V1__baseline.sql + incremental V71+ (prod path)
 db/migration/h2/           — README only; default H2 uses postgresql pack in MODE=PostgreSQL
 db/migration/mssql/        — generated greenfield baseline (Prod Yes B1+B2 on signed Evaluation cell; A-A uncertified; B2 SWITCH product path deferred)
-db/migration/mysql/        — README only (planned)
+db/migration/mysql/        — generated greenfield baseline (B1 Lab green on MySQL 8.4 Community; Prod: No; ADR-0079)
 db/migration/oracle/       — README only (planned)
 ```
 
@@ -49,7 +49,7 @@ Legacy increments **V1–V70 were squashed** into `V1__baseline.sql` (2026-07-07
 | Change `ISPF_METADATA_DB_KIND` | New empty DB/schema; configuration via **bundles** (`package import`) — **no** in-place engine migration |
 | Legacy DB still on pre-squash V1–V70 history | One-time `deploy/vps-flyway-repair.sh` — squash history to V1 + repair checksum, then apply `V71+` |
 | MSSQL | **Prod Yes (B1)** metadata + **Prod Yes (B2)** opt-in single-engine JDBC history/journal on SQL Server 2022 Enterprise Evaluation `16.0.4325.4` ([B1 checklist](../mssql-sku-promotion-checklist.md), [B2 checklist](../mssql-b2-sku-promotion-checklist.md)). B2 retention in force is DELETE + 90-day ceiling; product/scheduled SWITCH and A-A stay uncertified. Scope: [0078](0078-mssql-metadata-certification.md) |
-| MySQL / Oracle | **Scheduled after MSSQL** — charters [0079](0079-mysql-metadata-certification.md) and [0080](0080-oracle-metadata-certification.md). Boot refuses each engine until its Flyway pack and certification gate are complete |
+| MySQL / Oracle | MySQL **B1 Lab green, Prod: No** ([0079](0079-mysql-metadata-certification.md), [checklist](../mysql-sku-promotion-checklist.md)) — boots only under B1 fences; MariaDB not aliased to MySQL. Oracle after MySQL B1 Prod Yes ([0080](0080-oracle-metadata-certification.md)); boot refuses Oracle |
 
 Solution configuration (objects, applications, mimics) lives in **bundle export/import**, not in «moving» metadata rows between DBMS engines.
 
@@ -78,7 +78,8 @@ Default mode: `ISPF_EVENT_JOURNAL_STORE=jdbc`, `ISPF_VARIABLE_HISTORY_STORE=jdbc
 | 1 | PG-compatible (Yugabyte, Cockroach) | On request | `postgresql/` | Test per vendor |
 | 2 | H2 (edge/dev) | Edge only | `postgresql/` + PG compat mode | `application-local.yml` |
 | 3 | MS SQL Server | **Prod Yes (B1 + B2)** | Generated greenfield `mssql/V1` | Signed Evaluation `16.0.4325.4`: B1 metadata ([checklist](../mssql-sku-promotion-checklist.md)); B2 opt-in single-engine JDBC history/journal ([B2 checklist](../mssql-b2-sku-promotion-checklist.md), 2026-11-22). Operators still need a licensed Standard/Enterprise or Azure SQL DB/MI for perpetual hosts. B2 does **not** certify product SWITCH, ≤20 s plant-wide scans, or A-A. Contract [0078](0078-mssql-metadata-certification.md) |
-| 4 | MySQL, Oracle | **No — Scheduled** | README only | After MSSQL: MySQL 8.x B1 [0079](0079-mysql-metadata-certification.md), then Oracle B1 [0080](0080-oracle-metadata-certification.md); boot refuses each engine until its Flyway pack and certification gate are complete |
+| 4 | MySQL | **No — Lab green** | Generated greenfield `mysql/V1` | B1 metadata Lab green on MySQL 8.4.13 Community, 2026-11-22 ([checklist](../mysql-sku-promotion-checklist.md)); client MariaDB Connector/J (LGPL), MariaDB servers refused. Boots only under B1 fences (no JDBC history/journal, cluster, row isolation). No named-SKU Prod Yes; `ddl-auto=validate` open. Contract [0079](0079-mysql-metadata-certification.md) |
+| 4 | Oracle | **No — Scheduled** | README only | After MySQL B1 Prod Yes ([0080](0080-oracle-metadata-certification.md)); boot refuses Oracle until its Flyway pack and gate are complete |
 
 ## Consequences
 
@@ -97,5 +98,5 @@ Risks:
 - [0028-horizontal-active-active-cluster](0028-horizontal-active-active-cluster.md), [0016-clickhouse-event-journal](0016-clickhouse-event-journal.md)
 - [0064-release-compatibility-lts](0064-release-compatibility-lts.md) — expand/contract + platform LTS
 - [0078-mssql-metadata-certification](0078-mssql-metadata-certification.md) — MSSQL B1/B2 certification contract
-- [0079-mysql-metadata-certification](0079-mysql-metadata-certification.md), [0080-oracle-metadata-certification](0080-oracle-metadata-certification.md) — scheduled B1 charters; no production claim
+- [0079-mysql-metadata-certification](0079-mysql-metadata-certification.md) (MySQL B1 Lab green), [0080-oracle-metadata-certification](0080-oracle-metadata-certification.md) (Oracle scheduled) — B1 charters; no production claim
 - [blueprints](../blueprints.md) — `data-source-v1`

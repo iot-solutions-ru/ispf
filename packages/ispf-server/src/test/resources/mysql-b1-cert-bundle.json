@@ -1,0 +1,49 @@
+{
+  "version": "1.0.0",
+  "displayName": "MySQL B1 Certification",
+  "tablePrefix": "",
+  "schemaName": "app_mysql_b1_cert",
+  "formatVersion": 1,
+  "metadata": {
+    "purpose": "ADR-0079 B1 lab certification fixture — tree-only, no app-schema SQL / migrations"
+  },
+  "objects": [
+    {
+      "parentPath": "root.platform.devices",
+      "name": "mysql-b1-cert-sensor-01",
+      "type": "DEVICE",
+      "displayName": "MySQL B1 cert sensor"
+    }
+  ],
+  "blueprints": [
+    {
+      "name": "mysql-b1-cert-hub-v1",
+      "description": "MySQL B1 cert logic hub (SINGLETON)",
+      "type": "SINGLETON",
+      "variables": [],
+      "events": [],
+      "functions": [],
+      "bindings": [],
+      "parameters": {}
+    }
+  ],
+  "dashboards": [
+    {
+      "path": "root.platform.dashboards.mysql-b1-cert-overview",
+      "title": "MySQL B1 cert overview",
+      "refreshIntervalMs": 5000,
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[]}"
+    }
+  ],
+  "operatorUi": {
+    "appId": "mysql-b1-cert",
+    "title": "MySQL B1 Cert",
+    "defaultDashboard": "root.platform.dashboards.mysql-b1-cert-overview",
+    "dashboards": [
+      {
+        "path": "root.platform.dashboards.mysql-b1-cert-overview",
+        "title": "Overview"
+      }
+    ]
+  }
+}

@@ -23,4 +23,14 @@ class JdbcExpirySqlTest {
         assertThat(JdbcExpirySql.nowPlusSecondsExpression(null))
                 .isEqualTo(JdbcExpirySql.POSTGRES_STYLE);
     }
+
+    @Test
+    void mysqlStyleOnlyForMysqlNotMariadb() {
+        assertThat(JdbcExpirySql.nowPlusSecondsExpression("MySQL"))
+                .isEqualTo(JdbcExpirySql.MYSQL_STYLE);
+        assertThat(JdbcExpirySql.nowPlusSecondsExpression("MariaDB"))
+                .isEqualTo(JdbcExpirySql.POSTGRES_STYLE);
+        assertThat(JdbcExpirySql.nowPlusSecondsExpression("MySQL / MariaDB"))
+                .isEqualTo(JdbcExpirySql.POSTGRES_STYLE);
+    }
 }

@@ -31,7 +31,7 @@ Before v1.0: new install = new DB; changing `ISPF_METADATA_DB_KIND` = empty DB +
 | Historian buckets | `JdbcVariableHistoryQueryStore` | `extract(epoch...)`, `to_timestamp` | `variableSampleBucketAggregateSql()` |
 | Timescale | `TimescaleHypertableInitializer` | `create_hypertable` | `supportsTimescale()` |
 | Leader locks | `PlatformLeaderLockService` | Table leases (`platform_leader_locks`) — not `pg_advisory_lock` | Keep table leases on MSSQL ([0078](decisions/0078-mssql-metadata-certification.md)) |
-| Audit / script locks | `AuditChainStore`, function `advisoryLock` | `pg_advisory_xact_lock` (+ SQLSTATE `23505`) | Dialect / table lock for B1 ([0078](decisions/0078-mssql-metadata-certification.md)) |
+| Audit / script locks | `AuditChainStore`, function `advisoryLock` | `pg_advisory_xact_lock` (+ SQLSTATE `23505`) | Dialect / table lock for B1 ([0078](decisions/0078-mssql-metadata-certification.md)); MySQL lock row via `INSERT … ON DUPLICATE KEY UPDATE` ([0079](decisions/0079-mysql-metadata-certification.md)) |
 | JDBC `LIMIT` stores | Audit/config stores + event journal | Dialect `limitClause()` for audit/config and journal | Lab smoke on MSSQL Evaluation; B2 Prod Yes signed on Evaluation — see [0078](decisions/0078-mssql-metadata-certification.md), [B2 checklist](mssql-b2-sku-promotion-checklist.md) |
 
 ## JDBC stores (raw SQL)
@@ -43,7 +43,7 @@ Before v1.0: new install = new DB; changing `ISPF_METADATA_DB_KIND` = empty DB +
 | Env | Purpose |
 |-----|------------|
 | `ISPF_DB_URL` | JDBC URL metadata + jdbc time-series |
-| `ISPF_METADATA_DB_KIND` | `postgresql`, `h2`, `mssql`, `mysql`, `oracle` (optional, auto-detect if empty). **`mssql` — Prod Yes (B1 + B2)** on SQL Server 2022 Enterprise Evaluation `16.0.4325.4` ([0078](decisions/0078-mssql-metadata-certification.md), [B1](mssql-sku-promotion-checklist.md), [B2](mssql-b2-sku-promotion-checklist.md)); A-A not certified. **`mysql` / `oracle` — boot refused** until their gates ([0079](decisions/0079-mysql-metadata-certification.md), [0080](decisions/0080-oracle-metadata-certification.md)) |
+| `ISPF_METADATA_DB_KIND` | `postgresql`, `h2`, `mssql`, `mysql`, `oracle` (optional, auto-detect if empty). **`mssql` — Prod Yes (B1 + B2)** on SQL Server 2022 Enterprise Evaluation `16.0.4325.4` ([0078](decisions/0078-mssql-metadata-certification.md), [B1](mssql-sku-promotion-checklist.md), [B2](mssql-b2-sku-promotion-checklist.md)); A-A not certified. **`mysql` — B1 Lab green, Prod No** on MySQL 8.4 Community; boots only under B1 fences; client MariaDB Connector/J with `jdbc:mysql://…?permitMysqlScheme=true` + `SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.mariadb.jdbc.Driver` ([0079](decisions/0079-mysql-metadata-certification.md), [checklist](mysql-sku-promotion-checklist.md)); **`mariadb` refused** (not MySQL), and a MariaDB server is refused under `mysql` too. **`oracle` — boot refused** until after MySQL B1 Prod Yes ([0080](decisions/0080-oracle-metadata-certification.md)) |
 | `ISPF_EVENT_JOURNAL_STORE` | `jdbc` = same DB |
 | `ISPF_VARIABLE_HISTORY_STORE` | `jdbc` = same DB |
 
