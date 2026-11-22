@@ -53,6 +53,8 @@ Inventory source: `packages/**/build.gradle.kts`, `:packages:ispf-server:runtime
 | Spring Boot / Spring Framework starters | via BOM | Apache-2.0 | Web, WebSocket, Security, JPA, Redis, … |
 | PostgreSQL JDBC Driver | via BOM | BSD-2-Clause | Runtime |
 | MariaDB Connector/J (`org.mariadb.jdbc:mariadb-java-client`) | via BOM | LGPL-2.1-or-later | Runtime `ISPF_DB` client for MySQL 8.4 servers ([ADR-0079](decisions/0079-mysql-metadata-certification.md)); shipped unmodified as its own JAR, so it can be replaced. GPL `mysql-connector-j` is not shipped |
+| Flyway (`flyway-core` and database modules, including `flyway-database-oracle`) | via BOM | Apache-2.0 | Runtime migrations; the Oracle module brings no JDBC driver |
+| Oracle JDBC driver (`ojdbc*`) | — | Oracle license terms | **Not shipped.** An Oracle `ISPF_DB` needs the operator to add it to the runtime classpath ([ADR-0080](decisions/0080-oracle-metadata-certification.md)); ISPF makes no redistribution claim |
 | H2 Database | via BOM | MPL-2.0 / EPL-1.0 dual | Local/test runtime |
 | Apache POI | 5.5.1 | Apache-2.0 | Spreadsheet Band1 Template Filler + table export |
 | Micrometer / OpenTelemetry | via BOM | Apache-2.0 | Observability |
@@ -79,7 +81,7 @@ Inventory source: `packages/**/build.gradle.kts`, `:packages:ispf-server:runtime
 
 ### Test-only / build-only
 
-JUnit (EPL-2.0), AssertJ/Mockito (Apache/MIT), Gradle plugins (Apache-2.0) — not shipped in runtime JARs.
+JUnit (EPL-2.0), AssertJ/Mockito (Apache/MIT), Gradle plugins (Apache-2.0) — not shipped in runtime JARs. The opt-in Oracle gate downloads `ojdbc17` (Oracle license terms) only for `-Dispf.test.oracleDocker=true` or `copyOracleLabJdbc`; it is not on `runtimeClasspath` and not shipped.
 
 ## Web Console (npm)
 

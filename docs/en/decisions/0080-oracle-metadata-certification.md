@@ -2,34 +2,82 @@
 
 ## Status
 
-**Accepted** (2026-11-20) — policy and certification charter. **Implementation: Phase 1 lab started** (2026-11-22). **Prod: No** — boot still refuses `ISPF_METADATA_DB_KIND=oracle`.
+**Accepted** (2026-11-20) — policy and certification charter. **Amended 2026-11-22 — B1 pack + Lab green:** lab Flyway SQL is authorized (§ Amendment 1), the JDBC driver stays on the operator's classpath (§ Amendment 2), and the Lab-green gate (§ Amendment 3) passed on Oracle Database Free. **Prod: No — Lab green.** An Oracle `ISPF_DB` boots only when the build carries the Flyway pack and the operator supplied the Oracle JDBC driver, and then only under the B1 fences (`MetadataDialectBootPolicy.assertOracleB1Fences`). Oracle Database Free is not a production edition; no named-SKU Prod Yes cell is signed.
 
-Amends [0037-relational-core-portability](0037-relational-core-portability.md). MySQL B1 Prod Yes is signed in [0079](0079-mysql-metadata-certification.md) (2026-11-22), so the Oracle B1 pack may start. This ADR does not grant production support.
+Amends [0037-relational-core-portability](0037-relational-core-portability.md). MySQL B1 Prod Yes is signed in [0079](0079-mysql-metadata-certification.md) (2026-11-22), which unblocked the Oracle B1 pack. This ADR does not grant production support.
 
 ## Context
 
-ISPF has an `OracleDialect`, but no Oracle Flyway pack or certified metadata path. External Oracle through `DATA_SOURCE` is an integration path, not evidence that `ISPF_DB` can run on Oracle.
+ISPF has an `OracleDialect` and, since the 2026-11-22 amendment, a generated greenfield Oracle Flyway pack. External Oracle through `DATA_SOURCE` is an integration path, not evidence that `ISPF_DB` can run on Oracle.
 
-Oracle version, edition, JDBC driver, schema behavior, locking, and identifier rules must be named and tested; generic JDBC compatibility is not certification. Two rules already shape the dialect: a quoted Oracle identifier cannot contain a double quote or NUL (there is no escape), and an Oracle schema is a database user, not a `CREATE SCHEMA` object.
+Oracle version, edition, JDBC driver, schema behavior, locking, and identifier rules must be named and tested; generic JDBC compatibility is not certification. Oracle rules shape the pack: `''` is `NULL`; a quoted identifier cannot contain a double quote or NUL (there is no escape); a schema is a database user, not a `CREATE SCHEMA` object; and 19c has no `BOOLEAN`, no `SELECT` without `FROM`, and no row limit together with `FOR UPDATE`.
 
 ## Decision
 
-- Scope the first gate to **B1 metadata** on a named Oracle database version/edition and JDBC driver (candidates: **19c** or **23ai**, both long-term releases). Oracle Database Free is lab evidence only.
+- Scope the first gate to **B1 metadata** on a named Oracle database version/edition and JDBC driver (candidates: **19c** or **23ai**, both long-term releases; Oracle renamed the 23ai line "26ai" with release 23.26). Oracle Database Free is lab evidence only.
 - Keep journal and variable history outside the claim unless a later B2 decision and gate cover them. **No** MSSQL-style single-engine bypass in B1 fences.
-- **Lab Phase 1** started on 2026-11-22 by owner decision, ahead of MySQL B1 Prod Yes. Phase 1 is limited to dialect honesty and pre-wired fences. MySQL B1 Prod Yes was signed on 2026-11-22 (ADR-0079 § Amendment 4), so the Oracle B1 pack (Flyway SQL, JDBC driver, TCK) may start. Oracle Prod Yes still needs its own gate.
-- Keep `Prod: No`. `UncertifiedRelationalEngineBootGuard` / `MetadataDialectBootPolicy.assertEngineCertified` refuse boot for `oracle` until the complete gate passes. `assertOracleB1Fences` / `OracleCertificationBootGuard` are pre-wired (unit-tested) for the pack PR: no row isolation, no `HARD` tenant mode, no dual-write, no cluster, no JDBC history/journal on `ISPF_DB`.
+- **Lab green** is reached (§ Amendment 3). The Oracle **named-SKU Prod Yes** gate is separate and still open: Free is not Enterprise Edition.
+- `MetadataDialectBootPolicy.assertEngineCertified` admits `oracle` only when `classpath:db/migration/oracle/V1__baseline.sql` exists and `oracle.jdbc.OracleDriver` loads; otherwise it refuses with the remedy. `OracleJdbcDriverEnvironmentPostProcessor` refuses earlier, before Spring Boot builds the DataSource. The B1 fences run pre-Flyway (`FlywayDialectConfiguration`) and on context refresh (`OracleCertificationBootGuard`): no row isolation, no `HARD` tenant mode, no dual-write, no cluster, no JDBC history/journal on `ISPF_DB`. The runtime-settings `PATCH` refuses to hot-enable the JDBC event journal.
 - Require a greenfield Flyway pack, fixed bundle import, concurrent audit verification, lease/failover checks, and explicit unsupported-feature failures before promotion.
 - Treat containers, free editions, or a developer lab as lab evidence only, never as certification for another named production edition.
-- Do **not** add an Oracle JDBC driver (`ojdbc*`, Oracle license terms) to any classpath until counsel signs a driver choice ([0016b — AGPL/dual-licensing](0016-agpl-dual-licensing.md)). Pack / generator / lockstep CI wait for a follow-on PR that amends this ADR to authorize lab Flyway SQL.
+- ISPF does not ship an Oracle JDBC driver (§ Amendment 2). Nothing in ISPF claims a right to redistribute it.
 
-No Flyway SQL is authorized or supplied by this policy ADR yet.
+### Amendment 1 (2026-11-22) — lab Flyway SQL authorized
+
+- `db/migration/oracle/V1__baseline.sql` is the greenfield baseline, generated by `tools/oracle-baseline-generate.py` from postgresql `V1` + `V71`…`V101`. Skipped: `V86` (PG RLS), `V89` (`random_uuid`).
+- The DDL follows 19c rules (Free 23.26 applies it): no `BOOLEAN` type, no `IF NOT EXISTS`, one row per `INSERT`, `DEFAULT` before `NOT NULL`.
+- Type map: `VARCHAR(n)` → `VARCHAR2(n CHAR)` (`CLOB` above 4000 under `MAX_STRING_SIZE=STANDARD`), `TEXT` → `CLOB`, `BYTEA` → `BLOB`, `UUID` → `VARCHAR2(36 CHAR)`, `BOOLEAN` → `NUMBER(1)` with `CHECK (… IN (0, 1))`, `TIMESTAMP` → `TIMESTAMP(6)` with `LOCALTIMESTAMP` defaults, `BIGINT` → `NUMBER(19)`, `INT` → `NUMBER(10)`, `DOUBLE PRECISION` → `BINARY_DOUBLE`, identity → `GENERATED BY DEFAULT AS IDENTITY`.
+- Oracle stores `''` as `NULL`. The three columns PostgreSQL declares `NOT NULL DEFAULT ''` (`platform_roles.description`, `federation_peers.path_prefix`, `platform_cluster_replicas.replica_capabilities`) are nullable here. Every other `NOT NULL` text column refuses `''` with ORA-01400: a loud failure, not a silent rewrite.
+- The reserved words `event_history.level`, `alarm_shelves.comment` and `alarm_shelf_requests.comment` are quoted lowercase identifiers; the JPA mappings for `comment` quote the column.
+- `idx_object_nodes_path_prefix` is skipped: the `UNIQUE` constraint on `object_nodes.path` already indexes that column list (ORA-01408). The `V78` retype of `variable_samples.value_text` to `CLOB` uses add / drop / rename on the empty table (ORA-22858).
+- `UPDATE` / `DELETE` statements against tables nothing has inserted into are skipped: 95 statements, each a no-op on an empty schema. An `UPDATE` / `DELETE` against a seeded table fails the generator, as do unique keys over nullable columns, keys wider than ORA-01450 allows, LOB key parts, identifiers over 128 bytes, and untranslated defaults or DML.
+- Lockstep: `tools/oracle-flyway-lockstep-check.py` + `docs/en/oracle-flyway-exceptions.txt` run in CI. An applied `oracle/V1` is frozen; a new PG `Vnn` needs an `oracle/Vnn` twin or an exception line, not a regenerated V1.
+- Oracle DDL auto-commits. A failed V1 leaves a partial schema: drop and recreate the ISPF schema user, then retry.
+- Flyway: `org.flywaydb:flyway-database-oracle` (Apache-2.0), `runtimeOnly`; it brings no JDBC driver. Flyway quotes its history table verbatim, so on Oracle it is the lowercase `"flyway_schema_history"`.
+
+### Amendment 2 (2026-11-22) — driver on the operator's classpath
+
+| Item | Decision |
+|------|----------|
+| Oracle JDBC driver (`ojdbc*`) | Not part of ISPF's distribution: never `implementation` / `runtimeOnly`, not in `bootJar`, the portable zip, or the image. ISPF makes no claim about redistributing it. The operator obtains the thin driver (`ojdbc17` for JDK 17+) under Oracle's terms and adds it to the runtime classpath |
+| Operator path | `java -Dloader.path=lib -cp ispf-server.jar org.springframework.boot.loader.launch.PropertiesLauncher` — Spring Boot's launcher for extra classpath entries, already inside the JAR. Steps for the JAR and the container: [checklist § Adding the Oracle JDBC driver](../oracle-sku-promotion-checklist.md#adding-the-oracle-jdbc-driver) |
+| Missing driver | Boot refuses with that remedy before the DataSource is built (`OracleJdbcDriverEnvironmentPostProcessor`); `MetadataDialectBootPolicy` checks again pre-Flyway and on context refresh |
+| Lab / CI | Gradle configuration `oracleLabJdbc` (`com.oracle.database.jdbc:ojdbc17`, Spring Boot BOM `23.26.3.0.0`) resolves only for `-Dispf.test.oracleDocker=true` and the `copyOracleLabJdbc` task. Default CI never downloads it, and it is not on `runtimeClasspath`, so the SBOM does not list it |
+| Tests | `org.testcontainers:testcontainers-oracle-free:2.0.5`, `testImplementation` |
+| UUID values | ojdbc rejects `java.util.UUID` binds (ORA-17004). On an Oracle `ISPF_DB` the primary DataSource is wrapped by `OracleUuidJdbcDataSource`: UUIDs bind and read as their `VARCHAR2(36)` text. Other engines are not wrapped |
+| Hibernate | `OracleDialect` is auto-detected. `Instant` binds as plain `TIMESTAMP` on Oracle: ojdbc refuses an `OffsetDateTime` read of a `TIMESTAMP` column (ORA-18716) |
+| Dialect SQL | `limitClause` is `FETCH FIRST ? ROWS ONLY`. The audit-chain head is locked through a `ROWID` + `ROWNUM` subquery (19c refuses a row limit with `FOR UPDATE`, ORA-02014). The lock-row insert is `SELECT … FROM DUAL`; a racing insert ends in ORA-00001, which is ignored. The job claim is `FOR UPDATE SKIP LOCKED` without a row limit, and `PlatformJobService` fetches one row so only one job is locked |
+
+### Amendment 3 (2026-11-22) — Lab-green gate
+
+Lab green means every item below passed on one named lab cell. It is **not** Prod Yes.
+
+| # | Gate | Evidence |
+|---|------|----------|
+| 1 | Empty schema → Flyway `oracle/V1`; lowercase Flyway history table; role seed; case-sensitive paths; `''` is `NULL` (relaxed column stores `NULL`, a `NOT NULL` column refuses ORA-01400); quoted reserved-word column round trip | `OracleFlywayBaselineTckTest` (`oracle-docker`) |
+| 2 | Job claim through `PlatformJobService`: two concurrent claimers get different jobs (`SKIP LOCKED`); concurrent audit-chain append (8 writers) + hash verify; driver lease failover between two owners | `OracleFlywayBaselineTckTest` |
+| 3 | Spring Boot boot on Oracle (Hibernate `OracleDialect`, UUID adapter) + cert-bundle import twice + `by-path` + one deployment row + audit verify; alarm shelf round trip through JPA | `OracleLiveBundleImportTckTest` (`oracle-docker`) |
+| 4 | Lab stand: engine cell, health, login, Flyway V1, dialect, no ojdbc inside `bootJar` with the driver on `loader.path`, refusal without the driver, cert import + 4 paths, second JVM, serial re-import + audit chain | [`tools/oracle-b1-lab`](../../../tools/oracle-b1-lab/README.md) |
+| 5 | Boot refusals: row isolation, `HARD`, JDBC history, dual-write, JDBC journal, cluster; hot-reload of the JDBC journal refused | Lab stand + `OracleCertificationBootGuardTest`, `FlywayDialectConfigurationOracleTest`, `PlatformRuntimeSettingsServiceTest` |
+
+Lab cell: Oracle AI Database 26ai **Free** 23.26.4.0.0 (`gvenzl/oracle-free:23-slim-faststart`), `AL32UTF8`, `MAX_STRING_SIZE=STANDARD`, 8 KiB blocks, schema user `ispf` in `FREEPDB1`, ojdbc17 23.26.3.0.0 on `loader.path`, single JVM, `local` profile (`ddl-auto=none`). Signed run: [`gate-evidence-lab-free.json`](../../../tools/oracle-b1-lab/gate-evidence-lab-free.json) — 2026-11-22, 18 PASS / 0 FAIL. Checklist: [oracle-sku-promotion-checklist](../oracle-sku-promotion-checklist.md).
+
+Open on the way to Prod Yes (not claimed by Lab green):
+
+- A named production edition: Enterprise Edition 19c or 23ai/26ai, or a named managed service. Free caps CPU, memory, and data, and it is not that edition.
+- 19c: the DDL and dialect SQL follow 19c rules but have only run on 23.26 Free.
+- Hibernate `ddl-auto=validate` has not run on Oracle (`NUMBER(1)` columns against Hibernate's 23ai `BOOLEAN` mapping). Non-`local` deployments set `SPRING_JPA_HIBERNATE_DDL_AUTO=none`.
+- `''` → `NULL`: code that writes `''` into a `NOT NULL` text column fails with ORA-01400. Paths the gate does not exercise are not audited for it.
+- PostgreSQL-only SQL on paths the gate does not exercise, for example the bucket aggregate, `CLOB` columns compared with `=` (ORA-22848), and `ApplicationSqlBindingStore` concatenation.
+- Oracle Net encryption / TLS and wallet setup on the named host.
+- B2 JDBC history/journal, active-active, tenant row isolation, `HARD` schemas, and per-app schemas stay refused or unsupported.
 
 ## Consequences
 
-- Oracle remains unavailable as the production metadata database.
-- Sales and documentation must state the exact B1 scope and named database/driver combination.
+- Oracle is **Lab green, Prod: No**. A lab `ISPF_DB` may run on Oracle under the B1 fences with an operator-supplied driver; a production claim waits for a named-SKU signature.
+- Sales and documentation must name **Oracle B1 metadata (lab, Oracle Database Free)**, state that the driver is operator-supplied, and must not claim Enterprise Edition.
 - Engine changes remain greenfield database plus bundle import, not in-place migration.
-- Starting Oracle Phase 1 early did not change the order of the packs: MySQL B1 Prod Yes came first (2026-11-22), and the Oracle B1 pack may start now.
+- MySQL B1 Prod Yes does not carry over to Oracle. An Oracle Prod Yes needs its own named-SKU gate.
 
 ## Related
 
@@ -37,4 +85,5 @@ No Flyway SQL is authorized or supplied by this policy ADR yet.
 - [0078-mssql-metadata-certification](0078-mssql-metadata-certification.md)
 - [0079-mysql-metadata-certification](0079-mysql-metadata-certification.md)
 - [oracle-certification-epic](../oracle-certification-epic.md)
+- [oracle-sku-promotion-checklist](../oracle-sku-promotion-checklist.md)
 - [storage-portability-inventory](../storage-portability-inventory.md)

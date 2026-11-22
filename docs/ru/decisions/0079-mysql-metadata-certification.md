@@ -14,7 +14,7 @@
 
 - Scope — **B1 metadata**; lab-ячейка — **MySQL 8.4 LTS Community** (8.0 не подписывается).
 - Journal/history вне B1; **нет** single-engine bypass в fences.
-- `assertEngineCertified` больше не отказывает `mysql`: как MSSQL, MySQL стартует только под B1 fences (до Flyway и на context refresh). Oracle — по-прежнему hard refuse.
+- `assertEngineCertified` больше не отказывает `mysql`: как MSSQL, MySQL стартует только под B1 fences (до Flyway и на context refresh). У Oracle свой engine gate ([0080](0080-oracle-metadata-certification.md)).
 - Testcontainers и dev-lab — только lab-сигнал, не production-сертификация. § Amendment 4 — явное исключение владельца для одной ячейки.
 - MySQL B1 Prod Yes подписан (§ Amendment 4), поэтому B1 pack Oracle ([0080](0080-oracle-metadata-certification.md)) может начинаться; Oracle остаётся **Prod: No** до своего gate. Oracle Phase 1 (честность dialect и fences; boot refuse) начат раньше решением владельца.
 
