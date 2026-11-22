@@ -34,7 +34,7 @@ db/migration/postgresql/   — V1__baseline.sql + инкрементальные
 db/migration/h2/           — только README; по умолчанию H2 использует postgresql pack в MODE=PostgreSQL
 db/migration/mssql/        — generated greenfield baseline (Prod Yes B1+B2+A-A; licensed SKUs owner-extended; product SWITCH deferred)
 db/migration/mysql/        — generated greenfield baseline (Prod Yes B1 на MySQL Community Server 8.4.x + MariaDB Connector/J; ADR-0079)
-db/migration/oracle/       — README + Phase 1 lab (Prod: No; boot refuse; ADR-0080)
+db/migration/oracle/       — сгенерированный greenfield baseline (B1 Lab green на Oracle Database Free; драйвер от оператора; Prod: No; ADR-0080)
 ```
 
 `FlywayConfigurationCustomizer` выбирает `locations` по активному dialect.
@@ -50,7 +50,7 @@ db/migration/oracle/       — README + Phase 1 lab (Prod: No; boot refuse; ADR-
 | Смена `ISPF_METADATA_DB_KIND` | Новая пустая БД/схема; конфигурация через **бандлы** (`package import`) — **без** in-place смены движка |
 | Legacy DB всё ещё на истории V1–V70 до squash | Однократно `deploy/vps-flyway-repair.sh` — squash history до V1 + repair checksum, затем применить `V71+` |
 | MSSQL | **Prod Yes (B1 + B2 + A-A)** на Evaluation `16.0.4325.4` и owner-extended licensed Standard / Enterprise / Azure SQL DB\|MI ([B1](../../en/mssql-sku-promotion-checklist.md), [B2](../../en/mssql-b2-sku-promotion-checklist.md), [A-A](../../en/mssql-aa-sku-promotion-checklist.md)). B2 retention = DELETE + 90 д; product SWITCH вне claim; AG soak tech-debt. Scope: [0078](0078-mssql-metadata-certification.md) |
-| MySQL / Oracle | MySQL **Prod Yes (B1)** только на MySQL Community Server 8.4.x + MariaDB Connector/J ([0079](0079-mysql-metadata-certification.md), [checklist](../../en/mysql-sku-promotion-checklist.md)) — boot только под B1 fences; MariaDB не алиасится в MySQL; остальные ячейки MySQL — **P-MYSQL-SKU-RERUN**; TLS и SQL вне путей gate не сертифицированы (**P-MYSQL-TLS**, **P-MYSQL-PG-SQL**). Oracle **Phase 1 lab, Prod: No** ([0080](0080-oracle-metadata-certification.md)) — только честность dialect и fences; MySQL B1 Prod Yes подписан, B1 pack Oracle может начинаться; boot Oracle запрещён до готовности его Flyway pack и certification gate |
+| MySQL / Oracle | MySQL **Prod Yes (B1)** только на MySQL Community Server 8.4.x + MariaDB Connector/J ([0079](0079-mysql-metadata-certification.md), [checklist](../../en/mysql-sku-promotion-checklist.md)) — boot только под B1 fences; MariaDB не алиасится в MySQL; остальные ячейки MySQL — **P-MYSQL-SKU-RERUN**; TLS и SQL вне путей gate не сертифицированы (**P-MYSQL-TLS**, **P-MYSQL-PG-SQL**). Oracle **B1 Lab green, Prod: No** ([0080](0080-oracle-metadata-certification.md), [checklist](../../en/oracle-sku-promotion-checklist.md)) — boot только с Flyway pack и JDBC-драйвером от оператора, под B1 fences; Oracle Database Free — lab-сигнал, не named-редакция |
 
 Конфигурация решения (объекты, приложения, мимики) живёт в **export/import бандлов**, не в «переносе» строк metadata между СУБД.
 
@@ -80,7 +80,7 @@ db/migration/oracle/       — README + Phase 1 lab (Prod: No; boot refuse; ADR-
 | 2 | H2 (edge/dev) | Edge only | `postgresql/` + PG compat mode | `application-local.yml` |
 | 3 | MS SQL Server | **Prod Yes (B1 + B2 + A-A)** | Generated greenfield `mssql/V1` | Evaluation `16.0.4325.4` + owner-extended licensed SKUs (2026-11-22). B2 не сертифицирует product SWITCH / ≤20 с. A-A fence снят; AG soak tech-debt. Контракт [0078](0078-mssql-metadata-certification.md) |
 | 4 | MySQL | **Prod Yes (B1)** | Generated greenfield `mysql/V1` | Подписанная ячейка (owner extension 2026-11-22): self-managed **MySQL Community Server 8.4.x + MariaDB Connector/J** (только этот клиент) ([checklist](../../en/mysql-sku-promotion-checklist.md)), из Lab-green ячейки 8.4.13 с исправленным `ddl-auto=validate` (`MysqlHibernateDialect`). Boot только под B1 fences. Enterprise / HeatWave / RDS / Aurora / Azure и прочие non-Community ячейки — не эта (**P-MYSQL-SKU-RERUN**); серверы MariaDB — refuse. TLS и SQL вне путей gate не сертифицированы (**P-MYSQL-TLS**, **P-MYSQL-PG-SQL**). Контракт [0079](0079-mysql-metadata-certification.md) |
-| 4 | Oracle | **No — Phase 1 lab** | README + fences | Честность dialect и заранее подключённые B1 fences ([0080](0080-oracle-metadata-certification.md), [эпик](../oracle-certification-epic.md)); без driver и Flyway SQL. MySQL B1 Prod Yes подписан, B1 pack может начинаться; boot запрещён до готовности Flyway pack и gate |
+| 4 | Oracle | **No — Lab green** | Сгенерированный greenfield `oracle/V1` | B1 metadata Lab green на Oracle AI Database 26ai Free 23.26.4.0.0, 2026-11-22 ([checklist](../../en/oracle-sku-promotion-checklist.md)); DDL по правилам 19c. ISPF не поставляет JDBC-драйвер Oracle: оператор добавляет `ojdbc17` через `loader.path`, без него boot отказывает. Boot только под B1 fences (без JDBC history/journal, cluster, row isolation). Named-SKU Prod Yes нет; `ddl-auto=validate` открыт. Контракт [0080](0080-oracle-metadata-certification.md) |
 
 ## Последствия
 
@@ -99,5 +99,5 @@ Risks:
 - [0028-horizontal-active-active-cluster](0028-horizontal-active-active-cluster.md), [0016-clickhouse-event-journal](0016-clickhouse-event-journal.md)
 - [0064-release-compatibility-lts](0064-release-compatibility-lts.md) — expand/contract + LTS платформы
 - [0078-mssql-metadata-certification](0078-mssql-metadata-certification.md) — контракт сертификации MSSQL B1/B2
-- [0079-mysql-metadata-certification](0079-mysql-metadata-certification.md) (MySQL B1 Prod Yes на Community Server 8.4.x + MariaDB Connector/J), [0080-oracle-metadata-certification](0080-oracle-metadata-certification.md) (Oracle Phase 1 lab, boot refuse) — B1 charters; у Oracle нет production claim
+- [0079-mysql-metadata-certification](0079-mysql-metadata-certification.md) (MySQL B1 Prod Yes на Community Server 8.4.x + MariaDB Connector/J), [0080-oracle-metadata-certification](0080-oracle-metadata-certification.md) (Oracle B1 Lab green) — B1 charters; у Oracle нет production claim
 - [BLUEPRINTS](../BLUEPRINTS.md) — `data-source-v1`

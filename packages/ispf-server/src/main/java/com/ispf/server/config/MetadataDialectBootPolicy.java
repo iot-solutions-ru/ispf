@@ -2,8 +2,11 @@ package com.ispf.server.config;
 
 import com.ispf.server.relational.RelationalDbKind;
 import com.ispf.server.relational.RelationalDialect;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.util.ClassUtils;
 
 import java.util.Objects;
+import java.util.function.Predicate;
 
 /**
  * Shared ADR-0078 / 0079 / 0080 / 0037 boot fences. Invoked before Flyway locations are applied and again
@@ -11,25 +14,52 @@ import java.util.Objects;
  */
 public final class MetadataDialectBootPolicy {
 
+    public static final String ORACLE_JDBC_DRIVER = "oracle.jdbc.OracleDriver";
+    static final String ORACLE_B1_BASELINE = "db/migration/oracle/V1__baseline.sql";
+
     private MetadataDialectBootPolicy() {
     }
 
     /**
-     * Hard engine refuse: Oracle stays refused through ADR-0080 Phase 1. MySQL is not refused here:
-     * like MSSQL it boots only under its B1 fences ({@link #assertMysqlB1Fences}), which every caller
-     * of this method also runs.
+     * Engine gate. Oracle (ADR-0080 Lab green, Prod: No) boots only when this build carries its B1
+     * Flyway pack and the operator put the Oracle JDBC driver on the classpath; ISPF never ships it.
+     * MySQL, MSSQL and Oracle then boot only under their B1 fences, which every caller also runs.
      */
     public static void assertEngineCertified(RelationalDialect dialect) {
-        RelationalDbKind kind = dialect.kind();
-        if (kind == RelationalDbKind.ORACLE) {
+        assertEngineCertified(
+                dialect,
+                className -> ClassUtils.isPresent(className, MetadataDialectBootPolicy.class.getClassLoader()),
+                path -> new ClassPathResource(path, MetadataDialectBootPolicy.class.getClassLoader()).exists()
+        );
+    }
+
+    static void assertEngineCertified(
+            RelationalDialect dialect,
+            Predicate<String> classPresent,
+            Predicate<String> resourcePresent
+    ) {
+        if (dialect.kind() != RelationalDbKind.ORACLE) {
+            return;
+        }
+        if (!resourcePresent.test(ORACLE_B1_BASELINE)) {
             throw new IllegalStateException(
-                    "ISPF_METADATA_DB_KIND=oracle is not certified (ADR-0037 tier 4 / ADR-0080). "
-                            + "Phase 1 lab only; boot remains refused until the Oracle B1 gate, "
-                            + "which follows MySQL B1 Prod Yes. "
-                            + "Use postgresql, h2, or mssql under ADR-0078. "
+                    "ISPF_METADATA_DB_KIND=oracle needs the Oracle B1 Flyway pack (classpath:"
+                            + ORACLE_B1_BASELINE + "), which this build does not contain (ADR-0080). "
+                            + "Use postgresql, h2, mssql, or mysql. "
                             + "External DATA_SOURCE JDBC to Oracle for reports remains supported."
             );
         }
+        if (!classPresent.test(ORACLE_JDBC_DRIVER)) {
+            throw new IllegalStateException(oracleDriverMissingMessage());
+        }
+    }
+
+    public static String oracleDriverMissingMessage() {
+        return "ISPF_METADATA_DB_KIND=oracle needs the Oracle JDBC thin driver (" + ORACLE_JDBC_DRIVER
+                + ", for example ojdbc17.jar) on the classpath. ISPF does not ship it (ADR-0080). "
+                + "Put the JAR in a lib directory and start ISPF with "
+                + "java -Dloader.path=lib -cp ispf-server.jar "
+                + "org.springframework.boot.loader.launch.PropertiesLauncher";
     }
 
     /**
@@ -192,9 +222,9 @@ public final class MetadataDialectBootPolicy {
     }
 
     /**
-     * Oracle B1 fences (ADR-0080 Phase 1). No single-engine bypass — JDBC history/journal on
-     * ISPF_DB would need a later B2 decision. Unreachable while {@link #assertEngineCertified}
-     * refuses Oracle; unit-tested and pre-wired for the B1 pack PR.
+     * Oracle B1 fences (ADR-0080 Lab green). No single-engine bypass — JDBC history/journal on
+     * ISPF_DB is a later B2 decision. These fences are the only thing between an Oracle ISPF_DB and
+     * an uncertified mode; keep them before Flyway and on context refresh.
      */
     public static void assertOracleB1Fences(
             RelationalDialect dialect,

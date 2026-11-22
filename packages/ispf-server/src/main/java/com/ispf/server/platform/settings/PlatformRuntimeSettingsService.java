@@ -215,8 +215,8 @@ public class PlatformRuntimeSettingsService {
     }
 
     /**
-     * ADR-0078 / ADR-0079 B1: hot-reload must not enable JDBC event journal on MSSQL or MySQL
-     * (boot fence alone is not enough).
+     * ADR-0078 / ADR-0079 / ADR-0080 B1: hot-reload must not enable JDBC event journal on MSSQL,
+     * MySQL, or Oracle (boot fence alone is not enough).
      */
     private void assertB1EventJournalHotReloadAllowed(String settingId, String value) {
         if (!"event-journal.enabled".equals(settingId) || !Boolean.parseBoolean(value)) {
@@ -235,6 +235,13 @@ public class PlatformRuntimeSettingsService {
         if (relationalDialect.kind() == RelationalDbKind.MYSQL) {
             throw new IllegalArgumentException(
                     "cannot enable JDBC event journal on MySQL (ADR-0079 B1); "
+                            + "set ISPF_EVENT_JOURNAL_STORE=clickhouse (or cassandra/scylla), "
+                            + "or keep event-journal.enabled=false"
+            );
+        }
+        if (relationalDialect.kind() == RelationalDbKind.ORACLE) {
+            throw new IllegalArgumentException(
+                    "cannot enable JDBC event journal on Oracle (ADR-0080 B1); "
                             + "set ISPF_EVENT_JOURNAL_STORE=clickhouse (or cassandra/scylla), "
                             + "or keep event-journal.enabled=false"
             );

@@ -17,7 +17,7 @@ MySQL certification does **not** imply MariaDB certification. They have distinct
 - Scope the first gate to **B1 metadata** on a named MySQL version/edition. The lab cell is **MySQL 8.4 LTS Community**; 8.0 is not a signed cell.
 - Keep journal and variable history outside the claim unless a later B2 decision and gate cover them. **No** MSSQL-style single-engine bypass in B1 fences.
 - **Lab green** is reached (§ Amendment 3). **Prod Yes (B1)** covers one cell by owner extension (§ Amendment 4); every other MySQL cell needs its own checklist run.
-- `MetadataDialectBootPolicy.assertEngineCertified` no longer hard-refuses `mysql`. Like MSSQL, a MySQL `ISPF_DB` boots only under its B1 fences, enforced pre-Flyway (`FlywayDialectConfiguration`) and on context refresh (`MysqlCertificationBootGuard`). Oracle stays hard-refused.
+- `MetadataDialectBootPolicy.assertEngineCertified` no longer hard-refuses `mysql`. Like MSSQL, a MySQL `ISPF_DB` boots only under its B1 fences, enforced pre-Flyway (`FlywayDialectConfiguration`) and on context refresh (`MysqlCertificationBootGuard`). Oracle has its own engine gate ([0080](0080-oracle-metadata-certification.md)).
 - Require a greenfield Flyway pack, fixed bundle import, concurrent audit verification, lease/failover checks, and explicit unsupported-feature failures before promotion.
 - Treat Testcontainers or a developer lab as lab evidence only, never as production certification. § Amendment 4 is an explicit owner exception for one cell.
 - Do not reuse a MySQL result for MariaDB. A MariaDB claim requires its own charter, pack, named version, and gate.

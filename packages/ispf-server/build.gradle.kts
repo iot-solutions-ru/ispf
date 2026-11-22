@@ -69,6 +69,8 @@ dependencies {
     runtimeOnly("org.flywaydb:flyway-database-postgresql")
     runtimeOnly("org.flywaydb:flyway-sqlserver")
     runtimeOnly("org.flywaydb:flyway-mysql")
+    // ADR-0080: Flyway's Oracle support (Apache-2.0). It brings no JDBC driver; see oracleLabJdbc.
+    runtimeOnly("org.flywaydb:flyway-database-oracle")
 
     implementation("io.micrometer:micrometer-registry-prometheus")
     implementation("io.micrometer:micrometer-registry-otlp")
@@ -112,6 +114,26 @@ dependencies {
     testImplementation("org.testcontainers:testcontainers-mssqlserver:2.0.5")
     // ADR-0079: MySQL 8.4 Flyway baseline gate (skips when Docker unavailable).
     testImplementation("org.testcontainers:testcontainers-mysql:2.0.5")
+    // ADR-0080: Oracle Database Free gate (opt-in; needs oracleLabJdbc on the test classpath).
+    testImplementation("org.testcontainers:testcontainers-oracle-free:2.0.5")
+}
+
+// ADR-0080: the Oracle JDBC thin driver (ojdbc, Oracle license terms) is a lab / customer classpath
+// item. Never implementation or runtimeOnly: it must stay out of bootJar, the portable zip and the
+// image. Only the opt-in Oracle gate (-Dispf.test.oracleDocker=true) and copyOracleLabJdbc use it.
+val oracleLabJdbc: Configuration by configurations.creating {
+    isCanBeConsumed = false
+    isCanBeResolved = true
+}
+
+dependencies {
+    oracleLabJdbc("com.oracle.database.jdbc:ojdbc17")
+}
+
+tasks.register<Copy>("copyOracleLabJdbc") {
+    description = "Copies the lab Oracle JDBC driver to build/oracle-lab-jdbc (ADR-0080; not shipped)."
+    from(oracleLabJdbc)
+    into(layout.buildDirectory.dir("oracle-lab-jdbc"))
 }
 
 val webConsoleDistDir = rootProject.layout.projectDirectory.dir("apps/web-console/dist")
@@ -180,6 +202,9 @@ tasks.named<Test>("test") {
     environment("ISPF_DRIVER_PACKS_DIR", packsPath)
     systemProperty("ISPF_DRIVER_PACKS_DIR", packsPath)
     systemProperty("junit.jupiter.execution.parallel.enabled", "false")
+    if (System.getProperty("ispf.test.oracleDocker") == "true") {
+        classpath += oracleLabJdbc
+    }
     maxHeapSize = "10g"
     // Many @SpringBootTest classes in one JVM can pollute shared async shutdown (CI flakes).
     // forkEvery=1 is safest but ~1h wall on GHA; default 5 is a compromise (override via ISPF_TEST_FORK_EVERY).
@@ -202,6 +227,10 @@ tasks.named<Test>("test") {
         // ADR-0079 MySQL 8.4 Testcontainers — opt-in: -Dispf.test.mysqlDocker=true
         if (System.getProperty("ispf.test.mysqlDocker") != "true") {
             excludeTags("mysql-docker")
+        }
+        // ADR-0080 Oracle Database Free Testcontainers — opt-in: -Dispf.test.oracleDocker=true
+        if (System.getProperty("ispf.test.oracleDocker") != "true") {
+            excludeTags("oracle-docker")
         }
     }
 }

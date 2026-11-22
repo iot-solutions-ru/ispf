@@ -20,8 +20,9 @@
 | История на ноутбуке — эта локальная база | Кластер ClickHouse, который создаёт ISPF, или вторая копия буфера историка на другом узле ISPF |
 | Relational core на PostgreSQL, H2 local или MSSQL **B1 + B2 + A-A** (Prod Yes; licensed SKUs owner-extended). См. EN [known-limitations](../en/known-limitations.md), [A-A](../en/mssql-aa-sku-promotion-checklist.md) | Бессрочная лицензия *из* Evaluation trial, product `SWITCH`, 10 лет raw, ≤20 с plant-wide, завершённый AG soak (tech-debt), Oracle ([0078](decisions/0078-mssql-metadata-certification.md)) |
 | MySQL Community Server 8.4.x **B1 metadata — Prod Yes** под B1 fences; клиент только MariaDB Connector/J, `jdbc:mysql://…?permitMysqlScheme=true` ([checklist](../en/mysql-sku-promotion-checklist.md)) | Prod Yes на MySQL Enterprise, HeatWave, RDS / Aurora, Azure Database for MySQL и любой другой non-Community ячейке (**P-MYSQL-SKU-RERUN**); JDBC history/journal, cluster и row isolation на MySQL; MariaDB как `ISPF_DB`; любой другой JDBC-клиент MySQL; TLS на соединении MySQL `ISPF_DB` (обязанность оператора, gate не проходил — **P-MYSQL-TLS**); полный паритет SQL с PostgreSQL вне путей B1 gate и MySQL TCK (**P-MYSQL-PG-SQL**) ([0079](decisions/0079-mysql-metadata-certification.md)) |
-| App SQL-схемы / `search_path` на PostgreSQL | Переключение per-app schema на MSSQL или MySQL (`ApplicationSchemaSession`) — **не поддерживается**, fail-closed ([0078](decisions/0078-mssql-metadata-certification.md), [0079](decisions/0079-mysql-metadata-certification.md)) |
-| PG-скрипты solution `exec` / `ON CONFLICT` против `ISPF_DB` | Те же скрипты на MSSQL или MySQL metadata — **не поддерживаются**; внешний `DATA_SOURCE` или dialect-safe SQL |
+| Oracle **B1 metadata — Lab green** на Oracle Database Free под B1 fences, с JDBC-драйвером Oracle, который вы добавляете сами (`ojdbc17` через `loader.path`; [checklist](../en/oracle-sku-promotion-checklist.md)) | JDBC-драйвер Oracle в составе ISPF, Prod Yes Oracle на любой named-редакции (Free ≠ Enterprise Edition; **P-ORACLE-SKU**), прогон на 19c, Hibernate `ddl-auto=validate` на Oracle, `''` как текст (Oracle хранит `NULL`), JDBC history/journal, cluster и row isolation на Oracle ([0080](decisions/0080-oracle-metadata-certification.md)) |
+| App SQL-схемы / `search_path` на PostgreSQL | Переключение per-app schema на MSSQL, MySQL или Oracle (`ApplicationSchemaSession`) — **не поддерживается**, fail-closed ([0078](decisions/0078-mssql-metadata-certification.md), [0079](decisions/0079-mysql-metadata-certification.md), [0080](decisions/0080-oracle-metadata-certification.md)) |
+| PG-скрипты solution `exec` / `ON CONFLICT` против `ISPF_DB` | Те же скрипты на MSSQL, MySQL или Oracle metadata — **не поддерживаются**; внешний `DATA_SOURCE` или dialect-safe SQL |
 | Дисковый буфер перед единственным хранилищем ClickHouse есть и выключен | Буфер сам не включается и не работает для JDBC и двойной записи |
 | `ispf validate` предупреждает, если логика лежит на `DEVICE` | `--strict` и каталог marketplace такой бандл не примут |
 | Одноразовые коды TOTP для входа можно включить | WebAuthn и ключи доступа как способ входа |
@@ -79,6 +80,7 @@
 | **P-MYSQL-SKU-RERUN** | Повтор checklist MySQL на каждой named Enterprise / managed / non-Community ячейке |
 | **P-MYSQL-TLS** | Повтор B1 gate MySQL по TLS; TLS — обязанность оператора, не сертифицирован |
 | **P-MYSQL-PG-SQL** | Проверить остальной JDBC SQL на PG-only конструкции на MySQL; найденные при подписи (отчёты через очередь задач, platform metrics, триггеры SQL-binding) исправлены |
+| **P-ORACLE-SKU** | Checklist Oracle на named-редакции, не Free (19c или 23ai/26ai), до любого Prod Yes |
 
 Доска: [parked-backlog](parked-backlog.md).
 

@@ -4,6 +4,7 @@ import com.ispf.server.config.ClusterProperties;
 import com.ispf.server.config.NatsProperties;
 import com.ispf.server.relational.MssqlDialect;
 import com.ispf.server.relational.MysqlDialect;
+import com.ispf.server.relational.OracleDialect;
 import com.ispf.server.relational.PostgreSqlDialect;
 import com.ispf.server.relational.RelationalDialect;
 import org.junit.jupiter.api.Test;
@@ -13,9 +14,11 @@ import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.PreparedStatementSetter;
 import org.springframework.jdbc.core.RowMapper;
 import tools.jackson.databind.ObjectMapper;
 
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.UUID;
 
@@ -41,6 +44,8 @@ class PlatformJobServiceDialectSqlTest {
     ArgumentCaptor<String> sqlCaptor;
     @Captor
     ArgumentCaptor<RowMapper<UUID>> jobIdMapperCaptor;
+    @Captor
+    ArgumentCaptor<PreparedStatementSetter> claimSetterCaptor;
 
     @Test
     void runningJobsSortNullsLastWithoutNullsLastOnMysql() {
@@ -63,9 +68,23 @@ class PlatformJobServiceDialectSqlTest {
     }
 
     @Test
+    void claimFetchesOneRowSoSkipLockedLocksOneJob() throws Exception {
+        service(new OracleDialect()).claimNextJob();
+        verify(jdbcTemplate).query(sqlCaptor.capture(), claimSetterCaptor.capture(), any(RowMapper.class));
+        // Oracle's claim has no row limit; the one-row fetch is what keeps SKIP LOCKED to one job.
+        assertThat(sqlCaptor.getValue()).contains("FOR UPDATE SKIP LOCKED").doesNotContain("FETCH");
+
+        PreparedStatement select = mock(PreparedStatement.class);
+        claimSetterCaptor.getValue().setValues(select);
+        verify(select).setMaxRows(1);
+        verify(select).setFetchSize(1);
+        verify(select).setString(1, "QUEUED");
+    }
+
+    @Test
     void claimReadsJobIdThatTheDriverReturnsAsString() throws Exception {
         service(new MysqlDialect()).claimNextJob();
-        verify(jdbcTemplate).query(anyString(), jobIdMapperCaptor.capture(), eq("QUEUED"));
+        verify(jdbcTemplate).query(anyString(), claimSetterCaptor.capture(), jobIdMapperCaptor.capture());
 
         UUID jobId = UUID.randomUUID();
         ResultSet rs = mock(ResultSet.class);

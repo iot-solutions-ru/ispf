@@ -58,6 +58,8 @@ jobs:
               - 'docs/en/mssql-flyway-exceptions.txt'
               - 'tools/mysql-*.py'
               - 'docs/en/mysql-flyway-exceptions.txt'
+              - 'tools/oracle-*.py'
+              - 'docs/en/oracle-flyway-exceptions.txt'
               - 'examples/**'
             drivers:
               - 'packages/ispf-driver-*/**'
@@ -153,6 +155,9 @@ jobs:
 
       - name: MySQL Flyway lockstep (ADR-0079)
         run: python tools/mysql-flyway-lockstep-check.py
+
+      - name: Oracle Flyway lockstep (ADR-0080)
+        run: python tools/oracle-flyway-lockstep-check.py
 
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew

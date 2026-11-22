@@ -4,6 +4,7 @@ import com.ispf.server.config.EventJournalProperties;
 import com.ispf.server.config.NatsProperties;
 import com.ispf.server.config.VariableHistoryProperties;
 import com.ispf.server.cluster.NatsJetStreamSupport;
+import com.ispf.server.relational.RelationalDbKind;
 import com.ispf.server.relational.RelationalDialect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,10 +60,11 @@ public class PlatformStorageSchemaInitializer {
         StorageStartupRetry.run("Platform relational catalog", () -> {
             // Quoted identifiers stay lowercase on H2 MODE=PostgreSQL without DATABASE_TO_LOWER;
             // the dialect quotes them (MySQL rejects ANSI double quotes without ANSI_QUOTES).
-            Integer migrationCount = jdbcTemplate.queryForObject(
-                    "SELECT COUNT(*) FROM " + relationalDialect.quoteIdentifier("flyway_schema_history"),
-                    Integer.class
-            );
+            // Flyway quotes its own table verbatim, so on Oracle it is the lowercase name.
+            String history = relationalDialect.kind() == RelationalDbKind.ORACLE
+                    ? "\"flyway_schema_history\""
+                    : relationalDialect.quoteIdentifier("flyway_schema_history");
+            Integer migrationCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM " + history, Integer.class);
             if (migrationCount == null || migrationCount <= 0) {
                 throw new IllegalStateException("Flyway migrations have not been applied");
             }

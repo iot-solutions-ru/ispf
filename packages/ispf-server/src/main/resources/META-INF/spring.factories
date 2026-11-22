@@ -2,4 +2,5 @@
 # (META-INF/spring/org.springframework.boot.env.EnvironmentPostProcessor is ignored).
 org.springframework.boot.EnvironmentPostProcessor=\
 com.ispf.server.platform.settings.RuntimeSettingsOverrideEnvironmentPostProcessor,\
-com.ispf.server.config.HistorianTierDeployProfileEnvironmentPostProcessor
+com.ispf.server.config.HistorianTierDeployProfileEnvironmentPostProcessor,\
+com.ispf.server.config.OracleJdbcDriverEnvironmentPostProcessor
