@@ -35,6 +35,13 @@ public class FlywayDialectConfiguration {
             RelationalDialect dialect = relationalDialectDetector.resolve(dataSource);
             // Refuse before Flyway locations are applied / migrate runs.
             MetadataDialectBootPolicy.assertEngineCertified(dialect);
+            MetadataDialectBootPolicy.assertOracleB1Fences(
+                    dialect,
+                    tenantIsolationProperties,
+                    variableHistoryProperties,
+                    eventJournalProperties,
+                    clusterProperties
+            );
             MetadataDialectBootPolicy.assertMssqlB1Fences(
                     dialect,
                     tenantIsolationProperties,

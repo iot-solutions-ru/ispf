@@ -6,7 +6,7 @@ import com.ispf.server.relational.RelationalDialect;
 import java.util.Objects;
 
 /**
- * Shared ADR-0078 / 0079 / 0037 boot fences. Invoked before Flyway locations are applied and again
+ * Shared ADR-0078 / 0079 / 0080 / 0037 boot fences. Invoked before Flyway locations are applied and again
  * on {@code ContextRefreshedEvent} so disallowed engines never migrate.
  */
 public final class MetadataDialectBootPolicy {
@@ -15,15 +15,17 @@ public final class MetadataDialectBootPolicy {
     }
 
     /**
-     * Hard engine refuse. MySQL is not refused here: like MSSQL it boots only under its B1 fences
-     * ({@link #assertMysqlB1Fences}), which every caller of this method also runs.
+     * Hard engine refuse: Oracle stays refused through ADR-0080 Phase 1. MySQL is not refused here:
+     * like MSSQL it boots only under its B1 fences ({@link #assertMysqlB1Fences}), which every caller
+     * of this method also runs.
      */
     public static void assertEngineCertified(RelationalDialect dialect) {
         RelationalDbKind kind = dialect.kind();
         if (kind == RelationalDbKind.ORACLE) {
             throw new IllegalStateException(
                     "ISPF_METADATA_DB_KIND=oracle is not certified (ADR-0037 tier 4 / ADR-0080). "
-                            + "Oracle starts only after MySQL B1. "
+                            + "Phase 1 lab only; boot remains refused until the Oracle B1 gate, "
+                            + "which follows MySQL B1 Prod Yes. "
                             + "Use postgresql, h2, or mssql under ADR-0078. "
                             + "External DATA_SOURCE JDBC to Oracle for reports remains supported."
             );
@@ -185,6 +187,62 @@ public final class MetadataDialectBootPolicy {
         if (eventJournalProperties.isEnabled() && !eventJournalProperties.isJdbcStore()) {
             throw new IllegalStateException(
                     "MSSQL single-engine requires ISPF_EVENT_JOURNAL_STORE=jdbc."
+            );
+        }
+    }
+
+    /**
+     * Oracle B1 fences (ADR-0080 Phase 1). No single-engine bypass — JDBC history/journal on
+     * ISPF_DB would need a later B2 decision. Unreachable while {@link #assertEngineCertified}
+     * refuses Oracle; unit-tested and pre-wired for the B1 pack PR.
+     */
+    public static void assertOracleB1Fences(
+            RelationalDialect dialect,
+            TenantIsolationProperties tenantIsolationProperties,
+            VariableHistoryProperties variableHistoryProperties,
+            EventJournalProperties eventJournalProperties,
+            ClusterProperties clusterProperties
+    ) {
+        if (dialect.kind() != RelationalDbKind.ORACLE) {
+            return;
+        }
+        if (tenantIsolationProperties.isDbRowIsolation()) {
+            throw new IllegalStateException(
+                    "ispf.tenant.db-row-isolation=true is unsupported on Oracle (ADR-0080). "
+                            + "Set ISPF_TENANT_DB_ROW_ISOLATION=false for single-tenant lab, "
+                            + "or use PostgreSQL until a native Virtual Private Database policy exists."
+            );
+        }
+        if (tenantIsolationProperties.isHardMode()) {
+            throw new IllegalStateException(
+                    "ispf.tenant.isolation-mode=HARD is unsupported on Oracle (ADR-0080). "
+                            + "Per-tenant schemas require PostgreSQL search_path."
+            );
+        }
+        if (variableHistoryProperties.isDualWriteEnabled()) {
+            throw new IllegalStateException(
+                    "ispf.variable-history.dual-write-enabled=true is refused on Oracle (ADR-0080). "
+                            + "B1 keeps history off ISPF_DB JDBC."
+            );
+        }
+        if (clusterProperties.enabled()) {
+            throw new IllegalStateException(
+                    "ispf.cluster.enabled=true is not certified on Oracle (ADR-0080). "
+                            + "Run a single JVM, or use PostgreSQL for active-active."
+            );
+        }
+        if (variableHistoryProperties.isEnabled() && !variableHistoryProperties.isExternalTimeSeriesStore()) {
+            throw new IllegalStateException(
+                    "ispf.variable-history store falls back to ISPF_DB JDBC on Oracle (B2, ADR-0080). "
+                            + "Set ISPF_VARIABLE_HISTORY_STORE=clickhouse (or cassandra/scylla), "
+                            + "or ISPF_VARIABLE_HISTORY_ENABLED=false for B1."
+            );
+        }
+        if (eventJournalProperties.isEnabled() && eventJournalProperties.isJdbcStore()) {
+            throw new IllegalStateException(
+                    "ispf.event-journal store falls back to ISPF_DB JDBC on Oracle (B2, ADR-0080). "
+                            + "Set ISPF_EVENT_JOURNAL_STORE=clickhouse (or cassandra/scylla), "
+                            + "or ISPF_EVENT_JOURNAL_ENABLED=false for B1."
             );
         }
     }

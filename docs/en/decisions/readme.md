@@ -130,7 +130,7 @@ Regressions: [`strip-neuro-slang.py`](../../../tools/docs-audit/strip-neuro-slan
 | [0077-contextpack-hybrid-retrieval](0077-contextpack-hybrid-retrieval.md) | ContextPack hybrid lexical+embedding `search_context` — **Accepted** |
 | [0078-mssql-metadata-certification](0078-mssql-metadata-certification.md) | MS SQL Server metadata certification B1/B2/A-A (amends 0037) — **Accepted** (Prod Yes; licensed SKUs owner-extended; AG soak tech-debt) |
 | [0079-mysql-metadata-certification](0079-mysql-metadata-certification.md) | MySQL 8.x B1 metadata certification charter (amends 0037) — **Accepted** (B1 Lab green on 8.4 Community; Prod: No; LGPL MariaDB Connector/J client, MariaDB servers refused) |
-| [0080-oracle-metadata-certification](0080-oracle-metadata-certification.md) | Oracle B1 metadata certification charter (amends 0037) — **Accepted** (impl Not started) |
+| [0080-oracle-metadata-certification](0080-oracle-metadata-certification.md) | Oracle B1 metadata certification charter (amends 0037) — **Accepted** (Phase 1 lab; Prod: No; boot refused) |
 | [0081-mssql-historian-switch-retention](0081-mssql-historian-switch-retention.md) | MSSQL historian monthly SWITCH retention — **Accepted as design** (lab dry-run + confirm evidence; staging DDL; JVM/schedule still forbidden; capped Prod Yes B2 does not use this as product retention) |
 
 ## Topic chains (read in order)

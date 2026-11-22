@@ -2,7 +2,7 @@
 
 > **Language:** Canonical English. Russian: [ru/mysql-certification-epic.md](../ru/mysql-certification-epic.md).  
 > **Status:** B1 **Lab green** — delivery board for [ADR-0079](decisions/0079-mysql-metadata-certification.md). **Prod: No.**  
-> **Policy:** Lab work unblocked after MSSQL B1 Prod Yes ([0078](decisions/0078-mssql-metadata-certification.md)). MariaDB is **not** this epic. Oracle waits for MySQL B1 Prod Yes ([0080](decisions/0080-oracle-metadata-certification.md)).
+> **Policy:** Lab work unblocked after MSSQL B1 Prod Yes ([0078](decisions/0078-mssql-metadata-certification.md)). MariaDB is **not** this epic. The Oracle B1 pack waits for MySQL B1 Prod Yes ([0080](decisions/0080-oracle-metadata-certification.md)).
 
 ## Phase 1 — dialect honesty (landed)
 

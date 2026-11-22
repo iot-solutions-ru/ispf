@@ -16,7 +16,7 @@
 - Journal/history вне B1; **нет** single-engine bypass в fences.
 - `assertEngineCertified` больше не отказывает `mysql`: как MSSQL, MySQL стартует только под B1 fences (до Flyway и на context refresh). Oracle — по-прежнему hard refuse.
 - Testcontainers и dev-lab — только lab-сигнал, не production-сертификация.
-- Oracle ([0080](0080-oracle-metadata-certification.md)) — только после MySQL B1 Prod Yes.
+- B1 pack Oracle ([0080](0080-oracle-metadata-certification.md)) — только после MySQL B1 Prod Yes. Oracle Phase 1 (честность dialect и fences; boot refuse) начат раньше решением владельца.
 
 ### Amendment 1 — lab Flyway SQL
 

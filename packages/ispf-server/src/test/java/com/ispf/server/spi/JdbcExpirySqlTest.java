@@ -7,6 +7,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 class JdbcExpirySqlTest {
 
     @Test
+    void oracleStyleForOracleProductName() {
+        assertThat(JdbcExpirySql.nowPlusSecondsExpression("Oracle"))
+                .isEqualTo(JdbcExpirySql.ORACLE_STYLE);
+        assertThat(JdbcExpirySql.ORACLE_STYLE).doesNotContain("BIGINT");
+    }
+
+    @Test
     void detectsSqlServerProductNames() {
         assertThat(JdbcExpirySql.nowPlusSecondsExpression("Microsoft SQL Server"))
                 .isEqualTo(JdbcExpirySql.MSSQL_STYLE);
