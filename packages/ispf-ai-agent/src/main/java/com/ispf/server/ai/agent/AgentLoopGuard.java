@@ -1,7 +1,6 @@
 package com.ispf.server.ai.agent;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -302,10 +301,14 @@ final class AgentLoopGuard {
             return driverInventoryHint();
         }
         if ("get_driver_help".equals(toolName)) {
-            return snmpAwareDriverHelpHint(appendProposedStep(steps, toolName, toolArgs));
+            // Hard-block path must NOT dump an Execute SNMP playbook — that caused Ask retries.
+            return """
+                    Driver help for this driverId was already returned above. Finish NOW with Markdown \
+                    from that result (and any prior list_drivers). Do NOT call get_driver_help again \
+                    with the same driverId. Provisioning devices belongs in Execute, not Ask.""";
         }
         return "Discovery result for '" + toolName
-                + "' is already above — stop repeating it; act on prior results or finish with Markdown.";
+                + "' is already above — stop repeating it; finish with Markdown from prior results.";
     }
 
     static String bundleHowToFinishHint(String toolName) {
@@ -337,14 +340,17 @@ final class AgentLoopGuard {
 
     /**
      * After an unfiltered inventory OK (or a placeholder query), block further list_drivers.
-     * First offense keeps {@code stopTurn=false} so Ask can finish from the hint; repeats escalate.
+     * Ask mode stops the turn once inventory already succeeded; a bare placeholder on step 1 stays soft
+     * so the model can retry with empty args / a real substring.
      */
     private static Optional<BlockDecision> checkListDriversInventoryDone(
             List<Map<String, Object>> steps,
-            Map<String, Object> toolArgs
+            Map<String, Object> toolArgs,
+            boolean askMode
     ) {
         long anyCalls = totalToolCount(steps, "list_drivers");
-        boolean escalate = anyCalls >= DISCOVERY_HARD_BLOCK || hasPriorListDriversGuardBlock(steps);
+        boolean repeatBlock = anyCalls >= DISCOVERY_HARD_BLOCK || hasPriorListDriversGuardBlock(steps);
+        boolean hasUnfilteredOk = hasSuccessfulUnfilteredListDrivers(steps);
         String query = stringArg(toolArgs == null ? Map.of() : toolArgs, "query");
         if (looksLikeAngleBracketPlaceholder(query)) {
             return Optional.of(new BlockDecision(
@@ -352,14 +358,14 @@ final class AgentLoopGuard {
                     "Do not copy angle-bracket placeholders into tool arguments. "
                             + "Finish NOW from the Knowledge index / prior list_drivers result, "
                             + "or (only if none yet) call list_drivers once with empty arguments or a real substring (mqtt).",
-                    escalate
+                    repeatBlock || (askMode && hasUnfilteredOk)
             ));
         }
-        if (hasSuccessfulUnfilteredListDrivers(steps)) {
+        if (hasUnfilteredOk) {
             return Optional.of(new BlockDecision(
                     "Hard block: unfiltered list_drivers already succeeded this turn — stop looping",
                     driverInventoryHint(),
-                    escalate
+                    askMode || repeatBlock
             ));
         }
         return Optional.empty();
@@ -473,20 +479,6 @@ final class AgentLoopGuard {
         return false;
     }
 
-    private static List<Map<String, Object>> appendProposedStep(
-            List<Map<String, Object>> steps,
-            String toolName,
-            Map<String, Object> toolArgs
-    ) {
-        List<Map<String, Object>> withProposed = new ArrayList<>(steps == null ? List.of() : steps);
-        Map<String, Object> proposed = new LinkedHashMap<>();
-        proposed.put("type", "tool");
-        proposed.put("tool", toolName);
-        proposed.put("arguments", toolArgs == null ? Map.of() : toolArgs);
-        withProposed.add(proposed);
-        return withProposed;
-    }
-
     private static String defaultHint(List<Map<String, Object>> steps, int maxStepsTotal) {
         int stepCount = AgentTurnPaceHints.actionStepCount(steps);
         int remainingTotal = Math.max(0, maxStepsTotal - stepCount);
@@ -540,7 +532,7 @@ final class AgentLoopGuard {
         }
         String normalized = normalize(toolName);
         if ("list_drivers".equals(normalized)) {
-            Optional<BlockDecision> inventoryDone = checkListDriversInventoryDone(steps, toolArgs);
+            Optional<BlockDecision> inventoryDone = checkListDriversInventoryDone(steps, toolArgs, askMode);
             if (inventoryDone.isPresent()) {
                 return inventoryDone;
             }
@@ -567,16 +559,15 @@ final class AgentLoopGuard {
             long sameCallCount = totalToolCountWithFingerprint(steps, normalized, discoveryFp);
             if (sameCallCount >= DISCOVERY_HARD_BLOCK) {
                 String hint = discoveryHardBlockHint(normalized, steps, toolArgs);
-                boolean stopTurn = "list_drivers".equals(normalized)
-                        && (sameCallCount >= DISCOVERY_HARD_BLOCK + 1
-                        || hasPriorListDriversGuardBlock(steps));
+                // Always stopTurn: soft ERROR hard-blocks were retried 10–20× on get_driver_help
+                // and flooded the Studio log (Ask and Execute).
                 return Optional.of(new BlockDecision(
                         "Hard block: discovery tool '" + normalized + "'"
                                 + (discoveryFp.isBlank() ? "" : " (" + discoveryFp + ")")
                                 + " called " + sameCallCount
                                 + " times this turn with the same arguments — stop looping",
                         hint,
-                        stopTurn
+                        true
                 ));
             }
         }

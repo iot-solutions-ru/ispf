@@ -14,8 +14,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class AgentLoopGuardTest {
 
     @Test
-    void hardBlocksRepeatedGetDriverHelp() {
-        // Two prior get_driver_help calls with same args → third is hard-blocked.
+    void hardBlocksRepeatedGetDriverHelpAndStopsTurn() {
+        // Two prior get_driver_help calls with same args → third is hard-blocked and stops the turn.
         List<Map<String, Object>> steps = List.of(
                 step("get_driver_help", Map.of("driverId", "snmp")),
                 step("get_driver_help", Map.of("driverId", "snmp"))
@@ -23,10 +23,37 @@ class AgentLoopGuardTest {
         var block = AgentLoopGuard.checkHardBlock("get_driver_help", Map.of("driverId", "snmp"), steps);
         assertTrue(block.isPresent());
         assertTrue(block.get().blocked());
-        assertFalse(block.get().stopTurn());
+        assertTrue(block.get().stopTurn());
         assertTrue(block.get().error().contains("stop looping"));
-        assertTrue(block.get().hint().toLowerCase(Locale.ROOT).contains("create_object"));
-        assertTrue(block.get().hint().contains("snmp-agent-v1"));
+        assertTrue(block.get().hint().contains("Finish NOW"));
+        assertFalse(block.get().hint().contains("snmp-agent-v1"));
+        assertFalse(block.get().hint().toLowerCase(Locale.ROOT).contains("create_object"));
+    }
+
+    @Test
+    void askStopsTurnOnSecondUnfilteredListDrivers() {
+        List<Map<String, Object>> steps = List.of(
+                okStep("list_drivers", Map.of())
+        );
+        var block = AgentLoopGuard.checkHardBlock("list_drivers", Map.of(), steps, true);
+        assertTrue(block.isPresent());
+        assertTrue(block.get().blocked());
+        assertTrue(block.get().stopTurn());
+        assertTrue(block.get().hint().toLowerCase(Locale.ROOT).contains("authoritative"));
+    }
+
+    @Test
+    void askPlaceholderListDriversOnStepOneDoesNotStopTurn() {
+        var block = AgentLoopGuard.checkHardBlock(
+                "list_drivers",
+                Map.of("query", "<protocol>"),
+                List.of(),
+                true
+        );
+        assertTrue(block.isPresent());
+        assertTrue(block.get().blocked());
+        assertFalse(block.get().stopTurn());
+        assertTrue(block.get().error().contains("placeholder"));
     }
 
     @Test

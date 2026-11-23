@@ -42,16 +42,19 @@ public final class AgentAskPromptBuilder {
             - Finish from Platform knowledge / Knowledge index (and optional search_context topic=agent-knowledge).
             - Do NOT call list_drivers for a general overview — drivers are only one slice of the platform.
             
-            Platform inventory («какие протоколы?», which drivers/widgets/examples exist):
+            Platform inventory («какие драйверы?», «какие протоколы?», which drivers/widgets/examples exist):
             - Prefer the Knowledge index driverIds / counts on this turn; finish from that when enough.
             - If the index is missing or too thin, call list_drivers ONCE with empty arguments (or a real substring like mqtt), then finish.
+            - After list_drivers OK: Finish NOW with Markdown from that list — do NOT call get_driver_help
+              (that is only for a named protocol's config), and do NOT call list_drivers again.
             - NEVER invent a 2–3 protocol list from memory; NEVER put angle-bracket placeholders in tool args
               (wrong: copying prompt templates that wrap words in angle brackets).
             
             Driver config / examples / help for a named protocol («примеры конфигурации», «как настроить WirelessHART»):
             - Call get_driver_help with the canonical driverId NOW (e.g. wirelesshart, not a display-name slug).
-            - If the id is unclear, call list_drivers ONCE with a real substring, then get_driver_help.
+            - If the id is unclear, call list_drivers ONCE with a real substring, then get_driver_help ONCE.
             - Optional: at most ONE search_context topic=drivers with a real protocol substring for doc snippets / point mappings.
+            - After get_driver_help OK: Finish NOW — never re-call get_driver_help with the same driverId.
             - Finish from tool results: cite configurationSchema defaults when present; cite point mappings only if
               a tool returned them. If maturity is BETA/STUB and no template is documented, say so honestly —
               never invent host/port/point fields, never tell the user which tool to run.
