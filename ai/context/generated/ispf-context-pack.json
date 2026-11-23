@@ -1,6 +1,6 @@
 {
   "contextPackVersion": "ispf-1.0.0",
-  "generatedAt": "2026-11-23T07:22:16.499645+00:00",
+  "generatedAt": "2026-11-23T10:48:55.688880+00:00",
   "platformVersion": "1.0.0",
   "bundleManifest": {
     "fields": [
@@ -18830,6 +18830,12 @@
       "keywords": "multi-tenant Multi-tenant SaaS (BL-125, BL-126, BL-155)"
     },
     {
+      "id": "mysql-aa-sku-promotion-checklist",
+      "path": "docs/en/mysql-aa-sku-promotion-checklist.md",
+      "title": "MySQL active-active (A-A) promotion checklist",
+      "keywords": "mysql-aa-sku-promotion-checklist MySQL active-active (A-A) promotion checklist"
+    },
+    {
       "id": "mysql-b2-sku-promotion-checklist",
       "path": "docs/en/mysql-b2-sku-promotion-checklist.md",
       "title": "MySQL B2 SKU promotion checklist (ADR-0079 single-engine)",
@@ -18888,6 +18894,18 @@
       "path": "docs/en/operator-pwa-android-smoke.md",
       "title": "Operator PWA — Android Chrome smoke checklist (BL-90)",
       "keywords": "operator-pwa-android-smoke Operator PWA — Android Chrome smoke checklist (BL-90)"
+    },
+    {
+      "id": "oracle-aa-sku-promotion-checklist",
+      "path": "docs/en/oracle-aa-sku-promotion-checklist.md",
+      "title": "Oracle active-active (A-A) promotion checklist",
+      "keywords": "oracle-aa-sku-promotion-checklist Oracle active-active (A-A) promotion checklist"
+    },
+    {
+      "id": "oracle-b2-sku-promotion-checklist",
+      "path": "docs/en/oracle-b2-sku-promotion-checklist.md",
+      "title": "Oracle B2 single-engine promotion checklist",
+      "keywords": "oracle-b2-sku-promotion-checklist Oracle B2 single-engine promotion checklist"
     },
     {
       "id": "oracle-certification-epic",
@@ -71689,5 +71707,5 @@
   "embeddingModel": "ispf-hash-v1",
   "embeddingDims": 384,
   "embeddingCoverage": 41,
-  "contentSha256": "8cdeaa9097da31ecd99ade6b3a80b66ae9b2122e5f75f97158fd828b72dc18aa"
+  "contentSha256": "abbd6c5409d68401fbe8b12164a8aca0e6acba403974e5df406b0944e3f3cad3"
 }
