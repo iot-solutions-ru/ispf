@@ -81,7 +81,10 @@ public class AuditEventService {
 
     @Transactional(readOnly = true)
     public List<AuditEvent> listRecent(String category, int limit) {
-        int capped = Math.min(Math.max(limit, 1), 1000);
+        if (limit < 1) {
+            throw new IllegalArgumentException("Audit limit must be positive");
+        }
+        int capped = Math.min(limit, 1000);
         PageRequest page = PageRequest.of(0, capped);
         List<AuditEventEntity> rows = category == null || category.isBlank()
                 ? repository.findAllByOrderByOccurredAtDesc(page)
