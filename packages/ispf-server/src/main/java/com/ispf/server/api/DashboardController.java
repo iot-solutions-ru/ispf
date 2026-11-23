@@ -102,6 +102,9 @@ public class DashboardController {
             @RequestBody SaveTitleRequest request,
             Authentication authentication
     ) {
+        if (request.title() == null || request.title().isBlank()) {
+            throw new IllegalArgumentException("title must not be blank");
+        }
         variableMemberAccessService.requireWrite(path, "title", authentication);
         return federationProxyService.resolve(path)
                 .map(target -> federationProxyService.proxyDashboardSaveTitle(target, request.title()))
