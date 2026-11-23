@@ -5,6 +5,7 @@ import com.ispf.core.ref.PlatformRefParseException;
 import com.ispf.expression.ExpressionException;
 import com.ispf.plugin.workflow.WorkflowException;
 import com.ispf.server.workflow.WorkflowInstanceNotFoundException;
+import org.springframework.core.NestedRuntimeException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -111,11 +112,13 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(BadSqlGrammarException.class)
     public ProblemDetail handleBadSqlGrammar(BadSqlGrammarException exception) {
-        if (!isPostgresRaise(exception)) {
-            throw exception;
+        if (isPostgresRaise(exception)) {
+            ProblemDetail detail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, sqlRaiseDetail(exception));
+            detail.setTitle("Database raise");
+            return detail;
         }
-        ProblemDetail detail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, sqlRaiseDetail(exception));
-        detail.setTitle("Database raise");
+        ProblemDetail detail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, sqlCauseDetail(exception));
+        detail.setTitle("Invalid request");
         return detail;
     }
 
@@ -174,5 +177,20 @@ public class ApiExceptionHandler {
             return top.trim();
         }
         return "Database raised an exception";
+    }
+
+    static String sqlCauseDetail(Throwable exception) {
+        Throwable root = exception instanceof NestedRuntimeException nested
+                ? nested.getMostSpecificCause()
+                : exception;
+        String message = root != null ? root.getMessage() : null;
+        if (message != null && !message.isBlank()) {
+            return message.trim();
+        }
+        String top = exception.getMessage();
+        if (top != null && !top.isBlank()) {
+            return top.trim();
+        }
+        return "Invalid SQL";
     }
 }

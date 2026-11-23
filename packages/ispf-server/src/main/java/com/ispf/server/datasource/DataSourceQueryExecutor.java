@@ -1,5 +1,6 @@
 package com.ispf.server.datasource;
 
+import org.springframework.jdbc.BadSqlGrammarException;
 import org.springframework.jdbc.core.ArgumentPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.ResultSetExtractor;
@@ -30,6 +31,19 @@ public class DataSourceQueryExecutor {
     }
 
     public DataSourceQueryResult execute(String dataSourcePath, String sql, List<Object> params, Integer maxRows) {
+        try {
+            return executeOnConnection(dataSourcePath, sql, params, maxRows);
+        } catch (BadSqlGrammarException ex) {
+            throw new IllegalArgumentException(grammarMessage(ex), ex);
+        }
+    }
+
+    private DataSourceQueryResult executeOnConnection(
+            String dataSourcePath,
+            String sql,
+            List<Object> params,
+            Integer maxRows
+    ) {
         String query = DataSourceSqlSupport.normalizeSql(sql);
         DataSourceSqlSupport.assertAllowedForExternal(connectionResolver.isExternal(dataSourcePath), query);
         List<Object> bindParams = DataSourceSqlSupport.normalizeParams(params);
@@ -41,6 +55,17 @@ public class DataSourceQueryExecutor {
         }
         return dataSourceSqlSession.callWithDataSource(dataSourcePath, template ->
                 executeOnTemplate(template, query, bindParams, rowLimit));
+    }
+
+    static String grammarMessage(BadSqlGrammarException exception) {
+        Throwable cause = exception.getMostSpecificCause();
+        if (cause != null && cause.getMessage() != null && !cause.getMessage().isBlank()) {
+            return cause.getMessage().trim();
+        }
+        if (exception.getMessage() != null && !exception.getMessage().isBlank()) {
+            return exception.getMessage().trim();
+        }
+        return "Invalid SQL";
     }
 
     private static DataSourceQueryResult executeOnTemplate(
