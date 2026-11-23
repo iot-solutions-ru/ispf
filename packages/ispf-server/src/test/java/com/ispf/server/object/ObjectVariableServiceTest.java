@@ -411,6 +411,42 @@ class ObjectVariableServiceTest {
     }
 
     @Test
+    void upsertFunctionRejectsBlankAndBrokenExpressionBeforeSaving() {
+        FunctionDescriptor blank = new FunctionDescriptor(
+                "blankExpr",
+                "Blank",
+                null,
+                null,
+                "expression",
+                " ",
+                null,
+                null
+        );
+        FunctionDescriptor broken = new FunctionDescriptor(
+                "brokenExpr",
+                "Broken",
+                null,
+                null,
+                "expression",
+                "{\"expression\":",
+                null,
+                null
+        );
+
+        assertThatThrownBy(() -> variableService.upsertFunction(PATH, blank))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("blankExpr")
+                .hasMessageContaining("Expression function body is blank");
+        assertThatThrownBy(() -> variableService.upsertFunction(PATH, broken))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("brokenExpr")
+                .hasMessageContaining("Invalid expression function JSON");
+        assertThat(node.functions()).doesNotContainKey("blankExpr");
+        assertThat(node.functions()).doesNotContainKey("brokenExpr");
+        verify(objectManager, never()).persistNodeConfig(any(), any(), any(), any());
+    }
+
+    @Test
     void upsertFunctionSavesValidScript() {
         FunctionDescriptor function = new FunctionDescriptor(
                 "ok",
