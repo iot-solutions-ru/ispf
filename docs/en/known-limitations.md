@@ -81,6 +81,7 @@ Resume only with a **named** plant, customer, or vendor task:
 | **P-MYSQL-SKU-RERUN** | MySQL checklist re-runs (B1 and B2) per named Enterprise / managed / non-Community cell |
 | **P-MYSQL-TLS** | MySQL gate re-runs (B1 and B2) over TLS; TLS is operator-required, not certified |
 | **P-MYSQL-PG-SQL** | Review the remaining JDBC SQL for PostgreSQL-only constructs on MySQL; the ones found at signing (queued report runs, platform metrics, SQL-binding triggers) are fixed |
+| **P-MYSQL-AA-SOAK** | MySQL A-A dual-JVM chaos soak and failover under load; Prod Yes (A-A) is signed and NATS is required |
 | **P-ORACLE-SKU** | Oracle checklist on a named non-Free edition (19c or 23ai/26ai) before any Prod Yes |
 
 Board: [parked-backlog](parked-backlog.md).

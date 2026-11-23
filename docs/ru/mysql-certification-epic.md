@@ -1,7 +1,7 @@
 # Эпик: сертификация MySQL (ADR-0079)
 
 > **Язык:** русская версия. Канон: [en/mysql-certification-epic.md](../en/mysql-certification-epic.md).  
-> **Статус:** B1 **Prod Yes** только на MySQL Community Server 8.4.x + MariaDB Connector/J (owner extension 2026-11-22, [checklist](../en/mysql-sku-promotion-checklist.md)); opt-in single-engine **B2 Prod Yes** на той же ячейке (owner extension 2026-11-23, [B2 checklist](../en/mysql-b2-sku-promotion-checklist.md)). Active-active не заявлен (boot отклоняет cluster). Остальные ячейки MySQL — **P-MYSQL-SKU-RERUN**.  
+> **Статус:** B1 **Prod Yes** только на MySQL Community Server 8.4.x + MariaDB Connector/J (owner extension 2026-11-22, [checklist](../en/mysql-sku-promotion-checklist.md)); opt-in single-engine **B2 Prod Yes** на той же ячейке (owner extension 2026-11-23, [B2 checklist](../en/mysql-b2-sku-promotion-checklist.md)). **A-A Prod Yes** с single-engine + cluster (owner extension 2026-11-23, [A-A checklist](../en/mysql-aa-sku-promotion-checklist.md); soak — **P-MYSQL-AA-SOAK**). Остальные ячейки MySQL — **P-MYSQL-SKU-RERUN**.  
 > **Политика:** lab после MSSQL B1 Prod Yes. MariaDB ≠ MySQL. MySQL B1 Prod Yes подписан — B1 pack Oracle может начинаться; Oracle позже подписал свой Prod Yes (B1) только на Oracle Database Free.
 
 ## Phase 1 — честность диалекта (есть)
@@ -31,7 +31,7 @@
 Конфигурация, historian и journal в одной базе MySQL, как MSSQL B2 ([0079](decisions/0079-mysql-metadata-certification.md) § Amendment 5).
 
 - `ISPF_MYSQL_SINGLE_ENGINE` / `ispf.relational.mysql.single-engine` (по умолчанию выключен) и `max-retention-days` (по умолчанию 90) в `MysqlRelationalProperties`; deploy profile `mysql-single-engine`
-- Fences: с флагом JDBC history и journal разрешены по правилам MSSQL single-engine (общая проверка); warm tier, cold archive, ClickHouse spool, dual-write — refuse; cluster, row isolation и `HARD` — по-прежнему refuse; флаг на другом движке — refuse
+- Fences: с флагом JDBC history и journal разрешены по правилам MSSQL single-engine (общая проверка); warm tier, cold archive, ClickHouse spool, dual-write — refuse; row isolation и `HARD` — по-прежнему refuse; cluster с флагом разрешён с § Amendment 6 (A-A); флаг на другом движке — refuse
 - Нативный bucket aggregate (`TIMESTAMPDIFF` / `TIMESTAMPADD`, выравнивание по epoch, без зависимости от часовых поясов); `/history/aggregate` считает в SQL, а не в JVM
 - Purge journal пачками `DELETE … LIMIT 5000`, по транзакции на пачку (цикл общий с MSSQL `DELETE TOP`)
 - Потолок retention `max-retention-days` под флагом (общий с MSSQL)
@@ -44,10 +44,11 @@
 - **P-MYSQL-TLS** — повтор gate по TLS (`sslMode=verify-full`), рекомендуется на первом named хосте
 - **P-MYSQL-PG-SQL** — проверить остальной JDBC SQL на PG-only конструкции и портировать или закрыть fence то, что найдёт проверка; пути, найденные при подписи, исправлены ([checklist](../en/mysql-sku-promotion-checklist.md#known-gaps-tracked-tech-debt))
 - **P-MYSQL-SKU-RERUN** — повтор checklist B1 и B2 на каждой named Enterprise / managed / non-Community ячейке
+- **P-MYSQL-AA-SOAK** — dual-JVM chaos soak и failover под нагрузкой для A-A ([A-A checklist](../en/mysql-aa-sku-promotion-checklist.md))
 
 ## Не цели
 
 - MariaDB как сертифицированный MySQL
-- Active-active на MySQL (boot отклоняет `ISPF_CLUSTER_ENABLED=true` с single-engine и без)
+- Multi-master Group Replication; A-A без NATS; завершённый многочасовой soak (**P-MYSQL-AA-SOAK**)
 - Rollups, партиции и partition-drop retention historian на MySQL; файловый буфер перед MySQL
 - Живая миграция данных PG→MySQL
