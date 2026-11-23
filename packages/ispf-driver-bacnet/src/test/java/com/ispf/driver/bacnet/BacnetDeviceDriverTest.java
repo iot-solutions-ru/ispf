@@ -70,6 +70,26 @@ class BacnetDeviceDriverTest {
         driver.disconnect();
     }
 
+    @Test
+    void readsAddressFromBindingConfiguration() throws Exception {
+        BindingConfigDriverObject object = new BindingConfigDriverObject(Map.of(
+                "host", "192.0.2.55",
+                "port", "47819",
+                "remoteDeviceId", "4242",
+                "bindAddress", LOOPBACK_HOST,
+                "bindPort", "0"
+        ));
+        BacnetDeviceDriver driver = new BacnetDeviceDriver();
+        driver.initialize(object);
+        driver.connect();
+        try {
+            assertTrue(object.lastLog.contains("192.0.2.55:47819"), object.lastLog);
+            assertTrue(object.lastLog.contains("4242"), object.lastLog);
+        } finally {
+            driver.disconnect();
+        }
+    }
+
     private BacnetDeviceDriver connectClient(int serverPort, int clientBindPort) throws DriverException {
         return connectClient(serverPort, clientBindPort, new StubDriverObject(Map.of(
                 "bindAddress", LOOPBACK_HOST,
@@ -138,6 +158,46 @@ class BacnetDeviceDriverTest {
 
         @Override
         public void log(DeviceDriver.DriverLogLevel level, String message) {
+        }
+
+        @Override
+        public Map<String, String> configuration() {
+            return configuration;
+        }
+    }
+
+    static final class BindingConfigDriverObject implements DeviceDriver.DriverObject {
+        private final Map<String, String> configuration;
+        private String lastLog = "";
+
+        BindingConfigDriverObject(Map<String, String> configuration) {
+            this.configuration = configuration;
+        }
+
+        @Override
+        public PlatformObject deviceObject() {
+            return new PlatformObject(
+                    "test-device",
+                    "root.platform.devices.test",
+                    ObjectType.DEVICE,
+                    "Test",
+                    "",
+                    null
+            );
+        }
+
+        @Override
+        public void updateVariable(String name, DataRecord value) {
+        }
+
+        @Override
+        public Optional<DataRecord> getVariable(String name) {
+            return Optional.empty();
+        }
+
+        @Override
+        public void log(DeviceDriver.DriverLogLevel level, String message) {
+            lastLog = message;
         }
 
         @Override
