@@ -88,9 +88,20 @@ public class BlueprintController {
                 .toList();
     }
 
+    private BlueprintDefinition requireBlueprint(String id) {
+        try {
+            return blueprintRegistry.requireById(id);
+        } catch (BlueprintException ex) {
+            if (ex.getMessage() != null && ex.getMessage().startsWith("Model not found")) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Blueprint not found: " + id, ex);
+            }
+            throw ex;
+        }
+    }
+
     @GetMapping("/{id}")
     public BlueprintDto get(@PathVariable String id) {
-        return BlueprintDto.from(blueprintRegistry.requireById(id));
+        return BlueprintDto.from(requireBlueprint(id));
     }
 
     @GetMapping("/by-name/{name}")
@@ -387,7 +398,7 @@ public class BlueprintController {
             @PathVariable String id,
             @RequestParam @NotBlank String objectPath
     ) {
-        BlueprintDefinition model = blueprintEngine.flattenInheritance(blueprintRegistry.requireById(id));
+        BlueprintDefinition model = blueprintEngine.flattenInheritance(requireBlueprint(id));
         PlatformObject object = objectManager.require(objectPath);
         LinkedHashSet<String> modelVariables = model.variables().stream()
                 .map(BlueprintVariableDefinition::name)
@@ -428,7 +439,7 @@ public class BlueprintController {
 
     @GetMapping("/{id}/instances")
     public List<Map<String, String>> listInstances(@PathVariable String id) {
-        BlueprintDefinition model = blueprintRegistry.requireById(id);
+        BlueprintDefinition model = requireBlueprint(id);
         LinkedHashSet<String> paths = new LinkedHashSet<>();
         for (BlueprintAttachment attachment : blueprintEngine.attachments()) {
             if (id.equals(attachment.blueprintId())) {
