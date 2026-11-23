@@ -14,6 +14,7 @@ import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
 import com.ispf.core.object.VariableStorageMode;
 import com.ispf.server.application.script.FunctionScriptValidator;
+import com.ispf.server.function.FunctionExpressionBody;
 import com.ispf.server.history.VariableHistoryService;
 import com.ispf.server.spi.DeviceTelemetryPolicy;
 import com.ispf.server.function.java.JavaFunctionRuntimeService;
@@ -346,6 +347,13 @@ public class ObjectVariableService {
                     );
                 }
                 scriptValidator.validate(toSave.sourceBody());
+            } catch (IllegalArgumentException ex) {
+                throw new IllegalArgumentException("Function " + function.name() + ": " + ex.getMessage(), ex);
+            }
+        }
+        if (function.sourceType() != null && "expression".equalsIgnoreCase(function.sourceType().trim())) {
+            try {
+                FunctionExpressionBody.parse(function.sourceBody());
             } catch (IllegalArgumentException ex) {
                 throw new IllegalArgumentException("Function " + function.name() + ": " + ex.getMessage(), ex);
             }
