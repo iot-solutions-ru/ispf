@@ -165,6 +165,7 @@ public class ScheduleObjectService {
             throw new IllegalArgumentException("Schedule already exists: " + scheduleId);
         }
         requireValidScheduleInputs(cronExpression, timeZone);
+        requirePositiveInterval(intervalMs);
         String nodeName = sanitizeNodeName(scheduleId);
         objectManager.create(
                 SCHEDULES_ROOT,
@@ -212,6 +213,7 @@ public class ScheduleObjectService {
         }
         String scheduleId = readString(node, "scheduleId").orElse(path.substring(path.lastIndexOf('.') + 1));
         requireValidScheduleInputs(cronExpression, timeZone);
+        requirePositiveInterval(intervalMs);
         String nextDisplayName = displayName != null && !displayName.isBlank() ? displayName : node.displayName();
         String nextDescription = description != null ? description : node.description();
         objectManager.updateInfo(path, nextDisplayName, nextDescription);
@@ -232,6 +234,12 @@ public class ScheduleObjectService {
         }
     }
 
+    private static void requirePositiveInterval(Long intervalMs) {
+        if (intervalMs != null && intervalMs <= 0) {
+            throw new IllegalArgumentException("intervalMs must be positive");
+        }
+    }
+
     private void applyScheduleFields(
             String path,
             String scheduleId,
@@ -242,6 +250,7 @@ public class ScheduleObjectService {
             String objectPath,
             String functionName
     ) {
+        requirePositiveInterval(intervalMs);
         ensureStructure(path);
         setString(path, "scheduleId", scheduleId);
         if (enabled != null) {

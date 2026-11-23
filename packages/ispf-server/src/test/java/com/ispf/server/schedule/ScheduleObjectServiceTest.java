@@ -61,4 +61,18 @@ class ScheduleObjectServiceTest {
         assertEquals("Invalid schedule timeZone: Not/AZone", zone.getMessage());
         verify(objectManager, never()).create(any(), any(), any(), any(), any(), any());
     }
+
+    @Test
+    void nonPositiveIntervalDoesNotCreateTheSchedule() {
+        when(objectManager.tree()).thenReturn(new ObjectTree());
+
+        IllegalArgumentException negative = assertThrows(IllegalArgumentException.class, () ->
+                service.create("neg", null, null, false, -1L, null, null, null, null));
+        IllegalArgumentException zero = assertThrows(IllegalArgumentException.class, () ->
+                service.create("zero", null, null, false, 0L, null, null, null, null));
+
+        assertEquals("intervalMs must be positive", negative.getMessage());
+        assertEquals("intervalMs must be positive", zero.getMessage());
+        verify(objectManager, never()).create(any(), any(), any(), any(), any(), any());
+    }
 }
