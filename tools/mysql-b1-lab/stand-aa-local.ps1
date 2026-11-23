@@ -43,11 +43,23 @@ if (-not $Jar) {
     $Jar = $candidates[0].FullName
 }
 if (-not (Test-Path $Jar)) { throw "Jar not found: $Jar" }
-Write-Host "jar=$Jar"
+# Snapshot the bootJar (and virtual pack) away from Gradle's build/libs. A bind-mount of the
+# live build output is rewritten when another agent runs bootJar; Spring's nested classloader
+# then loses MariaDB classes (QuitPacket CNFE) and the Hikari pool dies mid-gate.
+$LabRunDir = Join-Path $ScriptDir ".run-aa"
+New-Item -ItemType Directory -Force -Path $LabRunDir | Out-Null
+$JarSnapshot = Join-Path $LabRunDir "ispf-server-aa.jar"
+Copy-Item -LiteralPath $Jar -Destination $JarSnapshot -Force
+$Jar = $JarSnapshot
+Write-Host "jar=$Jar (snapshot from build output)"
 if (-not $VirtualPack) { $VirtualPack = Join-Path $RepoRoot "build\driver-packs\ispf-driver-virtual" }
 if (-not (Test-Path (Join-Path $VirtualPack "driver-pack.json"))) {
     throw "Virtual driver pack not found at $VirtualPack (run .\gradlew.bat syncDevDriverPacks or pass -VirtualPack)"
 }
+$PackSnapshot = Join-Path $LabRunDir "ispf-driver-virtual"
+if (Test-Path $PackSnapshot) { Remove-Item -LiteralPath $PackSnapshot -Recurse -Force }
+Copy-Item -LiteralPath $VirtualPack -Destination $PackSnapshot -Recurse -Force
+$VirtualPack = $PackSnapshot
 Write-Host "virtual_pack=$VirtualPack"
 
 $ImageJre = "eclipse-temurin:25-jre-jammy"

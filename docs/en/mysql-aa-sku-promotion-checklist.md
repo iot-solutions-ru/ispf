@@ -11,6 +11,8 @@
 | Required flags | `ISPF_MYSQL_SINGLE_ENGINE=true`, `ISPF_CLUSTER_ENABLED=true`, JDBC history + journal, NATS JetStream |
 | Signer / date | owner extension / 2026-11-23 |
 | Stand / gate | [`stand-aa-local.ps1`](../../tools/mysql-b1-lab/stand-aa-local.ps1), [`gate-aa.ps1`](../../tools/mysql-b1-lab/gate-aa.ps1) |
+| Gate evidence | [`gate-evidence-aa-community.json`](../../tools/mysql-b1-lab/gate-evidence-aa-community.json) (35 PASS / 0 FAIL) |
+| Owner decision | [`gate-evidence-aa-prod-yes-community.json`](../../tools/mysql-b1-lab/gate-evidence-aa-prod-yes-community.json) |
 
 ## What Prod Yes (A-A) means
 

@@ -101,7 +101,7 @@ A-A follows MSSQL A-A ([0078](0078-mssql-metadata-certification.md)): **N JVMs, 
 | Dependencies | `ClusterDependencyValidator` still requires NATS JetStream (and Redis when live-variable sync / path interest is on). No “no-NATS” claim |
 | Topology | One writable MySQL primary; every replica uses the same `ISPF_METADATA_DB_KIND` and `ISPF_DB_URL` |
 | Gate | [`tools/mysql-b1-lab/gate-aa.ps1`](../../../tools/mysql-b1-lab/gate-aa.ps1) + [`stand-aa-local.ps1`](../../../tools/mysql-b1-lab/stand-aa-local.ps1); CI opt-in `MysqlClusterLeaseTckTest` |
-| Prod Yes (A-A) | Owner extension on the § Amendment 4 / 5 Community cell. Residual dual-JVM chaos soak / failover under load is tech-debt **P-MYSQL-AA-SOAK** ([checklist](../mysql-aa-sku-promotion-checklist.md)) |
+| Prod Yes (A-A) | Owner extension on the § Amendment 4 / 5 Community cell; evidence [`gate-evidence-aa-prod-yes-community.json`](../../../tools/mysql-b1-lab/gate-evidence-aa-prod-yes-community.json) (measurements [`gate-evidence-aa-community.json`](../../../tools/mysql-b1-lab/gate-evidence-aa-community.json), 35/0). Residual dual-JVM chaos soak / failover under load is tech-debt **P-MYSQL-AA-SOAK** ([checklist](../mysql-aa-sku-promotion-checklist.md)) |
 | Non-claims | Multi-master Group Replication; readable secondaries as write targets; cluster without NATS; completed multi-hour soak (**P-MYSQL-AA-SOAK**); non-Community cells |
 
 ## Consequences

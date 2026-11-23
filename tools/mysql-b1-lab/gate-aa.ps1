@@ -512,8 +512,34 @@ if ((Ok2xx $c.Code) -and $runningA -and $holder -eq "mysql-aa-a" -and $lockRows 
 } else {
     Fail "aa_driver_lease" "create=$($c.Code) configure=$($cfg.Code) holder=$holder rows=$lockRows body=$($cfg.Body)"
 }
-$bindingOnB = Read-StringValue $BaseB $tokenB $DriverDevice "driverId"
-Start-Sleep 5
+# Path interest + wait: B must see driverId before we kill A, otherwise reclaim's reload is the
+# only path and a wedged JDBC pool on B fails the SLO with an empty binding diagnostic.
+$drvObserverB = Open-Observer $BaseB $tokenB $DriverDevice
+$bindingOnB = ""
+$bindingWaitMs = -1
+$bindingStart = NowMs
+while ((NowMs) - $bindingStart -lt 20000) {
+    $bindingOnB = Read-StringValue $BaseB $tokenB $DriverDevice "driverId"
+    if ($bindingOnB -eq "virtual") { $bindingWaitMs = (NowMs) - $bindingStart; break }
+    Start-Sleep -Milliseconds 200
+}
+Close-Observer $drvObserverB
+if ($bindingOnB -ne "virtual") {
+    # Object-level touch on A forces a structure fan-out; B reloads variables from MySQL.
+    $null = Invoke-Http "PATCH" "$BaseA/api/v1/objects/by-path?path=$(Url $DriverDevice)" $tokenA '{"displayName":"aa-drv-sync"}'
+    $bindingStart = NowMs
+    while ((NowMs) - $bindingStart -lt 20000) {
+        $bindingOnB = Read-StringValue $BaseB $tokenB $DriverDevice "driverId"
+        if ($bindingOnB -eq "virtual") { $bindingWaitMs = (NowMs) - $bindingStart; break }
+        Start-Sleep -Milliseconds 200
+    }
+}
+if ($bindingOnB -eq "virtual") {
+    Pass "aa_driver_binding_on_b" "B sees driverId=virtual before kill (wait ${bindingWaitMs} ms)"
+} else {
+    Fail "aa_driver_binding_on_b" "B still missing driverId before kill (last='$bindingOnB')"
+}
+Start-Sleep 2
 
 $leadersBefore = Get-LeaderLocks
 $shortBefore = @($leadersBefore | Where-Object { $ShortTtlLocks -contains $_.Name -and $_.State -eq "live" })
