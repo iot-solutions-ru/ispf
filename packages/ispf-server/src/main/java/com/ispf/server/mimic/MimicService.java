@@ -10,6 +10,7 @@ import com.ispf.server.object.ObjectManager;
 import com.ispf.server.plugin.blueprint.SystemObjectStructureService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.databind.ObjectMapper;
 
 @Service
 public class MimicService {
@@ -25,6 +26,8 @@ public class MimicService {
     private static final DataSchema REFRESH_SCHEMA = DataSchema.builder("refreshIntervalMs")
             .field("value", FieldType.INTEGER)
             .build();
+
+    private static final ObjectMapper DIAGRAM_JSON = new ObjectMapper();
 
     private final ObjectManager objectManager;
     private final SystemObjectStructureService structureService;
@@ -112,6 +115,7 @@ public class MimicService {
         if (diagramJson == null || diagramJson.isBlank()) {
             throw new IllegalArgumentException("diagramJson is required");
         }
+        MimicDiagramJsonSupport.parseToObjectNode(diagramJson, DIAGRAM_JSON);
         ensureMimicStructureInternal(path);
         objectManager.setVariableValue(
                 path,
