@@ -259,9 +259,13 @@ public class BlueprintController {
 
     @GetMapping("/attachments")
     public List<BlueprintAttachmentDto> attachments(@RequestParam(required = false) String objectPath) {
-        List<BlueprintAttachment> list = objectPath != null && !objectPath.isBlank()
-                ? blueprintEngine.attachmentsForObject(objectPath)
-                : blueprintEngine.attachments();
+        List<BlueprintAttachment> list;
+        if (objectPath != null && !objectPath.isBlank()) {
+            objectManager.require(objectPath);
+            list = blueprintEngine.attachmentsForObject(objectPath);
+        } else {
+            list = blueprintEngine.attachments();
+        }
         return list.stream().map(BlueprintAttachmentDto::from).toList();
     }
 
