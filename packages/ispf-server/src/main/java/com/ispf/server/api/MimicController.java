@@ -34,6 +34,7 @@ public class MimicController {
             @RequestBody SaveDiagramRequest request,
             Authentication authentication
     ) {
+        mimicService.ensureMimicStructure(path);
         variableMemberAccessService.requireWrite(path, "diagram", authentication);
         return mimicService.saveDiagram(path, request.diagramJson());
     }
@@ -44,6 +45,7 @@ public class MimicController {
             @RequestBody SaveTitleRequest request,
             Authentication authentication
     ) {
+        mimicService.ensureMimicStructure(path);
         variableMemberAccessService.requireWrite(path, "title", authentication);
         return mimicService.updateTitle(path, request.title());
     }

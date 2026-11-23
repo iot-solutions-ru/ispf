@@ -29,6 +29,7 @@ import com.ispf.server.object.VisualGroupService;
 import com.ispf.server.object.ObjectTemplateService;
 import com.ispf.server.object.ObjectUiIconService;
 import com.ispf.server.dashboard.DashboardService;
+import com.ispf.server.mimic.MimicService;
 import com.ispf.server.report.ReportService;
 import com.ispf.server.driver.DeviceProvisioningService;
 import com.ispf.server.driver.DriverRuntimeService;
@@ -81,6 +82,7 @@ public class ObjectController {
     private final ObjectManager objectManager;
     private final ObjectTemplateService objectTemplateService;
     private final DashboardService dashboardService;
+    private final MimicService mimicService;
     private final ReportService reportService;
     private final WorkflowService workflowService;
     private final PlatformUserService platformUserService;
@@ -110,6 +112,7 @@ public class ObjectController {
             ObjectManager objectManager,
             ObjectTemplateService objectTemplateService,
             DashboardService dashboardService,
+            MimicService mimicService,
             ReportService reportService,
             WorkflowService workflowService,
             PlatformUserService platformUserService,
@@ -138,6 +141,7 @@ public class ObjectController {
         this.objectManager = objectManager;
         this.objectTemplateService = objectTemplateService;
         this.dashboardService = dashboardService;
+        this.mimicService = mimicService;
         this.reportService = reportService;
         this.workflowService = workflowService;
         this.platformUserService = platformUserService;
@@ -432,6 +436,9 @@ public class ObjectController {
         }
         if (request.type() == ObjectType.DASHBOARD) {
             dashboardService.ensureDashboardStructure(node.path());
+        }
+        if (request.type() == ObjectType.MIMIC) {
+            mimicService.ensureMimicStructure(node.path());
         }
         if (request.type() == ObjectType.REPORT) {
             reportService.ensureReportStructure(node.path());
