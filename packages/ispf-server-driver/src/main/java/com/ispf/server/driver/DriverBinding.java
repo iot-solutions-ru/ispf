@@ -24,6 +24,9 @@ public record DriverBinding(
     public static final String DEFAULT_INGRESS_EVENT_NAME = "messageReceived";
 
     public DriverBinding {
+        if (driverId != null && driverId.isBlank()) {
+            throw new IllegalArgumentException("driverId must not be blank");
+        }
         if (telemetryPublishMode == null) {
             telemetryPublishMode = TelemetryPublishMode.FULL;
         }

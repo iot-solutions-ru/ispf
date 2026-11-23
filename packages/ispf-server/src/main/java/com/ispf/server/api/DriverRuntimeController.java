@@ -252,6 +252,9 @@ public class DriverRuntimeController {
             Authentication authentication
     ) {
         String canonical = requireDeviceWrite(devicePath, authentication);
+        if (request.driverId() != null && request.driverId().isBlank()) {
+            throw new IllegalArgumentException("driverId must not be blank");
+        }
         structureService.ensureDeviceDriverStructure(canonical);
         Map<String, String> configuration = mergeConfiguration(request);
         TelemetryPublishMode publishMode = TelemetryPublishMode.parse(configuration.get("telemetryPublishMode"));
@@ -278,7 +281,8 @@ public class DriverRuntimeController {
             driverRuntimeService.setDriverAutoStart(canonical, true);
             return driverRuntimeService.start(canonical);
         }
-        return driverRuntimeService.status(canonical).orElseThrow();
+        return driverRuntimeService.status(canonical).orElseThrow(() ->
+                new IllegalArgumentException("No driver binding for: " + canonical));
     }
 
     private String requireDeviceWrite(String path, Authentication authentication) {
