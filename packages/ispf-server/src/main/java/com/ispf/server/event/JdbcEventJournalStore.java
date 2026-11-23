@@ -198,7 +198,9 @@ public class JdbcEventJournalStore implements EventJournalStore {
 
     @Override
     public long deleteOlderThan(Instant cutoff, String objectPath) {
-        if (relationalDialect.kind() == RelationalDbKind.MSSQL || relationalDialect.kind() == RelationalDbKind.MYSQL) {
+        if (relationalDialect.kind() == RelationalDbKind.MSSQL
+                || relationalDialect.kind() == RelationalDbKind.MYSQL
+                || relationalDialect.kind() == RelationalDbKind.ORACLE) {
             return deleteOlderThanInBatches(cutoff, objectPath);
         }
         Long deleted = requiresNewTx.execute(status -> {
@@ -233,8 +235,8 @@ public class JdbcEventJournalStore implements EventJournalStore {
     }
 
     /**
-     * MSSQL {@code DELETE TOP} / MySQL {@code DELETE … LIMIT}. Each batch commits in its own
-     * REQUIRES_NEW transaction (no multi-batch lock hold).
+     * MSSQL {@code DELETE TOP} / MySQL {@code DELETE … LIMIT} / Oracle {@code ROWID} +
+     * {@code FETCH FIRST}. Each batch commits in its own REQUIRES_NEW transaction.
      */
     private long deleteOlderThanInBatches(Instant cutoff, String objectPath) {
         long total = 0;
@@ -265,6 +267,11 @@ public class JdbcEventJournalStore implements EventJournalStore {
                 : "WHERE occurred_at < ? AND (object_path = ? OR object_path LIKE ?)";
         if (relationalDialect.kind() == RelationalDbKind.MSSQL) {
             return "DELETE TOP (" + PURGE_BATCH_ROWS + ") FROM event_history " + where;
+        }
+        if (relationalDialect.kind() == RelationalDbKind.ORACLE) {
+            return "DELETE FROM event_history WHERE ROWID IN (SELECT rid FROM ("
+                    + "SELECT ROWID AS rid FROM event_history " + where
+                    + " FETCH FIRST " + PURGE_BATCH_ROWS + " ROWS ONLY))";
         }
         return "DELETE FROM event_history " + where + " LIMIT " + PURGE_BATCH_ROWS;
     }

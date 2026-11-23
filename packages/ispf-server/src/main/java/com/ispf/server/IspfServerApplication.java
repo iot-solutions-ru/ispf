@@ -47,6 +47,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
         com.ispf.server.config.MetadataDbProperties.class,
         com.ispf.server.config.MssqlRelationalProperties.class,
         com.ispf.server.config.MysqlRelationalProperties.class,
+        com.ispf.server.config.OracleRelationalProperties.class,
         com.ispf.server.config.ExternalDataSourceProperties.class,
         com.ispf.server.config.FederationSecurityProperties.class,
         com.ispf.server.federation.FederationOutboundBufferProperties.class,

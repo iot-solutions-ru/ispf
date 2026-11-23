@@ -7,6 +7,7 @@ import com.ispf.server.config.HistorianTierProperties;
 import com.ispf.server.config.MetadataDialectBootPolicy;
 import com.ispf.server.config.MssqlRelationalProperties;
 import com.ispf.server.config.MysqlRelationalProperties;
+import com.ispf.server.config.OracleRelationalProperties;
 import com.ispf.server.config.TenantIsolationProperties;
 import com.ispf.server.config.VariableHistoryProperties;
 import org.springframework.boot.flyway.autoconfigure.FlywayConfigurationCustomizer;
@@ -30,6 +31,7 @@ public class FlywayDialectConfiguration {
             ClusterProperties clusterProperties,
             MssqlRelationalProperties mssqlRelationalProperties,
             MysqlRelationalProperties mysqlRelationalProperties,
+            OracleRelationalProperties oracleRelationalProperties,
             HistorianTierProperties historianTierProperties,
             HistorianColdArchiveProperties coldArchiveProperties
     ) {
@@ -42,7 +44,10 @@ public class FlywayDialectConfiguration {
                     tenantIsolationProperties,
                     variableHistoryProperties,
                     eventJournalProperties,
-                    clusterProperties
+                    clusterProperties,
+                    oracleRelationalProperties.isSingleEngine(),
+                    historianTierProperties.warmTier().isEnabled(),
+                    coldArchiveProperties.enabled()
             );
             MetadataDialectBootPolicy.assertMssqlB1Fences(
                     dialect,
