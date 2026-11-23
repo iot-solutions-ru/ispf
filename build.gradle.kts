@@ -72,6 +72,8 @@ subprojects {
     // (CVE-2025-48924, patched ≥ 3.18.0) and keep the pin explicit past the BOM.
     pluginManager.withPlugin("io.spring.dependency-management") {
         extra["commons-lang3.version"] = "3.21.0"
+        // Boot 4.1.2 BOM manages MariaDB Connector/J 3.5.10 (Dependabot #148–#151).
+        extra["mariadb.version"] = "3.5.11"
         // Boot 4.1.2 BOM manages OpenTelemetry 1.62.0 (GHSA-ccrj-gw8r-854m, API ≤ 1.66.0).
         extra["opentelemetry.version"] = "1.68.0"
     }
@@ -202,6 +204,7 @@ subprojects {
             implementation("org.apache.commons:commons-lang3:3.22.0")
             implementation("org.xerial.snappy:snappy-java:1.1.10.12")
             implementation("com.google.guava:guava:33.8.0-jre")
+            implementation("org.mariadb.jdbc:mariadb-java-client:3.5.11")
             implementation("org.apache.kerby:kerby-asn1:2.1.2")
             implementation("org.apache.kerby:kerb-core:2.1.2")
             implementation("org.apache.kerby:kerb-util:2.1.2")
@@ -241,6 +244,9 @@ subprojects {
                 // (GHSA-x6vc-x4v4-hjhr). Drop when Hadoop / Parquet / Kafka declare them.
                 "org.xerial.snappy:snappy-java:1.1.10.12",
                 "com.google.guava:guava:33.8.0-jre",
+                // Dependabot #148–#151 (CVE-2026-119210 / 119276 / 119280 / 119281): Connector/J
+                // < 3.5.11. Drop when Boot's mariadb.version is ≥ 3.5.11.
+                "org.mariadb.jdbc:mariadb-java-client:3.5.11",
                 "org.apache.kerby:kerby-asn1:2.1.2",
                 "org.apache.kerby:kerb-core:2.1.2",
                 "org.apache.kerby:kerb-util:2.1.2",
@@ -279,6 +285,11 @@ subprojects {
                     "com.google.guava" -> {
                         if (requested.name == "guava") {
                             useVersion("33.8.0-jre")
+                        }
+                    }
+                    "org.mariadb.jdbc" -> {
+                        if (requested.name == "mariadb-java-client") {
+                            useVersion("3.5.11")
                         }
                     }
                     "org.apache.kerby" -> useVersion("2.1.2")

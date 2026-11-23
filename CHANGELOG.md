@@ -24,6 +24,7 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Fixed
 
+- **MariaDB Connector/J** — pin `org.mariadb.jdbc:mariadb-java-client` to **3.5.11** (BOM `mariadb.version` + force/eachDependency) for Dependabot #148–#151 (CVE-2026-119210 / 119276 / 119280 / 119281). Drop when Boot manages ≥ 3.5.11.
 - **Hosted ui-pack WASM CSP** — `/apps/<appId>/` CSP `script-src` now includes `'wasm-unsafe-eval'` so WebAssembly packs (Freedoom / DOOM) can compile. Still no `'unsafe-eval'`. ADR-0073 and nginx `/apps/` samples updated.
 - **Binding event rules** — an `event` rule whose condition was true emitted its event on every pass of the rule chain until the 8-pass limit stopped the chain with an error, and did the same on every later activation. A rule with a non-blank `condition` now emits once when the condition becomes true and again only after an activation finds it false. Cascades from the object's own writes, later telemetry updates, rule saves, and a restart do not emit it again; the armed state is kept in `@bindingState`. An `onEvent` / `onEventRef` event or a `periodicMs` tick emits each time the condition holds, and a rule with a blank condition emits once per activation. Docs: [docs/en/bindings.md](docs/en/bindings.md).
 

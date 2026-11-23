@@ -10,7 +10,7 @@ Promote `ISPF_METADATA_DB_KIND=mysql` to a production claim only on a signed nam
 | Field | Value |
 |-------|-------|
 | Product | **MySQL Community Server 8.4.x** LTS, self-managed. Evidence: 8.4.13 `MySQL Community Server - GPL`, image `mysql:8.4` (local AMD64 Docker) |
-| JDBC client | **MariaDB Connector/J only** — 3.5.10 (LGPL-2.1-or-later), `org.mariadb.jdbc.Driver`, `jdbc:mysql://…/ispf?permitMysqlScheme=true`. GPL `mysql-connector-j` is not on any classpath |
+| JDBC client | **MariaDB Connector/J only** — 3.5.11 (LGPL-2.1-or-later; gate evidence: 3.5.10), `org.mariadb.jdbc.Driver`, `jdbc:mysql://…/ispf?permitMysqlScheme=true`. GPL `mysql-connector-j` is not on any classpath |
 | Hibernate | `MysqlHibernateDialect` (pinned `MySQLDialect` subclass); the default `ddl-auto=validate` passes. Leave `hibernate.dialect` unset |
 | `lower_case_table_names` | `0` (Linux default) on the evidence cell, read by the gate (`g0_engine`) |
 | Isolation | `transaction_isolation=READ-COMMITTED` (server flag) |
