@@ -30,6 +30,7 @@ class AgentCopilotPromptBuilderTest {
         assertThat(prompt).contains("get_widget_catalog");
         assertThat(prompt).contains("add_dashboard_widget");
         assertThat(prompt).contains("ruleKind=historian");
+        assertThat(prompt).contains("telling the user to run list_*/get_*/search_*");
         assertThat(prompt).doesNotContain("create_object");
         assertThat(prompt).doesNotContain("Reference playbooks");
         assertThat(prompt).doesNotContain("PLAN-BEFORE-EXECUTE");

@@ -542,6 +542,31 @@ public class TreeFirstAgentService {
                             continue;
                         }
                     }
+                    if ((askMode || copilotChannel)
+                            && !AgentProseToolSuggestGuard.alreadyNudged(steps)) {
+                        Map<String, Object> focusForCallable = session.runState().clientFocus();
+                        boolean copilot = copilotChannel;
+                        Optional<String> proseToolReject = AgentProseToolSuggestGuard.rejectFinish(
+                                agentAction.summary(),
+                                steps,
+                                tool -> !copilot || AgentCopilotPromptBuilder.isAllowedTool(tool, focusForCallable)
+                        );
+                        if (proseToolReject.isPresent()) {
+                            Map<String, Object> guardStep = Map.of(
+                                    "step", stepNumber,
+                                    "type", "guard",
+                                    "label", "Call tools, don't suggest",
+                                    "error", "Finish suggested a discovery tool in prose",
+                                    "hint", proseToolReject.get(),
+                                    "proseToolSuggestNudge", true
+                            );
+                            steps.add(guardStep);
+                            publishStep(session.sessionId(), guardStep);
+                            messages.add(new LlmMessage("assistant", response.content()));
+                            messages.add(new LlmMessage("user", proseToolReject.get()));
+                            continue;
+                        }
+                    }
                     if (askMode) {
                         AgentPlanGuard.normalizeFinishForAskMode(candidateResult);
                         finishSummary = agentAction.summary();

@@ -28,7 +28,7 @@ final class AgentKnowledgeTools {
         return List.of(
                 searchContextTool(contextPackSearchService),
                 listDriversTool(driverCatalog),
-                getDriverHelpTool(contextPackSearchService),
+                getDriverHelpTool(contextPackSearchService, driverCatalog),
                 listExamplesTool(contextPackSearchService),
                 getExampleBundleTool(contextPackSearchService),
                 listApplicationsTool(applicationDataStore, bundleSnapshotStore),
@@ -110,7 +110,10 @@ final class AgentKnowledgeTools {
         };
     }
 
-    private static PlatformAgentTool getDriverHelpTool(ContextPackSearchService searchService) {
+    private static PlatformAgentTool getDriverHelpTool(
+            ContextPackSearchService searchService,
+            DriverCatalog driverCatalog
+    ) {
         return new PlatformAgentTool() {
             @Override
             public String name() {
@@ -119,12 +122,42 @@ final class AgentKnowledgeTools {
 
             @Override
             public String description() {
-                return "Driver config help from context pack. Args: driverId (required).";
+                return "Driver help for a canonical driverId: context-pack catalog row plus live "
+                        + "configurationSchema defaults when that driver is loaded on this instance. "
+                        + "Optional follow-up: search_context topic=drivers for doc snippets. "
+                        + "Call as JSON — never tell the user to run this tool.";
             }
 
             @Override
             public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
-                return searchService.driverHelp(stringArg(arguments, "driverId"));
+                String driverId = stringArg(arguments, "driverId");
+                Map<String, Object> result = new LinkedHashMap<>(searchService.driverHelp(driverId));
+                if (driverId == null || driverId.isBlank()) {
+                    return result;
+                }
+                String id = driverId.trim().toLowerCase(Locale.ROOT);
+                for (DriverMetadata driver : driverCatalog.list()) {
+                    if (!id.equals(driver.id().toLowerCase(Locale.ROOT))) {
+                        continue;
+                    }
+                    DriverListing listing = DriverListing.of(driver);
+                    result.put("status", "OK");
+                    result.put("driverId", listing.id());
+                    result.put("name", listing.name());
+                    result.put("version", listing.version());
+                    result.put("description", listing.description());
+                    result.put("maturity", listing.maturity().name());
+                    result.put("capabilities", listing.capabilities());
+                    result.put(
+                            "configurationSchema",
+                            listing.configurationSchema() == null ? Map.of() : listing.configurationSchema()
+                    );
+                    result.put("evidence", listing.evidence().name());
+                    result.put("readOnly", listing.readOnly());
+                    result.remove("hint");
+                    return result;
+                }
+                return result;
             }
         };
     }

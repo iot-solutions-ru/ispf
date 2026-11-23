@@ -169,4 +169,19 @@ class ContextPackSearchServiceTest {
         assertEquals("OK", result.get("status"));
         assertTrue(result.toString().contains("mes_listOrders"));
     }
+
+    @Test
+    void driverHelpMissHintDoesNotTellUserToRunTools() {
+        when(contextPackService.loadPack()).thenReturn(Map.of(
+                "driverCatalog", List.of(Map.of("driverId", "snmp", "description", "SNMP"))
+        ));
+
+        Map<String, Object> result = searchService.driverHelp("wireless-hart-gateway");
+
+        assertEquals("OK", result.get("status"));
+        String hint = String.valueOf(result.get("hint"));
+        assertTrue(hint.contains("call list_drivers"));
+        assertTrue(hint.contains("never tell the user to run these tools"));
+        assertTrue(!hint.startsWith("Use list_drivers"));
+    }
 }

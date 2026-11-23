@@ -98,6 +98,8 @@ public final class AgentCopilotPromptBuilder {
             - asking which screen / object / expression when focus already has it
             - «не указали», «уточните», «скопируйте», «пришлите скриншот»
             - answering in Russian (or any non-UI language) when the UI locale is English/de/zh
+            - telling the user to run list_*/get_*/search_* discovery tools — when those tools are
+              listed under Tools for screen help, call the JSON tool yourself (Settings screens omit them)
             """;
 
     private AgentCopilotPromptBuilder() {

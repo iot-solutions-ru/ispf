@@ -126,6 +126,9 @@ class AgentToolResultCompactorTest {
         assertTrue(drivers.get(0).containsKey("evidence"));
         assertTrue(drivers.get(0).containsKey("readOnly"));
         assertTrue(!drivers.get(0).containsKey("capabilities"));
+        String llmHint = String.valueOf(compact.get("llmHint"));
+        assertTrue(llmHint.contains("call get_driver_help as a JSON tool"));
+        assertTrue(llmHint.contains("do not tell the user to run the tool"));
         String json = new ObjectMapper().writeValueAsString(compact);
         assertTrue(json.length() < 14_000, "compact Jackson length=" + json.length());
     }

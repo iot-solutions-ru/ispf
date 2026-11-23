@@ -149,6 +149,8 @@ class PlatformBriefingServiceTest {
         assertTrue(briefing.contains("driverIds (1 of 1 loaded"));
         assertTrue(briefing.contains("virtual"));
         assertTrue(briefing.contains("SINGLETON or INSTANCE"));
+        assertTrue(briefing.contains("Call discovery tools as JSON yourself"));
+        assertTrue(briefing.contains("never tell the user to run list_*/get_*/search_*"));
         assertTrue(!briefing.contains("### Drivers (driverId | name | maturity)"));
         assertTrue(!briefing.contains("### Reference examples"));
     }

@@ -67,4 +67,44 @@ class ListDriversAgentToolTest {
         assertEquals(true, virtualRow.get("readOnly"));
         assertEquals(Set.of("read"), virtualRow.get("capabilities"));
     }
+
+    @Test
+    void getDriverHelpMergesLiveConfigurationSchema() throws Exception {
+        when(contextPackSearchService.driverHelp("wirelesshart")).thenReturn(Map.of(
+                "status", "OK",
+                "driverId", "wirelesshart",
+                "description", "WirelessHART gateway stub",
+                "maturity", "BETA"
+        ));
+        when(driverCatalog.list()).thenReturn(List.of(
+                new DriverMetadata(
+                        "wirelesshart",
+                        "WirelessHART Gateway Driver",
+                        "0.1.0",
+                        "HART-IP TCP gateway",
+                        "ISPF",
+                        Map.of("host", "127.0.0.1", "port", "5094", "timeoutMs", "3000"),
+                        DriverMaturity.BETA,
+                        Set.of("read", "write")
+                )
+        ));
+
+        PlatformAgentTool getHelp = AgentKnowledgeTools.all(
+                contextPackSearchService,
+                driverCatalog,
+                applicationDataStore,
+                bundleSnapshotStore
+        ).stream().filter(tool -> "get_driver_help".equals(tool.name())).findFirst().orElseThrow();
+
+        Map<String, Object> result = getHelp.execute(
+                Map.of("driverId", "wirelesshart"),
+                new AgentContext("admin", null, null)
+        );
+
+        assertEquals("OK", result.get("status"));
+        assertEquals("wirelesshart", result.get("driverId"));
+        assertEquals(Map.of("host", "127.0.0.1", "port", "5094", "timeoutMs", "3000"), result.get("configurationSchema"));
+        assertEquals(Set.of("read", "write"), result.get("capabilities"));
+        assertTrue(!result.containsKey("hint"));
+    }
 }
