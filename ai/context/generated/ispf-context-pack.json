@@ -1,6 +1,6 @@
 {
   "contextPackVersion": "ispf-1.0.0",
-  "generatedAt": "2026-11-22T18:54:14.631452+00:00",
+  "generatedAt": "2026-11-23T07:07:58.224813+00:00",
   "platformVersion": "1.0.0",
   "bundleManifest": {
     "fields": [
@@ -18828,6 +18828,12 @@
       "path": "docs/en/multi-tenant.md",
       "title": "Multi-tenant SaaS (BL-125, BL-126, BL-155)",
       "keywords": "multi-tenant Multi-tenant SaaS (BL-125, BL-126, BL-155)"
+    },
+    {
+      "id": "mysql-b2-sku-promotion-checklist",
+      "path": "docs/en/mysql-b2-sku-promotion-checklist.md",
+      "title": "MySQL B2 SKU promotion checklist (ADR-0079 single-engine)",
+      "keywords": "mysql-b2-sku-promotion-checklist MySQL B2 SKU promotion checklist (ADR-0079 single-engine)"
     },
     {
       "id": "mysql-certification-epic",
@@ -71683,5 +71689,5 @@
   "embeddingModel": "ispf-hash-v1",
   "embeddingDims": 384,
   "embeddingCoverage": 41,
-  "contentSha256": "f4838887234fa9d1f22018194b7e485e8d4a99f87eb8d62c9700fd62c12158aa"
+  "contentSha256": "5237c4cc3af7b6dc62a17c57678188b7704b6bbf8dd96859325afa86e9283efa"
 }

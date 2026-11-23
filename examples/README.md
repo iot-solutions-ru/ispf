@@ -131,6 +131,7 @@ These are hosted pages at `/apps/<appId>/`. Where the row names an application, 
 | [marketplace-catalog](marketplace-catalog/) | Listing copies read by the marketplace validator. Not a second product |
 | [marketplace-symbol-hvac-demo](marketplace-symbol-hvac-demo/) | HVAC symbol pack listing |
 | [mssql-single-engine](mssql-single-engine/) | Opt-in env for metadata + JDBC journal/history on one SQL Server DB (Prod Yes B2 on Evaluation = capped JDBC, DELETE+90d; not product SWITCH / 10y / 20s) |
+| [mysql-single-engine](mysql-single-engine/) | Opt-in env for metadata + JDBC journal/history on one MySQL Community 8.4 DB (Prod Yes B2 = capped JDBC, DELETE+90d; not active-active, rollups or partitions) |
 | [solution-tck](solution-tck/) | Scripts that score a lab server. Not an application bundle |
 
 `python tools/examples-index/check_examples_index.py` checks this page against the folders on disk.

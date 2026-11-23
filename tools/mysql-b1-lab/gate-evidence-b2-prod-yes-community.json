@@ -1,0 +1,38 @@
+{
+  "status": "Prod Yes (B2) signed: owner extension from the B2 single-engine lab gate; opt-in JDBC history + journal on the MySQL ISPF_DB; retention DELETE + 90-day ceiling",
+  "record": "Owner decision only; this file holds no measured items. Measurements are the collector output gate-evidence-b2-community.json, written by gate-b2.ps1 and not edited by hand",
+  "signed_on": "2026-11-23",
+  "owner_instruction": "2026-11-23: sign Community B2 with the MSSQL owner pattern if the gate runs green; Lab green B2 + checklist otherwise",
+  "cell": "MySQL Community Server 8.4.x LTS (self-managed) + MariaDB Connector/J only, with ISPF_MYSQL_SINGLE_ENGINE=true",
+  "basis": "B2 gate on MySQL 8.4.13 Community (Docker mysql:8.4, local AMD64), dedicated database ispf_b2, single JVM, ddl-auto=validate",
+  "evidence": [
+    "gate-evidence-b2-community.json: 25 PASS / 0 FAIL — live historian write through the platform, native bucket aggregate, raw read, 90-day retention ceiling, live journal + keyset read, 20,000-row journal purge in DELETE ... LIMIT batches, 6 boot refusals, 2 preflight refusals",
+    "CI, -Dispf.test.mysqlDocker=true: MysqlHistoryBucketTckTest (bucket SQL under a non-UTC JVM and a non-UTC session time_zone, 8 h epoch alignment, scoped and global journal purge across batches), MysqlFlywayBaselineTckTest, MysqlLiveBundleImportTckTest",
+    "Unit: MysqlCertificationBootGuardTest, FlywayDialectConfigurationMysqlTest, VariableHistoryServiceRetentionClampTest, MysqlDatabasePreflightTest, JdbcEventJournalBatchedPurgeTest, VariableSampleBucketQueryTest, JdbcVariableHistoryQueryStoreDialectPathTest",
+    "The B1 cell stays signed: gate-evidence-prod-yes-community.json"
+  ],
+  "owner_override": "As for B1, the lab Docker cell stands in for a named self-managed MySQL Community Server 8.4.x host; a gate re-run on the first named host is recommended, not blocking",
+  "operator_requirements": [
+    "Dedicated MySQL server instance for B2 (no co-tenant OLTP) and a dedicated ISPF database; the lab container hosted only ISPF databases",
+    "Server transaction_isolation=READ-COMMITTED and the ISPF database on utf8mb4_0900_bin; the single-engine preflight refuses boot otherwise",
+    "ISPF_MYSQL_SINGLE_ENGINE=true set explicitly; history and journal stores jdbc; warm tier, cold archive, ClickHouse spool and dual-write off (boot refuses otherwise)",
+    "Event journal enabled at boot (ISPF_EVENT_JOURNAL_ENABLED=true); the runtime-settings guard refuses switching the JDBC journal on later"
+  ],
+  "tech_debt": [
+    "P-MYSQL-SKU-RERUN: MySQL Enterprise, HeatWave, Amazon RDS / Aurora MySQL, Azure Database for MySQL and every other non-Community cell need their own B1 and B2 checklist runs",
+    "P-MYSQL-TLS: re-run the gates over TLS (sslMode=verify-full), recommended on the first named host",
+    "P-MYSQL-PG-SQL: review the remaining JDBC SQL for PostgreSQL-only constructs; port or fence what the review finds"
+  ],
+  "non_claims": [
+    "Active-active on MySQL: ispf.cluster.enabled stays refused, with or without single-engine",
+    "Historian rollups, table partitions or partition-drop retention on MySQL; retention is application DELETE capped at max-retention-days",
+    "A file buffer in front of MySQL (the MSSQL JDBC buffer has no MySQL twin)",
+    "A multi-year raw archive in MySQL, or a raw-scan latency figure without a named fixture",
+    "MySQL Enterprise, HeatWave, Amazon RDS / Aurora MySQL, Azure Database for MySQL, or any other non-Community cell; MySQL 8.0 and 9.x",
+    "MariaDB Server (boot refuses it) and any JDBC client other than MariaDB Connector/J",
+    "Tenant row isolation, HARD schemas, per-app schema switch",
+    "TLS on the ISPF_DB connection (operator-required; no gate ran over TLS)",
+    "Full SQL parity with PostgreSQL outside the paths the gates and the MySQL TCKs exercise"
+  ],
+  "checklist": "docs/en/mysql-b2-sku-promotion-checklist.md"
+}

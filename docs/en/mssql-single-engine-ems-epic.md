@@ -19,7 +19,7 @@ Not this epic: Part 11 / a validated EMS, multi-tenant RLS, multi-master writes,
 | Partition grain | Monthly |
 | ClickHouse / Parquet | Refused while `ISPF_MSSQL_SINGLE_ENGINE=true` |
 | JDBC file buffer | Off by default. After B2-core. Not part of the first “one database” sentence |
-| MySQL / Oracle | Deferred (ADR-0079 / ADR-0080) |
+| MySQL / Oracle | Not this epic. MySQL has its own opt-in single-engine B2 ([ADR-0079](decisions/0079-mysql-metadata-certification.md) § Amendment 5); Oracle deferred (ADR-0080) |
 
 ## Capacity sheet (boundary, not a measured SLO)
 

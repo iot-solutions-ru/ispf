@@ -17,7 +17,7 @@ Promote `ISPF_METADATA_DB_KIND=mysql` to a production claim only on a signed nam
 | Charset / collation | Database `ispf` and every table on `utf8mb4` / `utf8mb4_0900_bin` |
 | Dedicated database | Yes (`ispf`); ISPF user has `ALL` on `ispf` only |
 | `ISPF_TENANT_DB_ROW_ISOLATION` | `false` (single-tenant) |
-| History / journal | Disabled (`ISPF_VARIABLE_HISTORY_ENABLED=false`, `ISPF_EVENT_JOURNAL_ENABLED=false`) |
+| History / journal | Disabled (`ISPF_VARIABLE_HISTORY_ENABLED=false`, `ISPF_EVENT_JOURNAL_ENABLED=false`). JDBC history / journal on this cell is the opt-in single-engine profile, signed separately: [B2 checklist](mysql-b2-sku-promotion-checklist.md) |
 | Cluster | `ISPF_CLUSTER_ENABLED=false` (A-A **not certified**) |
 | TLS | Not used on the evidence cell (`allowPublicKeyRetrieval=true`, lab-only). Operator-required in production; **not certified** (**P-MYSQL-TLS**) |
 
@@ -32,7 +32,7 @@ Promote `ISPF_METADATA_DB_KIND=mysql` to a production claim only on a signed nam
 - MySQL Enterprise, HeatWave, Amazon RDS / Aurora MySQL, Azure Database for MySQL, and every other non-Community cell (tech debt **P-MYSQL-SKU-RERUN**)
 - MySQL 8.0 and 9.x Innovation releases
 - MariaDB Server under any `ISPF_METADATA_DB_KIND` (boot refuses it), and any JDBC client other than MariaDB Connector/J
-- B2 JDBC history / journal and historian dual-write on MySQL (boot refuses them)
+- B2 JDBC history / journal under this B1 signature: boot refuses them without `ISPF_MYSQL_SINGLE_ENGINE=true`; with the flag they are **Prod Yes (B2)** on this cell ([B2 checklist](mysql-b2-sku-promotion-checklist.md)). Historian dual-write stays refused either way
 - Active-active (`ISPF_CLUSTER_ENABLED=true`), tenant row isolation, `HARD` schemas, per-app schema switch
 - TLS on the `ISPF_DB` connection: operator-required, not certified by this signature (tech debt **P-MYSQL-TLS**)
 - Full SQL parity with PostgreSQL: SQL outside the paths the gate and the MySQL TCKs exercise has not been reviewed in full (tech debt **P-MYSQL-PG-SQL**)
