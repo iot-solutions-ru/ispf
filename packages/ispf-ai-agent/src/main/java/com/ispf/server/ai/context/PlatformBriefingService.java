@@ -200,6 +200,8 @@ public class PlatformBriefingService {
                 .append("get_widget_catalog, list_object_blueprints, list_examples, get_example_bundle.\n");
         sb.append("Do not invent a short protocol list from memory; cite driverIds from this index or one list_drivers call.\n");
         sb.append("Never pass angle-bracket placeholders as tool arguments.\n");
+        sb.append("Call discovery tools as JSON yourself — never tell the user to run list_*/get_*/search_* / ")
+                .append("get_driver_help / get_widget_catalog / get_example_bundle / get_automation_schema.\n");
     }
 
     private static int maturityRank(DriverMaturity maturity) {
@@ -246,7 +248,8 @@ public class PlatformBriefingService {
                     .append(driver.maturity().name())
                     .append('\n');
         }
-        sb.append("Use list_drivers or get_driver_help for config templates.\n");
+        sb.append("For driver defaults call get_driver_help (JSON; live configurationSchema when loaded); ")
+                .append("optional search_context topic=drivers for doc examples — do not suggest tools in prose.\n");
     }
 
     private void appendVirtualProfiles(StringBuilder sb) {
@@ -265,7 +268,7 @@ public class PlatformBriefingService {
 
     private void appendWidgetCatalog(StringBuilder sb) {
         sb.append("\n### Dashboard widgets\n");
-        sb.append("Use get_widget_catalog or get_automation_schema topic=dashboard for all ")
+        sb.append("Call get_widget_catalog or get_automation_schema topic=dashboard as JSON tools for all ")
                 .append(AgentWidgetCatalog.all().size())
                 .append(" widget types, bindings, and layout templates.\n");
         @SuppressWarnings("unchecked")
@@ -311,7 +314,7 @@ public class PlatformBriefingService {
                 }
             }
         }
-        sb.append("Use list_examples or get_example_bundle for manifest details.\n");
+        sb.append("For manifest details call list_examples / get_example_bundle as JSON tools — do not suggest them in prose.\n");
     }
 
     private void appendFeatures(StringBuilder sb) {

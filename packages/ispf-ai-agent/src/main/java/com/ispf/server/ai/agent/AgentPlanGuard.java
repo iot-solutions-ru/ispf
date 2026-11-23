@@ -204,8 +204,8 @@ final class AgentPlanGuard {
         }
         String phase = runState.planPhase().storageValue();
         String hint = runState.interactionMode() == AgentInteractionMode.ASK
-                ? "Ask mode is read-only. Use list_*/get_*/search_* tools, then finish with an answer."
-                : "Planning phase (" + phase + "): use read-only discovery tools, then finish with "
+                ? "Ask mode is read-only. Call list_*/get_*/search_* as JSON tools yourself, then finish with an answer."
+                : "Planning phase (" + phase + "): call read-only discovery tools as JSON, then finish with "
                         + "{\"type\":\"finish\",\"result\":{\"phase\":\"plan\",\"interactive\":true,"
                         + "\"plan\":{...},\"questions\":[...],\"suggestions\":[{\"label\":\"Утвердить полный план\","
                         + "\"message\":\"Утверждаю план, начинай выполнение\",\"primary\":true}]}}.";

@@ -77,6 +77,9 @@ public final class AgentPromptBuilder {
             or when done:
             {"type":"finish","summary":"Human-readable result for the user","result":{"devicePath":"...","dashboardPath":"..."}}
             
+            CALL TOOLS — DO NOT SUGGEST THEM: never finish with «use / используйте list_*/get_*/search_*»
+            for the user to type. Emit {"type":"tool",...} yourself; user-typed tool lines are not executed.
+            
             CONVERSATION STYLE — prefer dialogue over blind execution:
             - PLAN-BEFORE-EXECUTE: for complex tasks (SCADA project, pump station, multi-layer blueprint, \
             several devices + dashboard + operator UI), run discovery first and finish with phase=plan + questions \

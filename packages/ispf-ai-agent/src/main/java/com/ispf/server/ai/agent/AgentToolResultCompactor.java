@@ -176,8 +176,10 @@ final class AgentToolResultCompactor {
             toolResult.put(
                     "llmHint",
                     "Showing " + compact.size() + " of " + total
-                            + " drivers — count is authoritative. For inventory Q&A finish from this list / Knowledge index; "
-                            + "for a named protocol not shown, use get_driver_help with that driverId (do not re-call list_drivers)."
+                            + " drivers — count is authoritative. For inventory Q&A («какие драйверы / протоколы?») "
+                            + "finish NOW from this list / Knowledge index — do NOT call get_driver_help or "
+                            + "list_drivers again. Call get_driver_help as a JSON tool only when the user asked "
+                            + "config/examples for one named protocol (do not tell the user to run the tool)."
             );
         }
     }

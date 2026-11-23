@@ -17,6 +17,10 @@ class AgentAskPromptBuilderTest {
         assertThat(prompt).doesNotContain("specIntakeGuide");
         assertThat(prompt).doesNotContain("Утвердить полный план");
         assertThat(prompt).contains("FINISH FROM BRIEFING");
+        assertThat(prompt).contains("CALL TOOLS — DO NOT SUGGEST THEM");
+        assertThat(prompt).contains("Driver config / examples / help");
+        assertThat(prompt).contains("After list_drivers OK: Finish NOW");
+        assertThat(prompt).contains("get_driver_help");
         assertThat(prompt).contains("Platform overview");
         assertThat(prompt).contains("NEVER put angle-bracket placeholders");
         assertThat(prompt).contains("switch to Execute");

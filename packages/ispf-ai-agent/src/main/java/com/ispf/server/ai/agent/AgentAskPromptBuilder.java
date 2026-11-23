@@ -23,19 +23,41 @@ public final class AgentAskPromptBuilder {
             For real deploy/create/configure («создай демо SNMP», «разверни»): say in 1–2 short sentences to switch to Execute —
             do NOT invent a long fake deploy playbook and do NOT call list_drivers first.
             
+            CALL TOOLS — DO NOT SUGGEST THEM (all discovery tools, not only drivers):
+            - When you need a tool, emit {"type":"tool",...} yourself. NEVER finish with «use / используйте
+              <tool>» for list_*/get_*/search_* / get_driver_help / get_widget_catalog / get_automation_schema /
+              list_examples / get_example_bundle / list_object_blueprints / … or paste CLI-like tool lines
+              for the user to type.
+            - User messages that look like tool syntax (e.g. search_context topic=drivers query=…) are NOT
+              executed by the runtime — interpret the intent and call the matching tool as JSON yourself.
+            - Tool names in backticks belong only in how-to Markdown AFTER you already fetched the facts
+              (or when describing future Execute-mode mutations the Ask surface cannot run). They never replace a tool call.
+            
             FINISH FROM BRIEFING (preferred for simple Q&A): if Platform knowledge / Knowledge index, UI focus,
             or LIVE UI SNAPSHOT already answers the question, finish immediately with Markdown — do NOT call tools first.
-            Use read-only tools when live tree/report data is required and not already in context.
+            Use read-only tools when live tree/report data OR driver/widget config templates are required and
+            not already in context (ids/counts in the briefing are NOT config examples).
             
             Platform overview / concepts («про что платформа», «как пользоваться», «что в ней есть»):
             - Finish from Platform knowledge / Knowledge index (and optional search_context topic=agent-knowledge).
             - Do NOT call list_drivers for a general overview — drivers are only one slice of the platform.
             
-            Platform inventory («какие протоколы?», which drivers/widgets/examples exist):
+            Platform inventory («какие драйверы?», «какие протоколы?», which drivers/widgets/examples exist):
             - Prefer the Knowledge index driverIds / counts on this turn; finish from that when enough.
             - If the index is missing or too thin, call list_drivers ONCE with empty arguments (or a real substring like mqtt), then finish.
+            - After list_drivers OK: Finish NOW with Markdown from that list — do NOT call get_driver_help
+              (that is only for a named protocol's config), and do NOT call list_drivers again.
             - NEVER invent a 2–3 protocol list from memory; NEVER put angle-bracket placeholders in tool args
               (wrong: copying prompt templates that wrap words in angle brackets).
+            
+            Driver config / examples / help for a named protocol («примеры конфигурации», «как настроить WirelessHART»):
+            - Call get_driver_help with the canonical driverId NOW (e.g. wirelesshart, not a display-name slug).
+            - If the id is unclear, call list_drivers ONCE with a real substring, then get_driver_help ONCE.
+            - Optional: at most ONE search_context topic=drivers with a real protocol substring for doc snippets / point mappings.
+            - After get_driver_help OK: Finish NOW — never re-call get_driver_help with the same driverId.
+            - Finish from tool results: cite configurationSchema defaults when present; cite point mappings only if
+              a tool returned them. If maturity is BETA/STUB and no template is documented, say so honestly —
+              never invent host/port/point fields, never tell the user which tool to run.
             
             GROUND TRUTH: paths, appIds, report names — from tool results this turn, briefing, \
             OR from LIVE UI SNAPSHOT / ## User UI focus / [UI CONTEXT] on this turn (those ARE live state). \
@@ -43,7 +65,7 @@ public final class AgentAskPromptBuilder {
             Playbook examples (mes-reference, pump-01) are patterns, not live state.
             
             How-to questions («как упаковать bundle?», «как это сделать?»):
-            - Give numbered Markdown steps in summary (tool names in backticks).
+            - Give numbered Markdown steps in summary (tool names in backticks only after facts are known).
             - Pack/deploy bundle («как упаковать / развернуть bundle»): at most ONE of
               search_context topic=applications|agent-knowledge, list_applications,
               get_example_bundle appId=mes-reference, or export_application_bundle.

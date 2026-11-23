@@ -426,8 +426,9 @@ public class PlatformAgentToolRegistry implements McpToolCatalogPort {
             return Map.of(
                     "status", "ERROR",
                     "error", "Tool requires operator app scope (not available in admin/copilot mode)",
-                    "hint", "Use search_context / get_automation_schema / LIVE UI SNAPSHOT for admin Q&A. "
-                            + "Operator document tools only work in the operator HMI copilot."
+                    "hint", "For admin Q&A call search_context / get_automation_schema as JSON tools "
+                            + "(or use LIVE UI SNAPSHOT). Operator document tools only work in the operator HMI copilot — "
+                            + "do not tell the user to run those tools."
             );
         }
         if (context.isOperator()) {

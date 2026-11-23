@@ -51,8 +51,8 @@ public class ContextPackSearchService {
             return Map.of(
                     "status", "ERROR",
                     "error", "query is required (or pass a specific topic; topic-only defaults query to that topic)",
-                    "hint", "Example: search_context query=bindings topic=agent-knowledge "
-                            + "— or topic=agent-knowledge alone."
+                    "hint", "Call search_context again as a JSON tool with query=... and/or a specific topic "
+                            + "(topic-only is OK). Do not tell the user to type that command."
             );
         }
         String searchMode = normalizeMode(mode);
@@ -127,7 +127,11 @@ public class ContextPackSearchService {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("status", "OK");
         result.put("driverId", driverId);
-        result.put("hint", "Use list_drivers and search_context topic=drivers query=" + driverId);
+        result.put(
+                "hint",
+                "Unknown driverId — call list_drivers with a short substring as a JSON tool to find the "
+                        + "canonical driverId, then call get_driver_help (never tell the user to run these tools)."
+        );
         return result;
     }
 
