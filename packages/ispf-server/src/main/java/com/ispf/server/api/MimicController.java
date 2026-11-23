@@ -45,6 +45,9 @@ public class MimicController {
             @RequestBody SaveTitleRequest request,
             Authentication authentication
     ) {
+        if (request.title() == null || request.title().isBlank()) {
+            throw new IllegalArgumentException("title must not be blank");
+        }
         mimicService.ensureMimicStructure(path);
         variableMemberAccessService.requireWrite(path, "title", authentication);
         return mimicService.updateTitle(path, request.title());
