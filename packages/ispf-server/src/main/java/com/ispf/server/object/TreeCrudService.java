@@ -18,6 +18,8 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.Instant;
 import java.util.LinkedHashSet;
@@ -81,12 +83,32 @@ public class TreeCrudService {
                 PlatformCatalogSortOrder.forPath(fullPath).orElseGet(() -> nextSortOrder(parentPath))
         );
         objectTree.register(node);
+        forgetCreatedNodeIfTransactionRollsBack(fullPath);
         node.setRevision(1L);
         node.setLastChangedBy(ObjectRevisionContext.actor());
         node.setLastChangedAt(Instant.now());
         objectManager.persistNode(node);
         objectManager.publish(ObjectChangeEvent.of(ObjectChangeType.CREATED, fullPath, node.revision(), node.lastChangedBy()));
         return node;
+    }
+
+    /**
+     * {@code register} updates the live tree before the database insert commits. A later failure
+     * in the same transaction rolls the row back and must drop the node, or a rejected create
+     * stays readable.
+     */
+    private void forgetCreatedNodeIfTransactionRollsBack(String path) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            return;
+        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCompletion(int status) {
+                if (status == STATUS_ROLLED_BACK) {
+                    objectManager.removePathFromMemoryIfPresent(path);
+                }
+            }
+        });
     }
 
     @Transactional

@@ -164,6 +164,7 @@ public class ScheduleObjectService {
         if (objectManager.tree().findByPath(path).isPresent()) {
             throw new IllegalArgumentException("Schedule already exists: " + scheduleId);
         }
+        requireValidScheduleInputs(cronExpression, timeZone);
         String nodeName = sanitizeNodeName(scheduleId);
         objectManager.create(
                 SCHEDULES_ROOT,
@@ -210,6 +211,7 @@ public class ScheduleObjectService {
             throw new IllegalArgumentException("Not a schedule object: " + path);
         }
         String scheduleId = readString(node, "scheduleId").orElse(path.substring(path.lastIndexOf('.') + 1));
+        requireValidScheduleInputs(cronExpression, timeZone);
         String nextDisplayName = displayName != null && !displayName.isBlank() ? displayName : node.displayName();
         String nextDescription = description != null ? description : node.description();
         objectManager.updateInfo(path, nextDisplayName, nextDescription);
@@ -219,6 +221,15 @@ public class ScheduleObjectService {
 
     public String pathForScheduleId(String scheduleId) {
         return SCHEDULES_ROOT + "." + sanitizeNodeName(scheduleId);
+    }
+
+    private static void requireValidScheduleInputs(String cronExpression, String timeZone) {
+        if (cronExpression != null) {
+            ScheduleDueChecker.normalizeCronOrBlank(cronExpression);
+        }
+        if (timeZone != null) {
+            ScheduleDueChecker.resolveZone(timeZone.isBlank() ? "UTC" : timeZone);
+        }
     }
 
     private void applyScheduleFields(

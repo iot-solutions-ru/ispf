@@ -12,6 +12,8 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
@@ -43,6 +45,20 @@ class ScheduleObjectServiceTest {
 
         assertTrue(schedules.isEmpty());
         verify(objectManager, never()).ensureSystemCatalogFolder(any(), any(), any());
+        verify(objectManager, never()).create(any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void invalidCronAndTimeZoneDoNotCreateTheSchedule() {
+        when(objectManager.tree()).thenReturn(new ObjectTree());
+
+        IllegalArgumentException cron = assertThrows(IllegalArgumentException.class, () ->
+                service.create("bad-cron", null, null, false, 60_000L, "not a cron", null, null, null));
+        IllegalArgumentException zone = assertThrows(IllegalArgumentException.class, () ->
+                service.create("bad-zone", null, null, false, 60_000L, null, "Not/AZone", null, null));
+
+        assertTrue(cron.getMessage().startsWith("Invalid schedule cronExpression"));
+        assertEquals("Invalid schedule timeZone: Not/AZone", zone.getMessage());
         verify(objectManager, never()).create(any(), any(), any(), any(), any(), any());
     }
 }
