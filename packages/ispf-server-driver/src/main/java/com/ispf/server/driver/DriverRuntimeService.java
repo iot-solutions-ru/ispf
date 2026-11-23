@@ -505,6 +505,9 @@ public class DriverRuntimeService implements DriverConnectionLookup {
 
     @Transactional
     public DriverRuntimeStatus configure(String devicePath, DriverBinding binding, String pointMappingsJson) {
+        if (binding.driverId() != null && !binding.driverId().isBlank()) {
+            driverFactory.create(binding.driverId());
+        }
         String existingDriverId = objects.findByPath(devicePath)
                 .flatMap(node -> stringValue(node, "driverId"))
                 .orElse("");
