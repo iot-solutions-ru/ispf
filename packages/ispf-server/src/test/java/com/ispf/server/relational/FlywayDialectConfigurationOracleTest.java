@@ -8,6 +8,7 @@ import com.ispf.server.config.MetadataDbProperties;
 import com.ispf.server.config.MetadataDialectBootPolicy;
 import com.ispf.server.config.MssqlRelationalProperties;
 import com.ispf.server.config.MysqlRelationalProperties;
+import com.ispf.server.config.OracleRelationalProperties;
 import com.ispf.server.config.TenantIsolationProperties;
 import com.ispf.server.config.VariableHistoryProperties;
 import org.flywaydb.core.Flyway;
@@ -38,7 +39,7 @@ class FlywayDialectConfigurationOracleTest {
     void missingDriverIsRefusedBeforeLocationsAreApplied() {
         assumeFalse(driverPresent(), "Oracle lab driver on the classpath");
         FluentConfiguration configuration = Flyway.configure();
-        assertThatThrownBy(() -> customizer(false, false).customize(configuration))
+        assertThatThrownBy(() -> customizer(false, false, false).customize(configuration))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("ISPF_METADATA_DB_KIND=oracle")
                 .hasMessageContaining("ADR-0080");
@@ -50,27 +51,36 @@ class FlywayDialectConfigurationOracleTest {
     void b1DefaultsSelectOraclePack() {
         assumeTrue(driverPresent(), "Oracle lab driver not on the classpath");
         FluentConfiguration configuration = Flyway.configure();
-        customizer(false, false).customize(configuration);
+        customizer(false, false, false).customize(configuration);
         assertThat(Arrays.stream(configuration.getLocations()).map(Location::getDescriptor))
                 .containsExactly("classpath:db/migration/oracle");
     }
 
     @Test
-    void clusterIsRefusedBeforeMigrate() {
+    void b1ClusterIsRefusedBeforeMigrate() {
         assumeTrue(driverPresent(), "Oracle lab driver not on the classpath");
-        assertThatThrownBy(() -> customizer(true, false).customize(Flyway.configure()))
+        assertThatThrownBy(() -> customizer(true, false, false).customize(Flyway.configure()))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("cluster")
+                .hasMessageContaining("ispf.cluster.enabled=true on Oracle requires ISPF_ORACLE_SINGLE_ENGINE=true")
                 .hasMessageContaining("ADR-0080");
     }
 
     @Test
     void jdbcHistoryIsRefusedBeforeMigrate() {
         assumeTrue(driverPresent(), "Oracle lab driver not on the classpath");
-        assertThatThrownBy(() -> customizer(false, true).customize(Flyway.configure()))
+        assertThatThrownBy(() -> customizer(false, true, false).customize(Flyway.configure()))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("variable-history")
                 .hasMessageContaining("B2");
+    }
+
+    @Test
+    void singleEngineClusterSelectsOraclePack() {
+        assumeTrue(driverPresent(), "Oracle lab driver not on the classpath");
+        FluentConfiguration configuration = Flyway.configure();
+        customizer(true, true, true).customize(configuration);
+        assertThat(Arrays.stream(configuration.getLocations()).map(Location::getDescriptor))
+                .containsExactly("classpath:db/migration/oracle");
     }
 
     private static boolean driverPresent() {
@@ -80,7 +90,11 @@ class FlywayDialectConfigurationOracleTest {
         );
     }
 
-    private static FlywayConfigurationCustomizer customizer(boolean clusterEnabled, boolean jdbcHistory) {
+    private static FlywayConfigurationCustomizer customizer(
+            boolean clusterEnabled,
+            boolean jdbcHistory,
+            boolean singleEngine
+    ) {
         MetadataDbProperties metadata = new MetadataDbProperties();
         metadata.setKind("oracle");
         RelationalDialectDetector detector = new RelationalDialectDetector(
@@ -93,9 +107,12 @@ class FlywayDialectConfigurationOracleTest {
         history.setStore(jdbcHistory ? "jdbc" : "clickhouse");
         history.setDualWriteEnabled(false);
         EventJournalProperties journal = new EventJournalProperties();
-        journal.setEnabled(false);
+        journal.setEnabled(singleEngine);
+        journal.setStore("jdbc");
         ClusterProperties cluster = mock(ClusterProperties.class);
         when(cluster.enabled()).thenReturn(clusterEnabled);
+        OracleRelationalProperties oracle = new OracleRelationalProperties();
+        oracle.setSingleEngine(singleEngine);
         return new FlywayDialectConfiguration().flywayDialectCustomizer(
                 null,
                 detector,
@@ -105,6 +122,7 @@ class FlywayDialectConfigurationOracleTest {
                 cluster,
                 new MssqlRelationalProperties(),
                 new MysqlRelationalProperties(),
+                oracle,
                 new HistorianTierProperties(),
                 new HistorianColdArchiveProperties(false, "", 200, 10000)
         );

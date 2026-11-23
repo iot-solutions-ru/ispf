@@ -1,0 +1,33 @@
+{
+  "status": "Prod Yes (A-A) signed: owner extension from the dual-JVM single-engine lab gate; cluster + NATS JetStream + Redis on one Oracle Free ISPF_DB with JDBC history and journal",
+  "record": "Owner decision only; this file holds no measured items. Measurements are the collector output gate-evidence-aa-free.json, written by gate-aa.ps1 and not edited by hand",
+  "signed_on": "2026-11-23",
+  "owner_instruction": "2026-11-23: sign Free A-A with the MySQL/MSSQL owner pattern if the gate runs green; Lab green A-A + checklist otherwise; residual soak stays P-ORACLE-AA-SOAK",
+  "cell": "Oracle Database Free 23.26.x (self-managed) + operator-supplied ojdbc17 only, with ISPF_ORACLE_SINGLE_ENGINE=true and ISPF_CLUSTER_ENABLED=true",
+  "basis": "A-A gate on Oracle Database Free 23.26.4 (Docker gvenzl/oracle-free:23-slim-faststart, local AMD64), dedicated schema ispf_aa, two JVMs (:18097 / :18098), NATS JetStream, Redis, staged start (A then B), ddl-auto=none",
+  "evidence": [
+    "gate-evidence-aa-free.json: 35 PASS / 0 FAIL — shared sessions, structure + definition sync, live lag both ways under SLO, historian and journal dual-writer uniqueness, concurrent writes + audit chain, driver lease reclaim after docker kill A in 8.1 s (SLO 45 s), survivor serves, leader takeover, rejoin without dual owner, 7 boot fences",
+    "JdbcEventJournalStore quotes Oracle reserved \"level\" to match Flyway DDL (ORA-03050 without the quote)",
+    "Lab stand snapshots bootJar/ojdbc/virtual pack under tools/oracle-b1-lab/.run-aa",
+    "CI opt-in OracleClusterLeaseTckTest (-Dispf.test.oracleDocker=true)"
+  ],
+  "owner_override": "As for B1/B2, the lab Docker Free cell stands in for a named self-managed Free host; a gate re-run on the first named host is recommended, not blocking. Free CPU/storage caps remain a non-preferred soak cell (P-ORACLE-AA-SOAK)",
+  "operator_requirements": [
+    "Dedicated Oracle instance for the single-engine cell and a dedicated ISPF schema shared by every replica",
+    "ISPF_ORACLE_SINGLE_ENGINE=true and ISPF_CLUSTER_ENABLED=true; history and journal stores jdbc; warm tier, cold archive, ClickHouse spool and dual-write off; SPRING_JPA_HIBERNATE_DDL_AUTO=none",
+    "ojdbc17 on loader.path (ISPF does not ship it)",
+    "NATS JetStream and Redis (when live-variable sync / path interest is on)",
+    "Do not bind-mount a live Gradle bootJar into the lab JVMs while another build may overwrite it; use the stand snapshot under tools/oracle-b1-lab/.run-aa"
+  ],
+  "tech_debt": [
+    "P-ORACLE-AA-SOAK: dual-JVM chaos soak journal and failover under load; Free resource pressure",
+    "P-ORACLE-SKU / P-ORACLE-TLS / P-ORACLE-VALIDATE / P-ORACLE-PG-SQL / P-ORACLE-EMPTY as for B1/B2"
+  ],
+  "non_claims": [
+    "RAC multi-master or readable replicas as write targets",
+    "Cluster without ISPF_ORACLE_SINGLE_ENGINE or without NATS",
+    "Completed multi-hour soak (P-ORACLE-AA-SOAK)",
+    "SE2 / EE / Autonomous / RDS; shipping ojdbc"
+  ],
+  "checklist": "docs/en/oracle-aa-sku-promotion-checklist.md"
+}

@@ -8,7 +8,8 @@ import java.util.Locale;
 /**
  * Oracle dialect (ADR-0080 B1; Prod Yes on Oracle Database Free 23.26.x only). Boot needs the Flyway
  * pack and an operator-supplied JDBC driver ({@code MetadataDialectBootPolicy.assertEngineCertified})
- * and runs only under {@code assertOracleB1Fences}. SQL stays 19c-compatible: 23ai accepts {@code SELECT} without
+ * and runs only under {@code assertOracleB1Fences} (B1, opt-in B2, and A-A when single-engine + cluster).
+ * SQL stays 19c-compatible: 23ai accepts {@code SELECT} without
  * {@code FROM} and a row limit with {@code FOR UPDATE}, 19c rejects both (ORA-00923 / ORA-02014).
  */
 public class OracleDialect extends AbstractRelationalDialect {
@@ -112,12 +113,42 @@ public class OracleDialect extends AbstractRelationalDialect {
     }
 
     /**
-     * Still the PostgreSQL-shaped string — invalid on Oracle. B2 must replace this;
-     * do not treat it as a historian claim.
+     * Native Oracle (B2). Epoch-aligned buckets on the TIMESTAMP wall clock via Oracle DATE arithmetic
+     * (DATE includes time). Parameter order matches MySQL/MSSQL: bucket seconds, bucket seconds,
+     * object path, variable, field, from, to, max buckets.
      */
     @Override
     public String variableSampleBucketAggregateSql() {
-        return bucketAggregateSqlPostgresStyle();
+        return """
+                SELECT bucket_start, avg_val, min_val, max_val, sample_count
+                FROM (
+                    SELECT
+                        bucket_start,
+                        AVG(value_double) AS avg_val,
+                        MIN(value_double) AS min_val,
+                        MAX(value_double) AS max_val,
+                        COUNT(*) AS sample_count
+                    FROM (
+                        SELECT
+                            TIMESTAMP '1970-01-01 00:00:00' + NUMTODSINTERVAL(
+                                FLOOR((CAST(observed_at AS DATE) - DATE '1970-01-01') * 86400 / ?) * ?,
+                                'SECOND'
+                            ) AS bucket_start,
+                            value_double
+                        FROM variable_samples
+                        WHERE object_path = ?
+                          AND variable_name = ?
+                          AND field_name = ?
+                          AND observed_at >= ?
+                          AND observed_at <= ?
+                          AND value_double IS NOT NULL
+                    ) bucketed
+                    GROUP BY bucket_start
+                    ORDER BY bucket_start DESC
+                    FETCH FIRST ? ROWS ONLY
+                ) recent_buckets
+                ORDER BY bucket_start ASC
+                """;
     }
 
     @Override

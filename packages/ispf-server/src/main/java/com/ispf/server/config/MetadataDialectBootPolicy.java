@@ -221,6 +221,13 @@ public final class MetadataDialectBootPolicy {
             ""
     );
 
+    private static final SingleEngineProfile ORACLE_SINGLE_ENGINE = new SingleEngineProfile(
+            "Oracle",
+            "oracle-single-engine",
+            "On Oracle set it false. Oracle single-engine has no file buffer in front of ISPF_DB.",
+            ""
+    );
+
     private static void assertSingleEngineStores(
             SingleEngineProfile profile,
             VariableHistoryProperties variableHistoryProperties,
@@ -266,19 +273,31 @@ public final class MetadataDialectBootPolicy {
     }
 
     /**
-     * Oracle B1 fences (ADR-0080; Prod Yes B1 on Oracle Database Free 23.26.x only, signed with these
-     * fences on). No single-engine bypass — JDBC history/journal on
-     * ISPF_DB is a later B2 decision. These fences are the only thing between an Oracle ISPF_DB and
-     * an uncertified mode; keep them before Flyway and on context refresh.
+     * Oracle fences (ADR-0080; Prod Yes B1 on Oracle Database Free 23.26.x). B1 keeps JDBC
+     * history/journal off ISPF_DB. The opt-in single-engine profile
+     * ({@code ISPF_ORACLE_SINGLE_ENGINE}, B2) allows both under the shared single-engine store rules.
+     * A-A (§ Amendment 5): cluster runs on the single-engine cell only. Residual tech-debt:
+     * failover under load / multi-hour soak — docs/en/parked-backlog.md P-ORACLE-AA-SOAK.
+     * Row isolation, {@code HARD} and dual-write stay refused either way. Keep these fences
+     * before Flyway and on context refresh.
      */
     public static void assertOracleB1Fences(
             RelationalDialect dialect,
             TenantIsolationProperties tenantIsolationProperties,
             VariableHistoryProperties variableHistoryProperties,
             EventJournalProperties eventJournalProperties,
-            ClusterProperties clusterProperties
+            ClusterProperties clusterProperties,
+            boolean singleEngine,
+            boolean warmEnabled,
+            boolean coldArchiveEnabled
     ) {
         if (dialect.kind() != RelationalDbKind.ORACLE) {
+            if (singleEngine) {
+                throw new IllegalStateException(
+                        "ISPF_ORACLE_SINGLE_ENGINE=true applies to an Oracle ISPF_DB only (ADR-0080); "
+                                + "this ISPF_DB is " + dialect.kind() + ". Unset it."
+                );
+            }
             return;
         }
         if (tenantIsolationProperties.isDbRowIsolation()) {
@@ -297,27 +316,37 @@ public final class MetadataDialectBootPolicy {
         if (variableHistoryProperties.isDualWriteEnabled()) {
             throw new IllegalStateException(
                     "ispf.variable-history.dual-write-enabled=true is refused on Oracle (ADR-0080). "
-                            + "B1 keeps history off ISPF_DB JDBC."
+                            + "B1 keeps history off ISPF_DB JDBC; single-engine keeps one JDBC store."
             );
         }
-        if (clusterProperties.enabled()) {
+        // A-A: cluster only with single-engine. ClusterDependencyValidator still fail-closes without
+        // NATS JetStream (+ Redis when live sync / path interest is on).
+        if (clusterProperties.enabled() && !singleEngine) {
             throw new IllegalStateException(
-                    "ispf.cluster.enabled=true is not certified on Oracle (ADR-0080). "
-                            + "Run a single JVM, or use PostgreSQL for active-active."
+                    "ispf.cluster.enabled=true on Oracle requires ISPF_ORACLE_SINGLE_ENGINE=true (ADR-0080 A-A): "
+                            + "the dual-JVM gate ran only with history and journal on this database. "
+                            + "Set the flag with the JDBC stores, or run a single JVM."
             );
+        }
+        if (singleEngine) {
+            assertSingleEngineStores(
+                    ORACLE_SINGLE_ENGINE, variableHistoryProperties, eventJournalProperties, warmEnabled, coldArchiveEnabled);
+            return;
         }
         if (variableHistoryProperties.isEnabled() && !variableHistoryProperties.isExternalTimeSeriesStore()) {
             throw new IllegalStateException(
                     "ispf.variable-history store falls back to ISPF_DB JDBC on Oracle (B2, ADR-0080). "
                             + "Set ISPF_VARIABLE_HISTORY_STORE=clickhouse (or cassandra/scylla), "
-                            + "or ISPF_VARIABLE_HISTORY_ENABLED=false for B1."
+                            + "ISPF_VARIABLE_HISTORY_ENABLED=false for B1, "
+                            + "or ISPF_ORACLE_SINGLE_ENGINE=true for the opt-in JDBC profile."
             );
         }
         if (eventJournalProperties.isEnabled() && eventJournalProperties.isJdbcStore()) {
             throw new IllegalStateException(
                     "ispf.event-journal store falls back to ISPF_DB JDBC on Oracle (B2, ADR-0080). "
                             + "Set ISPF_EVENT_JOURNAL_STORE=clickhouse (or cassandra/scylla), "
-                            + "or ISPF_EVENT_JOURNAL_ENABLED=false for B1."
+                            + "ISPF_EVENT_JOURNAL_ENABLED=false for B1, "
+                            + "or ISPF_ORACLE_SINGLE_ENGINE=true for the opt-in JDBC profile."
             );
         }
     }

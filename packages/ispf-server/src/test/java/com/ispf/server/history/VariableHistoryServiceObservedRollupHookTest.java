@@ -101,6 +101,7 @@ class VariableHistoryServiceObservedRollupHookTest {
                 observedAtRollupQueryService,
                 parquetExport,
                 mock(ObjectProvider.class),
+                mock(ObjectProvider.class),
                 mock(ObjectProvider.class)
         );
     }

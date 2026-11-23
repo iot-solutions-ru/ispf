@@ -70,6 +70,7 @@ public class VariableHistoryService {
     private final HistoryParquetExportGateway parquetExport;
     private final ObjectProvider<com.ispf.server.config.MssqlRelationalProperties> mssqlRelationalProperties;
     private final ObjectProvider<com.ispf.server.config.MysqlRelationalProperties> mysqlRelationalProperties;
+    private final ObjectProvider<com.ispf.server.config.OracleRelationalProperties> oracleRelationalProperties;
 
     /** Last sample epoch ms per (path|var|field) for debounce. */
     private final ConcurrentHashMap<String, Long> lastSampleMs = new ConcurrentHashMap<>();
@@ -98,7 +99,8 @@ public class VariableHistoryService {
             ObjectProvider<JdbcMssqlObservedAtRollupQueryService> observedAtRollupQueryService,
             HistoryParquetExportGateway parquetExport,
             ObjectProvider<com.ispf.server.config.MssqlRelationalProperties> mssqlRelationalProperties,
-            ObjectProvider<com.ispf.server.config.MysqlRelationalProperties> mysqlRelationalProperties
+            ObjectProvider<com.ispf.server.config.MysqlRelationalProperties> mysqlRelationalProperties,
+            ObjectProvider<com.ispf.server.config.OracleRelationalProperties> oracleRelationalProperties
     ) {
         this.parquetExport = parquetExport;
         this.rollupMaterializer = rollupMaterializer;
@@ -122,6 +124,7 @@ public class VariableHistoryService {
         this.rollupQueryService = rollupQueryService;
         this.mssqlRelationalProperties = mssqlRelationalProperties;
         this.mysqlRelationalProperties = mysqlRelationalProperties;
+        this.oracleRelationalProperties = oracleRelationalProperties;
     }
 
     @EventListener
@@ -997,7 +1000,7 @@ public class VariableHistoryService {
         return clampRetentionDays(days);
     }
 
-    /** Single-engine (MSSQL or MySQL): cap above max and treat ≤0 (unlimited) as the named ceiling. */
+    /** Single-engine (MSSQL, MySQL, or Oracle): cap above max and treat ≤0 (unlimited) as the named ceiling. */
     int clampRetentionDays(int days) {
         int cap = singleEngineMaxRetentionDays();
         if (cap <= 0) {
@@ -1018,6 +1021,10 @@ public class VariableHistoryService {
         com.ispf.server.config.MysqlRelationalProperties mysql = mysqlRelationalProperties.getIfAvailable();
         if (mysql != null && mysql.isSingleEngine()) {
             return mysql.getMaxRetentionDays();
+        }
+        com.ispf.server.config.OracleRelationalProperties oracle = oracleRelationalProperties.getIfAvailable();
+        if (oracle != null && oracle.isSingleEngine()) {
+            return oracle.getMaxRetentionDays();
         }
         return 0;
     }

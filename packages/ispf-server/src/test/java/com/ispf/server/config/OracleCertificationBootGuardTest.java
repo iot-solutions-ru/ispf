@@ -20,7 +20,7 @@ class OracleCertificationBootGuardTest {
     @Test
     void refusesRowIsolationOnOracle() {
         OracleCertificationBootGuard guard = newGuard(
-                true, TenantIsolationProperties.IsolationMode.LOGICAL, false, "clickhouse", false, false, "jdbc", false);
+                true, TenantIsolationProperties.IsolationMode.LOGICAL, false, "clickhouse", false, false, "jdbc", false, false);
         assertThatThrownBy(guard::refuseUnsupportedOracleModes)
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("db-row-isolation")
@@ -30,7 +30,7 @@ class OracleCertificationBootGuardTest {
     @Test
     void refusesHardTenantModeOnOracle() {
         OracleCertificationBootGuard guard = newGuard(
-                false, TenantIsolationProperties.IsolationMode.HARD, false, "clickhouse", false, false, "jdbc", false);
+                false, TenantIsolationProperties.IsolationMode.HARD, false, "clickhouse", false, false, "jdbc", false, false);
         assertThatThrownBy(guard::refuseUnsupportedOracleModes)
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("HARD")
@@ -40,7 +40,7 @@ class OracleCertificationBootGuardTest {
     @Test
     void refusesDualWriteOnOracle() {
         OracleCertificationBootGuard guard = newGuard(
-                false, TenantIsolationProperties.IsolationMode.LOGICAL, true, "clickhouse", true, false, "jdbc", false);
+                false, TenantIsolationProperties.IsolationMode.LOGICAL, true, "clickhouse", true, false, "jdbc", false, false);
         assertThatThrownBy(guard::refuseUnsupportedOracleModes)
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("dual-write")
@@ -48,64 +48,99 @@ class OracleCertificationBootGuardTest {
     }
 
     @Test
-    void refusesClusterOnOracle() {
+    void refusesClusterOnOracleWithoutSingleEngine() {
         OracleCertificationBootGuard guard = newGuard(
-                false, TenantIsolationProperties.IsolationMode.LOGICAL, false, "clickhouse", false, false, "jdbc", true);
+                false, TenantIsolationProperties.IsolationMode.LOGICAL, false, "clickhouse", false, false, "jdbc", true, false);
         assertThatThrownBy(guard::refuseUnsupportedOracleModes)
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("cluster")
+                .hasMessageContaining("ispf.cluster.enabled=true on Oracle requires ISPF_ORACLE_SINGLE_ENGINE=true")
                 .hasMessageContaining("ADR-0080");
+    }
+
+    @Test
+    void singleEngineAllowsCluster() {
+        OracleCertificationBootGuard guard = newGuard(
+                false, TenantIsolationProperties.IsolationMode.LOGICAL, true, "jdbc", false, true, "jdbc", true, true);
+        assertThatCode(guard::refuseUnsupportedOracleModes).doesNotThrowAnyException();
     }
 
     @Test
     void refusesJdbcHistoryOnOracleWithoutSingleEngineBypass() {
         OracleCertificationBootGuard guard = newGuard(
-                false, TenantIsolationProperties.IsolationMode.LOGICAL, true, "jdbc", false, false, "jdbc", false);
+                false, TenantIsolationProperties.IsolationMode.LOGICAL, true, "jdbc", false, false, "jdbc", false, false);
         assertThatThrownBy(guard::refuseUnsupportedOracleModes)
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("variable-history")
                 .hasMessageContaining("B2")
-                .hasMessageNotContaining("SINGLE_ENGINE");
+                .hasMessageContaining("SINGLE_ENGINE");
     }
 
     @Test
     void refusesJdbcJournalOnOracleWithoutSingleEngineBypass() {
         OracleCertificationBootGuard guard = newGuard(
-                false, TenantIsolationProperties.IsolationMode.LOGICAL, false, "clickhouse", false, true, "jdbc", false);
+                false, TenantIsolationProperties.IsolationMode.LOGICAL, false, "clickhouse", false, true, "jdbc", false, false);
         assertThatThrownBy(guard::refuseUnsupportedOracleModes)
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("event-journal")
                 .hasMessageContaining("B2")
-                .hasMessageNotContaining("SINGLE_ENGINE");
+                .hasMessageContaining("SINGLE_ENGINE");
     }
 
     @Test
-    void mssqlSingleEngineFlagDoesNotReachOracle() {
+    void singleEngineAllowsJdbcHistoryAndJournal() {
+        OracleCertificationBootGuard guard = newGuard(
+                false, TenantIsolationProperties.IsolationMode.LOGICAL, true, "jdbc", false, true, "jdbc", false, true);
+        assertThatCode(guard::refuseUnsupportedOracleModes).doesNotThrowAnyException();
+    }
+
+    @Test
+    void singleEngineRefusesWarmTier() {
         TenantIsolationProperties props = new TenantIsolationProperties();
         props.setDbRowIsolation(false);
         VariableHistoryProperties history = new VariableHistoryProperties();
         history.setEnabled(true);
         history.setStore("jdbc");
         EventJournalProperties journal = new EventJournalProperties();
+        journal.setEnabled(true);
+        journal.setStore("jdbc");
         ClusterProperties cluster = mock(ClusterProperties.class);
-        OracleDialect oracle = new OracleDialect();
-        assertThatCode(() -> MetadataDialectBootPolicy.assertMssqlB1Fences(
-                oracle, props, history, journal, cluster, true, false, false
-        )).doesNotThrowAnyException();
+        when(cluster.enabled()).thenReturn(false);
+        OracleRelationalProperties oracle = new OracleRelationalProperties();
+        oracle.setSingleEngine(true);
+        HistorianTierProperties tiers = new HistorianTierProperties();
+        tiers.warmTier().setEnabled(true);
+        HistorianColdArchiveProperties cold = new HistorianColdArchiveProperties(false, "", 200, 10000);
+        OracleCertificationBootGuard guard = new OracleCertificationBootGuard(
+                new OracleDialect(), props, history, journal, cluster, oracle, tiers, cold);
+        assertThatThrownBy(guard::refuseUnsupportedOracleModes)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("warm-tier");
+    }
+
+    @Test
+    void singleEngineFlagOnOtherEngineRefused() {
         assertThatThrownBy(() -> MetadataDialectBootPolicy.assertOracleB1Fences(
-                oracle, props, history, journal, cluster
+                new PostgreSqlDialect(),
+                new TenantIsolationProperties(),
+                new VariableHistoryProperties(),
+                new EventJournalProperties(),
+                mock(ClusterProperties.class),
+                true,
+                false,
+                false
         ))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("variable-history");
+                .hasMessageContaining("ISPF_ORACLE_SINGLE_ENGINE")
+                .hasMessageContaining("POSTGRESQL");
     }
 
     @Test
     void allowsB1OracleDefaults() {
         OracleCertificationBootGuard guard = newGuard(
-                false, TenantIsolationProperties.IsolationMode.LOGICAL, false, "clickhouse", false, false, "jdbc", false);
+                false, TenantIsolationProperties.IsolationMode.LOGICAL, false, "clickhouse", false, false, "jdbc", false, false);
         assertThatCode(guard::refuseUnsupportedOracleModes).doesNotThrowAnyException();
         OracleCertificationBootGuard externalStores = newGuard(
-                false, TenantIsolationProperties.IsolationMode.LOGICAL, true, "clickhouse", false, true, "clickhouse", false);
+                false, TenantIsolationProperties.IsolationMode.LOGICAL, true, "clickhouse", false, true, "clickhouse", false, false);
         assertThatCode(externalStores::refuseUnsupportedOracleModes).doesNotThrowAnyException();
     }
 
@@ -119,8 +154,8 @@ class OracleCertificationBootGuardTest {
             EventJournalProperties journal = new EventJournalProperties();
             ClusterProperties cluster = mock(ClusterProperties.class);
             when(cluster.enabled()).thenReturn(true);
-            assertThatCode(() -> new OracleCertificationBootGuard(
-                    dialect, props, history, journal, cluster
+            assertThatCode(() -> newGuardForDialect(
+                    dialect, props, history, journal, cluster, false
             ).refuseUnsupportedOracleModes()).doesNotThrowAnyException();
         }
     }
@@ -172,7 +207,8 @@ class OracleCertificationBootGuardTest {
             boolean dualWrite,
             boolean journalEnabled,
             String journalStore,
-            boolean clusterEnabled
+            boolean clusterEnabled,
+            boolean singleEngine
     ) {
         TenantIsolationProperties props = new TenantIsolationProperties();
         props.setDbRowIsolation(rowIsolation);
@@ -186,8 +222,22 @@ class OracleCertificationBootGuardTest {
         journal.setStore(journalStore);
         ClusterProperties cluster = mock(ClusterProperties.class);
         when(cluster.enabled()).thenReturn(clusterEnabled);
+        return newGuardForDialect(new OracleDialect(), props, history, journal, cluster, singleEngine);
+    }
+
+    private static OracleCertificationBootGuard newGuardForDialect(
+            RelationalDialect dialect,
+            TenantIsolationProperties props,
+            VariableHistoryProperties history,
+            EventJournalProperties journal,
+            ClusterProperties cluster,
+            boolean singleEngine
+    ) {
+        OracleRelationalProperties oracle = new OracleRelationalProperties();
+        oracle.setSingleEngine(singleEngine);
+        HistorianTierProperties tiers = new HistorianTierProperties();
+        HistorianColdArchiveProperties cold = new HistorianColdArchiveProperties(false, "", 200, 10000);
         return new OracleCertificationBootGuard(
-                new OracleDialect(), props, history, journal, cluster
-        );
+                dialect, props, history, journal, cluster, oracle, tiers, cold);
     }
 }

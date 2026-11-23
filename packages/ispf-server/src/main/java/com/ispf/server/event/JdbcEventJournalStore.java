@@ -22,11 +22,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 @ConditionalOnProperty(name = "ispf.event-journal.store", havingValue = "jdbc", matchIfMissing = true)
 public class JdbcEventJournalStore implements EventJournalStore {
 
-    private static final String INSERT_SQL = """
-            INSERT INTO event_history (id, object_path, event_name, level, payload_json, occurred_at)
-            VALUES (?, ?, ?, ?, ?, ?)
-            """;
-
     private static final int PURGE_BATCH_ROWS = 5000;
 
     private static final RowMapper<EventJournalRecord> ROW_MAPPER = (rs, rowNum) -> new EventJournalRecord(
@@ -43,6 +38,8 @@ public class JdbcEventJournalStore implements EventJournalStore {
     private final TimescaleHypertableInitializer timescaleHypertableInitializer;
     private final RelationalDialect relationalDialect;
     private final TransactionTemplate requiresNewTx;
+    private final String insertSql;
+    private final String selectColumns;
 
     public JdbcEventJournalStore(
             JdbcTemplate jdbcTemplate,
@@ -58,6 +55,11 @@ public class JdbcEventJournalStore implements EventJournalStore {
         TransactionTemplate tx = new TransactionTemplate(transactionManager);
         tx.setPropagationBehavior(Propagation.REQUIRES_NEW.value());
         this.requiresNewTx = tx;
+        // Oracle Flyway quotes reserved "level" lowercase (ADR-0080); unquoted LEVEL is ORA-03050.
+        String levelCol = relationalDialect.kind() == RelationalDbKind.ORACLE ? "\"level\"" : "level";
+        this.selectColumns = "id, object_path, event_name, " + levelCol + ", payload_json, occurred_at";
+        this.insertSql = "INSERT INTO event_history (id, object_path, event_name, " + levelCol
+                + ", payload_json, occurred_at) VALUES (?, ?, ?, ?, ?, ?)";
     }
 
     @Override
@@ -67,7 +69,7 @@ public class JdbcEventJournalStore implements EventJournalStore {
             return;
         }
         jdbcTemplate.batchUpdate(
-                INSERT_SQL,
+                insertSql,
                 records,
                 records.size(),
                 (statement, record) -> bindInsert(statement, record)
@@ -78,7 +80,7 @@ public class JdbcEventJournalStore implements EventJournalStore {
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void appendOne(EventJournalRecord record) {
-        jdbcTemplate.update(INSERT_SQL, statement -> bindInsert(statement, record));
+        jdbcTemplate.update(insertSql, statement -> bindInsert(statement, record));
         recordCounter.recordPersisted(1);
     }
 
@@ -89,9 +91,8 @@ public class JdbcEventJournalStore implements EventJournalStore {
         String limitSql = relationalDialect.limitClause();
         if (objectPath == null || objectPath.isBlank()) {
             return jdbcTemplate.query(
-                    """
-                            SELECT id, object_path, event_name, level, payload_json, occurred_at
-                            FROM event_history
+                    "SELECT " + selectColumns + """
+                             FROM event_history
                             ORDER BY occurred_at DESC, id DESC
                             """ + limitSql,
                     ROW_MAPPER,
@@ -99,9 +100,8 @@ public class JdbcEventJournalStore implements EventJournalStore {
             );
         }
         return jdbcTemplate.query(
-                """
-                        SELECT id, object_path, event_name, level, payload_json, occurred_at
-                        FROM event_history
+                "SELECT " + selectColumns + """
+                         FROM event_history
                         WHERE object_path = ?
                         ORDER BY occurred_at DESC, id DESC
                         """ + limitSql,
@@ -128,9 +128,8 @@ public class JdbcEventJournalStore implements EventJournalStore {
             return jdbcTemplate.query(
                     connection -> {
                         java.sql.PreparedStatement statement = connection.prepareStatement(
-                                """
-                                        SELECT id, object_path, event_name, level, payload_json, occurred_at
-                                        FROM event_history
+                                "SELECT " + selectColumns + """
+                                         FROM event_history
                                         WHERE occurred_at < ?
                                            OR (occurred_at = ? AND id < ?)
                                         ORDER BY occurred_at DESC, id DESC
@@ -147,9 +146,8 @@ public class JdbcEventJournalStore implements EventJournalStore {
         return jdbcTemplate.query(
                 connection -> {
                     java.sql.PreparedStatement statement = connection.prepareStatement(
-                            """
-                                    SELECT id, object_path, event_name, level, payload_json, occurred_at
-                                    FROM event_history
+                            "SELECT " + selectColumns + """
+                                     FROM event_history
                                     WHERE object_path = ?
                                       AND (occurred_at < ? OR (occurred_at = ? AND id < ?))
                                     ORDER BY occurred_at DESC, id DESC
@@ -168,9 +166,8 @@ public class JdbcEventJournalStore implements EventJournalStore {
     @Override
     @Transactional(readOnly = true)
     public Optional<EventJournalRecord> findLatest(String objectPath, String eventName) {
-        String sql = """
-                SELECT id, object_path, event_name, level, payload_json, occurred_at
-                FROM event_history
+        String sql = "SELECT " + selectColumns + """
+                 FROM event_history
                 WHERE object_path = ? AND event_name = ?
                 ORDER BY occurred_at DESC
                 """ + relationalDialect.limitClause();
@@ -198,7 +195,9 @@ public class JdbcEventJournalStore implements EventJournalStore {
 
     @Override
     public long deleteOlderThan(Instant cutoff, String objectPath) {
-        if (relationalDialect.kind() == RelationalDbKind.MSSQL || relationalDialect.kind() == RelationalDbKind.MYSQL) {
+        if (relationalDialect.kind() == RelationalDbKind.MSSQL
+                || relationalDialect.kind() == RelationalDbKind.MYSQL
+                || relationalDialect.kind() == RelationalDbKind.ORACLE) {
             return deleteOlderThanInBatches(cutoff, objectPath);
         }
         Long deleted = requiresNewTx.execute(status -> {
@@ -233,8 +232,8 @@ public class JdbcEventJournalStore implements EventJournalStore {
     }
 
     /**
-     * MSSQL {@code DELETE TOP} / MySQL {@code DELETE … LIMIT}. Each batch commits in its own
-     * REQUIRES_NEW transaction (no multi-batch lock hold).
+     * MSSQL {@code DELETE TOP} / MySQL {@code DELETE … LIMIT} / Oracle {@code ROWID} +
+     * {@code FETCH FIRST}. Each batch commits in its own REQUIRES_NEW transaction.
      */
     private long deleteOlderThanInBatches(Instant cutoff, String objectPath) {
         long total = 0;
@@ -265,6 +264,11 @@ public class JdbcEventJournalStore implements EventJournalStore {
                 : "WHERE occurred_at < ? AND (object_path = ? OR object_path LIKE ?)";
         if (relationalDialect.kind() == RelationalDbKind.MSSQL) {
             return "DELETE TOP (" + PURGE_BATCH_ROWS + ") FROM event_history " + where;
+        }
+        if (relationalDialect.kind() == RelationalDbKind.ORACLE) {
+            return "DELETE FROM event_history WHERE ROWID IN (SELECT rid FROM ("
+                    + "SELECT ROWID AS rid FROM event_history " + where
+                    + " FETCH FIRST " + PURGE_BATCH_ROWS + " ROWS ONLY))";
         }
         return "DELETE FROM event_history " + where + " LIMIT " + PURGE_BATCH_ROWS;
     }

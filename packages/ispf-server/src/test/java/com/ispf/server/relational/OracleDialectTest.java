@@ -145,8 +145,11 @@ class OracleDialectTest {
     }
 
     @Test
-    void bucketSqlStaysPostgresShapedUntilB2() {
-        assertThat(dialect.variableSampleBucketAggregateSql()).contains("extract(epoch");
+    void bucketSqlIsNativeOracleForB2() {
+        String sql = dialect.variableSampleBucketAggregateSql();
+        assertThat(sql).contains("NUMTODSINTERVAL");
+        assertThat(sql).contains("FETCH FIRST ? ROWS ONLY");
+        assertThat(sql).doesNotContain("extract(epoch");
     }
 
     @Test
