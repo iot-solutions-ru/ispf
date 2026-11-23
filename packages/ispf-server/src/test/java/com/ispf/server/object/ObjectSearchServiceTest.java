@@ -128,4 +128,36 @@ class ObjectSearchServiceTest {
         assertThat(result.matchCount()).isZero();
         assertThat(result.nodes()).isEmpty();
     }
+
+    @Test
+    void zeroLimitReturnsNoMatches() {
+        ObjectSearchService.Result result = service.search("sensor", null, null, 0, auth);
+
+        assertThat(result.matchCount()).isZero();
+        assertThat(result.nodes()).isEmpty();
+        assertThat(result.truncated()).isFalse();
+        verify(objectManager, never()).tree();
+    }
+
+    @Test
+    void negativeLimitIsRejectedBeforeSearch() {
+        assertThatThrownBy(() -> service.search("sensor", null, null, -1, auth))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(error -> {
+                    ResponseStatusException status = (ResponseStatusException) error;
+                    assertThat(status.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+                    assertThat(status.getReason()).isEqualTo("limit must not be negative");
+                });
+        verify(objectManager, never()).tree();
+    }
+
+    @Test
+    void limitOneReturnsASingleMatch() {
+        stubOpenTree();
+
+        ObjectSearchService.Result result = service.search("sensor", null, null, 1, auth);
+
+        assertThat(result.matchCount()).isEqualTo(1);
+        assertThat(result.nodes().stream().filter(node -> node.type() == ObjectType.DEVICE)).hasSize(1);
+    }
 }

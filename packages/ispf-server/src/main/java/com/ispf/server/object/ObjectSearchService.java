@@ -47,11 +47,14 @@ public class ObjectSearchService {
             int limit,
             Authentication authentication
     ) {
+        if (limit < 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "limit must not be negative");
+        }
         String needle = query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
-        if (needle.length() < MIN_QUERY_CHARS) {
+        if (needle.length() < MIN_QUERY_CHARS || limit == 0) {
             return Result.empty(needle);
         }
-        int cap = Math.max(1, Math.min(limit <= 0 ? DEFAULT_LIMIT : limit, MAX_LIMIT));
+        int cap = Math.min(limit, MAX_LIMIT);
         ObjectType typeFilter = parseType(type);
         String prefix = parentPrefix == null ? "" : parentPrefix.trim();
 
