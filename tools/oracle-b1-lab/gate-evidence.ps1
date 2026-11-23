@@ -1,5 +1,5 @@
 # ADR-0080 B1 lab-green evidence collector against the stand from stand-local.ps1 (default :18092).
-# Records results to -Out. Lab evidence only: Oracle Database Free is not a named production edition.
+# Records only what it measured to -Out. It signs no cell: the owner decision lives in gate-evidence-prod-yes-free.json.
 param(
     [string]$Base = "http://127.0.0.1:18092",
     [string]$Jar = "",

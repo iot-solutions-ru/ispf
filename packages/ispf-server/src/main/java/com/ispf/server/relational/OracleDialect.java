@@ -6,9 +6,9 @@ import java.sql.SQLException;
 import java.util.Locale;
 
 /**
- * Oracle dialect (ADR-0080 B1 lab). Boot needs the Flyway pack and an operator-supplied JDBC driver
- * ({@code MetadataDialectBootPolicy.assertEngineCertified}) and runs only under
- * {@code assertOracleB1Fences}. SQL stays 19c-compatible: 23ai accepts {@code SELECT} without
+ * Oracle dialect (ADR-0080 B1; Prod Yes on Oracle Database Free 23.26.x only). Boot needs the Flyway
+ * pack and an operator-supplied JDBC driver ({@code MetadataDialectBootPolicy.assertEngineCertified})
+ * and runs only under {@code assertOracleB1Fences}. SQL stays 19c-compatible: 23ai accepts {@code SELECT} without
  * {@code FROM} and a row limit with {@code FOR UPDATE}, 19c rejects both (ORA-00923 / ORA-02014).
  */
 public class OracleDialect extends AbstractRelationalDialect {

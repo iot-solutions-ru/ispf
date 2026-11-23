@@ -2,7 +2,7 @@
 
 ## Статус
 
-**Accepted** (2026-11-20) — политика и charter сертификации. **Amended 2026-11-22 — B1 pack + Lab green:** lab Flyway SQL авторизован, JDBC-драйвер остаётся на classpath оператора, Lab-green gate пройден на Oracle Database Free. **Prod: No — Lab green.** Oracle `ISPF_DB` стартует, только если в сборке есть Flyway pack и оператор добавил JDBC-драйвер Oracle, и только под B1 fences (`assertOracleB1Fences`). Oracle Database Free — не production-редакция; named-SKU Prod Yes не подписан.
+**Accepted** (2026-11-20) — политика и charter сертификации. **Amended 2026-11-22 — B1 pack + Lab green:** lab Flyway SQL авторизован, JDBC-драйвер остаётся на classpath оператора, Lab-green gate пройден на Oracle Database Free. **Prod Yes (B1)** 2026-11-23 по owner override (Amendment 4) на одной ячейке: **self-managed Oracle Database Free 23.26.x + `ojdbc17` от оператора** ([checklist](../../en/oracle-sku-promotion-checklist.md)). Oracle `ISPF_DB` стартует, только если в сборке есть Flyway pack и оператор добавил JDBC-драйвер Oracle, и только под B1 fences (`assertOracleB1Fences`). Hibernate `ddl-auto=validate` не исправлен: ячейка работает с `none`. Другие редакции, 19c и managed-сервисы — не Prod Yes (**P-ORACLE-SKU**, **P-ORACLE-19C**); validate, запись `''`, SQL вне путей gate и TLS не сертифицированы (**P-ORACLE-VALIDATE**, **P-ORACLE-EMPTY**, **P-ORACLE-PG-SQL**, **P-ORACLE-TLS**).
 
 Канонический текст: [EN ADR-0080](../../en/decisions/0080-oracle-metadata-certification.md).
 
@@ -12,9 +12,10 @@
 
 ## Решение
 
-- Scope — **B1 metadata** на именованной версии/редакции Oracle и JDBC driver (кандидаты: 19c или 23ai; в релизе 23.26 Oracle переименовал линию 23ai в «26ai»). Oracle Database Free — только lab.
+- Scope — **B1 metadata** на именованной версии/редакции Oracle и JDBC driver (кандидаты: 19c или 23ai; в релизе 23.26 Oracle переименовал линию 23ai в «26ai»). Oracle Database Free был только lab, пока owner override в Amendment 4 не назвал его ячейкой Prod Yes.
 - Journal/history вне B1; **нет** single-engine bypass в fences.
-- **Lab green** достигнут (Amendment 3). Named-SKU Prod Yes — отдельный gate, открыт: Free ≠ Enterprise Edition.
+- **Lab green** достигнут (Amendment 3). **Prod Yes (B1)** — одна ячейка по owner override (Amendment 4): Oracle Database Free 23.26.x с `ojdbc17` от оператора. Любой другой редакции, релизу и managed-сервису нужен свой прогон checklist.
+- Контейнеры, бесплатные редакции и developer lab — только lab-сигнал, не сертификация другой named-редакции. Amendment 4 — явное исключение владельца для самой ячейки Free; другие редакции оно не сертифицирует.
 - MySQL B1 Prod Yes подписан в [0079](0079-mysql-metadata-certification.md) (2026-11-22) — это разблокировало B1 pack Oracle.
 - `assertEngineCertified` пропускает `oracle`, только если есть `classpath:db/migration/oracle/V1__baseline.sql` и загружается `oracle.jdbc.OracleDriver`; иначе отказ с инструкцией. `OracleJdbcDriverEnvironmentPostProcessor` отказывает ещё до создания DataSource. B1 fences — до Flyway и на context refresh: без row isolation, `HARD`, dual-write, cluster и JDBC history/journal на `ISPF_DB`; `PATCH` runtime-settings не включает JDBC journal на лету.
 - ISPF не поставляет JDBC-драйвер Oracle и не заявляет права на его распространение.
@@ -42,11 +43,22 @@
 
 Flyway TCK (семантика `''`, quoted-колонки, `SKIP LOCKED` через `PlatformJobService`, concurrent audit 8 writers, lease failover — `OracleFlywayBaselineTckTest`), live boot + двойной import + alarm shelf через JPA (`OracleLiveBundleImportTckTest`), lab-стенд `tools/oracle-b1-lab` (health, login, Flyway, dialect, нет ojdbc в `bootJar`, отказ без драйвера, import + 4 пути, второй JVM, аудит) и boot refuse для row isolation, `HARD`, JDBC history, dual-write, JDBC journal, cluster плюс запрет hot-reload JDBC journal. Ячейка: Oracle AI Database 26ai Free 23.26.4.0.0, `AL32UTF8`, `MAX_STRING_SIZE=STANDARD`. Evidence: `tools/oracle-b1-lab/gate-evidence-lab-free.json` — 2026-11-22, 18 PASS / 0 FAIL. Docker TCK (`oracle-docker`) запускаются только opt-in (`-Dispf.test.oracleDocker=true`: нужен Docker, добавляется lab-драйвер), в обычном CI их нет; обычный CI гоняет unit-тесты boot refuse и lockstep.
 
-Открыто до Prod Yes: named-редакция (Enterprise / SE2 19c или 23ai/26ai, или managed-сервис; tech debt **P-ORACLE-SKU**), прогон на 19c, Hibernate `ddl-auto=validate` (вне `local` — `SPRING_JPA_HIBERNATE_DDL_AUTO=none`), запись `''` в `NOT NULL` на не покрытых путях, PG-only SQL (bucket aggregate, `CLOB` через `=`), шифрование Oracle Net / TLS. `concatExpression` на Oracle — это `||`: NULL-операнд считается пустой строкой, а не даёт NULL, поэтому вызывающий код сам проверяет NULL (запрос триггеров SQL-binding так и делает).
+Было открыто до Prod Yes (Lab green этого не заявлял): named-редакция (Enterprise / SE2 19c или 23ai/26ai, или managed-сервис), прогон на 19c, Hibernate `ddl-auto=validate` (вне `local` — `SPRING_JPA_HIBERNATE_DDL_AUTO=none`), запись `''` в `NOT NULL` на не покрытых путях, PG-only SQL (bucket aggregate, `CLOB` через `=`), шифрование Oracle Net / TLS. `concatExpression` на Oracle — это `||`: NULL-операнд считается пустой строкой, а не даёт NULL, поэтому вызывающий код сам проверяет NULL (запрос триггеров SQL-binding так и делает). Amendment 4 подписывает Prod Yes (B1), не закрыв ни один из этих пунктов: редакцию задаёт owner override (остальные редакции — **P-ORACLE-SKU**), остальное письменно снято как non-claims с tech debt (**P-ORACLE-19C**, **P-ORACLE-VALIDATE**, **P-ORACLE-EMPTY**, **P-ORACLE-PG-SQL**, **P-ORACLE-TLS**).
+
+### Amendment 4 (2026-11-23) — Prod Yes (B1) на Oracle Database Free по owner override
+
+- Ячейка: **Oracle Database Free** (Oracle AI Database 26ai Free, релиз **23.26.x**), self-managed: PDB `FREEPDB1`, отдельный пользователь схемы, `AL32UTF8`, `MAX_STRING_SIZE=STANDARD`; единственный клиент `ISPF_DB` — **`ojdbc17` от оператора** (ISPF его не поставляет).
+- Основание: Lab-green ячейка Amendment 3 (23.26.4.0.0, `gvenzl/oracle-free:23-slim-faststart`, ojdbc17 23.26.3.0.0 через `loader.path`) — 18 PASS / 0 FAIL (`tools/oracle-b1-lab/gate-evidence-lab-free.json`, вывод коллектора). Решение владельца — `tools/oracle-b1-lab/gate-evidence-prod-yes-free.json`.
+- Owner override: Free — именованная ячейка. Только для неё снимаются правило «Free — только lab» и требование non-Free редакции из checklist. Lab-ячейка в Docker заменяет named self-managed хост Free; повтор gate на первом named хосте рекомендован, но не блокирует.
+- Hibernate: на любом развёртывании Oracle `SPRING_JPA_HIBERNATE_DDL_AUTO=none`. `validate` **не** исправлен и на Oracle не запускался — письменно снят (waived), tech debt **P-ORACLE-VALIDATE**.
+- Fences и драйвер без изменений: boot отказывает JDBC history/journal, dual-write, cluster, row isolation и `HARD`; per-app schema switch — fail-closed; `PATCH` runtime-settings не включает JDBC journal на лету; ISPF не поставляет `ojdbc*`.
+- TLS / шифрование Oracle Net — обязанность оператора, подписью **не сертифицировано**; ячейка evidence работала без шифрования (**P-ORACLE-TLS**). Полного паритета SQL с PostgreSQL нет (**P-ORACLE-PG-SQL**); запись `''` вне путей gate не проверялась (**P-ORACLE-EMPTY**).
+- Tech debt: **P-ORACLE-SKU** (все non-Free редакции и managed-сервисы), **P-ORACLE-19C**, **P-ORACLE-VALIDATE**, **P-ORACLE-EMPTY**, **P-ORACLE-PG-SQL**, **P-ORACLE-TLS** ([checklist](../../en/oracle-sku-promotion-checklist.md#known-gaps-tracked-tech-debt)).
+- Non-claims: Standard Edition 2, Enterprise Edition, Autonomous Database, Amazon RDS for Oracle; 19c; `ddl-auto=validate`; нагрузка сверх лимитов ресурсов Free; B2 history/journal; active-active; tenant row isolation; `HARD` и per-app схемы; поставка JDBC-драйвера Oracle; миграция данных PostgreSQL → Oracle; `''` как текст (**P-ORACLE-EMPTY**); полный паритет SQL с PostgreSQL (**P-ORACLE-PG-SQL**); шифрование Oracle Net / TLS (**P-ORACLE-TLS**).
 
 ## Последствия
 
-Oracle — **Lab green, Prod: No**; смена движка — новая БД и импорт bundle. В продажах — «Oracle B1 metadata (lab, Oracle Database Free)», драйвер — от оператора, без заявлений об Enterprise Edition. MySQL B1 Prod Yes на Oracle не переносится; Prod Yes Oracle — только после своего named-SKU gate.
+Oracle — **Prod Yes (B1)** на одной ячейке: self-managed Oracle Database Free 23.26.x с `ojdbc17` от оператора, под B1 fences, с `ddl-auto=none`. Остальные редакции, релизы и managed-сервисы — только lab до своего прогона checklist (**P-ORACLE-SKU**, **P-ORACLE-19C**). Смена движка — новая БД и импорт bundle. В продажах — одна строка: «Oracle Database Free 23.26 B1 metadata, operator-supplied ojdbc17»; без SE2, Enterprise Edition, 19c, Autonomous Database и Amazon RDS for Oracle и без намёка, что ISPF поставляет драйвер. MySQL B1 Prod Yes на Oracle не переносится: Prod Yes Oracle получен своим gate и называет только ячейку Free.
 
 ## Связанные
 

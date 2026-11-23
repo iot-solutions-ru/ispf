@@ -21,8 +21,9 @@ public final class MetadataDialectBootPolicy {
     }
 
     /**
-     * Engine gate. Oracle (ADR-0080 Lab green, Prod: No) boots only when this build carries its B1
-     * Flyway pack and the operator put the Oracle JDBC driver on the classpath; ISPF never ships it.
+     * Engine gate. Oracle (ADR-0080; Prod Yes B1 on Oracle Database Free 23.26.x only) boots only when
+     * this build carries its B1 Flyway pack and the operator put the Oracle JDBC driver on the classpath;
+     * ISPF never ships it.
      * MySQL, MSSQL and Oracle then boot only under their B1 fences, which every caller also runs.
      */
     public static void assertEngineCertified(RelationalDialect dialect) {
@@ -260,7 +261,8 @@ public final class MetadataDialectBootPolicy {
     }
 
     /**
-     * Oracle B1 fences (ADR-0080 Lab green). No single-engine bypass — JDBC history/journal on
+     * Oracle B1 fences (ADR-0080; Prod Yes B1 on Oracle Database Free 23.26.x only, signed with these
+     * fences on). No single-engine bypass — JDBC history/journal on
      * ISPF_DB is a later B2 decision. These fences are the only thing between an Oracle ISPF_DB and
      * an uncertified mode; keep them before Flyway and on context refresh.
      */
@@ -277,7 +279,7 @@ public final class MetadataDialectBootPolicy {
         if (tenantIsolationProperties.isDbRowIsolation()) {
             throw new IllegalStateException(
                     "ispf.tenant.db-row-isolation=true is unsupported on Oracle (ADR-0080). "
-                            + "Set ISPF_TENANT_DB_ROW_ISOLATION=false for single-tenant lab, "
+                            + "Set ISPF_TENANT_DB_ROW_ISOLATION=false for single-tenant B1, "
                             + "or use PostgreSQL until a native Virtual Private Database policy exists."
             );
         }

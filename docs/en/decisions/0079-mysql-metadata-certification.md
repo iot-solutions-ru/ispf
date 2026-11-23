@@ -96,7 +96,7 @@ B2 follows MSSQL B2 ([0078](0078-mssql-metadata-certification.md) § 1): B1 plus
 - MySQL is **Prod Yes (B1)** on one cell: self-managed MySQL Community Server 8.4.x with MariaDB Connector/J, under the B1 fences. On the same cell, opt-in single-engine is **Prod Yes (B2)**: JDBC history and journal in the same database, retention `DELETE` capped at 90 days by default. Active-active on MySQL is not claimed and boot refuses it. Other MySQL cells stay lab-only until their own checklist runs (**P-MYSQL-SKU-RERUN**). TLS is operator-required and not certified (**P-MYSQL-TLS**); SQL outside the gates' paths is not claimed (**P-MYSQL-PG-SQL**).
 - Sales and documentation must name **MySQL Community Server 8.4 B1 metadata**, and **B2 single-engine** where it applies, with the MariaDB Connector/J client, and must not say “MySQL/MariaDB”, name Enterprise / managed MySQL, or claim active-active on MySQL.
 - Engine changes remain greenfield database plus bundle import, not in-place migration.
-- MySQL B1 Prod Yes (§ Amendment 4) lets the Oracle B1 pack ([0080](0080-oracle-metadata-certification.md)) start. Oracle stays **Prod: No** until its own gate passes. Oracle Phase 1 (dialect honesty and fences; boot refused) started early by owner decision.
+- MySQL B1 Prod Yes (§ Amendment 4) let the Oracle B1 pack ([0080](0080-oracle-metadata-certification.md)) start. Oracle signed its own Prod Yes (B1) on Oracle Database Free only (0080 § Amendment 4); it does not inherit this cell. Oracle Phase 1 (dialect honesty and fences; boot refused) started early by owner decision.
 
 ## Related
 
