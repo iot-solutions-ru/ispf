@@ -60,6 +60,38 @@ class HistorianTierDeployProfileEnvironmentPostProcessorTest {
     }
 
     @Test
+    void mysqlSingleEngineDisablesWarmAndSetsMysqlFlagOnly() {
+        MockEnvironment environment = new MockEnvironment();
+        environment.setProperty(
+                HistorianTierDeployProfileEnvironmentPostProcessor.DEPLOY_PROFILE_KEY, "mysql-single-engine");
+
+        processor.postProcessEnvironment(environment, new SpringApplication());
+
+        assertThat(environment.getProperty(HistorianTierDeployProfileEnvironmentPostProcessor.WARM_ENABLED_KEY))
+                .isEqualTo("false");
+        assertThat(environment.getProperty(HistorianTierDeployProfileEnvironmentPostProcessor.MYSQL_SINGLE_ENGINE_KEY))
+                .isEqualTo("true");
+        assertThat(environment.getProperty(HistorianTierDeployProfileEnvironmentPostProcessor.SINGLE_ENGINE_KEY))
+                .isNull();
+    }
+
+    @Test
+    void mysqlSingleEngineKeepsExplicitValues() {
+        MockEnvironment environment = new MockEnvironment();
+        environment.setProperty(
+                HistorianTierDeployProfileEnvironmentPostProcessor.DEPLOY_PROFILE_KEY, "mysql-single-engine");
+        environment.setProperty(HistorianTierDeployProfileEnvironmentPostProcessor.WARM_ENABLED_KEY, "true");
+        environment.setProperty(HistorianTierDeployProfileEnvironmentPostProcessor.MYSQL_SINGLE_ENGINE_KEY, "false");
+
+        processor.postProcessEnvironment(environment, new SpringApplication());
+
+        assertThat(environment.getProperty(HistorianTierDeployProfileEnvironmentPostProcessor.WARM_ENABLED_KEY))
+                .isEqualTo("true");
+        assertThat(environment.getProperty(HistorianTierDeployProfileEnvironmentPostProcessor.MYSQL_SINGLE_ENGINE_KEY))
+                .isEqualTo("false");
+    }
+
+    @Test
     void unknownProfileLeavesWarmUnset() {
         MockEnvironment environment = new MockEnvironment();
         environment.setProperty(HistorianTierDeployProfileEnvironmentPostProcessor.DEPLOY_PROFILE_KEY, "custom");

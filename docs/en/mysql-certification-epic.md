@@ -1,7 +1,7 @@
 # Epic: MySQL relational certification (ADR-0079)
 
 > **Language:** Canonical English. Russian: [ru/mysql-certification-epic.md](../ru/mysql-certification-epic.md).  
-> **Status:** B1 **Prod Yes** on MySQL Community Server 8.4.x + MariaDB Connector/J only (owner extension 2026-11-22, [checklist](mysql-sku-promotion-checklist.md)) — delivery board for [ADR-0079](decisions/0079-mysql-metadata-certification.md). Other MySQL cells: **P-MYSQL-SKU-RERUN**.  
+> **Status:** B1 **Prod Yes** on MySQL Community Server 8.4.x + MariaDB Connector/J only (owner extension 2026-11-22, [checklist](mysql-sku-promotion-checklist.md)); opt-in single-engine **B2 Prod Yes** on the same cell (owner extension 2026-11-23, [B2 checklist](mysql-b2-sku-promotion-checklist.md)) — delivery board for [ADR-0079](decisions/0079-mysql-metadata-certification.md). Active-active is not claimed (boot refuses cluster). Other MySQL cells: **P-MYSQL-SKU-RERUN**.  
 > **Policy:** Lab work unblocked after MSSQL B1 Prod Yes ([0078](decisions/0078-mssql-metadata-certification.md)). MariaDB is **not** this epic. MySQL B1 Prod Yes is signed, so the Oracle B1 pack may start ([0080](decisions/0080-oracle-metadata-certification.md)); Oracle stays Prod: No.
 
 ## Phase 1 — dialect honesty (landed)
@@ -9,7 +9,7 @@
 - [x] Schema-switch fail-closed (`MysqlDialect.supportsSessionSchemaSwitch=false`)
 - [x] MariaDB config / product-name fail-closed (not aliased to MySQL)
 - [x] Dialect honesty: unique violation **1062**, `DATE_ADD` expiry, `1`/`0` booleans, ADR-0079 messages
-- [x] `assertMysqlB1Fences` + `MysqlCertificationBootGuard` (no single-engine bypass)
+- [x] `assertMysqlB1Fences` + `MysqlCertificationBootGuard` (no single-engine bypass in B1; the opt-in B2 flag came later)
 
 ## B1 pack + Lab green (landed 2026-11-22)
 
@@ -28,15 +28,29 @@
 - [x] PostgreSQL-only SQL found at signing (platform jobs, SQL-binding triggers): fixed through `RelationalDialect`, run on MySQL in `MysqlFlywayBaselineTckTest`, `MysqlLiveBundleImportTckTest` and gate items `g9_metrics` / `g9_job_queue`; no full SQL parity is claimed (**P-MYSQL-PG-SQL**)
 - [x] Owner extension from the Lab-green cell instead of a named self-managed host: gate re-run with validate on the stand JVM and the second JVM, 20 PASS / 0 FAIL ([`gate-evidence-validate-community.json`](../../tools/mysql-b1-lab/gate-evidence-validate-community.json)); owner decision in [`gate-evidence-prod-yes-community.json`](../../tools/mysql-b1-lab/gate-evidence-prod-yes-community.json); a named-host re-run is recommended, not blocking; **P-MYSQL-SKU-RERUN** for Enterprise / managed / non-Community cells
 
+## B2 single-engine (opt-in) — Prod Yes signed 2026-11-23
+
+Config, historian and journal on one MySQL database, mirroring MSSQL B2 ([0079](decisions/0079-mysql-metadata-certification.md) § Amendment 5).
+
+- [x] `ISPF_MYSQL_SINGLE_ENGINE` / `ispf.relational.mysql.single-engine` (default off) and `max-retention-days` (default 90) in `MysqlRelationalProperties`; deploy profile `mysql-single-engine`
+- [x] Fences: with the flag, JDBC history and journal allowed under the MSSQL single-engine store rules (shared check); warm tier, cold archive, ClickHouse spool, dual-write refused; cluster, row isolation and `HARD` still refused; the flag on another engine refused
+- [x] Native bucket aggregate (`TIMESTAMPDIFF` / `TIMESTAMPADD`, epoch-aligned, time-zone independent); `/history/aggregate` runs it in SQL instead of the JVM
+- [x] Journal purge in `DELETE … LIMIT 5000` batches, one transaction each (loop shared with MSSQL `DELETE TOP`)
+- [x] Retention clamp to `max-retention-days` under the flag (shared with MSSQL)
+- [x] Preflight: `READ-COMMITTED` pool session and `utf8mb4_0900_bin` database, single-engine only
+- [x] Tests: boot guard, pre-Flyway customizer, clamp, preflight, dialect SQL, query path, batched purge; Docker TCK `MysqlHistoryBucketTckTest`
+- [x] Lab gate `tools/mysql-b1-lab/gate-b2.ps1`: 25 PASS / 0 FAIL on 8.4.13 Community ([`gate-evidence-b2-community.json`](../../tools/mysql-b1-lab/gate-evidence-b2-community.json)); owner decision [`gate-evidence-b2-prod-yes-community.json`](../../tools/mysql-b1-lab/gate-evidence-b2-prod-yes-community.json); profile [examples/mysql-single-engine](../../examples/mysql-single-engine/README.md)
+
 ## Tech debt after the sign
 
-- [ ] **P-MYSQL-TLS** — re-run the gate over TLS (`sslMode=verify-full`), recommended on the first named host
+- [ ] **P-MYSQL-TLS** — re-run the gates over TLS (`sslMode=verify-full`), recommended on the first named host
 - [ ] **P-MYSQL-PG-SQL** — review the remaining JDBC SQL for PostgreSQL-only constructs and port or fence what the review finds; the paths found at signing are fixed ([checklist](mysql-sku-promotion-checklist.md#known-gaps-tracked-tech-debt))
-- [ ] **P-MYSQL-SKU-RERUN** — checklist re-run per named Enterprise / managed / non-Community cell
+- [ ] **P-MYSQL-SKU-RERUN** — B1 and B2 checklist re-runs per named Enterprise / managed / non-Community cell
 
 ## Non-goals
 
 - MariaDB as certified MySQL
-- B2 jdbc historian on MySQL in the first quote
+- Active-active on MySQL (boot refuses `ISPF_CLUSTER_ENABLED=true`, with or without single-engine)
+- Historian rollups, partitions or partition-drop retention on MySQL; a file buffer in front of MySQL
 - Live PG→MySQL data migration
 - Oracle implementation in this epic

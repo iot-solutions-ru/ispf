@@ -124,7 +124,7 @@ class JdbcVariableHistoryQueryStore implements VariableHistoryQueryStore {
         if (relationalDialect.kind() == RelationalDbKind.POSTGRESQL) {
             return aggregateWithRepositorySql(objectPath, variableName, fieldName, from, to, bucket, maxBuckets);
         }
-        if (relationalDialect.kind() == RelationalDbKind.MSSQL) {
+        if (relationalDialect.kind() == RelationalDbKind.MSSQL || relationalDialect.kind() == RelationalDbKind.MYSQL) {
             return aggregateWithJdbcSql(objectPath, variableName, fieldName, from, to, bucket, maxBuckets);
         }
         return aggregateWithJvm(objectPath, variableName, fieldName, from, to, bucket, maxBuckets);

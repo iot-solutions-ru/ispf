@@ -1,0 +1,139 @@
+{
+  "generated_at": "2026-11-23T06:52:35.201Z",
+  "gate": "B2 (single-engine)",
+  "base": "http://127.0.0.1:18094",
+  "db": "ispf_b2",
+  "engine_note": "MySQL Community Server 8.4.13 (mysql:8.4, local AMD64 Docker) + MariaDB Connector/J 3.5.10, single-engine B2",
+  "edition": "8.4.13 | MySQL Community Server - GPL | READ-COMMITTED | utf8mb4_0900_bin",
+  "jdbc_client": "MariaDB Connector/J (LGPL-2.1) org.mariadb.jdbc.Driver, jdbc:mysql: + permitMysqlScheme",
+  "purge_rows": 20000,
+  "fail_count": 0,
+  "pass_count": 25,
+  "items": [
+    {
+      "id": "b2_engine",
+      "status": "PASS",
+      "detail": "MySQL 8.4.13 (MySQL Community Server - GPL), READ-COMMITTED, ispf_b2 utf8mb4_0900_bin"
+    },
+    {
+      "id": "b2_health",
+      "status": "PASS",
+      "detail": "actuator health UP"
+    },
+    {
+      "id": "b2_login",
+      "status": "PASS",
+      "detail": "admin login ok"
+    },
+    {
+      "id": "b2_config",
+      "status": "PASS",
+      "detail": "stand JVM (docker inspect): single-engine on, history + journal on JDBC, cluster off, warm off, ddl-auto=validate; ISPF_MYSQL_MAX_RETENTION_DAYS unset (default 90): True"
+    },
+    {
+      "id": "b2_flyway",
+      "status": "PASS",
+      "detail": "flyway mysql/V1 success=1 on ispf_b2"
+    },
+    {
+      "id": "b2_dialect",
+      "status": "PASS",
+      "detail": "Hibernate MysqlHibernateDialect with ddl-auto=validate"
+    },
+    {
+      "id": "b2_preflight",
+      "status": "PASS",
+      "detail": "ispf session: READ-COMMITTED | utf8mb4_0900_bin; single-engine preflight passed (stand UP)"
+    },
+    {
+      "id": "b2_bundle_import",
+      "status": "PASS",
+      "detail": "cert bundle import 200; root.platform.devices.mysql-b1-cert-sensor-01 200"
+    },
+    {
+      "id": "b2_variables",
+      "status": "PASS",
+      "detail": "historized DOUBLE variables temp (7d), live (7d), retained (365d)"
+    },
+    {
+      "id": "b2_history_live",
+      "status": "PASS",
+      "detail": "3 PUT /variables -> 3 rows in variable_samples via the historian JDBC writer; GET /history returned values 11.5 / 12.5 / 13.5"
+    },
+    {
+      "id": "b2_history_seed",
+      "status": "PASS",
+      "detail": "seeded 300 samples (10 s apart, observed_at = sampled_at, last 24 h)"
+    },
+    {
+      "id": "b2_history_bucket",
+      "status": "PASS",
+      "detail": "GET /history/aggregate bucket=1m: 51 buckets, counts sum 300, minute-aligned, dataSource=raw, 33 ms (native MySQL bucket SQL)"
+    },
+    {
+      "id": "b2_history_raw",
+      "status": "PASS",
+      "detail": "GET /history returned 300 samples"
+    },
+    {
+      "id": "b2_retention_cap",
+      "status": "PASS",
+      "detail": "variable historyRetentionDays=365; aggregate without from returned only the 10-day-old sample, not the 100-day-old one (window clamped to max-retention-days=90)"
+    },
+    {
+      "id": "b2_journal_live",
+      "status": "PASS",
+      "detail": "POST /events/fire -> 1 row(s) in event_history; GET /events?before= (keyset, JDBC store) lists it"
+    },
+    {
+      "id": "b2_purge_seed",
+      "status": "PASS",
+      "detail": "rows=20000 seed_ms=867"
+    },
+    {
+      "id": "b2_purge_measure",
+      "status": "PASS",
+      "detail": "POST /events/journal/purge: deleted=20000 in 561 ms, leftover=0, recent b2gate rows kept=1"
+    },
+    {
+      "id": "b2_fence_cluster",
+      "status": "PASS",
+      "detail": "refused with: ispf.cluster.enabled=true is not certified on MySQL"
+    },
+    {
+      "id": "b2_fence_warm",
+      "status": "PASS",
+      "detail": "refused with: MySQL single-engine refuses ClickHouse warm-tier routing"
+    },
+    {
+      "id": "b2_fence_cold",
+      "status": "PASS",
+      "detail": "refused with: MySQL single-engine refuses cold Parquet archive"
+    },
+    {
+      "id": "b2_fence_dual",
+      "status": "PASS",
+      "detail": "refused with: dual-write-enabled=true is refused on MySQL"
+    },
+    {
+      "id": "b2_fence_store",
+      "status": "PASS",
+      "detail": "refused with: MySQL single-engine requires ISPF_VARIABLE_HISTORY_STORE=jdbc"
+    },
+    {
+      "id": "b2_fence_b1",
+      "status": "PASS",
+      "detail": "refused with: variable-history store falls back to ISPF_DB JDBC on MySQL"
+    },
+    {
+      "id": "b2_preflight_isolation",
+      "status": "PASS",
+      "detail": "refused with: MySQL single-engine requires transaction_isolation=READ-COMMITTED"
+    },
+    {
+      "id": "b2_preflight_collation",
+      "status": "PASS",
+      "detail": "refused with: MySQL single-engine requires the ISPF database on utf8mb4_0900_bin"
+    }
+  ]
+}

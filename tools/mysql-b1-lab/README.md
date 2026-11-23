@@ -1,6 +1,6 @@
-# MySQL B1 lab harness (ADR-0079)
+# MySQL B1 / B2 lab harness (ADR-0079)
 
-Operator scripts for a **single-node** MySQL 8.4 lab stand. Not a production deploy path. The stand is not the signature: Prod Yes (B1) is signed in the [checklist](../../docs/en/mysql-sku-promotion-checklist.md).
+Operator scripts for a **single-node** MySQL 8.4 lab stand. Not a production deploy path. The stand is not the signature: Prod Yes (B1) is signed in the [checklist](../../docs/en/mysql-sku-promotion-checklist.md), Prod Yes (B2) single-engine in the [B2 checklist](../../docs/en/mysql-b2-sku-promotion-checklist.md).
 
 | Script / file | Role |
 |---------------|------|
@@ -10,12 +10,19 @@ Operator scripts for a **single-node** MySQL 8.4 lab stand. Not a production dep
 | `gate-evidence-validate-community.json` | Collector output, re-run on the same cell: `ddl-auto=validate` on the stand JVM and the second JVM (`docker inspect`), `lower_case_table_names` read, platform metrics and the job queue (2026-11-22, 20 PASS / 0 FAIL) |
 | `gate-evidence-prod-yes-community.json` | Owner decision, no measured items: the owner-extended **Prod Yes (B1)** cell, MySQL Community Server 8.4.x + MariaDB Connector/J, with its tech debt and non-claims |
 | `mysql-b1-cert-bundle.json` | Tree-only cert bundle; mirrors `packages/ispf-server/src/test/resources/mysql-b1-cert-bundle.json` — keep them in sync |
+| `stand-b2-local.ps1` | B2 single-engine stand: same MySQL container, fresh dedicated database `ispf_b2`, `bootJar` on `:18094` with `ISPF_MYSQL_SINGLE_ENGINE=true`, JDBC history + journal, `ddl-auto=validate` |
+| `gate-b2.ps1` | B2 gate collector (25 items) against that stand: live historian write, bucket aggregate, raw read, retention ceiling, live journal, journal purge, boot and preflight refusals; writes only what it measured to `-Out` |
+| `gate-evidence-b2-community.json` | Collector output, B2 run on MySQL 8.4.13 Community, 2026-11-23, 25 PASS / 0 FAIL |
+| `gate-evidence-b2-prod-yes-community.json` | Owner decision, no measured items: **Prod Yes (B2)** on the B1 cell with the single-engine flag, with tech debt and non-claims |
 
 ```powershell
 $env:MYSQL_LAB_PASSWORD = "<lab throwaway>"
 .\gradlew.bat :packages:ispf-server:bootJar
 powershell -File tools/mysql-b1-lab/stand-local.ps1
 powershell -File tools/mysql-b1-lab/gate-evidence.ps1 -Out tools/mysql-b1-lab/gate-evidence-<cell>.json -EngineNote "<named cell>"
+# B2 single-engine
+powershell -File tools/mysql-b1-lab/stand-b2-local.ps1
+powershell -File tools/mysql-b1-lab/gate-b2.ps1 -Out tools/mysql-b1-lab/gate-evidence-b2-<cell>.json -EngineNote "<named cell>"
 ```
 
 CI-side TCKs (Docker, opt-in): `.\gradlew.bat :packages:ispf-server:test --tests "com.ispf.server.relational.Mysql*" -Dispf.test.mysqlDocker=true`.
@@ -28,7 +35,15 @@ CI-side TCKs (Docker, opt-in): `.\gradlew.bat :packages:ispf-server:test --tests
 - `ISPF_EVENT_JOURNAL_ENABLED=false` (or a non-JDBC store)
 - `ISPF_CLUSTER_ENABLED=false`
 
-Boot refuses each of these otherwise, and refuses a MariaDB server under any kind. There is no single-engine bypass on MySQL.
+Boot refuses each of these otherwise, and refuses a MariaDB server under any kind.
+
+## B2 single-engine (required env)
+
+- `ISPF_MYSQL_SINGLE_ENGINE=true`, set explicitly (the `mysql-single-engine` deploy profile alone leaves ISPF in B1)
+- `ISPF_VARIABLE_HISTORY_STORE=jdbc`, `ISPF_EVENT_JOURNAL_STORE=jdbc` (journal enabled at boot)
+- `ISPF_HISTORIAN_TIER_WARM_ENABLED=false`, `ISPF_HISTORIAN_COLD_ARCHIVE_ENABLED=false`, `ISPF_VARIABLE_HISTORY_SPOOL_ENABLED=false`, `ISPF_VARIABLE_HISTORY_DUAL_WRITE_ENABLED=false`
+- `ISPF_CLUSTER_ENABLED=false`, row isolation off, isolation mode not `HARD` — still refused with the flag
+- Server `READ-COMMITTED` and the database on `utf8mb4_0900_bin`: the single-engine preflight refuses boot otherwise
 
 ## Connection
 
@@ -46,6 +61,8 @@ Boot refuses each of these otherwise, and refuses a MariaDB server under any kin
 - MySQL DDL is not transactional. If Flyway V1 fails, drop and recreate `ispf`, then restart.
 - PowerShell splits an unquoted `-h127.0.0.1` at the first dot; the scripts pass `--host=127.0.0.1` quoted.
 - Ports bind to `127.0.0.1` by default (`BIND_HOST` to override). The gate also uses `:18091` (second JVM) and a throwaway `mariadb:11.4` container.
+- The B2 stand uses `:18094` (`:18092` / `:18093` belong to the Oracle lab). Its gate boots refusal JVMs against throwaway databases `ispf_b2_fence` and `ispf_b2_ci` (a `utf8mb4_0900_ai_ci` default) and drops them afterwards.
+- The B2 gate seeds `variable_samples` and `event_history` with SQL in UTC (`UTC_TIMESTAMP(6)`), matching how ISPF writes `DATETIME(6)`.
 
 ## Secrets
 

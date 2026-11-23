@@ -5,7 +5,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 /**
- * MySQL 8.4 dialect (ADR-0079 B1). Boot runs only under
+ * MySQL 8.4 dialect (ADR-0079 B1, opt-in single-engine B2). Boot runs only under
  * {@code MetadataDialectBootPolicy.assertMysqlB1Fences}. MariaDB is not this dialect.
  */
 public class MysqlDialect extends AbstractRelationalDialect {
@@ -76,12 +76,44 @@ public class MysqlDialect extends AbstractRelationalDialect {
     }
 
     /**
-     * Still the PostgreSQL-shaped string — invalid on MySQL. B2 must replace this;
-     * do not treat it as a historian claim.
+     * Native MySQL 8.4 (B2). {@code TIMESTAMPDIFF}/{@code TIMESTAMPADD} work on the {@code DATETIME(6)}
+     * wall clock, so buckets do not move with the session {@code time_zone} as {@code UNIX_TIMESTAMP} /
+     * {@code FROM_UNIXTIME} would. Epoch-aligned like the PostgreSQL and JVM paths. Parameter order:
+     * bucket seconds, bucket seconds, object path, variable, field, from, to, max buckets.
      */
     @Override
     public String variableSampleBucketAggregateSql() {
-        return bucketAggregateSqlPostgresStyle();
+        return """
+                SELECT bucket_start, avg_val, min_val, max_val, sample_count
+                FROM (
+                    SELECT
+                        bucket_start,
+                        AVG(value_double) AS avg_val,
+                        MIN(value_double) AS min_val,
+                        MAX(value_double) AS max_val,
+                        COUNT(*) AS sample_count
+                    FROM (
+                        SELECT
+                            TIMESTAMPADD(
+                                SECOND,
+                                FLOOR(TIMESTAMPDIFF(SECOND, TIMESTAMP '1970-01-01 00:00:00', observed_at) / ?) * ?,
+                                TIMESTAMP '1970-01-01 00:00:00'
+                            ) AS bucket_start,
+                            value_double
+                        FROM variable_samples
+                        WHERE object_path = ?
+                          AND variable_name = ?
+                          AND field_name = ?
+                          AND observed_at >= ?
+                          AND observed_at <= ?
+                          AND value_double IS NOT NULL
+                    ) bucketed
+                    GROUP BY bucket_start
+                    ORDER BY bucket_start DESC
+                    LIMIT ?
+                ) recent_buckets
+                ORDER BY bucket_start ASC
+                """;
     }
 
     @Override

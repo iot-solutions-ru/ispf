@@ -2,17 +2,25 @@
 
 | | |
 |---|---|
-| Production claim | **Prod Yes (B1)** on MySQL Community Server 8.4.x + MariaDB Connector/J only — owner extension from the 8.4.13 Lab-green cell ([checklist](../../../../../../../../docs/en/mysql-sku-promotion-checklist.md)). Other MySQL cells: **P-MYSQL-SKU-RERUN** |
+| Production claim | **Prod Yes (B1)** on MySQL Community Server 8.4.x + MariaDB Connector/J only — owner extension from the 8.4.13 Lab-green cell ([checklist](../../../../../../../../docs/en/mysql-sku-promotion-checklist.md)); opt-in single-engine **Prod Yes (B2)** on the same cell ([B2 checklist](../../../../../../../../docs/en/mysql-b2-sku-promotion-checklist.md)). Other MySQL cells: **P-MYSQL-SKU-RERUN** |
 | Baseline | `V1__baseline.sql`, generated: `python tools/mysql-baseline-generate.py` (greenfield only) |
 | Lockstep | `python tools/mysql-flyway-lockstep-check.py` + `docs/en/mysql-flyway-exceptions.txt` (CI) |
 
-`ISPF_METADATA_DB_KIND=mysql` boots only under the B1 fences (`MetadataDialectBootPolicy.assertMysqlB1Fences`,
+`ISPF_METADATA_DB_KIND=mysql` boots only under its fences (`MetadataDialectBootPolicy.assertMysqlB1Fences`,
 pre-Flyway and on context refresh). Boot refuses:
 
 - `ISPF_TENANT_DB_ROW_ISOLATION=true` and `ISPF_TENANT_ISOLATION_MODE=HARD`
-- JDBC variable history, historian dual-write, and JDBC event journal on `ISPF_DB` (B2 is not decided)
-- `ISPF_CLUSTER_ENABLED=true`
+- Historian dual-write
+- JDBC variable history and JDBC event journal on `ISPF_DB`, unless `ISPF_MYSQL_SINGLE_ENGINE=true` (B2, below)
+- `ISPF_CLUSTER_ENABLED=true`, with or without single-engine
 - A MariaDB server — config `mariadb`, product-name MariaDB, and `mysql` against a MariaDB server
+
+**Single-engine (opt-in, Prod Yes B2):** `ISPF_MYSQL_SINGLE_ENGINE=true` allows JDBC history and journal on this database and
+refuses warm tier, cold archive, the ClickHouse spool, and any history store other than `jdbc`. Boot also requires a
+`READ-COMMITTED` pool session and the database on `utf8mb4_0900_bin`. Retention is application `DELETE`, clamped to
+`ispf.relational.mysql.max-retention-days` (default 90). Buckets are native SQL (`MysqlDialect.variableSampleBucketAggregateSql`);
+the journal purges in `DELETE … LIMIT` batches. B2 adds no migration: `V1` already carries `variable_samples` and `event_history`.
+Profile: [examples/mysql-single-engine](../../../../../../../../examples/mysql-single-engine/README.md).
 
 Client: LGPL MariaDB Connector/J (`org.mariadb.jdbc.Driver`). Connector/J 3.x accepts `jdbc:mysql:` only with
 `permitMysqlScheme=true`:
