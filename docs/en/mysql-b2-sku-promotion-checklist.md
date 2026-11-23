@@ -10,7 +10,7 @@ Promote opt-in `ISPF_MYSQL_SINGLE_ENGINE=true` (JDBC history and journal on the 
 | Field | Value |
 |-------|-------|
 | Product | **MySQL Community Server 8.4.x** LTS, self-managed. Evidence: 8.4.13 `MySQL Community Server - GPL`, image `mysql:8.4` (local AMD64 Docker) |
-| JDBC client | **MariaDB Connector/J only** — 3.5.10, `org.mariadb.jdbc.Driver`, `jdbc:mysql://…?permitMysqlScheme=true` |
+| JDBC client | **MariaDB Connector/J only** — 3.5.11 (gate evidence: 3.5.10), `org.mariadb.jdbc.Driver`, `jdbc:mysql://…?permitMysqlScheme=true` |
 | Isolation | `transaction_isolation=READ-COMMITTED` — the single-engine preflight checks the pool's session and refuses boot otherwise |
 | Charset / collation | ISPF database on `utf8mb4` / `utf8mb4_0900_bin` — the preflight refuses another database default |
 | Dedicated database | Yes (`ispf_b2` on the evidence cell) |
