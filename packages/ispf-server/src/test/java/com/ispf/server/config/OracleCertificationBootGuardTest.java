@@ -48,13 +48,20 @@ class OracleCertificationBootGuardTest {
     }
 
     @Test
-    void refusesClusterOnOracleEvenWithSingleEngine() {
+    void refusesClusterOnOracleWithoutSingleEngine() {
         OracleCertificationBootGuard guard = newGuard(
-                false, TenantIsolationProperties.IsolationMode.LOGICAL, true, "jdbc", false, true, "jdbc", true, true);
+                false, TenantIsolationProperties.IsolationMode.LOGICAL, false, "clickhouse", false, false, "jdbc", true, false);
         assertThatThrownBy(guard::refuseUnsupportedOracleModes)
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("cluster")
+                .hasMessageContaining("ispf.cluster.enabled=true on Oracle requires ISPF_ORACLE_SINGLE_ENGINE=true")
                 .hasMessageContaining("ADR-0080");
+    }
+
+    @Test
+    void singleEngineAllowsCluster() {
+        OracleCertificationBootGuard guard = newGuard(
+                false, TenantIsolationProperties.IsolationMode.LOGICAL, true, "jdbc", false, true, "jdbc", true, true);
+        assertThatCode(guard::refuseUnsupportedOracleModes).doesNotThrowAnyException();
     }
 
     @Test

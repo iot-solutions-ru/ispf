@@ -3,8 +3,8 @@ package com.ispf.server.config;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * Opt-in Oracle single-engine profile (ADR-0080 B2). Default off. Oracle Database Free 23.26.x
- * cell; cluster stays refused in B2 (A-A is a later train).
+ * Opt-in Oracle single-engine profile (ADR-0080 B2 / A-A). Default off. Oracle Database Free 23.26.x
+ * cell; {@code ispf.cluster.enabled} is allowed only when this flag is on (A-A).
  */
 @ConfigurationProperties(prefix = "ispf.relational.oracle")
 public class OracleRelationalProperties {

@@ -1,0 +1,192 @@
+{
+  "generated_at": "2026-11-23T10:06:04.304Z",
+  "gate": "A-A (single-engine + cluster, two JVMs)",
+  "base_a": "http://127.0.0.1:18097",
+  "base_b": "http://127.0.0.1:18098",
+  "db": "ispf_aa",
+  "engine_note": "Oracle Database Free 23.26.4 (Docker gvenzl/oracle-free:23-slim-faststart, local AMD64), schema ispf_aa",
+  "edition": "Oracle AI Database 26ai Free Release 23.26.4.0.0 - Develop, Learn, and Run for Free Version 23.26.4.0.0",
+  "jdbc_client": "operator ojdbc17 on loader.path (ISPF does not ship it)",
+  "topology": "2 JVMs, same capabilities (http-public,ws,replica-sync,config-write,schedulers,drivers), one ISPF_DB; NATS 2.10 JetStream; Redis 7.4; staged start (A then B)",
+  "reclaim_slo_sec": 45,
+  "live_lag_slo_ms": 5000,
+  "fail_count": 0,
+  "pass_count": 35,
+  "items": [
+    {
+      "id": "aa_engine",
+      "status": "PASS",
+      "detail": "Oracle Free (Oracle AI Database 26ai Free Release 23.26.4.0.0 - Develop, Learn, and Run for Free Version 23.26.4.0.0), NLS_CHARACTERSET=AL32UTF8, schema ispf_aa"
+    },
+    {
+      "id": "aa_health",
+      "status": "PASS",
+      "detail": "replica A and replica B actuator health UP"
+    },
+    {
+      "id": "aa_login",
+      "status": "PASS",
+      "detail": "admin login on A and on B"
+    },
+    {
+      "id": "aa_session_shared",
+      "status": "PASS",
+      "detail": "a token issued by A is accepted by B and the reverse (sessions in the shared Oracle database)"
+    },
+    {
+      "id": "aa_config",
+      "status": "PASS",
+      "detail": "both JVMs (docker inspect): single-engine on, history + journal JDBC, cluster on, NATS + JetStream on, Redis on, warm off, ddl-auto=none; one ISPF_DB schema (ispf_aa); replica ids oracle-aa-a / oracle-aa-b; capabilities http-public,ws,replica-sync,config-write,schedulers,drivers"
+    },
+    {
+      "id": "aa_flyway",
+      "status": "PASS",
+      "detail": "flyway Oracle/V1 applied once (success=1), no failed rows"
+    },
+    {
+      "id": "aa_dialect",
+      "status": "PASS",
+      "detail": "Hibernate OracleDialect with ddl-auto=none on both JVMs"
+    },
+    {
+      "id": "aa_dialect_allows",
+      "status": "PASS",
+      "detail": "cluster + single-engine passes the Oracle boot fences (pre-Flyway and on context refresh) on both JVMs"
+    },
+    {
+      "id": "aa_preflight",
+      "status": "PASS",
+      "detail": "ispf session: AL32UTF8; single-engine preflight passed on both JVMs"
+    },
+    {
+      "id": "aa_cluster_deps",
+      "status": "PASS",
+      "detail": "ClusterDependencyValidator on both JVMs: Cluster dependency check OK (jetStream=true, redis=true, liveMirror=true, pathInterest=true)"
+    },
+    {
+      "id": "aa_time_zone",
+      "status": "PASS",
+      "detail": "both JVM containers on UTC; Oracle system_time_zone UTC, time_zone SYSTEM (leases are zone-less DATETIME(6))"
+    },
+    {
+      "id": "aa_cluster_health",
+      "status": "PASS",
+      "detail": "GET /platform/cluster/health on A and on B: clusterEnabled, nodesUp=2/2, liveVariableSync on, NATS on"
+    },
+    {
+      "id": "aa_replica_registry",
+      "status": "PASS",
+      "detail": "platform_cluster_replicas: oracle-aa-a,oracle-aa-b with a heartbeat in the last 60 s"
+    },
+    {
+      "id": "aa_structure_sync",
+      "status": "PASS",
+      "detail": "device created on A visible on B after 31 ms; deleted on A, gone on B after 20 ms (no ghost)"
+    },
+    {
+      "id": "aa_definition_sync",
+      "status": "PASS",
+      "detail": "variables lagProbe and aa (historized) and event aagate defined on A; after the object-level PATCH on A, B reloaded the object from Oracle and serves both definitions (writable, aa historyEnabled) in 28 ms"
+    },
+    {
+      "id": "aa_live_var",
+      "status": "PASS",
+      "detail": "WebSocket observer subscribed on each replica (/ws/objects, cluster path interest in Redis): PUT on A read on B in 1320 ms, PUT on B read on A in 1434 ms (8 consecutive reads each, SLO 5000 ms)"
+    },
+    {
+      "id": "aa_history_two_writers",
+      "status": "PASS",
+      "detail": "PUT 101.5 on A and 202.5 on B: exactly 1 variable_samples row each (no mirrored duplicate); GET /history on A and on B returns both"
+    },
+    {
+      "id": "aa_journal_two_writers",
+      "status": "PASS",
+      "detail": "POST /events/fire on A and on B: exactly 2 event_history rows (1 per fire, no mirrored duplicate); GET /events?before= on A and on B lists both"
+    },
+    {
+      "id": "aa_concurrent_writes",
+      "status": "PASS",
+      "detail": "20 concurrent POST /objects (10 on A, 10 on B): all 2xx, 20 object_nodes rows, each replica sees the other's objects"
+    },
+    {
+      "id": "aa_audit_chain",
+      "status": "PASS",
+      "detail": "20 concurrent DELETE /objects across both JVMs (each deletes the other's objects): audit_event_chain 3 -> 23; GET /audit/verify-chain intact on A and on B"
+    },
+    {
+      "id": "aa_driver_lease",
+      "status": "PASS",
+      "detail": "virtual driver configured and started through A (RUNNING): one platform_driver_locks row, holder oracle-aa-a, live"
+    },
+    {
+      "id": "aa_driver_binding_on_b",
+      "status": "PASS",
+      "detail": "B sees driverId=virtual before kill (wait 7 ms)"
+    },
+    {
+      "id": "aa_crash_reclaim",
+      "status": "PASS",
+      "detail": "docker kill A (no graceful release): B reclaimed the driver lease in 8.1 s (TTL 15 s, scan 5 s, SLO 45 s); driver RUNNING on B"
+    },
+    {
+      "id": "aa_survivor_serves",
+      "status": "PASS",
+      "detail": "with A down: B answers /info and login, and its historian and journal writes land in Oracle (1 sample row, 1 event row)"
+    },
+    {
+      "id": "aa_leader_survivor",
+      "status": "PASS",
+      "detail": "before the kill 6 live short-TTL leases on 1 holder(s) [alert_rule_periodic,application_sql_bindings,platform_scheduler,process_program_runner,workflow_due_timer_scheduler,workflow_retry_scheduler]; 45 s after it 6 live, all on one holder (the survivor) [alert_rule_periodic,application_sql_bindings,platform_scheduler,process_program_runner,workflow_due_timer_scheduler,workflow_retry_scheduler]; 6 taken over from the dead JVM"
+    },
+    {
+      "id": "aa_rejoin",
+      "status": "PASS",
+      "detail": "A restarted and rejoined (nodesUp=2 from B); the driver lease stayed with oracle-aa-b, one lock row (no dual owner)"
+    },
+    {
+      "id": "aa_audit_after_crash",
+      "status": "PASS",
+      "detail": "GET /audit/verify-chain intact on A and on B after the crash, survivor writes and rejoin"
+    },
+    {
+      "id": "aa_lease_log_noise",
+      "status": "PASS",
+      "detail": "leader-lease duplicate-key lines over the whole run: A=0, B=0 (followers do not INSERT a held lease)"
+    },
+    {
+      "id": "aa_fence_b1_cluster",
+      "status": "PASS",
+      "detail": "refused with: ispf.cluster.enabled=true on Oracle requires ISPF_ORACLE_SINGLE_ENGINE=true"
+    },
+    {
+      "id": "aa_fence_nats_off",
+      "status": "PASS",
+      "detail": "refused with: ispf.cluster.enabled=true requires ispf.nats.enabled=true"
+    },
+    {
+      "id": "aa_fence_jetstream_off",
+      "status": "PASS",
+      "detail": "refused with: ispf.cluster.enabled=true requires ispf.nats.jet-stream-enabled=true"
+    },
+    {
+      "id": "aa_fence_redis_off",
+      "status": "PASS",
+      "detail": "refused with: requires ispf.redis.enabled=true"
+    },
+    {
+      "id": "aa_fence_dual",
+      "status": "PASS",
+      "detail": "refused with: dual-write-enabled=true is refused on Oracle"
+    },
+    {
+      "id": "aa_fence_warm",
+      "status": "PASS",
+      "detail": "refused with: single-engine refuses ClickHouse warm-tier routing"
+    },
+    {
+      "id": "aa_fence_spool",
+      "status": "PASS",
+      "detail": "refused with: ISPF_VARIABLE_HISTORY_SPOOL_ENABLED is the ClickHouse spool"
+    }
+  ]
+}
