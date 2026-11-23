@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
  * ADR-0079 fences for MySQL metadata (also enforced pre-Flyway via
  * {@link com.ispf.server.relational.FlywayDialectConfiguration} → {@link MetadataDialectBootPolicy}).
  * Runs even when Flyway is disabled, so a MySQL ISPF_DB never boots outside B1 or the opt-in
- * single-engine profile (B2).
+ * single-engine profile (B2, and A-A with cluster on).
  */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE + 21)

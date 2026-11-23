@@ -43,12 +43,21 @@ class MysqlCertificationBootGuardTest {
     }
 
     @Test
-    void refusesClusterOnMysql() {
+    void b1RefusesCluster() {
         MysqlCertificationBootGuard guard = newGuard(
                 false, TenantIsolationProperties.IsolationMode.LOGICAL, false, "clickhouse", false, false, "jdbc", true);
         assertThatThrownBy(guard::refuseUnsupportedMysqlModes)
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("cluster");
+                .hasMessageContaining("ispf.cluster.enabled=true on MySQL requires ISPF_MYSQL_SINGLE_ENGINE=true");
+    }
+
+    @Test
+    void b1RefusesClusterWithExternalStores() {
+        MysqlCertificationBootGuard guard = newGuard(
+                false, TenantIsolationProperties.IsolationMode.LOGICAL, true, "clickhouse", false, true, "clickhouse", true);
+        assertThatThrownBy(guard::refuseUnsupportedMysqlModes)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("requires ISPF_MYSQL_SINGLE_ENGINE=true");
     }
 
     @Test
@@ -90,12 +99,53 @@ class MysqlCertificationBootGuardTest {
     }
 
     @Test
-    void singleEngineStillRefusesCluster() {
+    void singleEngineAllowsCluster() {
         MysqlCertificationBootGuard guard = singleEngineGuard(true, "jdbc", false, true, "jdbc", true, false, false);
-        assertThatThrownBy(guard::refuseUnsupportedMysqlModes)
+        assertThatCode(guard::refuseUnsupportedMysqlModes).doesNotThrowAnyException();
+    }
+
+    @Test
+    void clusterKeepsSingleEngineStoreFences() {
+        assertThatThrownBy(singleEngineGuard(true, "jdbc", true, true, "jdbc", true, false, false)::refuseUnsupportedMysqlModes)
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("ispf.cluster.enabled=true is not certified on MySQL")
-                .hasMessageContaining("single-engine");
+                .hasMessageContaining("dual-write");
+        assertThatThrownBy(singleEngineGuard(true, "jdbc", false, true, "jdbc", true, true, false)::refuseUnsupportedMysqlModes)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("MySQL single-engine refuses ClickHouse warm-tier");
+        assertThatThrownBy(singleEngineGuard(true, "jdbc", false, true, "jdbc", true, false, true)::refuseUnsupportedMysqlModes)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("cold Parquet archive");
+        assertThatThrownBy(singleEngineGuard(true, "clickhouse", false, true, "jdbc", true, false, false)::refuseUnsupportedMysqlModes)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("MySQL single-engine requires ISPF_VARIABLE_HISTORY_STORE=jdbc");
+        assertThatThrownBy(singleEngineGuard(true, "jdbc", false, true, "clickhouse", true, false, false)::refuseUnsupportedMysqlModes)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("MySQL single-engine requires ISPF_EVENT_JOURNAL_STORE=jdbc");
+
+        VariableHistoryProperties spooled = history(true, "jdbc", false);
+        spooled.getSpool().setEnabled(true);
+        assertThatThrownBy(() -> guard(new MysqlDialect(), b1Tenant(), spooled, journal(true, "jdbc"),
+                true, true, false, false).refuseUnsupportedMysqlModes())
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("ISPF_VARIABLE_HISTORY_SPOOL_ENABLED");
+    }
+
+    @Test
+    void clusterKeepsTenantFences() {
+        TenantIsolationProperties rls = new TenantIsolationProperties();
+        rls.setDbRowIsolation(true);
+        assertThatThrownBy(() -> guard(new MysqlDialect(), rls, history(true, "jdbc", false),
+                journal(true, "jdbc"), true, true, false, false).refuseUnsupportedMysqlModes())
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("db-row-isolation");
+
+        TenantIsolationProperties hard = new TenantIsolationProperties();
+        hard.setDbRowIsolation(false);
+        hard.setIsolationMode(TenantIsolationProperties.IsolationMode.HARD);
+        assertThatThrownBy(() -> guard(new MysqlDialect(), hard, history(true, "jdbc", false),
+                journal(true, "jdbc"), true, true, false, false).refuseUnsupportedMysqlModes())
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("HARD");
     }
 
     @Test

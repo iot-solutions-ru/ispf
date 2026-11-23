@@ -108,7 +108,7 @@ ispf:
       # Opt-in /history/aggregate stitch from observed_at rollups + raw head/tail. Default off.
       observed-rollup-read-enabled: ${ISPF_MSSQL_OBSERVED_ROLLUP_READ:false}
     mysql:
-      # Opt-in B2: JDBC history + journal on the MySQL ISPF_DB (ADR-0079). Community 8.4.x only; cluster stays refused.
+      # Opt-in B2: JDBC history + journal on the MySQL ISPF_DB (ADR-0079). Community 8.4.x only. Required for cluster (A-A) on MySQL.
       single-engine: ${ISPF_MYSQL_SINGLE_ENGINE:false}
       # Retention is application DELETE: clamp historian retention (days) in single-engine mode.
       max-retention-days: ${ISPF_MYSQL_MAX_RETENTION_DAYS:90}

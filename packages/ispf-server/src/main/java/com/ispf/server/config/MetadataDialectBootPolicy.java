@@ -66,9 +66,10 @@ public final class MetadataDialectBootPolicy {
     /**
      * MySQL fences (ADR-0079). B1 keeps JDBC history/journal off ISPF_DB. The opt-in single-engine
      * profile ({@code ISPF_MYSQL_SINGLE_ENGINE}, B2 — § Amendment 5) allows both under the MSSQL
-     * single-engine store rules. Cluster, row isolation, {@code HARD} and dual-write stay refused either
-     * way. These fences are the only thing between a MySQL ISPF_DB and an uncertified mode; keep them
-     * before Flyway and on context refresh.
+     * single-engine store rules. Cluster is allowed only with single-engine (A-A — § Amendment 6), the
+     * cell the dual-JVM gate ran; B1 with cluster stays refused. Row isolation, {@code HARD} and
+     * dual-write stay refused either way. These fences are the only thing between a MySQL ISPF_DB and an
+     * uncertified mode; keep them before Flyway and on context refresh.
      */
     public static void assertMysqlB1Fences(
             RelationalDialect dialect,
@@ -109,10 +110,14 @@ public final class MetadataDialectBootPolicy {
                             + "B1 keeps history off ISPF_DB JDBC; single-engine keeps one JDBC store."
             );
         }
-        if (clusterProperties.enabled()) {
+        // A-A (§ Amendment 6): cluster runs on the single-engine cell only. ClusterDependencyValidator
+        // still fail-closes without NATS JetStream (+ Redis when live sync / path interest is on).
+        // Residual tech-debt: failover under load / multi-hour soak — docs/en/parked-backlog.md P-MYSQL-AA-SOAK.
+        if (clusterProperties.enabled() && !singleEngine) {
             throw new IllegalStateException(
-                    "ispf.cluster.enabled=true is not certified on MySQL (ADR-0079), with or without "
-                            + "single-engine. Run a single JVM, or use PostgreSQL for active-active."
+                    "ispf.cluster.enabled=true on MySQL requires ISPF_MYSQL_SINGLE_ENGINE=true (ADR-0079 A-A): "
+                            + "the dual-JVM gate ran only with history and journal on this database. "
+                            + "Set the flag with the JDBC stores, or run a single JVM."
             );
         }
         if (singleEngine) {

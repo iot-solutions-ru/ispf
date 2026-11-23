@@ -1,4 +1,4 @@
-# ADR-0079 B2 (single-engine) evidence collector against the stand from stand-b2-local.ps1 (default :18094).
+﻿# ADR-0079 B2 (single-engine) evidence collector against the stand from stand-b2-local.ps1 (default :18094).
 # Records results to -Out. Writes only what it measured; owner decisions go in a separate JSON, never into -Out.
 param(
     [string]$Base = "http://127.0.0.1:18094",
@@ -402,7 +402,8 @@ if ($token) {
 
 Write-Host "== 8 boot refusals under single-engine (throwaway database) =="
 Reset-Database "ispf_b2_fence" "utf8mb4_0900_bin"
-Run-Fence "b2_fence_cluster" @{ "ISPF_CLUSTER_ENABLED" = "true" } "ispf.cluster.enabled=true is not certified on MySQL"
+# Since A-A (ADR-0079 § Amendment 6) cluster runs with the flag; gate-aa.ps1 covers that cell and its NATS refusals.
+Run-Fence "b2_fence_cluster_b1" @{ "ISPF_MYSQL_SINGLE_ENGINE" = "false"; "ISPF_VARIABLE_HISTORY_ENABLED" = "false"; "ISPF_EVENT_JOURNAL_ENABLED" = "false"; "ISPF_CLUSTER_ENABLED" = "true" } "ispf.cluster.enabled=true on MySQL requires ISPF_MYSQL_SINGLE_ENGINE=true"
 Run-Fence "b2_fence_warm" @{ "ISPF_HISTORIAN_TIER_WARM_ENABLED" = "true" } "MySQL single-engine refuses ClickHouse warm-tier routing"
 Run-Fence "b2_fence_cold" @{ "ISPF_HISTORIAN_COLD_ARCHIVE_ENABLED" = "true" } "MySQL single-engine refuses cold Parquet archive"
 Run-Fence "b2_fence_dual" @{ "ISPF_VARIABLE_HISTORY_DUAL_WRITE_ENABLED" = "true" } "dual-write-enabled=true is refused on MySQL"

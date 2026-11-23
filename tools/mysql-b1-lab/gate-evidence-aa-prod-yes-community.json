@@ -1,0 +1,36 @@
+{
+  "status": "Prod Yes (A-A) signed: owner extension from the dual-JVM single-engine lab gate; cluster + NATS JetStream + Redis on one MySQL ISPF_DB with JDBC history and journal",
+  "record": "Owner decision only; this file holds no measured items. Measurements are the collector output gate-evidence-aa-community.json, written by gate-aa.ps1 and not edited by hand",
+  "signed_on": "2026-11-23",
+  "owner_instruction": "2026-11-23: sign Community A-A with the MSSQL owner pattern if the gate runs green; Lab green A-A + checklist otherwise; residual soak stays P-MYSQL-AA-SOAK",
+  "cell": "MySQL Community Server 8.4.x LTS (self-managed) + MariaDB Connector/J only, with ISPF_MYSQL_SINGLE_ENGINE=true and ISPF_CLUSTER_ENABLED=true",
+  "basis": "A-A gate on MySQL 8.4.13 Community (Docker mysql:8.4, local AMD64), dedicated database ispf_aa, two JVMs (:18095 / :18096), NATS JetStream, Redis, staged start (A then B), ddl-auto=validate",
+  "evidence": [
+    "gate-evidence-aa-community.json: 35 PASS / 0 FAIL — shared sessions, structure + definition sync, live lag both ways under SLO, historian and journal dual-writer uniqueness, concurrent writes + audit chain, driver lease reclaim after docker kill A in 14.1 s (SLO 45 s), survivor serves, leader takeover, rejoin without dual owner, 7 boot fences",
+    "Lab stand snapshots the bootJar away from Gradle build/libs (stand-aa-local.ps1 .run-aa) so a mid-run rebuild cannot corrupt the nested MariaDB classloader",
+    "The B1 and B2 cells stay signed: gate-evidence-prod-yes-community.json, gate-evidence-b2-prod-yes-community.json"
+  ],
+  "owner_override": "As for B1/B2, the lab Docker cell stands in for a named self-managed MySQL Community Server 8.4.x host; a gate re-run on the first named host is recommended, not blocking",
+  "operator_requirements": [
+    "Dedicated MySQL server instance for the single-engine cell (no co-tenant OLTP) and a dedicated ISPF database shared by every replica",
+    "Server transaction_isolation=READ-COMMITTED and the ISPF database on utf8mb4_0900_bin",
+    "ISPF_MYSQL_SINGLE_ENGINE=true and ISPF_CLUSTER_ENABLED=true; history and journal stores jdbc; warm tier, cold archive, ClickHouse spool and dual-write off",
+    "NATS JetStream and Redis (when live-variable sync / path interest is on); ClusterDependencyValidator must pass",
+    "Do not bind-mount a live Gradle bootJar into the lab JVMs while another build may overwrite it; use the stand snapshot under tools/mysql-b1-lab/.run-aa"
+  ],
+  "tech_debt": [
+    "P-MYSQL-AA-SOAK: dual-JVM chaos soak journal and failover under sustained historian/journal load; multi-hour soak on a named host",
+    "P-MYSQL-SKU-RERUN: MySQL Enterprise, HeatWave, Amazon RDS / Aurora MySQL, Azure Database for MySQL and every other non-Community cell need their own checklist runs",
+    "P-MYSQL-TLS: re-run the gates over TLS (sslMode=verify-full), recommended on the first named host",
+    "P-MYSQL-PG-SQL: review the remaining JDBC SQL for PostgreSQL-only constructs; port or fence what the review finds"
+  ],
+  "non_claims": [
+    "Multi-master Group Replication or readable secondaries as write targets",
+    "Cluster without ISPF_MYSQL_SINGLE_ENGINE or without NATS",
+    "Completed multi-hour soak (P-MYSQL-AA-SOAK)",
+    "MySQL Enterprise, HeatWave, Amazon RDS / Aurora MySQL, Azure Database for MySQL, or any other non-Community cell; MySQL 8.0 and 9.x",
+    "MariaDB Server (boot refuses it) and any JDBC client other than MariaDB Connector/J",
+    "TLS on the ISPF_DB connection (operator-required; no gate ran over TLS)"
+  ],
+  "checklist": "docs/en/mysql-aa-sku-promotion-checklist.md"
+}

@@ -41,6 +41,11 @@ public class DeviceObjectAccessService implements DeviceObjectAccess {
     }
 
     @Override
+    public void reloadFromDatabase(String path) {
+        objectManager.reloadPathFromDatabase(path);
+    }
+
+    @Override
     public List<PlatformObject> childrenOf(String path) {
         return objectManager.tree().childrenOf(path);
     }

@@ -5,7 +5,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 /**
- * MySQL 8.4 dialect (ADR-0079 B1, opt-in single-engine B2). Boot runs only under
+ * MySQL 8.4 dialect (ADR-0079 B1, opt-in single-engine B2 and A-A). Boot runs only under
  * {@code MetadataDialectBootPolicy.assertMysqlB1Fences}. MariaDB is not this dialect.
  */
 public class MysqlDialect extends AbstractRelationalDialect {

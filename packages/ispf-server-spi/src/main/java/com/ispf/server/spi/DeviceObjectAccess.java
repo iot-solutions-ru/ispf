@@ -20,6 +20,9 @@ public interface DeviceObjectAccess {
 
     PlatformObject require(String path);
 
+    /** Replaces this replica's in-memory copy of {@code path} with the shared database row. */
+    void reloadFromDatabase(String path);
+
     List<PlatformObject> childrenOf(String path);
 
     void setSystemVariableValue(String path, String name, DataRecord value);

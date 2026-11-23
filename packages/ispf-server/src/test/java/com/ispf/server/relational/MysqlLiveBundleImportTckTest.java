@@ -76,7 +76,7 @@ class MysqlLiveBundleImportTckTest {
         registry.add("spring.jpa.hibernate.ddl-auto", () -> "validate");
         registry.add("ispf.tenant.db-row-isolation", () -> "false");
         registry.add("ispf.bootstrap.fixtures-enabled", () -> "false");
-        // ADR-0079 B1: jdbc history / journal / cluster are B2 or uncertified on MySQL.
+        // ADR-0079 B1: jdbc history / journal need single-engine (B2); cluster needs it too (A-A).
         registry.add("ispf.variable-history.enabled", () -> "false");
         registry.add("ispf.variable-history.dual-write-enabled", () -> "false");
         registry.add("ispf.event-journal.enabled", () -> "false");

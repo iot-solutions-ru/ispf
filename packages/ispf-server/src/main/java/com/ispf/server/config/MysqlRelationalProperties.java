@@ -4,7 +4,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
  * Opt-in MySQL single-engine profile (ADR-0079 § Amendment 5, B2). Default off. MySQL Community
- * Server 8.4.x only; cluster stays refused.
+ * Server 8.4.x only. It is also the only MySQL profile that may run {@code ispf.cluster.enabled}
+ * (A-A, § Amendment 6).
  */
 @ConfigurationProperties(prefix = "ispf.relational.mysql")
 public class MysqlRelationalProperties {
