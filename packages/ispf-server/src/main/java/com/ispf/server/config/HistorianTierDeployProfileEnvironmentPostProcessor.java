@@ -24,6 +24,7 @@ public final class HistorianTierDeployProfileEnvironmentPostProcessor implements
     static final String DEPLOY_PROFILE_KEY = "ispf.historian.deploy-profile";
     static final String SINGLE_ENGINE_KEY = "ispf.relational.mssql.single-engine";
     static final String MYSQL_SINGLE_ENGINE_KEY = "ispf.relational.mysql.single-engine";
+    static final String ORACLE_SINGLE_ENGINE_KEY = "ispf.relational.oracle.single-engine";
 
     @Override
     public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
@@ -56,6 +57,9 @@ public final class HistorianTierDeployProfileEnvironmentPostProcessor implements
         }
         if ("mysql-single-engine".equalsIgnoreCase(deployProfile)) {
             return MYSQL_SINGLE_ENGINE_KEY;
+        }
+        if ("oracle-single-engine".equalsIgnoreCase(deployProfile)) {
+            return ORACLE_SINGLE_ENGINE_KEY;
         }
         return null;
     }

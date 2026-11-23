@@ -80,7 +80,8 @@ class VariableHistoryServiceRetentionClampTest {
                 mock(org.springframework.beans.factory.ObjectProvider.class),
                 parquetExport,
                 mssqlRelationalProperties,
-                mysqlRelationalProperties
+                mysqlRelationalProperties,
+                mock(org.springframework.beans.factory.ObjectProvider.class)
         );
     }
 

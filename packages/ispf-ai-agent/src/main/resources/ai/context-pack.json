@@ -1,6 +1,6 @@
 {
   "contextPackVersion": "ispf-1.0.0",
-  "generatedAt": "2026-11-23T07:07:58.224813+00:00",
+  "generatedAt": "2026-11-23T08:36:44.033910+00:00",
   "platformVersion": "1.0.0",
   "bundleManifest": {
     "fields": [
@@ -18888,6 +18888,12 @@
       "path": "docs/en/operator-pwa-android-smoke.md",
       "title": "Operator PWA — Android Chrome smoke checklist (BL-90)",
       "keywords": "operator-pwa-android-smoke Operator PWA — Android Chrome smoke checklist (BL-90)"
+    },
+    {
+      "id": "oracle-b2-sku-promotion-checklist",
+      "path": "docs/en/oracle-b2-sku-promotion-checklist.md",
+      "title": "Oracle B2 single-engine promotion checklist",
+      "keywords": "oracle-b2-sku-promotion-checklist Oracle B2 single-engine promotion checklist"
     },
     {
       "id": "oracle-certification-epic",
@@ -71689,5 +71695,5 @@
   "embeddingModel": "ispf-hash-v1",
   "embeddingDims": 384,
   "embeddingCoverage": 41,
-  "contentSha256": "5237c4cc3af7b6dc62a17c57678188b7704b6bbf8dd96859325afa86e9283efa"
+  "contentSha256": "052fa993f185bfff126deafb773f5dd4976e897c521eb5356f8ec6f7e0e01319"
 }

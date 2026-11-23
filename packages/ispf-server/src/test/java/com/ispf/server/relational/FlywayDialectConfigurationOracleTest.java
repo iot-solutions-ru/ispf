@@ -8,6 +8,7 @@ import com.ispf.server.config.MetadataDbProperties;
 import com.ispf.server.config.MetadataDialectBootPolicy;
 import com.ispf.server.config.MssqlRelationalProperties;
 import com.ispf.server.config.MysqlRelationalProperties;
+import com.ispf.server.config.OracleRelationalProperties;
 import com.ispf.server.config.TenantIsolationProperties;
 import com.ispf.server.config.VariableHistoryProperties;
 import org.flywaydb.core.Flyway;
@@ -105,6 +106,7 @@ class FlywayDialectConfigurationOracleTest {
                 cluster,
                 new MssqlRelationalProperties(),
                 new MysqlRelationalProperties(),
+                new OracleRelationalProperties(),
                 new HistorianTierProperties(),
                 new HistorianColdArchiveProperties(false, "", 200, 10000)
         );

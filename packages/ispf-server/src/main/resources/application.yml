@@ -112,6 +112,10 @@ ispf:
       single-engine: ${ISPF_MYSQL_SINGLE_ENGINE:false}
       # Retention is application DELETE: clamp historian retention (days) in single-engine mode.
       max-retention-days: ${ISPF_MYSQL_MAX_RETENTION_DAYS:90}
+    oracle:
+      # Opt-in B2: JDBC history + journal on the Oracle ISPF_DB (ADR-0080). Free 23.26.x cell; cluster stays refused.
+      single-engine: ${ISPF_ORACLE_SINGLE_ENGINE:false}
+      max-retention-days: ${ISPF_ORACLE_MAX_RETENTION_DAYS:90}
   datasource:
     external:
       default-pool-size: ${ISPF_DATASOURCE_EXTERNAL_POOL_SIZE:5}
