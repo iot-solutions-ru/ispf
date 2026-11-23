@@ -244,6 +244,11 @@ public class BacnetDeviceDriver implements DeviceDriver {
     }
 
     private void readConfig(String name, java.util.function.Consumer<String> consumer) {
+        String fromBinding = driverObject.configuration().get(name);
+        if (fromBinding != null && !fromBinding.isBlank()) {
+            consumer.accept(fromBinding.trim());
+            return;
+        }
         driverObject.getVariable(name).ifPresent(record -> {
             Object raw = record.firstRow().get("raw");
             if (raw == null) {
