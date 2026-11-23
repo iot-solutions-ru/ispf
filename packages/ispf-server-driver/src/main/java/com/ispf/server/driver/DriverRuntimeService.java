@@ -573,7 +573,8 @@ public class DriverRuntimeService implements DriverConnectionLookup {
     public DriverRuntimeStatus pollNow(String devicePath, String pointId) {
         ActiveDriver active = activeDrivers.get(devicePath);
         if (active == null) {
-            return status(devicePath).orElseThrow();
+            return status(devicePath).orElseThrow(() ->
+                    new IllegalArgumentException("No driver binding for: " + devicePath));
         }
         pollOnIoThread(devicePath, active, pointId);
         active.driverObject().flushIngress();
