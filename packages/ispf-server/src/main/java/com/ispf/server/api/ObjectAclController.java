@@ -1,5 +1,6 @@
 package com.ispf.server.api;
 
+import com.ispf.server.object.ObjectManager;
 import com.ispf.server.security.acl.ObjectAccessService;
 import com.ispf.server.security.acl.ObjectAclStore;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,13 +19,16 @@ import java.util.Map;
 public class ObjectAclController {
 
     private final ObjectAccessService objectAccessService;
+    private final ObjectManager objectManager;
 
-    public ObjectAclController(ObjectAccessService objectAccessService) {
+    public ObjectAclController(ObjectAccessService objectAccessService, ObjectManager objectManager) {
         this.objectAccessService = objectAccessService;
+        this.objectManager = objectManager;
     }
 
     @GetMapping
     public Map<String, Object> list(@RequestParam String path) {
+        objectManager.require(path);
         List<Map<String, Object>> entries = objectAccessService.listEntries(path).stream()
                 .map(entry -> {
                     Map<String, Object> row = new LinkedHashMap<>();
@@ -39,6 +43,7 @@ public class ObjectAclController {
 
     @PutMapping
     public Map<String, Object> replace(@RequestParam String path, @RequestBody ReplaceAclRequest request) {
+        objectManager.require(path);
         List<ObjectAclStore.ObjectAclEntryDraft> drafts = request.entries().stream()
                 .map(item -> new ObjectAclStore.ObjectAclEntryDraft(
                         item.principalType(),
