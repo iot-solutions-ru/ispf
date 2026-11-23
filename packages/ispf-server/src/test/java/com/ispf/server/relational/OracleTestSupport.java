@@ -9,8 +9,9 @@ import java.util.UUID;
 
 /**
  * Shared helpers for ADR-0080 Oracle Testcontainers gates.
- * <p>Oracle Database Free ({@code gvenzl/oracle-free}, the 23ai line Oracle renamed 26ai) is lab
- * evidence only, not the Enterprise Edition a production cell would name. The ojdbc thin driver
+ * <p>Oracle Database Free ({@code gvenzl/oracle-free}, the 23ai line Oracle renamed 26ai) is the
+ * Prod Yes (B1) cell by owner override; these gates say nothing about Standard Edition 2, Enterprise
+ * Edition, 19c, or managed services. The ojdbc thin driver
  * comes from the opt-in {@code oracleLabJdbc} configuration ({@code -Dispf.test.oracleDocker=true});
  * ISPF never ships it, so these gates skip when it is absent.
  */

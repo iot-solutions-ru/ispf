@@ -2,9 +2,9 @@
 
 ## Status
 
-**Accepted** (2026-11-20) — policy and certification charter. **Amended 2026-11-22 — B1 pack + Lab green:** lab Flyway SQL is authorized (§ Amendment 1), the JDBC driver stays on the operator's classpath (§ Amendment 2), and the Lab-green gate (§ Amendment 3) passed on Oracle Database Free. **Prod: No — Lab green.** An Oracle `ISPF_DB` boots only when the build carries the Flyway pack and the operator supplied the Oracle JDBC driver, and then only under the B1 fences (`MetadataDialectBootPolicy.assertOracleB1Fences`). Oracle Database Free is not a production edition; no named-SKU Prod Yes cell is signed.
+**Accepted** (2026-11-20) — policy and certification charter. **Amended 2026-11-22 — B1 pack + Lab green:** lab Flyway SQL is authorized (§ Amendment 1), the JDBC driver stays on the operator's classpath (§ Amendment 2), and the Lab-green gate (§ Amendment 3) passed on Oracle Database Free. **Prod Yes (B1)** 2026-11-23 by owner override (§ Amendment 4) on one cell: **self-managed Oracle Database Free 23.26.x + operator-supplied `ojdbc17` only** ([checklist](../oracle-sku-promotion-checklist.md)). An Oracle `ISPF_DB` boots only when the build carries the Flyway pack and the operator supplied the Oracle JDBC driver, and then only under the B1 fences (`MetadataDialectBootPolicy.assertOracleB1Fences`). Hibernate `ddl-auto=validate` is not fixed: the cell runs `none`. Other editions, 19c, and managed services are not Prod Yes (**P-ORACLE-SKU**, **P-ORACLE-19C**). Validate, `''` writes, SQL outside the gate's paths, and TLS are not certified (**P-ORACLE-VALIDATE**, **P-ORACLE-EMPTY**, **P-ORACLE-PG-SQL**, **P-ORACLE-TLS**).
 
-Amends [0037-relational-core-portability](0037-relational-core-portability.md). MySQL B1 Prod Yes is signed in [0079](0079-mysql-metadata-certification.md) (2026-11-22), which unblocked the Oracle B1 pack. This ADR does not grant production support.
+Amends [0037-relational-core-portability](0037-relational-core-portability.md). MySQL B1 Prod Yes is signed in [0079](0079-mysql-metadata-certification.md) (2026-11-22), which unblocked the Oracle B1 pack. This ADR grants production support only for the § Amendment 4 cell.
 
 ## Context
 
@@ -14,12 +14,12 @@ Oracle version, edition, JDBC driver, schema behavior, locking, and identifier r
 
 ## Decision
 
-- Scope the first gate to **B1 metadata** on a named Oracle database version/edition and JDBC driver (candidates: **19c** or **23ai**, both long-term releases; Oracle renamed the 23ai line "26ai" with release 23.26). Oracle Database Free is lab evidence only.
+- Scope the first gate to **B1 metadata** on a named Oracle database version/edition and JDBC driver (candidates: **19c** or **23ai**, both long-term releases; Oracle renamed the 23ai line "26ai" with release 23.26). Oracle Database Free was lab evidence only until the § Amendment 4 owner override named it as the Prod Yes cell.
 - Keep journal and variable history outside the claim unless a later B2 decision and gate cover them. **No** MSSQL-style single-engine bypass in B1 fences.
-- **Lab green** is reached (§ Amendment 3). The Oracle **named-SKU Prod Yes** gate is separate and still open: Free is not Enterprise Edition.
+- **Lab green** is reached (§ Amendment 3). **Prod Yes (B1)** covers one cell by owner override (§ Amendment 4): Oracle Database Free 23.26.x with an operator-supplied `ojdbc17`. Every other edition, release, and managed service needs its own checklist run.
 - `MetadataDialectBootPolicy.assertEngineCertified` admits `oracle` only when `classpath:db/migration/oracle/V1__baseline.sql` exists and `oracle.jdbc.OracleDriver` loads; otherwise it refuses with the remedy. `OracleJdbcDriverEnvironmentPostProcessor` refuses earlier, before Spring Boot builds the DataSource. The B1 fences run pre-Flyway (`FlywayDialectConfiguration`) and on context refresh (`OracleCertificationBootGuard`): no row isolation, no `HARD` tenant mode, no dual-write, no cluster, no JDBC history/journal on `ISPF_DB`. The runtime-settings `PATCH` refuses to hot-enable the JDBC event journal.
 - Require a greenfield Flyway pack, fixed bundle import, concurrent audit verification, lease/failover checks, and explicit unsupported-feature failures before promotion.
-- Treat containers, free editions, or a developer lab as lab evidence only, never as certification for another named production edition.
+- Treat containers, free editions, or a developer lab as lab evidence only, never as certification for another named production edition. § Amendment 4 is an explicit owner exception for the Free cell itself; it certifies no other edition.
 - ISPF does not ship an Oracle JDBC driver (§ Amendment 2). Nothing in ISPF claims a right to redistribute it.
 
 ### Amendment 1 (2026-11-22) — lab Flyway SQL authorized
@@ -75,12 +75,29 @@ Open on the way to Prod Yes (not claimed by Lab green):
 - Oracle Net encryption / TLS and wallet setup on the named host.
 - B2 JDBC history/journal, active-active, tenant row isolation, `HARD` schemas, and per-app schemas stay refused or unsupported.
 
+§ Amendment 4 signs Prod Yes (B1) without closing any of these items. The owner override names the Free cell as the edition (other editions stay **P-ORACLE-SKU**). 19c, validate, `''` writes, uncovered SQL including the `concatExpression` caveat, and TLS are waived in writing as non-claims with tech-debt tickets (**P-ORACLE-19C**, **P-ORACLE-VALIDATE**, **P-ORACLE-EMPTY**, **P-ORACLE-PG-SQL**, **P-ORACLE-TLS**). The refused modes stay refused.
+
+### Amendment 4 (2026-11-23) — Prod Yes (B1) on Oracle Database Free by owner override
+
+| Item | Decision |
+|------|----------|
+| Cell | **Oracle Database Free** (Oracle AI Database 26ai Free, release **23.26.x**), self-managed: PDB `FREEPDB1`, dedicated schema user, `AL32UTF8`, `MAX_STRING_SIZE=STANDARD`, with an **operator-supplied `ojdbc17`** as the only `ISPF_DB` client |
+| Basis | The § Amendment 3 Lab-green cell (23.26.4.0.0, `gvenzl/oracle-free:23-slim-faststart`, local Docker; ojdbc17 23.26.3.0.0 on `loader.path`): 18 PASS / 0 FAIL ([`gate-evidence-lab-free.json`](../../../tools/oracle-b1-lab/gate-evidence-lab-free.json), collector output). Owner decision: [`gate-evidence-prod-yes-free.json`](../../../tools/oracle-b1-lab/gate-evidence-prod-yes-free.json) |
+| Owner override | Oracle Database Free is the named cell. For this cell only, this sets aside the Decision's "Free is lab evidence only" and the checklist's named non-Free edition rule. The lab Docker cell stands in for a named self-managed Free host. A gate re-run on the first named host is recommended, not blocking |
+| Hibernate | Every Oracle deployment sets `SPRING_JPA_HIBERNATE_DDL_AUTO=none`. `validate` is **not** fixed and has not run on Oracle; it is waived in writing. Tech debt **P-ORACLE-VALIDATE** |
+| Fences | Unchanged: boot refuses JDBC history / journal, dual-write, cluster, row isolation, and `HARD`; per-app schema switch stays fail-closed; the runtime-settings `PATCH` cannot hot-enable the JDBC journal |
+| Driver | Unchanged (§ Amendment 2): ISPF ships no `ojdbc*`, and boot refuses without it |
+| TLS | Operator-required; **not certified** by this signature. The evidence cell ran without Oracle Net encryption. Tech debt **P-ORACLE-TLS** |
+| SQL coverage | The paths the gate and the Oracle TCKs exercise; **no** full SQL parity with PostgreSQL. The bucket aggregate and `CLOB` compared with `=` stay unreviewed (**P-ORACLE-PG-SQL**). `''` writes into `NOT NULL` text columns outside the gate's paths are not audited (**P-ORACLE-EMPTY**) |
+| Tech debt | **P-ORACLE-SKU** (every non-Free edition or managed service), **P-ORACLE-19C**, **P-ORACLE-VALIDATE**, **P-ORACLE-EMPTY**, **P-ORACLE-PG-SQL**, **P-ORACLE-TLS** ([checklist](../oracle-sku-promotion-checklist.md#known-gaps-tracked-tech-debt)) |
+| Non-claims | Standard Edition 2, Enterprise Edition, Autonomous Database, Amazon RDS for Oracle; 19c; `ddl-auto=validate`; load past Free's resource caps; B2 history / journal; active-active; tenant row isolation; `HARD` and per-app schemas; shipping the Oracle JDBC driver; PostgreSQL → Oracle data migration; `''` kept as text (**P-ORACLE-EMPTY**); full SQL parity with PostgreSQL (**P-ORACLE-PG-SQL**); Oracle Net encryption / TLS (**P-ORACLE-TLS**) |
+
 ## Consequences
 
-- Oracle is **Lab green, Prod: No**. A lab `ISPF_DB` may run on Oracle under the B1 fences with an operator-supplied driver; a production claim waits for a named-SKU signature.
-- Sales and documentation must name **Oracle B1 metadata (lab, Oracle Database Free)**, state that the driver is operator-supplied, and must not claim Enterprise Edition.
+- Oracle is **Prod Yes (B1)** on one cell: self-managed Oracle Database Free 23.26.x with an operator-supplied `ojdbc17`, under the B1 fences, with `ddl-auto=none`. Every other edition, release, and managed service stays lab-only until its own checklist run (**P-ORACLE-SKU**, **P-ORACLE-19C**).
+- Sales and documentation use one line: **Oracle Database Free 23.26 B1 metadata, operator-supplied ojdbc17**. They must not name Standard Edition 2, Enterprise Edition, 19c, Autonomous Database, or Amazon RDS for Oracle, and must not suggest that ISPF ships the driver.
 - Engine changes remain greenfield database plus bundle import, not in-place migration.
-- MySQL B1 Prod Yes does not carry over to Oracle. An Oracle Prod Yes needs its own named-SKU gate.
+- MySQL B1 Prod Yes does not carry over to Oracle. The Oracle Prod Yes comes from its own gate and names only the Free cell.
 
 ## Related
 

@@ -2,7 +2,7 @@
 
 > **Язык:** русская версия. Канон: [en/mysql-certification-epic.md](../en/mysql-certification-epic.md).  
 > **Статус:** B1 **Prod Yes** только на MySQL Community Server 8.4.x + MariaDB Connector/J (owner extension 2026-11-22, [checklist](../en/mysql-sku-promotion-checklist.md)); opt-in single-engine **B2 Prod Yes** на той же ячейке (owner extension 2026-11-23, [B2 checklist](../en/mysql-b2-sku-promotion-checklist.md)). Active-active не заявлен (boot отклоняет cluster). Остальные ячейки MySQL — **P-MYSQL-SKU-RERUN**.  
-> **Политика:** lab после MSSQL B1 Prod Yes. MariaDB ≠ MySQL. MySQL B1 Prod Yes подписан — B1 pack Oracle может начинаться; Oracle остаётся Prod: No.
+> **Политика:** lab после MSSQL B1 Prod Yes. MariaDB ≠ MySQL. MySQL B1 Prod Yes подписан — B1 pack Oracle может начинаться; Oracle позже подписал свой Prod Yes (B1) только на Oracle Database Free.
 
 ## Phase 1 — честность диалекта (есть)
 

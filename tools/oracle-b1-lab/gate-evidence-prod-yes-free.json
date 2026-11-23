@@ -1,0 +1,44 @@
+{
+  "status": "Prod Yes (B1) signed: owner override names the Lab-green Oracle Database Free cell; ddl-auto=validate is not fixed (the cell runs none)",
+  "record": "Owner decision only; this file holds no measured items. Measurements are the collector output under evidence, written by gate-evidence.ps1 and not edited by hand",
+  "signed_on": "2026-11-23",
+  "cell": "Oracle Database Free (Oracle AI Database 26ai Free, release 23.26.x), self-managed; PDB FREEPDB1, dedicated schema user, AL32UTF8, MAX_STRING_SIZE=STANDARD; operator-supplied ojdbc17 only (ISPF does not ship it); B1 fences on; SPRING_JPA_HIBERNATE_DDL_AUTO=none",
+  "basis": "Lab-green cell Oracle AI Database 26ai Free 23.26.4.0.0 (Docker gvenzl/oracle-free:23-slim-faststart, local AMD64), ojdbc17 23.26.3.0.0 on loader.path, 2026-11-22",
+  "evidence": [
+    "gate-evidence-lab-free.json: Lab green, local profile (ddl-auto=none), 18 PASS / 0 FAIL",
+    "Opt-in Docker TCKs, -Dispf.test.oracleDocker=true (not default CI): OracleFlywayBaselineTckTest (Flyway V1, '' as NULL, SKIP LOCKED job claims, concurrent audit append, lease failover, job queue and function-success SQL-binding triggers through PlatformSqlPathsTck), OracleLiveBundleImportTckTest (boot, cert bundle imported twice, by-path, alarm shelf through JPA)",
+    "Default CI: Oracle boot-fence and driver unit tests (OracleCertificationBootGuardTest, FlywayDialectConfigurationOracleTest, OracleJdbcDriverEnvironmentPostProcessorTest, PlatformRuntimeSettingsServiceTest) and tools/oracle-flyway-lockstep-check.py"
+  ],
+  "owner_override": "2026-11-23: Oracle Database Free 23.26.x is the named cell. This overrides, for this cell only, ADR-0080's 'Oracle Database Free is lab evidence only' and the checklist's named non-Free edition rule; the Lab-green Docker cell stands in for a named self-managed Free host. No other edition, release or managed service inherits it. A gate re-run on the first named host is recommended, not blocking",
+  "sales_line": "Oracle Database Free 23.26 B1 metadata, operator-supplied ojdbc17.",
+  "sign_items": [
+    "Named edition: waived by the owner override; the cell is Oracle Database Free 23.26.x. Standard Edition 2, Enterprise Edition and managed services stay out. Tech debt P-ORACLE-SKU",
+    "19c: not run; recorded as a non-claim. Tech debt P-ORACLE-19C",
+    "Hibernate validate: not fixed and not run on Oracle; waived in writing. Every Oracle deployment sets SPRING_JPA_HIBERNATE_DDL_AUTO=none. Tech debt P-ORACLE-VALIDATE",
+    "Empty strings: Oracle stores '' as NULL; '' writes into NOT NULL text columns (ORA-01400) on paths the gate does not exercise are not audited. Recorded as a non-claim. Tech debt P-ORACLE-EMPTY",
+    "PostgreSQL-only SQL on paths the gate does not exercise (bucket aggregate, CLOB compared with =): not reviewed in full; recorded as a non-claim. No full SQL parity is claimed. Tech debt P-ORACLE-PG-SQL",
+    "TLS: recorded as a non-claim, not verified. Oracle Net encryption or TLS with a wallet is operator-required on a production host; the evidence cell ran without it. Tech debt P-ORACLE-TLS"
+  ],
+  "tech_debt": [
+    "P-ORACLE-SKU: Standard Edition 2, Enterprise Edition, Autonomous Database, Amazon RDS for Oracle and every other non-Free edition or managed service need their own checklist run before a claim names them",
+    "P-ORACLE-19C: run the B1 gate on Oracle Database 19c; the DDL and dialect SQL follow 19c rules but have run only on 23.26 Free",
+    "P-ORACLE-VALIDATE: make Hibernate ddl-auto=validate pass on Oracle (NUMBER(1) columns against Hibernate's 23ai BOOLEAN mapping); until then ddl-auto=none",
+    "P-ORACLE-EMPTY: audit '' writes into NOT NULL text columns on paths the gate does not exercise",
+    "P-ORACLE-PG-SQL: review the remaining JDBC SQL for PostgreSQL-only constructs on Oracle; port or fence what the review finds",
+    "P-ORACLE-TLS: re-run the gate over Oracle Net encryption or TLS with a wallet, recommended on the first named host"
+  ],
+  "non_claims": [
+    "Oracle Database Standard Edition 2, Enterprise Edition, Autonomous Database, Amazon RDS for Oracle, or any other non-Free edition or managed service",
+    "Oracle Database 19c",
+    "Hibernate ddl-auto=validate on Oracle",
+    "Load past Oracle Database Free's resource caps (CPU, memory, user data); the caps are Oracle's and this signature does not lift them",
+    "B2 JDBC history / journal and historian dual-write on Oracle (boot refuses them)",
+    "Active-active (ispf.cluster.enabled), tenant row isolation, HARD schemas, per-app schema switch",
+    "Shipping or redistributing the Oracle JDBC driver; ISPF ships no ojdbc",
+    "PostgreSQL to Oracle data migration; an engine change is a new empty schema plus bundle import",
+    "'' kept as text on paths the gate does not exercise",
+    "Full SQL parity with PostgreSQL outside the paths the gate and the Oracle TCKs exercise",
+    "Oracle Net encryption / TLS on the ISPF_DB connection (operator-required; no gate ran over it)"
+  ],
+  "checklist": "docs/en/oracle-sku-promotion-checklist.md"
+}

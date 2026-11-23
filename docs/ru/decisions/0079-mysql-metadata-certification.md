@@ -16,7 +16,7 @@
 - Journal/history вне B1; B2 (§ Amendment 5) покрывает их только под opt-in флагом single-engine, без флага fences по-прежнему refuse JDBC history и journal.
 - `assertEngineCertified` больше не отказывает `mysql`: как MSSQL, MySQL стартует только под B1 fences (до Flyway и на context refresh). У Oracle свой engine gate ([0080](0080-oracle-metadata-certification.md)).
 - Testcontainers и dev-lab — только lab-сигнал, не production-сертификация. § Amendment 4 — явное исключение владельца для одной ячейки.
-- MySQL B1 Prod Yes подписан (§ Amendment 4), поэтому B1 pack Oracle ([0080](0080-oracle-metadata-certification.md)) может начинаться; Oracle остаётся **Prod: No** до своего gate. Oracle Phase 1 (честность dialect и fences; boot refuse) начат раньше решением владельца.
+- MySQL B1 Prod Yes (§ Amendment 4) разблокировал B1 pack Oracle ([0080](0080-oracle-metadata-certification.md)); Oracle подписал свой Prod Yes (B1) только на Oracle Database Free (0080, Amendment 4) и эту ячейку не наследует. Oracle Phase 1 (честность dialect и fences; boot refuse) начат раньше решением владельца.
 
 ### Amendment 1 — lab Flyway SQL
 
