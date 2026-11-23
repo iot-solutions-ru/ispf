@@ -1,8 +1,8 @@
 # Epic: MySQL relational certification (ADR-0079)
 
 > **Language:** Canonical English. Russian: [ru/mysql-certification-epic.md](../ru/mysql-certification-epic.md).  
-> **Status:** B1 **Prod Yes** on MySQL Community Server 8.4.x + MariaDB Connector/J only (owner extension 2026-11-22, [checklist](mysql-sku-promotion-checklist.md)); opt-in single-engine **B2 Prod Yes** on the same cell (owner extension 2026-11-23, [B2 checklist](mysql-b2-sku-promotion-checklist.md)) — delivery board for [ADR-0079](decisions/0079-mysql-metadata-certification.md). Active-active is not claimed (boot refuses cluster). Other MySQL cells: **P-MYSQL-SKU-RERUN**.  
-> **Policy:** Lab work unblocked after MSSQL B1 Prod Yes ([0078](decisions/0078-mssql-metadata-certification.md)). MariaDB is **not** this epic. MySQL B1 Prod Yes is signed, so the Oracle B1 pack may start ([0080](decisions/0080-oracle-metadata-certification.md)); Oracle later signed its own Prod Yes (B1) on Oracle Database Free only.
+> **Status:** B1 **Prod Yes** on MySQL Community Server 8.4.x + MariaDB Connector/J only (owner extension 2026-11-22, [checklist](mysql-sku-promotion-checklist.md)); opt-in single-engine **B2 Prod Yes** on the same cell (owner extension 2026-11-23, [B2 checklist](mysql-b2-sku-promotion-checklist.md)); **A-A Prod Yes** with single-engine + cluster (owner extension 2026-11-23, [A-A checklist](mysql-aa-sku-promotion-checklist.md); soak **P-MYSQL-AA-SOAK**) — delivery board for [ADR-0079](decisions/0079-mysql-metadata-certification.md). Other MySQL cells: **P-MYSQL-SKU-RERUN**.  
+> **Policy:** Lab work unblocked after MSSQL B1 Prod Yes ([0078](decisions/0078-mssql-metadata-certification.md)). MariaDB is **not** this epic. MySQL B1 Prod Yes is signed, so the Oracle B1 pack may start ([0080](decisions/0080-oracle-metadata-certification.md)); Oracle stays Prod: No.
 
 ## Phase 1 — dialect honesty (landed)
 
@@ -50,7 +50,7 @@ Config, historian and journal on one MySQL database, mirroring MSSQL B2 ([0079](
 ## Non-goals
 
 - MariaDB as certified MySQL
-- Active-active on MySQL (boot refuses `ISPF_CLUSTER_ENABLED=true`, with or without single-engine)
+- Multi-master Group Replication; A-A without NATS; completed multi-hour soak (**P-MYSQL-AA-SOAK**)
 - Historian rollups, partitions or partition-drop retention on MySQL; a file buffer in front of MySQL
 - Live PG→MySQL data migration
 - Oracle implementation in this epic

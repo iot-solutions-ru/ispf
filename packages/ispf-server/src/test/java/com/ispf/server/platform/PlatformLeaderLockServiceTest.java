@@ -13,6 +13,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -63,6 +65,28 @@ class PlatformLeaderLockServiceTest {
             elapse(TICK);
             replicaA.renewHeldLeases();
         }
+    }
+
+    @Test
+    void followerSkipsTheInsertWhileTheLeaseIsLive() {
+        List<String> followerUpdates = new ArrayList<>();
+        JdbcTemplate recording = new JdbcTemplate(jdbcTemplate.getDataSource()) {
+            @Override
+            public int update(String sql, Object... args) {
+                followerUpdates.add(sql.strip());
+                return super.update(sql, args);
+            }
+        };
+        PlatformLeaderLockService follower = new PlatformLeaderLockService(recording, transactionManager, clock, nanos::get);
+        assertThat(replicaA.runIfLeader(LOCK, TTL, PlatformLeaderLockServiceTest::noop)).isTrue();
+
+        for (int tick = 0; tick < 3; tick++) {
+            assertThat(follower.runIfLeader(LOCK, TTL, PlatformLeaderLockServiceTest::noop)).isFalse();
+            elapse(TICK);
+            replicaA.renewHeldLeases();
+        }
+
+        assertThat(followerUpdates).isNotEmpty().noneMatch(sql -> sql.startsWith("INSERT"));
     }
 
     @Test

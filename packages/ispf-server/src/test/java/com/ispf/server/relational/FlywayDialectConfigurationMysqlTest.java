@@ -25,7 +25,8 @@ import static org.mockito.Mockito.when;
 
 /**
  * ADR-0079: with the hard engine refuse lifted, the pre-Flyway customizer is where a MySQL
- * ISPF_DB outside B1 (or the opt-in single-engine profile) must still stop — before any migration runs.
+ * ISPF_DB outside B1 (or the opt-in single-engine profile, with or without cluster) must still stop —
+ * before any migration runs.
  */
 class FlywayDialectConfigurationMysqlTest {
 
@@ -38,10 +39,10 @@ class FlywayDialectConfigurationMysqlTest {
     }
 
     @Test
-    void clusterIsRefusedBeforeMigrate() {
+    void b1ClusterIsRefusedBeforeMigrate() {
         assertThatThrownBy(() -> customizer(true, false, false).customize(Flyway.configure()))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("cluster")
+                .hasMessageContaining("ispf.cluster.enabled=true on MySQL requires ISPF_MYSQL_SINGLE_ENGINE=true")
                 .hasMessageContaining("ADR-0079");
     }
 
@@ -62,16 +63,35 @@ class FlywayDialectConfigurationMysqlTest {
     }
 
     @Test
-    void singleEngineStillRefusesClusterBeforeMigrate() {
-        assertThatThrownBy(() -> customizer(true, true, true).customize(Flyway.configure()))
+    void singleEngineClusterSelectsMysqlPack() {
+        FluentConfiguration configuration = Flyway.configure();
+        customizer(true, true, true).customize(configuration);
+        assertThat(Arrays.stream(configuration.getLocations()).map(Location::getDescriptor))
+                .containsExactly("classpath:db/migration/mysql");
+    }
+
+    @Test
+    void singleEngineClusterStillRefusesWarmTierBeforeMigrate() {
+        HistorianTierProperties warm = new HistorianTierProperties();
+        warm.warmTier().setEnabled(true);
+        assertThatThrownBy(() -> customizer(true, true, true, warm).customize(Flyway.configure()))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("ispf.cluster.enabled=true is not certified on MySQL");
+                .hasMessageContaining("MySQL single-engine refuses ClickHouse warm-tier");
     }
 
     private static FlywayConfigurationCustomizer customizer(
             boolean clusterEnabled,
             boolean jdbcHistory,
             boolean singleEngine
+    ) {
+        return customizer(clusterEnabled, jdbcHistory, singleEngine, new HistorianTierProperties());
+    }
+
+    private static FlywayConfigurationCustomizer customizer(
+            boolean clusterEnabled,
+            boolean jdbcHistory,
+            boolean singleEngine,
+            HistorianTierProperties tiers
     ) {
         MetadataDbProperties metadata = new MetadataDbProperties();
         metadata.setKind("mysql");
@@ -100,7 +120,7 @@ class FlywayDialectConfigurationMysqlTest {
                 cluster,
                 new MssqlRelationalProperties(),
                 mysql,
-                new HistorianTierProperties(),
+                tiers,
                 new HistorianColdArchiveProperties(false, "", 200, 10000)
         );
     }

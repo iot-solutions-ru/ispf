@@ -2,7 +2,7 @@
 
 ## Status
 
-**Accepted** (2026-11-20) — policy and certification charter. **Amended 2026-11-22 — B1 pack + Lab green:** lab Flyway SQL is authorized (§ Amendment 1), the JDBC client driver is decided (§ Amendment 2), and the Lab-green gate (§ Amendment 3) passed on MySQL 8.4.13 Community. **Prod Yes (B1)** 2026-11-22 by owner extension (§ Amendment 4) on one cell: **MySQL Community Server 8.4.x + MariaDB Connector/J only** ([checklist](../mysql-sku-promotion-checklist.md)). **Amended 2026-11-23 — B2 single-engine:** opt-in `ISPF_MYSQL_SINGLE_ENGINE=true` puts JDBC history and journal on the same MySQL database (§ Amendment 5); **Prod Yes (B2)** 2026-11-23 by owner extension on the same cell ([B2 checklist](../mysql-b2-sku-promotion-checklist.md)). A MySQL `ISPF_DB` boots only under its fences (`MetadataDialectBootPolicy.assertMysqlB1Fences`): B1 by default, B2 with the flag; cluster stays refused either way (no active-active claim). Other MySQL cells are not Prod Yes (**P-MYSQL-SKU-RERUN**); MariaDB is never covered. TLS and SQL outside the gates' paths are not certified (**P-MYSQL-TLS**, **P-MYSQL-PG-SQL**).
+**Accepted** (2026-11-20) — policy and certification charter. **Amended 2026-11-22 — B1 pack + Lab green:** lab Flyway SQL is authorized (§ Amendment 1), the JDBC client driver is decided (§ Amendment 2), and the Lab-green gate (§ Amendment 3) passed on MySQL 8.4.13 Community. **Prod Yes (B1)** 2026-11-22 by owner extension (§ Amendment 4) on one cell: **MySQL Community Server 8.4.x + MariaDB Connector/J only** ([checklist](../mysql-sku-promotion-checklist.md)). **Amended 2026-11-23 — B2 single-engine:** opt-in `ISPF_MYSQL_SINGLE_ENGINE=true` puts JDBC history and journal on the same MySQL database (§ Amendment 5); **Prod Yes (B2)** 2026-11-23 by owner extension on the same cell ([B2 checklist](../mysql-b2-sku-promotion-checklist.md)). **Amended 2026-11-23 — A-A:** with the single-engine flag, `ispf.cluster.enabled=true` is allowed (§ Amendment 6); **Prod Yes (A-A)** by owner extension on the same cell ([A-A checklist](../mysql-aa-sku-promotion-checklist.md)); NATS still required; soak tech-debt **P-MYSQL-AA-SOAK**. A MySQL `ISPF_DB` boots only under its fences (`MetadataDialectBootPolicy.assertMysqlB1Fences`): B1 by default; B2/A-A with the flag (cluster only with the flag). Other MySQL cells are not Prod Yes (**P-MYSQL-SKU-RERUN**); MariaDB is never covered. TLS and SQL outside the gates' paths are not certified (**P-MYSQL-TLS**, **P-MYSQL-PG-SQL**).
 
 Amends [0037-relational-core-portability](0037-relational-core-portability.md). MySQL 8.x is the next enterprise metadata target after MSSQL B1 lab-green / Prod Yes on the Evaluation cell in [0078](0078-mssql-metadata-certification.md). This ADR grants production support only for the § Amendment 4 cell.
 
@@ -81,7 +81,7 @@ B2 follows MSSQL B2 ([0078](0078-mssql-metadata-certification.md) § 1): B1 plus
 |------|----------|
 | Switch | `ISPF_MYSQL_SINGLE_ENGINE=true` (`ispf.relational.mysql.single-engine`, default `false`). Set it explicitly: deploy profile `mysql-single-engine` fills only keys no property source defines, and `application.yml` defines this one ([B2 checklist](../mysql-b2-sku-promotion-checklist.md#deploy-profile)) |
 | Store rules (pre-Flyway and on context refresh) | With the flag, the history store must be exactly `jdbc` (ClickHouse, Cassandra/Scylla, `jpa` and typos refused) and an enabled journal must be JDBC; warm tier, cold Parquet archive and the ClickHouse spool are refused. The rules are the MSSQL single-engine rules, in one shared check |
-| Still refused with the flag | `ispf.cluster.enabled` (no active-active on MySQL), dual-write, row isolation, `HARD`, MariaDB servers. The flag on any engine other than MySQL is refused, because it clamps retention wherever it is set |
+| Still refused with the flag (before § Amendment 6) | Dual-write, row isolation, `HARD`, MariaDB servers. Cluster was refused until § Amendment 6. The flag on any engine other than MySQL is refused, because it clamps retention wherever it is set |
 | Preflight | With the flag, boot refuses unless the pool's session runs `READ-COMMITTED` and the database default collation is `utf8mb4_0900_bin` (`MysqlDatabasePreflightRunner`) |
 | Bucket aggregate | Native `MysqlDialect.variableSampleBucketAggregateSql`: `TIMESTAMPDIFF` / `TIMESTAMPADD` on the `DATETIME(6)` `observed_at` (UTC wall clock as written), epoch-aligned like PostgreSQL and the JVM path, and independent of the session `time_zone` and the JVM zone. `/history/aggregate` runs it in SQL; MySQL no longer falls back to aggregating rows in the JVM |
 | Journal purge | `DELETE … LIMIT 5000`, one transaction per batch; the loop is shared with MSSQL `DELETE TOP (5000)` |
@@ -89,14 +89,27 @@ B2 follows MSSQL B2 ([0078](0078-mssql-metadata-certification.md) § 1): B1 plus
 | Schema | No migration: `mysql/V1` already carries `variable_samples` and `event_history` |
 | Gate | [`gate-evidence-b2-community.json`](../../../tools/mysql-b1-lab/gate-evidence-b2-community.json): 25 PASS / 0 FAIL on MySQL 8.4.13 Community, 2026-11-23 — live historian write, native bucket aggregate, raw read, retention ceiling, live journal and keyset read, 20,000-row purge, 6 boot refusals, 2 preflight refusals. CI (opt-in Docker): `MysqlHistoryBucketTckTest` |
 | Prod Yes (B2) | Owner extension 2026-11-23 on the § Amendment 4 cell only, with the flag on, a dedicated database and a dedicated server instance (no co-tenant OLTP). Owner decision: [`gate-evidence-b2-prod-yes-community.json`](../../../tools/mysql-b1-lab/gate-evidence-b2-prod-yes-community.json) |
-| Non-claims | Active-active on MySQL; rollups, partitions and partition-drop retention; a file buffer in front of MySQL; a multi-year raw archive; raw-scan latency without a named fixture; non-Community cells (**P-MYSQL-SKU-RERUN**); MariaDB; TLS (**P-MYSQL-TLS**); full SQL parity (**P-MYSQL-PG-SQL**) |
+| Non-claims (B2 alone) | Rollups, partitions and partition-drop retention; a file buffer in front of MySQL; a multi-year raw archive; raw-scan latency without a named fixture; non-Community cells (**P-MYSQL-SKU-RERUN**); MariaDB; TLS (**P-MYSQL-TLS**); full SQL parity (**P-MYSQL-PG-SQL**). Active-active is § Amendment 6 |
+
+### Amendment 6 (2026-11-23) — A-A (active-active) on the single-engine cell
+
+A-A follows MSSQL A-A ([0078](0078-mssql-metadata-certification.md)): **N JVMs, one writable primary**, not multi-master. Cluster is allowed only together with `ISPF_MYSQL_SINGLE_ENGINE=true` (the dual-JVM gate ran with history and journal on this database).
+
+| Item | Decision |
+|------|----------|
+| Switch | `ISPF_CLUSTER_ENABLED=true` **and** `ISPF_MYSQL_SINGLE_ENGINE=true`. B1 with cluster still refuses boot |
+| Dependencies | `ClusterDependencyValidator` still requires NATS JetStream (and Redis when live-variable sync / path interest is on). No “no-NATS” claim |
+| Topology | One writable MySQL primary; every replica uses the same `ISPF_METADATA_DB_KIND` and `ISPF_DB_URL` |
+| Gate | [`tools/mysql-b1-lab/gate-aa.ps1`](../../../tools/mysql-b1-lab/gate-aa.ps1) + [`stand-aa-local.ps1`](../../../tools/mysql-b1-lab/stand-aa-local.ps1); CI opt-in `MysqlClusterLeaseTckTest` |
+| Prod Yes (A-A) | Owner extension on the § Amendment 4 / 5 Community cell. Residual dual-JVM chaos soak / failover under load is tech-debt **P-MYSQL-AA-SOAK** ([checklist](../mysql-aa-sku-promotion-checklist.md)) |
+| Non-claims | Multi-master Group Replication; readable secondaries as write targets; cluster without NATS; completed multi-hour soak (**P-MYSQL-AA-SOAK**); non-Community cells |
 
 ## Consequences
 
-- MySQL is **Prod Yes (B1)** on one cell: self-managed MySQL Community Server 8.4.x with MariaDB Connector/J, under the B1 fences. On the same cell, opt-in single-engine is **Prod Yes (B2)**: JDBC history and journal in the same database, retention `DELETE` capped at 90 days by default. Active-active on MySQL is not claimed and boot refuses it. Other MySQL cells stay lab-only until their own checklist runs (**P-MYSQL-SKU-RERUN**). TLS is operator-required and not certified (**P-MYSQL-TLS**); SQL outside the gates' paths is not claimed (**P-MYSQL-PG-SQL**).
-- Sales and documentation must name **MySQL Community Server 8.4 B1 metadata**, and **B2 single-engine** where it applies, with the MariaDB Connector/J client, and must not say “MySQL/MariaDB”, name Enterprise / managed MySQL, or claim active-active on MySQL.
+- MySQL is **Prod Yes (B1)** on one cell: self-managed MySQL Community Server 8.4.x with MariaDB Connector/J, under the B1 fences. On the same cell, opt-in single-engine is **Prod Yes (B2)**: JDBC history and journal in the same database, retention `DELETE` capped at 90 days by default. With the same flag, **Prod Yes (A-A)** allows `ispf.cluster.enabled` (NATS still required; soak **P-MYSQL-AA-SOAK**). Other MySQL cells stay lab-only until their own checklist runs (**P-MYSQL-SKU-RERUN**). TLS is operator-required and not certified (**P-MYSQL-TLS**); SQL outside the gates' paths is not claimed (**P-MYSQL-PG-SQL**).
+- Sales and documentation must name **MySQL Community Server 8.4 B1 metadata**, **B2 single-engine**, and **A-A** where they apply, with the MariaDB Connector/J client, and must not say “MySQL/MariaDB” or name Enterprise / managed MySQL without a re-run.
 - Engine changes remain greenfield database plus bundle import, not in-place migration.
-- MySQL B1 Prod Yes (§ Amendment 4) let the Oracle B1 pack ([0080](0080-oracle-metadata-certification.md)) start. Oracle signed its own Prod Yes (B1) on Oracle Database Free only (0080 § Amendment 4); it does not inherit this cell. Oracle Phase 1 (dialect honesty and fences; boot refused) started early by owner decision.
+- MySQL B1 Prod Yes (§ Amendment 4) unblocked the Oracle B1 pack ([0080](0080-oracle-metadata-certification.md)). Oracle Free has its own Prod Yes (B1); Oracle B2/A-A are separate trains.
 
 ## Related
 
@@ -106,4 +119,5 @@ B2 follows MSSQL B2 ([0078](0078-mssql-metadata-certification.md) § 1): B1 plus
 - [mysql-certification-epic](../mysql-certification-epic.md)
 - [mysql-sku-promotion-checklist](../mysql-sku-promotion-checklist.md)
 - [mysql-b2-sku-promotion-checklist](../mysql-b2-sku-promotion-checklist.md)
+- [mysql-aa-sku-promotion-checklist](../mysql-aa-sku-promotion-checklist.md)
 - [storage-portability-inventory](../storage-portability-inventory.md)
