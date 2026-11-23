@@ -2,6 +2,7 @@ package com.ispf.server.history;
 
 import com.ispf.server.config.ClusterProperties;
 import com.ispf.server.config.MssqlRelationalProperties;
+import com.ispf.server.config.MysqlRelationalProperties;
 import com.ispf.server.config.VariableHistoryProperties;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.persistence.ObjectVariableRepository;
@@ -51,6 +52,8 @@ class VariableHistoryServiceRetentionClampTest {
     private HistoryParquetExportGateway parquetExport;
     @Mock
     private ObjectProvider<MssqlRelationalProperties> mssqlRelationalProperties;
+    @Mock
+    private ObjectProvider<MysqlRelationalProperties> mysqlRelationalProperties;
 
     private VariableHistoryProperties properties;
     private VariableHistoryService service;
@@ -76,7 +79,8 @@ class VariableHistoryServiceRetentionClampTest {
                 rollupMaterializer,
                 mock(org.springframework.beans.factory.ObjectProvider.class),
                 parquetExport,
-                mssqlRelationalProperties
+                mssqlRelationalProperties,
+                mysqlRelationalProperties
         );
     }
 
@@ -99,6 +103,7 @@ class VariableHistoryServiceRetentionClampTest {
         mssql.setSingleEngine(false);
         mssql.setMaxRetentionDays(30);
         when(mssqlRelationalProperties.getIfAvailable()).thenReturn(mssql);
+        when(mysqlRelationalProperties.getIfAvailable()).thenReturn(new MysqlRelationalProperties());
 
         assertThat(service.clampRetentionDays(365)).isEqualTo(365);
         assertThat(service.clampRetentionDays(0)).isEqualTo(0);
@@ -108,5 +113,34 @@ class VariableHistoryServiceRetentionClampTest {
     void missingMssqlBeanLeavesDaysAlone() {
         when(mssqlRelationalProperties.getIfAvailable()).thenReturn(null);
         assertThat(service.clampRetentionDays(365)).isEqualTo(365);
+    }
+
+    @Test
+    void mysqlSingleEngineClampsAboveCapAndUnlimited() {
+        when(mssqlRelationalProperties.getIfAvailable()).thenReturn(new MssqlRelationalProperties());
+        MysqlRelationalProperties mysql = new MysqlRelationalProperties();
+        mysql.setSingleEngine(true);
+        when(mysqlRelationalProperties.getIfAvailable()).thenReturn(mysql);
+
+        // Default ceiling is 90 days: application DELETE is the only MySQL retention path.
+        assertThat(service.clampRetentionDays(365)).isEqualTo(90);
+        assertThat(service.clampRetentionDays(0)).isEqualTo(90);
+        assertThat(service.clampRetentionDays(-1)).isEqualTo(90);
+        assertThat(service.clampRetentionDays(90)).isEqualTo(90);
+        assertThat(service.clampRetentionDays(7)).isEqualTo(7);
+
+        mysql.setMaxRetentionDays(30);
+        assertThat(service.clampRetentionDays(31)).isEqualTo(30);
+    }
+
+    @Test
+    void mysqlB1LeavesDaysAlone() {
+        when(mssqlRelationalProperties.getIfAvailable()).thenReturn(null);
+        MysqlRelationalProperties mysql = new MysqlRelationalProperties();
+        mysql.setMaxRetentionDays(30);
+        when(mysqlRelationalProperties.getIfAvailable()).thenReturn(mysql);
+
+        assertThat(service.clampRetentionDays(365)).isEqualTo(365);
+        assertThat(service.clampRetentionDays(0)).isEqualTo(0);
     }
 }

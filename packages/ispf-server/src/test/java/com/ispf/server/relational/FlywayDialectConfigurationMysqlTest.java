@@ -6,6 +6,7 @@ import com.ispf.server.config.HistorianColdArchiveProperties;
 import com.ispf.server.config.HistorianTierProperties;
 import com.ispf.server.config.MetadataDbProperties;
 import com.ispf.server.config.MssqlRelationalProperties;
+import com.ispf.server.config.MysqlRelationalProperties;
 import com.ispf.server.config.TenantIsolationProperties;
 import com.ispf.server.config.VariableHistoryProperties;
 import org.flywaydb.core.Flyway;
@@ -24,21 +25,21 @@ import static org.mockito.Mockito.when;
 
 /**
  * ADR-0079: with the hard engine refuse lifted, the pre-Flyway customizer is where a MySQL
- * ISPF_DB outside B1 must still stop — before any migration runs.
+ * ISPF_DB outside B1 (or the opt-in single-engine profile) must still stop — before any migration runs.
  */
 class FlywayDialectConfigurationMysqlTest {
 
     @Test
     void b1DefaultsSelectMysqlPack() {
         FluentConfiguration configuration = Flyway.configure();
-        customizer(false, false).customize(configuration);
+        customizer(false, false, false).customize(configuration);
         assertThat(Arrays.stream(configuration.getLocations()).map(Location::getDescriptor))
                 .containsExactly("classpath:db/migration/mysql");
     }
 
     @Test
     void clusterIsRefusedBeforeMigrate() {
-        assertThatThrownBy(() -> customizer(true, false).customize(Flyway.configure()))
+        assertThatThrownBy(() -> customizer(true, false, false).customize(Flyway.configure()))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("cluster")
                 .hasMessageContaining("ADR-0079");
@@ -46,13 +47,32 @@ class FlywayDialectConfigurationMysqlTest {
 
     @Test
     void jdbcHistoryIsRefusedBeforeMigrate() {
-        assertThatThrownBy(() -> customizer(false, true).customize(Flyway.configure()))
+        assertThatThrownBy(() -> customizer(false, true, false).customize(Flyway.configure()))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("variable-history")
                 .hasMessageContaining("B2");
     }
 
-    private static FlywayConfigurationCustomizer customizer(boolean clusterEnabled, boolean jdbcHistory) {
+    @Test
+    void singleEngineSelectsMysqlPackWithJdbcHistoryAndJournal() {
+        FluentConfiguration configuration = Flyway.configure();
+        customizer(false, true, true).customize(configuration);
+        assertThat(Arrays.stream(configuration.getLocations()).map(Location::getDescriptor))
+                .containsExactly("classpath:db/migration/mysql");
+    }
+
+    @Test
+    void singleEngineStillRefusesClusterBeforeMigrate() {
+        assertThatThrownBy(() -> customizer(true, true, true).customize(Flyway.configure()))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("ispf.cluster.enabled=true is not certified on MySQL");
+    }
+
+    private static FlywayConfigurationCustomizer customizer(
+            boolean clusterEnabled,
+            boolean jdbcHistory,
+            boolean singleEngine
+    ) {
         MetadataDbProperties metadata = new MetadataDbProperties();
         metadata.setKind("mysql");
         RelationalDialectDetector detector = new RelationalDialectDetector(
@@ -65,9 +85,12 @@ class FlywayDialectConfigurationMysqlTest {
         history.setStore("jdbc");
         history.setDualWriteEnabled(false);
         EventJournalProperties journal = new EventJournalProperties();
-        journal.setEnabled(false);
+        journal.setEnabled(singleEngine);
+        journal.setStore("jdbc");
         ClusterProperties cluster = mock(ClusterProperties.class);
         when(cluster.enabled()).thenReturn(clusterEnabled);
+        MysqlRelationalProperties mysql = new MysqlRelationalProperties();
+        mysql.setSingleEngine(singleEngine);
         return new FlywayDialectConfiguration().flywayDialectCustomizer(
                 null,
                 detector,
@@ -76,6 +99,7 @@ class FlywayDialectConfigurationMysqlTest {
                 journal,
                 cluster,
                 new MssqlRelationalProperties(),
+                mysql,
                 new HistorianTierProperties(),
                 new HistorianColdArchiveProperties(false, "", 200, 10000)
         );

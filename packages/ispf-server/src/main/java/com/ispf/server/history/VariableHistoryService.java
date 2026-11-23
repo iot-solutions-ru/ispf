@@ -69,6 +69,7 @@ public class VariableHistoryService {
     private final HistorianIngressCompressor ingressCompressor;
     private final HistoryParquetExportGateway parquetExport;
     private final ObjectProvider<com.ispf.server.config.MssqlRelationalProperties> mssqlRelationalProperties;
+    private final ObjectProvider<com.ispf.server.config.MysqlRelationalProperties> mysqlRelationalProperties;
 
     /** Last sample epoch ms per (path|var|field) for debounce. */
     private final ConcurrentHashMap<String, Long> lastSampleMs = new ConcurrentHashMap<>();
@@ -96,7 +97,8 @@ public class VariableHistoryService {
             ObjectProvider<HistorianRollupMaterializerService> rollupMaterializer,
             ObjectProvider<JdbcMssqlObservedAtRollupQueryService> observedAtRollupQueryService,
             HistoryParquetExportGateway parquetExport,
-            ObjectProvider<com.ispf.server.config.MssqlRelationalProperties> mssqlRelationalProperties
+            ObjectProvider<com.ispf.server.config.MssqlRelationalProperties> mssqlRelationalProperties,
+            ObjectProvider<com.ispf.server.config.MysqlRelationalProperties> mysqlRelationalProperties
     ) {
         this.parquetExport = parquetExport;
         this.rollupMaterializer = rollupMaterializer;
@@ -119,6 +121,7 @@ public class VariableHistoryService {
         this.analyticsOnChangeTrigger = analyticsOnChangeTrigger;
         this.rollupQueryService = rollupQueryService;
         this.mssqlRelationalProperties = mssqlRelationalProperties;
+        this.mysqlRelationalProperties = mysqlRelationalProperties;
     }
 
     @EventListener
@@ -994,17 +997,29 @@ public class VariableHistoryService {
         return clampRetentionDays(days);
     }
 
-    /** Single-engine: cap above max and treat ≤0 (unlimited) as the named ceiling. */
+    /** Single-engine (MSSQL or MySQL): cap above max and treat ≤0 (unlimited) as the named ceiling. */
     int clampRetentionDays(int days) {
-        com.ispf.server.config.MssqlRelationalProperties mssql = mssqlRelationalProperties.getIfAvailable();
-        if (mssql == null || !mssql.isSingleEngine()) {
+        int cap = singleEngineMaxRetentionDays();
+        if (cap <= 0) {
             return days;
         }
-        int cap = mssql.getMaxRetentionDays();
         if (days <= 0 || days > cap) {
             return cap;
         }
         return days;
+    }
+
+    /** Ceiling of the active single-engine profile, or 0 when none is on. */
+    private int singleEngineMaxRetentionDays() {
+        com.ispf.server.config.MssqlRelationalProperties mssql = mssqlRelationalProperties.getIfAvailable();
+        if (mssql != null && mssql.isSingleEngine()) {
+            return mssql.getMaxRetentionDays();
+        }
+        com.ispf.server.config.MysqlRelationalProperties mysql = mysqlRelationalProperties.getIfAvailable();
+        if (mysql != null && mysql.isSingleEngine()) {
+            return mysql.getMaxRetentionDays();
+        }
+        return 0;
     }
 
     private static Optional<Double> toNumeric(Object raw) {

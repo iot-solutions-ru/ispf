@@ -63,18 +63,30 @@ public final class MetadataDialectBootPolicy {
     }
 
     /**
-     * MySQL B1 fences (ADR-0079). No single-engine bypass — JDBC history/journal on
-     * ISPF_DB is a later B2 decision. These fences are the only thing between a MySQL ISPF_DB and
-     * an uncertified mode; keep them before Flyway and on context refresh.
+     * MySQL fences (ADR-0079). B1 keeps JDBC history/journal off ISPF_DB. The opt-in single-engine
+     * profile ({@code ISPF_MYSQL_SINGLE_ENGINE}, B2 — § Amendment 5) allows both under the MSSQL
+     * single-engine store rules. Cluster, row isolation, {@code HARD} and dual-write stay refused either
+     * way. These fences are the only thing between a MySQL ISPF_DB and an uncertified mode; keep them
+     * before Flyway and on context refresh.
      */
     public static void assertMysqlB1Fences(
             RelationalDialect dialect,
             TenantIsolationProperties tenantIsolationProperties,
             VariableHistoryProperties variableHistoryProperties,
             EventJournalProperties eventJournalProperties,
-            ClusterProperties clusterProperties
+            ClusterProperties clusterProperties,
+            boolean singleEngine,
+            boolean warmEnabled,
+            boolean coldArchiveEnabled
     ) {
         if (dialect.kind() != RelationalDbKind.MYSQL) {
+            // The flag clamps historian retention wherever it is set; keep it off other engines.
+            if (singleEngine) {
+                throw new IllegalStateException(
+                        "ISPF_MYSQL_SINGLE_ENGINE=true applies to a MySQL ISPF_DB only (ADR-0079); "
+                                + "this ISPF_DB is " + dialect.kind() + ". Unset it."
+                );
+            }
             return;
         }
         if (tenantIsolationProperties.isDbRowIsolation()) {
@@ -93,27 +105,34 @@ public final class MetadataDialectBootPolicy {
         if (variableHistoryProperties.isDualWriteEnabled()) {
             throw new IllegalStateException(
                     "ispf.variable-history.dual-write-enabled=true is refused on MySQL (ADR-0079). "
-                            + "B1 keeps history off ISPF_DB JDBC."
+                            + "B1 keeps history off ISPF_DB JDBC; single-engine keeps one JDBC store."
             );
         }
         if (clusterProperties.enabled()) {
             throw new IllegalStateException(
-                    "ispf.cluster.enabled=true is not certified on MySQL (ADR-0079). "
-                            + "Run a single JVM, or use PostgreSQL for active-active."
+                    "ispf.cluster.enabled=true is not certified on MySQL (ADR-0079), with or without "
+                            + "single-engine. Run a single JVM, or use PostgreSQL for active-active."
             );
+        }
+        if (singleEngine) {
+            assertSingleEngineStores(
+                    MYSQL_SINGLE_ENGINE, variableHistoryProperties, eventJournalProperties, warmEnabled, coldArchiveEnabled);
+            return;
         }
         if (variableHistoryProperties.isEnabled() && !variableHistoryProperties.isExternalTimeSeriesStore()) {
             throw new IllegalStateException(
                     "ispf.variable-history store falls back to ISPF_DB JDBC on MySQL (B2, ADR-0079). "
                             + "Set ISPF_VARIABLE_HISTORY_STORE=clickhouse (or cassandra/scylla), "
-                            + "or ISPF_VARIABLE_HISTORY_ENABLED=false for B1."
+                            + "ISPF_VARIABLE_HISTORY_ENABLED=false for B1, "
+                            + "or ISPF_MYSQL_SINGLE_ENGINE=true for the opt-in JDBC profile."
             );
         }
         if (eventJournalProperties.isEnabled() && eventJournalProperties.isJdbcStore()) {
             throw new IllegalStateException(
                     "ispf.event-journal store falls back to ISPF_DB JDBC on MySQL (B2, ADR-0079). "
                             + "Set ISPF_EVENT_JOURNAL_STORE=clickhouse (or cassandra/scylla), "
-                            + "or ISPF_EVENT_JOURNAL_ENABLED=false for B1."
+                            + "ISPF_EVENT_JOURNAL_ENABLED=false for B1, "
+                            + "or ISPF_MYSQL_SINGLE_ENGINE=true for the opt-in JDBC profile."
             );
         }
     }
@@ -155,7 +174,8 @@ public final class MetadataDialectBootPolicy {
         // Residual tech-debt: AG failover soak / dual-JVM chaos journal — docs/en/parked-backlog.md P-MSSQL-AA-SOAK.
         Objects.requireNonNull(clusterProperties, "clusterProperties");
         if (singleEngine) {
-            assertSingleEngineStores(variableHistoryProperties, eventJournalProperties, warmEnabled, coldArchiveEnabled);
+            assertSingleEngineStores(
+                    MSSQL_SINGLE_ENGINE, variableHistoryProperties, eventJournalProperties, warmEnabled, coldArchiveEnabled);
             return;
         }
         if (variableHistoryProperties.isEnabled() && !variableHistoryProperties.isExternalTimeSeriesStore()) {
@@ -176,7 +196,27 @@ public final class MetadataDialectBootPolicy {
         }
     }
 
+    /** Engine wording for {@link #assertSingleEngineStores}; the store rules are shared. */
+    private record SingleEngineProfile(String engine, String deployProfile, String spoolHint, String storeHint) {
+    }
+
+    private static final SingleEngineProfile MSSQL_SINGLE_ENGINE = new SingleEngineProfile(
+            "MSSQL",
+            "mssql-single-engine",
+            "On MSSQL set it false. The JDBC file buffer is ISPF_MSSQL_JDBC_BUFFER.",
+            "Gate C1 partitions use PRIMARY KEY (sampled_at, id); "
+                    + "VariableSampleEntity keeps a single @Id for PostgreSQL."
+    );
+
+    private static final SingleEngineProfile MYSQL_SINGLE_ENGINE = new SingleEngineProfile(
+            "MySQL",
+            "mysql-single-engine",
+            "On MySQL set it false. MySQL single-engine has no file buffer in front of ISPF_DB.",
+            ""
+    );
+
     private static void assertSingleEngineStores(
+            SingleEngineProfile profile,
             VariableHistoryProperties variableHistoryProperties,
             EventJournalProperties eventJournalProperties,
             boolean warmEnabled,
@@ -184,21 +224,20 @@ public final class MetadataDialectBootPolicy {
     ) {
         if (warmEnabled) {
             throw new IllegalStateException(
-                    "MSSQL single-engine refuses ClickHouse warm-tier routing. "
-                            + "Set ISPF_HISTORIAN_DEPLOY_PROFILE=mssql-single-engine "
+                    profile.engine() + " single-engine refuses ClickHouse warm-tier routing. "
+                            + "Set ISPF_HISTORIAN_DEPLOY_PROFILE=" + profile.deployProfile() + " "
                             + "and ISPF_HISTORIAN_TIER_WARM_ENABLED=false."
             );
         }
         if (coldArchiveEnabled) {
             throw new IllegalStateException(
-                    "MSSQL single-engine refuses cold Parquet archive. "
+                    profile.engine() + " single-engine refuses cold Parquet archive. "
                             + "Set ISPF_HISTORIAN_COLD_ARCHIVE_ENABLED=false."
             );
         }
         if (variableHistoryProperties.getSpool() != null && variableHistoryProperties.getSpool().isEnabled()) {
             throw new IllegalStateException(
-                    "ISPF_VARIABLE_HISTORY_SPOOL_ENABLED is the ClickHouse spool. "
-                            + "On MSSQL set it false. The JDBC file buffer is ISPF_MSSQL_JDBC_BUFFER."
+                    "ISPF_VARIABLE_HISTORY_SPOOL_ENABLED is the ClickHouse spool. " + profile.spoolHint()
             );
         }
         if (variableHistoryProperties.isEnabled()) {
@@ -207,16 +246,15 @@ public final class MetadataDialectBootPolicy {
                     : variableHistoryProperties.getStore().trim();
             if (variableHistoryProperties.isExternalTimeSeriesStore() || !"jdbc".equalsIgnoreCase(store)) {
                 throw new IllegalStateException(
-                        "MSSQL single-engine requires ISPF_VARIABLE_HISTORY_STORE=jdbc "
-                                + "(got '" + store + "'; ClickHouse/Cassandra/jpa and typos are refused). "
-                                + "Gate C1 partitions use PRIMARY KEY (sampled_at, id); "
-                                + "VariableSampleEntity keeps a single @Id for PostgreSQL."
+                        profile.engine() + " single-engine requires ISPF_VARIABLE_HISTORY_STORE=jdbc "
+                                + "(got '" + store + "'; ClickHouse/Cassandra/jpa and typos are refused)."
+                                + (profile.storeHint().isEmpty() ? "" : " " + profile.storeHint())
                 );
             }
         }
         if (eventJournalProperties.isEnabled() && !eventJournalProperties.isJdbcStore()) {
             throw new IllegalStateException(
-                    "MSSQL single-engine requires ISPF_EVENT_JOURNAL_STORE=jdbc."
+                    profile.engine() + " single-engine requires ISPF_EVENT_JOURNAL_STORE=jdbc."
             );
         }
     }

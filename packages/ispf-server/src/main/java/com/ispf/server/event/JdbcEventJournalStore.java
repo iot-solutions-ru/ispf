@@ -27,6 +27,8 @@ public class JdbcEventJournalStore implements EventJournalStore {
             VALUES (?, ?, ?, ?, ?, ?)
             """;
 
+    private static final int PURGE_BATCH_ROWS = 5000;
+
     private static final RowMapper<EventJournalRecord> ROW_MAPPER = (rs, rowNum) -> new EventJournalRecord(
             rs.getString("id"),
             rs.getString("object_path"),
@@ -196,8 +198,8 @@ public class JdbcEventJournalStore implements EventJournalStore {
 
     @Override
     public long deleteOlderThan(Instant cutoff, String objectPath) {
-        if (relationalDialect.kind() == RelationalDbKind.MSSQL) {
-            return deleteOlderThanMssql(cutoff, objectPath);
+        if (relationalDialect.kind() == RelationalDbKind.MSSQL || relationalDialect.kind() == RelationalDbKind.MYSQL) {
+            return deleteOlderThanInBatches(cutoff, objectPath);
         }
         Long deleted = requiresNewTx.execute(status -> {
             long count;
@@ -230,42 +232,41 @@ public class JdbcEventJournalStore implements EventJournalStore {
         return total;
     }
 
-    /** Each DELETE TOP commits in its own REQUIRES_NEW transaction (no multi-batch lock hold). */
-    private long deleteOlderThanMssql(Instant cutoff, String objectPath) {
+    /**
+     * MSSQL {@code DELETE TOP} / MySQL {@code DELETE … LIMIT}. Each batch commits in its own
+     * REQUIRES_NEW transaction (no multi-batch lock hold).
+     */
+    private long deleteOlderThanInBatches(Instant cutoff, String objectPath) {
         long total = 0;
         int deleted;
         boolean global = objectPath == null || objectPath.isBlank();
+        String sql = batchDeleteSql(global);
         do {
             AtomicInteger batch = new AtomicInteger();
-            requiresNewTx.executeWithoutResult(status -> {
-                if (global) {
-                    batch.set(jdbcTemplate.update(connection -> {
-                        java.sql.PreparedStatement statement = connection.prepareStatement(
-                                "DELETE TOP (5000) FROM event_history WHERE occurred_at < ?");
-                        JdbcUtcTimestamps.bind(statement, 1, cutoff);
-                        return statement;
-                    }));
-                } else {
-                    String path = objectPath;
-                    batch.set(jdbcTemplate.update(connection -> {
-                        java.sql.PreparedStatement statement = connection.prepareStatement(
-                                """
-                                        DELETE TOP (5000) FROM event_history
-                                        WHERE occurred_at < ?
-                                          AND (object_path = ? OR object_path LIKE ?)
-                                        """);
-                        JdbcUtcTimestamps.bind(statement, 1, cutoff);
-                        statement.setString(2, path);
-                        statement.setString(3, path + ".%");
-                        return statement;
-                    }));
+            requiresNewTx.executeWithoutResult(status -> batch.set(jdbcTemplate.update(connection -> {
+                java.sql.PreparedStatement statement = connection.prepareStatement(sql);
+                JdbcUtcTimestamps.bind(statement, 1, cutoff);
+                if (!global) {
+                    statement.setString(2, objectPath);
+                    statement.setString(3, objectPath + ".%");
                 }
-            });
+                return statement;
+            })));
             deleted = batch.get();
             total += deleted;
-        } while (deleted == 5000);
+        } while (deleted == PURGE_BATCH_ROWS);
         recordCounter.recordDeleted(total);
         return total;
+    }
+
+    private String batchDeleteSql(boolean global) {
+        String where = global
+                ? "WHERE occurred_at < ?"
+                : "WHERE occurred_at < ? AND (object_path = ? OR object_path LIKE ?)";
+        if (relationalDialect.kind() == RelationalDbKind.MSSQL) {
+            return "DELETE TOP (" + PURGE_BATCH_ROWS + ") FROM event_history " + where;
+        }
+        return "DELETE FROM event_history " + where + " LIMIT " + PURGE_BATCH_ROWS;
     }
 
     @Override

@@ -58,8 +58,19 @@ class MysqlDialectTest {
     }
 
     @Test
-    void bucketSqlStaysPostgresShapedUntilB2() {
-        assertThat(dialect.variableSampleBucketAggregateSql()).contains("extract(epoch");
+    void bucketSqlIsNativeDatetimeArithmeticOnObservedAt() {
+        String sql = dialect.variableSampleBucketAggregateSql();
+        // B2: no PostgreSQL epoch syntax, and no session-time_zone-dependent epoch functions.
+        assertThat(sql).doesNotContain("extract(epoch", "to_timestamp", "UNIX_TIMESTAMP", "FROM_UNIXTIME");
+        assertThat(sql).contains(
+                "TIMESTAMPDIFF(SECOND, TIMESTAMP '1970-01-01 00:00:00', observed_at)",
+                "TIMESTAMPADD(",
+                "GROUP BY bucket_start",
+                "ORDER BY bucket_start DESC",
+                "LIMIT ?");
+        assertThat(sql).doesNotContain("COALESCE");
+        // bucket seconds ×2, path, variable, field, from, to, max buckets — VariableSampleBucketQuery binds 8.
+        assertThat(sql.split("\\?", -1).length - 1).isEqualTo(8);
     }
 
     @Test

@@ -6,6 +6,7 @@ import com.ispf.server.config.HistorianColdArchiveProperties;
 import com.ispf.server.config.HistorianTierProperties;
 import com.ispf.server.config.MetadataDialectBootPolicy;
 import com.ispf.server.config.MssqlRelationalProperties;
+import com.ispf.server.config.MysqlRelationalProperties;
 import com.ispf.server.config.TenantIsolationProperties;
 import com.ispf.server.config.VariableHistoryProperties;
 import org.springframework.boot.flyway.autoconfigure.FlywayConfigurationCustomizer;
@@ -28,6 +29,7 @@ public class FlywayDialectConfiguration {
             EventJournalProperties eventJournalProperties,
             ClusterProperties clusterProperties,
             MssqlRelationalProperties mssqlRelationalProperties,
+            MysqlRelationalProperties mysqlRelationalProperties,
             HistorianTierProperties historianTierProperties,
             HistorianColdArchiveProperties coldArchiveProperties
     ) {
@@ -57,7 +59,10 @@ public class FlywayDialectConfiguration {
                     tenantIsolationProperties,
                     variableHistoryProperties,
                     eventJournalProperties,
-                    clusterProperties
+                    clusterProperties,
+                    mysqlRelationalProperties.isSingleEngine(),
+                    historianTierProperties.warmTier().isEnabled(),
+                    coldArchiveProperties.enabled()
             );
             configuration.locations(dialect.flywayLocations());
             // PostgreSQL-only bodies (V86 RLS, V89 random_uuid, …): H2 also loads the
