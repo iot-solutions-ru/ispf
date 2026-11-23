@@ -1,7 +1,7 @@
 # Oracle B2 single-engine promotion checklist
 
 > **Language:** Canonical English.  
-> **Status:** Operator checklist for opt-in **Prod Yes (B2)** on Oracle Database Free 23.26.x + operator-supplied `ojdbc17` with `ISPF_ORACLE_SINGLE_ENGINE=true`. Cluster stays refused (A-A is a later train).
+> **Status:** Operator checklist for opt-in **Prod Yes (B2)** on Oracle Database Free 23.26.x + operator-supplied `ojdbc17` with `ISPF_ORACLE_SINGLE_ENGINE=true`. Active-active is a separate claim ([A-A checklist](oracle-aa-sku-promotion-checklist.md)).
 
 ## Named cell
 
@@ -17,11 +17,11 @@
 - Configuration, JDBC historian and JDBC journal on the **same** Oracle `ISPF_DB`.
 - Native bucket aggregate SQL (`OracleDialect.variableSampleBucketAggregateSql`).
 - Batched journal purge via `ROWID` + `FETCH FIRST`.
-- Warm tier, cold archive, ClickHouse spool, dual-write, cluster, row isolation, `HARD` remain refused.
+- Warm tier, cold archive, ClickHouse spool, dual-write, row isolation, `HARD` remain refused. Cluster is allowed only with this flag (A-A).
 
 ## Non-claims
 
-- Active-active / cluster on Oracle
+- Active-active without the dual-JVM A-A gate / soak (**P-ORACLE-AA-SOAK**)
 - SE2 / EE / Autonomous / RDS without **P-ORACLE-SKU**
 - `ddl-auto=validate` (**P-ORACLE-VALIDATE**)
 - Year-scale archive; rollups; partitions

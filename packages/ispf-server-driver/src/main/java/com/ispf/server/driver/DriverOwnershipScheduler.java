@@ -74,6 +74,11 @@ public class DriverOwnershipScheduler {
 
     private boolean shouldAutoReclaim(String devicePath) {
         try {
+            if (driverRuntimeService.readBinding(devicePath).isEmpty()) {
+                // With live-variable sync on, a binding configured on the dead owner after this replica
+                // loaded the device was never mirrored here; the shared database row has it.
+                objects.reloadFromDatabase(devicePath);
+            }
             PlatformObject node = objects.require(devicePath);
             if (node.type() != ObjectType.DEVICE) {
                 return false;

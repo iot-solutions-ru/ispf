@@ -174,6 +174,11 @@ public class PlatformLeaderLockService implements LeaderLock {
             if (updated > 0) {
                 return true;
             }
+            // A live lease held elsewhere: an INSERT would fail on the primary key on every follower
+            // tick, and MariaDB Connector/J logs each such error at WARN.
+            if (leaseRowExists(lockName)) {
+                return false;
+            }
             try {
                 jdbcTemplate.update(
                         """
@@ -190,6 +195,15 @@ public class PlatformLeaderLockService implements LeaderLock {
             }
         });
         return Boolean.TRUE.equals(taken);
+    }
+
+    private boolean leaseRowExists(String lockName) {
+        Integer rows = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM platform_leader_locks WHERE lock_name = ?",
+                Integer.class,
+                lockName
+        );
+        return rows != null && rows > 0;
     }
 
     private void renew(String lockName, Lease lease) {

@@ -271,8 +271,10 @@ public final class MetadataDialectBootPolicy {
      * Oracle fences (ADR-0080; Prod Yes B1 on Oracle Database Free 23.26.x). B1 keeps JDBC
      * history/journal off ISPF_DB. The opt-in single-engine profile
      * ({@code ISPF_ORACLE_SINGLE_ENGINE}, B2) allows both under the shared single-engine store rules.
-     * Cluster stays refused in B2 (A-A is a later train). Row isolation, {@code HARD} and dual-write
-     * stay refused either way. Keep these fences before Flyway and on context refresh.
+     * A-A (§ Amendment 5): cluster runs on the single-engine cell only. Residual tech-debt:
+     * failover under load / multi-hour soak — docs/en/parked-backlog.md P-ORACLE-AA-SOAK.
+     * Row isolation, {@code HARD} and dual-write stay refused either way. Keep these fences
+     * before Flyway and on context refresh.
      */
     public static void assertOracleB1Fences(
             RelationalDialect dialect,
@@ -312,10 +314,13 @@ public final class MetadataDialectBootPolicy {
                             + "B1 keeps history off ISPF_DB JDBC; single-engine keeps one JDBC store."
             );
         }
-        if (clusterProperties.enabled()) {
+        // A-A: cluster only with single-engine. ClusterDependencyValidator still fail-closes without
+        // NATS JetStream (+ Redis when live sync / path interest is on).
+        if (clusterProperties.enabled() && !singleEngine) {
             throw new IllegalStateException(
-                    "ispf.cluster.enabled=true is not certified on Oracle (ADR-0080). "
-                            + "Run a single JVM, or use PostgreSQL / MySQL A-A for active-active."
+                    "ispf.cluster.enabled=true on Oracle requires ISPF_ORACLE_SINGLE_ENGINE=true (ADR-0080 A-A): "
+                            + "the dual-JVM gate ran only with history and journal on this database. "
+                            + "Set the flag with the JDBC stores, or run a single JVM."
             );
         }
         if (singleEngine) {
