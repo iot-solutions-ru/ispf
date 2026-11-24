@@ -82,6 +82,7 @@ public class AlertRuleService {
     @Transactional
     public AlertRule create(CreateAlertRuleRequest request) {
         validateTiming(request.delaySeconds(), request.pollIntervalMs(), request.deactivateDelaySeconds());
+        notificationDispatchService.validateEmailTarget(request.notificationEmailTarget());
         validateTargetAndExpressions(
                 request.objectPath(),
                 request.conditionExpr(),
@@ -122,6 +123,7 @@ public class AlertRuleService {
     @Transactional
     public AlertRule update(String id, UpdateAlertRuleRequest request) {
         validateTiming(request.delaySeconds(), request.pollIntervalMs(), request.deactivateDelaySeconds());
+        notificationDispatchService.validateEmailTarget(request.notificationEmailTarget());
         AlertRule current = get(id);
         if (request.objectPath() != null || request.conditionExpr() != null
                 || request.deactivateExpr() != null || request.anomalyModelId() != null) {

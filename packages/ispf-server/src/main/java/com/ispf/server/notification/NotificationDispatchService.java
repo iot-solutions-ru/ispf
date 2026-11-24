@@ -40,6 +40,14 @@ public class NotificationDispatchService {
         postJson(url.trim(), context);
     }
 
+    /** Same parse as {@link #sendEmail}. A blank target means no email and is left unchanged. */
+    public void validateEmailTarget(String target) {
+        if (target == null || target.isBlank()) {
+            return;
+        }
+        EmailTarget.parse(target);
+    }
+
     public void sendEmail(String target, Map<String, Object> context) {
         EmailTarget parsed = EmailTarget.parse(target);
         String relay = properties.getEmailRelayUrl();
