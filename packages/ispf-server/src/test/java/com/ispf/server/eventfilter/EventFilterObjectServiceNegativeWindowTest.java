@@ -23,6 +23,9 @@ class EventFilterObjectServiceNegativeWindowTest {
     @Mock
     private SystemObjectStructureService structureService;
 
+    @Mock
+    private EventFilterMatcher eventFilterMatcher;
+
     @Test
     void negativeWindowIsRejectedBeforeSave() {
         IllegalArgumentException exception = assertThrows(
@@ -36,7 +39,7 @@ class EventFilterObjectServiceNegativeWindowTest {
     }
 
     private EventFilterObjectService service() {
-        return new EventFilterObjectService(objectManager, structureService);
+        return new EventFilterObjectService(objectManager, structureService, eventFilterMatcher);
     }
 
     private static EventFilterDefinition definition(long timeWindowMs) {
