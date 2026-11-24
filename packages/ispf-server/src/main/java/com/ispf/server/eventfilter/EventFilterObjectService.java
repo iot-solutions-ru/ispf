@@ -87,6 +87,9 @@ public class EventFilterObjectService {
         if (definition.timeWindowMs() < 0) {
             throw new IllegalArgumentException("timeWindowMs must not be negative");
         }
+        if (definition.eventNamePattern() != null && definition.eventNamePattern().isBlank()) {
+            throw new IllegalArgumentException("eventNamePattern must not be blank");
+        }
         try {
             eventFilterMatcher.validateExpression(definition.filterExpression());
         } catch (ExpressionException ex) {
