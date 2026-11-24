@@ -137,6 +137,19 @@ class MesPlanExecutionIntegrationTest {
                 .andExpect(jsonPath("$.result.rows[?(@.recipientCode=='SHOP')].status").value("error"));
         invoke("mes_plan_getDataReadiness", fields("siteCode"), row("siteCode", "NO-SUCH-SITE"))
                 .andExpect(jsonPath("$.result.status").value("empty"));
+
+        invoke("mes_plan_if01_exportMaster", fields("siteCode"), row("siteCode", "PLANT-A"))
+                .andExpect(jsonPath("$.error_code").value("OK"))
+                .andExpect(jsonPath("$.result.enqueued").value("true"));
+        invoke("mes_plan_if08_ingestMaterialAvail",
+                fields("messageId", "siteCode", "resourceId", "qty", "uom", "qualityStatus", "idempotencyKey"),
+                row("messageId", "IF08-T1", "siteCode", "PLANT-A", "resourceId", "RES-TANK-01",
+                        "qty", "99", "uom", "KG", "qualityStatus", "released", "idempotencyKey", "IF-08:IF08-T1"))
+                .andExpect(jsonPath("$.result.status").value("received"));
+        invoke("mes_plan_listOutbox", fields("entityType"), row("entityType", "IF-01"))
+                .andExpect(jsonPath("$.error_code").value("OK"));
+        invoke("mes_plan_listInbox", fields(), row())
+                .andExpect(jsonPath("$.error_code").value("OK"));
     }
 
     private void deployBundle() throws Exception {

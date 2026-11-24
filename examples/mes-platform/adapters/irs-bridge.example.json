@@ -1,0 +1,75 @@
+{
+  "description": "Example IRS→ISPF BFF calls for IF-04 ingest and IF-08 material availability. Replace host/token in the adapter service.",
+  "hub": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+  "wireProfile": "ispf-operator-v1",
+  "examples": [
+    {
+      "name": "IF-04 candidate from SPP via IRS",
+      "path": "/api/v1/bff/invoke",
+      "body": {
+        "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+        "functionName": "mes_plan_ingestCandidate",
+        "input": {
+          "schema": {
+            "name": "in",
+            "fields": [
+              { "name": "candidateId", "type": "STRING" },
+              { "name": "siteCode", "type": "STRING" },
+              { "name": "skuCode", "type": "STRING" },
+              { "name": "plannedQty", "type": "STRING" },
+              { "name": "uom", "type": "STRING" },
+              { "name": "qualityStatus", "type": "STRING" },
+              { "name": "idempotencyKey", "type": "STRING" }
+            ]
+          },
+          "rows": [
+            {
+              "candidateId": "CAND-IRS-1",
+              "siteCode": "PLANT-A",
+              "skuCode": "MAT-WIDGET-A01",
+              "plannedQty": "50",
+              "uom": "EA",
+              "qualityStatus": "released",
+              "idempotencyKey": "IF-04:CAND-IRS-1"
+            }
+          ]
+        },
+        "wireProfile": "ispf-operator-v1"
+      }
+    },
+    {
+      "name": "IF-08 material availability from SPP",
+      "path": "/api/v1/bff/invoke",
+      "body": {
+        "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+        "functionName": "mes_plan_if08_ingestMaterialAvail",
+        "input": {
+          "schema": {
+            "name": "in",
+            "fields": [
+              { "name": "messageId", "type": "STRING" },
+              { "name": "siteCode", "type": "STRING" },
+              { "name": "resourceId", "type": "STRING" },
+              { "name": "qty", "type": "STRING" },
+              { "name": "uom", "type": "STRING" },
+              { "name": "qualityStatus", "type": "STRING" },
+              { "name": "idempotencyKey", "type": "STRING" }
+            ]
+          },
+          "rows": [
+            {
+              "messageId": "IF08-1",
+              "siteCode": "PLANT-A",
+              "resourceId": "RES-TANK-01",
+              "qty": "120",
+              "uom": "KG",
+              "qualityStatus": "released",
+              "idempotencyKey": "IF-08:IF08-1"
+            }
+          ]
+        },
+        "wireProfile": "ispf-operator-v1"
+      }
+    }
+  ]
+}

@@ -4,7 +4,7 @@
 
 > **Статус:** Stable — краткая памятка оператора и технолога по работе с экранами пакета `mes-platform`. Метки зрелости: [doc-status.md](doc-status.md).
 
-Прикладной пакет **`mes-platform`** устанавливается поверх базового сервера ISPF из каталога `examples/mes-platform/` или витрины решений. Подробное техническое устройство пакета описано в разделе **[Эталонное решение MES (`reference-mes-platform.md`)](reference-mes-platform.md)**.
+Прикладной пакет **`mes-platform`** устанавливается поверх базового сервера ISPF из каталога `examples/mes-platform/` или витрины решений. Подробное техническое устройство пакета описано в разделе **[Эталонное решение MES (`reference-mes-platform.md`)](reference-mes-platform.md)**. Приёмка исполнения: [mes-plan-execution.md](mes-plan-execution.md). Карта IF: [mes-plan-interfaces.md](mes-plan-interfaces.md).
 
 ---
 

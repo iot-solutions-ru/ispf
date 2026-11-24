@@ -1,5 +1,5 @@
 {
-  "version": "1.2.1",
+  "version": "1.2.2",
   "displayName": "MES Platform Production (BL-170)",
   "tablePrefix": "",
   "schemaName": "app_mes_platform_production",
@@ -2464,6 +2464,432 @@
         "type": "script",
         "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"facts\",\"sql\":\"SELECT p.pub_id, p.sku_code,\\n                CAST(p.planned_qty AS VARCHAR(32)) AS planned_qty,\\n                CAST(COALESCE((SELECT SUM(f.actual_qty) FROM mes_exec_fact f WHERE f.pub_id = p.pub_id), 0) AS VARCHAR(32)) AS actual_qty,\\n                CAST(p.planned_qty - COALESCE((SELECT SUM(f.actual_qty) FROM mes_exec_fact f WHERE f.pub_id = p.pub_id), 0) AS VARCHAR(32)) AS delta_qty,\\n                CASE WHEN COALESCE((SELECT MAX(f.delay_minutes) FROM mes_exec_fact f WHERE f.pub_id = p.pub_id), 0) > 30 THEN 'at_risk' ELSE 'on_plan' END AS risk\\n                FROM mes_exec_pub p WHERE p.site_code = ? AND p.status <> 'cancelled' ORDER BY p.published_at\",\"params\":[\"${input.siteCode}\"]},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${facts}\",\"fields\":{\"pubId\":\"${item.pub_id}\",\"skuCode\":\"${item.sku_code}\",\"plannedQty\":\"${item.planned_qty}\",\"actualQty\":\"${item.actual_qty}\",\"deltaQty\":\"${item.delta_qty}\",\"risk\":\"${item.risk}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}"
       }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-production-hub-v1",
+      "functionName": "mes_plan_listInbox",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "inbox_row",
+                "fields": [
+                  {
+                    "name": "messageId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "messageType",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "idempotencyKey",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "status",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"inbox\",\"sql\":\"SELECT message_id, message_type, idempotency_key, status FROM mes_exec_inbox ORDER BY received_at DESC\"},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${inbox}\",\"fields\":{\"messageId\":\"${item.message_id}\",\"messageType\":\"${item.message_type}\",\"idempotencyKey\":\"${item.idempotency_key}\",\"status\":\"${item.status}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-production-hub-v1",
+      "functionName": "mes_plan_listOutbox",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "entityType",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "outbox_row",
+                "fields": [
+                  {
+                    "name": "outboxId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "entityType",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "entityId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "idempotencyKey",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "status",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"pending\",\"sql\":\"SELECT CAST(id AS VARCHAR(64)) AS outbox_id, entity_type, entity_id, idempotency_key, status FROM mes_erp_outbox WHERE (? = '' OR entity_type = ?) ORDER BY created_at DESC\",\"params\":[\"${input.entityType}\",\"${input.entityType}\"]},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${pending}\",\"fields\":{\"outboxId\":\"${item.outbox_id}\",\"entityType\":\"${item.entity_type}\",\"entityId\":\"${item.entity_id}\",\"idempotencyKey\":\"${item.idempotency_key}\",\"status\":\"${item.status}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-production-hub-v1",
+      "functionName": "mes_plan_if01_exportMaster",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "siteCode",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "enqueued",
+              "type": "STRING"
+            },
+            {
+              "name": "idempotencyKey",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"payload\",\"sql\":\"SELECT CONCAT('{\\\"siteCode\\\":\\\"', ?, '\\\",\\\"skuCount\\\":', CAST((SELECT COUNT(*) FROM mes_exec_sku) AS VARCHAR(16)), ',\\\"assetCount\\\":', CAST((SELECT COUNT(*) FROM mes_exec_asset WHERE site_code = ?) AS VARCHAR(16)), '}') AS body\",\"params\":[\"${input.siteCode}\",\"${input.siteCode}\"]},{\"type\":\"selectOne\",\"var\":\"key\",\"sql\":\"SELECT CONCAT('IF-01:', ?, ':', CAST(CURRENT_TIMESTAMP AS VARCHAR(32))) AS idempotency_key\",\"params\":[\"${input.siteCode}\"]},{\"type\":\"exec\",\"sql\":\"INSERT INTO mes_erp_outbox (id, entity_type, entity_id, payload_json, idempotency_key, status) SELECT RANDOM_UUID(), 'IF-01', ?, ?, ?, 'pending' WHERE NOT EXISTS (SELECT 1 FROM mes_erp_outbox WHERE idempotency_key = ?)\",\"params\":[\"${input.siteCode}\",\"${payload.body}\",\"${key.idempotency_key}\",\"${key.idempotency_key}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"enqueued\":\"true\",\"idempotencyKey\":\"${key.idempotency_key}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-production-hub-v1",
+      "functionName": "mes_plan_if02_exportResources",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "siteCode",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "enqueued",
+              "type": "STRING"
+            },
+            {
+              "name": "idempotencyKey",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"payload\",\"sql\":\"SELECT CONCAT('{\\\"siteCode\\\":\\\"', ?, '\\\",\\\"resourceCount\\\":', CAST((SELECT COUNT(*) FROM mes_exec_resource WHERE site_code = ?) AS VARCHAR(16)), '}') AS body\",\"params\":[\"${input.siteCode}\",\"${input.siteCode}\"]},{\"type\":\"selectOne\",\"var\":\"key\",\"sql\":\"SELECT CONCAT('IF-02:', ?, ':', CAST(CURRENT_TIMESTAMP AS VARCHAR(32))) AS idempotency_key\",\"params\":[\"${input.siteCode}\"]},{\"type\":\"exec\",\"sql\":\"INSERT INTO mes_erp_outbox (id, entity_type, entity_id, payload_json, idempotency_key, status) SELECT RANDOM_UUID(), 'IF-02', ?, ?, ?, 'pending' WHERE NOT EXISTS (SELECT 1 FROM mes_erp_outbox WHERE idempotency_key = ?)\",\"params\":[\"${input.siteCode}\",\"${payload.body}\",\"${key.idempotency_key}\",\"${key.idempotency_key}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"enqueued\":\"true\",\"idempotencyKey\":\"${key.idempotency_key}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-production-hub-v1",
+      "functionName": "mes_plan_if03_exportPlanFact",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "siteCode",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "enqueued",
+              "type": "STRING"
+            },
+            {
+              "name": "idempotencyKey",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"payload\",\"sql\":\"SELECT CONCAT('{\\\"siteCode\\\":\\\"', ?, '\\\",\\\"pubCount\\\":', CAST((SELECT COUNT(*) FROM mes_exec_pub WHERE site_code = ? AND status <> 'cancelled') AS VARCHAR(16)), '}') AS body\",\"params\":[\"${input.siteCode}\",\"${input.siteCode}\"]},{\"type\":\"selectOne\",\"var\":\"key\",\"sql\":\"SELECT CONCAT('IF-03:', ?, ':', CAST(CURRENT_TIMESTAMP AS VARCHAR(32))) AS idempotency_key\",\"params\":[\"${input.siteCode}\"]},{\"type\":\"exec\",\"sql\":\"INSERT INTO mes_erp_outbox (id, entity_type, entity_id, payload_json, idempotency_key, status) SELECT RANDOM_UUID(), 'IF-03', ?, ?, ?, 'pending' WHERE NOT EXISTS (SELECT 1 FROM mes_erp_outbox WHERE idempotency_key = ?)\",\"params\":[\"${input.siteCode}\",\"${payload.body}\",\"${key.idempotency_key}\",\"${key.idempotency_key}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"enqueued\":\"true\",\"idempotencyKey\":\"${key.idempotency_key}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-production-hub-v1",
+      "functionName": "mes_plan_if08_ingestMaterialAvail",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "messageId",
+              "type": "STRING"
+            },
+            {
+              "name": "siteCode",
+              "type": "STRING"
+            },
+            {
+              "name": "resourceId",
+              "type": "STRING"
+            },
+            {
+              "name": "qty",
+              "type": "STRING"
+            },
+            {
+              "name": "uom",
+              "type": "STRING"
+            },
+            {
+              "name": "qualityStatus",
+              "type": "STRING"
+            },
+            {
+              "name": "idempotencyKey",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "messageId",
+              "type": "STRING"
+            },
+            {
+              "name": "status",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"exec\",\"sql\":\"INSERT INTO mes_exec_inbox (message_id, message_type, idempotency_key, payload_json, status) SELECT ?, 'IF-08', ?, CONCAT('{\\\"resourceId\\\":\\\"', ?, '\\\",\\\"qty\\\":\\\"', ?, '\\\",\\\"uom\\\":\\\"', ?, '\\\",\\\"qualityStatus\\\":\\\"', ?, '\\\"}'), 'received' WHERE NOT EXISTS (SELECT 1 FROM mes_exec_inbox WHERE idempotency_key = ?)\",\"params\":[\"${input.messageId}\",\"${input.idempotencyKey}\",\"${input.resourceId}\",\"${input.qty}\",\"${input.uom}\",\"${input.qualityStatus}\",\"${input.idempotencyKey}\"]},{\"type\":\"exec\",\"sql\":\"UPDATE mes_exec_resource SET qty = ?, uom = ?, quality_status = ?, freshness = 'fresh', data_status = 'confirmed' WHERE resource_id = ? AND site_code = ?\",\"params\":[\"${input.qty}\",\"${input.uom}\",\"${input.qualityStatus}\",\"${input.resourceId}\",\"${input.siteCode}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"messageId\":\"${input.messageId}\",\"status\":\"received\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-production-hub-v1",
+      "functionName": "mes_plan_if09_exportTrade",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "pubId",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "enqueued",
+              "type": "STRING"
+            },
+            {
+              "name": "idempotencyKey",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"pub\",\"sql\":\"SELECT pub_id, site_code, sku_code, CAST(planned_qty AS VARCHAR(32)) AS planned_qty, status, shop_status FROM mes_exec_pub WHERE pub_id = ?\",\"params\":[\"${input.pubId}\"]},{\"type\":\"failIfNull\",\"var\":\"pub\",\"message\":\"Published plan not found\"},{\"type\":\"selectOne\",\"var\":\"payload\",\"sql\":\"SELECT CONCAT('{\\\"pubId\\\":\\\"', ?, '\\\",\\\"siteCode\\\":\\\"', ?, '\\\",\\\"skuCode\\\":\\\"', ?, '\\\",\\\"plannedQty\\\":\\\"', ?, '\\\",\\\"status\\\":\\\"', ?, '\\\",\\\"shopStatus\\\":\\\"', ?, '\\\"}') AS body\",\"params\":[\"${pub.pub_id}\",\"${pub.site_code}\",\"${pub.sku_code}\",\"${pub.planned_qty}\",\"${pub.status}\",\"${pub.shop_status}\"]},{\"type\":\"selectOne\",\"var\":\"key\",\"sql\":\"SELECT CONCAT('IF-09:', ?) AS idempotency_key\",\"params\":[\"${input.pubId}\"]},{\"type\":\"exec\",\"sql\":\"INSERT INTO mes_erp_outbox (id, entity_type, entity_id, payload_json, idempotency_key, status) SELECT RANDOM_UUID(), 'IF-09', ?, ?, ?, 'pending' WHERE NOT EXISTS (SELECT 1 FROM mes_erp_outbox WHERE idempotency_key = ?)\",\"params\":[\"${input.pubId}\",\"${payload.body}\",\"${key.idempotency_key}\",\"${key.idempotency_key}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"enqueued\":\"true\",\"idempotencyKey\":\"${key.idempotency_key}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-production-hub-v1",
+      "functionName": "mes_plan_if10_exportCapacity",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "siteCode",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "enqueued",
+              "type": "STRING"
+            },
+            {
+              "name": "idempotencyKey",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"payload\",\"sql\":\"SELECT CONCAT('{\\\"siteCode\\\":\\\"', ?, '\\\",\\\"assets\\\":', CAST((SELECT COUNT(*) FROM mes_exec_asset WHERE site_code = ?) AS VARCHAR(16)), '}') AS body\",\"params\":[\"${input.siteCode}\",\"${input.siteCode}\"]},{\"type\":\"selectOne\",\"var\":\"key\",\"sql\":\"SELECT CONCAT('IF-10:', ?, ':', CAST(CURRENT_TIMESTAMP AS VARCHAR(32))) AS idempotency_key\",\"params\":[\"${input.siteCode}\"]},{\"type\":\"exec\",\"sql\":\"INSERT INTO mes_erp_outbox (id, entity_type, entity_id, payload_json, idempotency_key, status) SELECT RANDOM_UUID(), 'IF-10', ?, ?, ?, 'pending' WHERE NOT EXISTS (SELECT 1 FROM mes_erp_outbox WHERE idempotency_key = ?)\",\"params\":[\"${input.siteCode}\",\"${payload.body}\",\"${key.idempotency_key}\",\"${key.idempotency_key}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"enqueued\":\"true\",\"idempotencyKey\":\"${key.idempotency_key}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-production-hub-v1",
+      "functionName": "mes_plan_if11_exportKpi",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "siteCode",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "enqueued",
+              "type": "STRING"
+            },
+            {
+              "name": "idempotencyKey",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"payload\",\"sql\":\"SELECT CONCAT('{\\\"siteCode\\\":\\\"', ?, '\\\",\\\"atRisk\\\":', CAST((SELECT COUNT(*) FROM mes_exec_pub p WHERE p.site_code = ? AND COALESCE((SELECT MAX(f.delay_minutes) FROM mes_exec_fact f WHERE f.pub_id = p.pub_id), 0) > 30) AS VARCHAR(16)), '}') AS body\",\"params\":[\"${input.siteCode}\",\"${input.siteCode}\"]},{\"type\":\"selectOne\",\"var\":\"key\",\"sql\":\"SELECT CONCAT('IF-11:', ?, ':', CAST(CURRENT_TIMESTAMP AS VARCHAR(32))) AS idempotency_key\",\"params\":[\"${input.siteCode}\"]},{\"type\":\"exec\",\"sql\":\"INSERT INTO mes_erp_outbox (id, entity_type, entity_id, payload_json, idempotency_key, status) SELECT RANDOM_UUID(), 'IF-11', ?, ?, ?, 'pending' WHERE NOT EXISTS (SELECT 1 FROM mes_erp_outbox WHERE idempotency_key = ?)\",\"params\":[\"${input.siteCode}\",\"${payload.body}\",\"${key.idempotency_key}\",\"${key.idempotency_key}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"enqueued\":\"true\",\"idempotencyKey\":\"${key.idempotency_key}\"}}]}"
+      }
     }
   ],
   "blueprints": [
@@ -3086,7 +3512,7 @@
       "path": "root.platform.dashboards.mes-platform-production-integration",
       "title": "MES Integration status",
       "refreshIntervalMs": 5000,
-      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"pub-delivery\",\"type\":\"function\",\"title\":\"Deliveries by site\",\"x\":0,\"y\":0,\"w\":84,\"h\":24,\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-production-hub-v1\",\"functionName\":\"mes_plan_listDeliveriesBySite\",\"buttonLabel\":\"List deliveries\",\"inputMapJson\":\"{\\\"siteCode\\\":\\\"PLANT-A\\\"}\"}]}"
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"pub-delivery\",\"type\":\"function\",\"title\":\"Deliveries by site\",\"x\":0,\"y\":0,\"w\":42,\"h\":18,\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-production-hub-v1\",\"functionName\":\"mes_plan_listDeliveriesBySite\",\"buttonLabel\":\"List deliveries\",\"inputMapJson\":\"{\\\"siteCode\\\":\\\"PLANT-A\\\"}\"},{\"id\":\"if-outbox\",\"type\":\"function\",\"title\":\"IF outbox\",\"x\":42,\"y\":0,\"w\":42,\"h\":18,\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-production-hub-v1\",\"functionName\":\"mes_plan_listOutbox\",\"buttonLabel\":\"List outbox\",\"inputMapJson\":\"{\\\"entityType\\\":\\\"\\\"}\"},{\"id\":\"if-inbox\",\"type\":\"function\",\"title\":\"IF inbox\",\"x\":0,\"y\":18,\"w\":42,\"h\":18,\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-production-hub-v1\",\"functionName\":\"mes_plan_listInbox\",\"buttonLabel\":\"List inbox\"},{\"id\":\"if-01\",\"type\":\"function\",\"title\":\"Export IF-01 master\",\"x\":42,\"y\":18,\"w\":42,\"h\":18,\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-production-hub-v1\",\"functionName\":\"mes_plan_if01_exportMaster\",\"buttonLabel\":\"Enqueue IF-01\",\"inputMapJson\":\"{\\\"siteCode\\\":\\\"PLANT-A\\\"}\"}]}"
     },
     {
       "path": "root.platform.dashboards.mes-platform-production-official",
@@ -3165,7 +3591,7 @@
     "product": "mes",
     "publisher": "IoT Solutions",
     "delivery": "marketplace",
-    "changelog": "1.2.0 - plan execution: candidate, official plan, resources, fact, tails, alerts; plan execution: candidate, official plan, resources, fact, tails, alerts; AM harden: frozen snapshot, SKU gate on publish, republish deliveries, accept/reject guards"
+    "changelog": "1.2.0 - plan execution: candidate, official plan, resources, fact, tails, alerts; plan execution: candidate, official plan, resources, fact, tails, alerts; AM harden: frozen snapshot, SKU gate on publish, republish deliveries, accept/reject guards; IF lab stubs: IF-01/02/03/08/09/10/11 plus inbox/outbox list"
   },
   "seeds": [
     {

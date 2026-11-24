@@ -6,7 +6,7 @@
 
 The **`mes-platform`** solution bundle (`v1.5.0`) is an installable application package in `examples/mes-platform/`. A clean ISPF installation does not create `root.platform.mes` until the bundle is deployed. For full architecture and integration test details, see **[Reference MES Platform (`reference-mes-platform.md`)](reference-mes-platform.md)**.
 
-**Related guides:** [Reference MES platform](reference-mes-platform.md) · [ISA-95 catalog](isa95-catalog.md) · [Manufacturing patterns](manufacturing-patterns.md) · [MES capability MCP map](mes-capability-mcp.md).
+**Related guides:** [Reference MES platform](reference-mes-platform.md) · [Plan execution AM](mes-plan-execution.md) · [Plan IF map](mes-plan-interfaces.md) · [ISA-95 catalog](isa95-catalog.md) · [Manufacturing patterns](manufacturing-patterns.md) · [MES capability MCP map](mes-capability-mcp.md).
 
 ---
 

@@ -646,6 +646,87 @@ def build_functions(hub: str) -> list[dict]:
                 ["${input.pubId}", "${input.recipientCode}"]),
             ret({"error_code": "OK", "error_message": "", "status": "${after.status}"}),
         ]),
+        # --- Lab IF stubs (MES ↔ SPP). Live CUTE/CIP/Kafka stay outside the bundle. ---
+        fn(hub, "mes_plan_listInbox", [], ok() + [rows_field("inbox_row", [
+            ("messageId", "STRING"), ("messageType", "STRING"), ("idempotencyKey", "STRING"), ("status", "STRING"),
+        ])], [
+            many("inbox", "SELECT message_id, message_type, idempotency_key, status FROM mes_exec_inbox ORDER BY received_at DESC"),
+            {"type": "map", "var": "rows", "source": "${inbox}", "fields": {
+                "messageId": "${item.message_id}", "messageType": "${item.message_type}",
+                "idempotencyKey": "${item.idempotency_key}", "status": "${item.status}",
+            }},
+            ret({"error_code": "OK", "error_message": "", "rows": "${rows}"}),
+        ]),
+        fn(hub, "mes_plan_listOutbox", [("entityType", "STRING")], ok() + [rows_field("outbox_row", [
+            ("outboxId", "STRING"), ("entityType", "STRING"), ("entityId", "STRING"), ("idempotencyKey", "STRING"), ("status", "STRING"),
+        ])], [
+            many("pending", "SELECT CAST(id AS VARCHAR(64)) AS outbox_id, entity_type, entity_id, idempotency_key, status FROM mes_erp_outbox WHERE (? = '' OR entity_type = ?) ORDER BY created_at DESC",
+                ["${input.entityType}", "${input.entityType}"]),
+            {"type": "map", "var": "rows", "source": "${pending}", "fields": {
+                "outboxId": "${item.outbox_id}", "entityType": "${item.entity_type}", "entityId": "${item.entity_id}",
+                "idempotencyKey": "${item.idempotency_key}", "status": "${item.status}",
+            }},
+            ret({"error_code": "OK", "error_message": "", "rows": "${rows}"}),
+        ]),
+        fn(hub, "mes_plan_if01_exportMaster", [("siteCode", "STRING")], ok(("enqueued", "STRING"), ("idempotencyKey", "STRING")), [
+            one("payload", "SELECT CONCAT('{\"siteCode\":\"', ?, '\",\"skuCount\":', CAST((SELECT COUNT(*) FROM mes_exec_sku) AS VARCHAR(16)), ',\"assetCount\":', CAST((SELECT COUNT(*) FROM mes_exec_asset WHERE site_code = ?) AS VARCHAR(16)), '}') AS body",
+                ["${input.siteCode}", "${input.siteCode}"]),
+            one("key", "SELECT CONCAT('IF-01:', ?, ':', CAST(CURRENT_TIMESTAMP AS VARCHAR(32))) AS idempotency_key", ["${input.siteCode}"]),
+            sql_exec("INSERT INTO mes_erp_outbox (id, entity_type, entity_id, payload_json, idempotency_key, status) SELECT RANDOM_UUID(), 'IF-01', ?, ?, ?, 'pending' WHERE NOT EXISTS (SELECT 1 FROM mes_erp_outbox WHERE idempotency_key = ?)",
+                ["${input.siteCode}", "${payload.body}", "${key.idempotency_key}", "${key.idempotency_key}"]),
+            ret({"error_code": "OK", "error_message": "", "enqueued": "true", "idempotencyKey": "${key.idempotency_key}"}),
+        ]),
+        fn(hub, "mes_plan_if02_exportResources", [("siteCode", "STRING")], ok(("enqueued", "STRING"), ("idempotencyKey", "STRING")), [
+            one("payload", "SELECT CONCAT('{\"siteCode\":\"', ?, '\",\"resourceCount\":', CAST((SELECT COUNT(*) FROM mes_exec_resource WHERE site_code = ?) AS VARCHAR(16)), '}') AS body",
+                ["${input.siteCode}", "${input.siteCode}"]),
+            one("key", "SELECT CONCAT('IF-02:', ?, ':', CAST(CURRENT_TIMESTAMP AS VARCHAR(32))) AS idempotency_key", ["${input.siteCode}"]),
+            sql_exec("INSERT INTO mes_erp_outbox (id, entity_type, entity_id, payload_json, idempotency_key, status) SELECT RANDOM_UUID(), 'IF-02', ?, ?, ?, 'pending' WHERE NOT EXISTS (SELECT 1 FROM mes_erp_outbox WHERE idempotency_key = ?)",
+                ["${input.siteCode}", "${payload.body}", "${key.idempotency_key}", "${key.idempotency_key}"]),
+            ret({"error_code": "OK", "error_message": "", "enqueued": "true", "idempotencyKey": "${key.idempotency_key}"}),
+        ]),
+        fn(hub, "mes_plan_if03_exportPlanFact", [("siteCode", "STRING")], ok(("enqueued", "STRING"), ("idempotencyKey", "STRING")), [
+            one("payload", "SELECT CONCAT('{\"siteCode\":\"', ?, '\",\"pubCount\":', CAST((SELECT COUNT(*) FROM mes_exec_pub WHERE site_code = ? AND status <> 'cancelled') AS VARCHAR(16)), '}') AS body",
+                ["${input.siteCode}", "${input.siteCode}"]),
+            one("key", "SELECT CONCAT('IF-03:', ?, ':', CAST(CURRENT_TIMESTAMP AS VARCHAR(32))) AS idempotency_key", ["${input.siteCode}"]),
+            sql_exec("INSERT INTO mes_erp_outbox (id, entity_type, entity_id, payload_json, idempotency_key, status) SELECT RANDOM_UUID(), 'IF-03', ?, ?, ?, 'pending' WHERE NOT EXISTS (SELECT 1 FROM mes_erp_outbox WHERE idempotency_key = ?)",
+                ["${input.siteCode}", "${payload.body}", "${key.idempotency_key}", "${key.idempotency_key}"]),
+            ret({"error_code": "OK", "error_message": "", "enqueued": "true", "idempotencyKey": "${key.idempotency_key}"}),
+        ]),
+        fn(hub, "mes_plan_if08_ingestMaterialAvail",
+           [("messageId", "STRING"), ("siteCode", "STRING"), ("resourceId", "STRING"), ("qty", "STRING"), ("uom", "STRING"), ("qualityStatus", "STRING"), ("idempotencyKey", "STRING")],
+           ok(("messageId", "STRING"), ("status", "STRING")), [
+            sql_exec("INSERT INTO mes_exec_inbox (message_id, message_type, idempotency_key, payload_json, status) SELECT ?, 'IF-08', ?, CONCAT('{\"resourceId\":\"', ?, '\",\"qty\":\"', ?, '\",\"uom\":\"', ?, '\",\"qualityStatus\":\"', ?, '\"}'), 'received' WHERE NOT EXISTS (SELECT 1 FROM mes_exec_inbox WHERE idempotency_key = ?)",
+                ["${input.messageId}", "${input.idempotencyKey}", "${input.resourceId}", "${input.qty}", "${input.uom}", "${input.qualityStatus}", "${input.idempotencyKey}"]),
+            sql_exec("UPDATE mes_exec_resource SET qty = ?, uom = ?, quality_status = ?, freshness = 'fresh', data_status = 'confirmed' WHERE resource_id = ? AND site_code = ?",
+                ["${input.qty}", "${input.uom}", "${input.qualityStatus}", "${input.resourceId}", "${input.siteCode}"]),
+            ret({"error_code": "OK", "error_message": "", "messageId": "${input.messageId}", "status": "received"}),
+        ]),
+        fn(hub, "mes_plan_if09_exportTrade", [("pubId", "STRING")], ok(("enqueued", "STRING"), ("idempotencyKey", "STRING")), [
+            one("pub", "SELECT pub_id, site_code, sku_code, CAST(planned_qty AS VARCHAR(32)) AS planned_qty, status, shop_status FROM mes_exec_pub WHERE pub_id = ?", ["${input.pubId}"]),
+            {"type": "failIfNull", "var": "pub", "message": "Published plan not found"},
+            one("payload", "SELECT CONCAT('{\"pubId\":\"', ?, '\",\"siteCode\":\"', ?, '\",\"skuCode\":\"', ?, '\",\"plannedQty\":\"', ?, '\",\"status\":\"', ?, '\",\"shopStatus\":\"', ?, '\"}') AS body",
+                ["${pub.pub_id}", "${pub.site_code}", "${pub.sku_code}", "${pub.planned_qty}", "${pub.status}", "${pub.shop_status}"]),
+            one("key", "SELECT CONCAT('IF-09:', ?) AS idempotency_key", ["${input.pubId}"]),
+            sql_exec("INSERT INTO mes_erp_outbox (id, entity_type, entity_id, payload_json, idempotency_key, status) SELECT RANDOM_UUID(), 'IF-09', ?, ?, ?, 'pending' WHERE NOT EXISTS (SELECT 1 FROM mes_erp_outbox WHERE idempotency_key = ?)",
+                ["${input.pubId}", "${payload.body}", "${key.idempotency_key}", "${key.idempotency_key}"]),
+            ret({"error_code": "OK", "error_message": "", "enqueued": "true", "idempotencyKey": "${key.idempotency_key}"}),
+        ]),
+        fn(hub, "mes_plan_if10_exportCapacity", [("siteCode", "STRING")], ok(("enqueued", "STRING"), ("idempotencyKey", "STRING")), [
+            one("payload", "SELECT CONCAT('{\"siteCode\":\"', ?, '\",\"assets\":', CAST((SELECT COUNT(*) FROM mes_exec_asset WHERE site_code = ?) AS VARCHAR(16)), '}') AS body",
+                ["${input.siteCode}", "${input.siteCode}"]),
+            one("key", "SELECT CONCAT('IF-10:', ?, ':', CAST(CURRENT_TIMESTAMP AS VARCHAR(32))) AS idempotency_key", ["${input.siteCode}"]),
+            sql_exec("INSERT INTO mes_erp_outbox (id, entity_type, entity_id, payload_json, idempotency_key, status) SELECT RANDOM_UUID(), 'IF-10', ?, ?, ?, 'pending' WHERE NOT EXISTS (SELECT 1 FROM mes_erp_outbox WHERE idempotency_key = ?)",
+                ["${input.siteCode}", "${payload.body}", "${key.idempotency_key}", "${key.idempotency_key}"]),
+            ret({"error_code": "OK", "error_message": "", "enqueued": "true", "idempotencyKey": "${key.idempotency_key}"}),
+        ]),
+        fn(hub, "mes_plan_if11_exportKpi", [("siteCode", "STRING")], ok(("enqueued", "STRING"), ("idempotencyKey", "STRING")), [
+            one("payload", "SELECT CONCAT('{\"siteCode\":\"', ?, '\",\"atRisk\":', CAST((SELECT COUNT(*) FROM mes_exec_pub p WHERE p.site_code = ? AND COALESCE((SELECT MAX(f.delay_minutes) FROM mes_exec_fact f WHERE f.pub_id = p.pub_id), 0) > 30) AS VARCHAR(16)), '}') AS body",
+                ["${input.siteCode}", "${input.siteCode}"]),
+            one("key", "SELECT CONCAT('IF-11:', ?, ':', CAST(CURRENT_TIMESTAMP AS VARCHAR(32))) AS idempotency_key", ["${input.siteCode}"]),
+            sql_exec("INSERT INTO mes_erp_outbox (id, entity_type, entity_id, payload_json, idempotency_key, status) SELECT RANDOM_UUID(), 'IF-11', ?, ?, ?, 'pending' WHERE NOT EXISTS (SELECT 1 FROM mes_erp_outbox WHERE idempotency_key = ?)",
+                ["${input.siteCode}", "${payload.body}", "${key.idempotency_key}", "${key.idempotency_key}"]),
+            ret({"error_code": "OK", "error_message": "", "enqueued": "true", "idempotencyKey": "${key.idempotency_key}"}),
+        ]),
     ]
 
 
@@ -705,7 +786,10 @@ def build_dashboards(hub: str, dash_prefix: str = "mes-platform-") -> list[dict]
             widget("mon-devs", "Deviations", hub, "mes_plan_listDeviationsBySite", 42, 18, 42, 18, "List deviations", site),
         ]),
         dashboard(root + "integration", "MES Integration status", [
-            widget("pub-delivery", "Deliveries by site", hub, "mes_plan_listDeliveriesBySite", 0, 0, 84, 24, "List deliveries", site),
+            widget("pub-delivery", "Deliveries by site", hub, "mes_plan_listDeliveriesBySite", 0, 0, 42, 18, "List deliveries", site),
+            widget("if-outbox", "IF outbox", hub, "mes_plan_listOutbox", 42, 0, 42, 18, "List outbox", {"entityType": ""}),
+            widget("if-inbox", "IF inbox", hub, "mes_plan_listInbox", 0, 18, 42, 18, "List inbox", None),
+            widget("if-01", "Export IF-01 master", hub, "mes_plan_if01_exportMaster", 42, 18, 42, 18, "Enqueue IF-01", site),
         ]),
     ]
 
@@ -884,6 +968,10 @@ def apply(
     am_note = "AM harden: frozen snapshot, SKU gate on publish, republish deliveries, accept/reject guards"
     if am_note not in (meta.get("changelog") or ""):
         meta["changelog"] = ((meta.get("changelog") or "") + "; " + am_note).strip("; ")
+        changed = True
+    if_note = "IF lab stubs: IF-01/02/03/08/09/10/11 plus inbox/outbox list"
+    if if_note not in (meta.get("changelog") or ""):
+        meta["changelog"] = ((meta.get("changelog") or "") + "; " + if_note).strip("; ")
         changed = True
     return changed
 
