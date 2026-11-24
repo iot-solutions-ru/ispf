@@ -90,6 +90,7 @@ public class EventFilterObjectService {
         if (definition.eventNamePattern() != null && definition.eventNamePattern().isBlank()) {
             throw new IllegalArgumentException("eventNamePattern must not be blank");
         }
+        validateSeverity(definition.minSeverity(), definition.maxSeverity());
         try {
             eventFilterMatcher.validateExpression(definition.filterExpression());
         } catch (ExpressionException ex) {
@@ -131,6 +132,18 @@ public class EventFilterObjectService {
             throw new IllegalArgumentException("Not an event filter object: " + path);
         }
         objectManager.delete(path);
+    }
+
+    private static void validateSeverity(long minSeverity, long maxSeverity) {
+        if (minSeverity < 0 || minSeverity > 100) {
+            throw new IllegalArgumentException("minSeverity must be between 0 and 100");
+        }
+        if (maxSeverity < 0 || maxSeverity > 100) {
+            throw new IllegalArgumentException("maxSeverity must be between 0 and 100");
+        }
+        if (minSeverity > maxSeverity) {
+            throw new IllegalArgumentException("minSeverity must not be greater than maxSeverity");
+        }
     }
 
     public String pathForFilterId(String filterId) {
