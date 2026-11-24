@@ -281,6 +281,7 @@ public class ReportService {
 
     @Transactional
     public ReportView saveDefinition(String path, SaveReportDefinitionRequest request) {
+        requirePositiveRefreshInterval(request.refreshIntervalMs());
         String resolved = resolvePath(path);
         PlatformObject node = objectManager.require(resolved);
         if (node.type() != ObjectType.REPORT) {
@@ -312,6 +313,7 @@ public class ReportService {
             String path,
             SaveTreeVariablesDefinitionRequest request
     ) {
+        requirePositiveRefreshInterval(request.refreshIntervalMs());
         String resolved = resolvePath(path);
         PlatformObject node = objectManager.require(resolved);
         if (node.type() != ObjectType.REPORT) {
@@ -359,6 +361,13 @@ public class ReportService {
     static void requirePositiveMaxRows(int maxRows) {
         if (maxRows < 1) {
             throw new IllegalArgumentException("Report maxRows must be at least 1");
+        }
+    }
+
+    /** A stored refresh interval is a positive period. Zero and negative values are rejected. */
+    static void requirePositiveRefreshInterval(Integer refreshIntervalMs) {
+        if (refreshIntervalMs != null && refreshIntervalMs <= 0) {
+            throw new IllegalArgumentException("refreshIntervalMs must be positive");
         }
     }
 
