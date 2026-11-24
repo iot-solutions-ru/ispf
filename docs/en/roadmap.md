@@ -9,7 +9,7 @@ Single source of truth for the platform path: phases, sprints, REQ-PF/FW, BL IDs
 | | |
 | --- | --- |
 | **Baseline** | `main`, July 2026 |
-| **Updated** | 2026-11-23 (restructured as platform-path document; same facts) |
+| **Updated** | 2026-11-24 (Post-S33 field soaks / pilots parked — not on active plan) |
 | **Product direction** | Self-hosted industrial application platform — object tree + SCADA HMI + automation + apps + AI ([architecture](architecture.md)) |
 
 ---
@@ -93,7 +93,7 @@ ISPF is **not** a full ERP (SAP/1C) and **not** “Opcenter in the core”. Leve
 
 **How to read Summary.** Phase 25–33 rows stay **Partial** until field/customer close-out ([parked-backlog](parked-backlog.md)). Many **BL inside those phases are Done in lab** — see [Phases 25–33 at a glance](#phases-2533-at-a-glance). Summary Done=0 for phases is **not** “nothing shipped”. Prefer the [maturity registry](#bl-140225--full-registry) for item-level truth. Non-claims: [known-limitations](known-limitations.md).
 
-**Current focus:** **quality over features** — harden what shipped; no new capability surface by default. Residual: AI field soak / soft &lt;15 min (BL-177…180 Done; live smoke opt-in `ISPF_LLM_SMOKE`). Lab OT pilots exist under Wave 1 evidence; **customer field Done / OT 10/10 still open**. Live ERP (BL-169), BPMN/DMN beyond [ADR-0047](decisions/0047-custom-bpmn-subset-engine.md), and WebAuthn (BL-194 / ADR-0056) stay **parked** unless a named task requires them.
+**Current focus:** **quality over features** — harden what shipped when a bug, honesty gap, or named customer blocker appears; no new capability surface by default. **No active field-soak / pilot campaign.** AI Autopilot harness is Done (BL-177…180; live smoke opt-in `ISPF_LLM_SMOKE`). Post-S33 field tracks (AI soak, MES plant, HMI tablet, OT plant sign-off) are **parked** — [parked-backlog](parked-backlog.md). Also parked: live ERP (BL-169), BPMN/DMN beyond [ADR-0047](decisions/0047-custom-bpmn-subset-engine.md), WebAuthn (BL-194 / ADR-0056).
 
 **Closed:** BL-01…139 (BL-112 Cancelled); Phases 0–24. **Active backlog:** BL-140…225 (new rows only for named customer blockers or honesty/hardening).
 
@@ -107,15 +107,15 @@ Acceleration: [acceleration-program](acceleration-program.md). VPS deploy — on
 
 | Default work | Not default |
 | ------------ | ----------- |
-| Field soak, live gates, runbooks, CI honesty | New element types / engines “for completeness” |
-| Partial → Done with **REAL** evidence ([Quality path](#quality-path-to-done)) | Silent parser growth, Camunda/Flowable embed, full BPMN 2.0 |
-| Scorecard / docs / UX truthfulness | Parallel greenfield waves that widen scope |
+| Bugs, flaky gates, stub honesty, runbooks, CI honesty | New element types / engines “for completeness” |
+| Partial → Done with **REAL** evidence when unparking ([Quality path](#quality-path-to-done)) | Silent parser growth, Camunda/Flowable embed, full BPMN 2.0 |
+| Scorecard / docs / UX truthfulness | Parallel greenfield waves that widen scope; unscheduled field soak campaigns |
 
 **Rules:**
 
-1. **Harden first** — bugs, flaky gates, stub honesty, operator/integrator runbooks, residual soaks beat new BL IDs.
+1. **Harden first** — bugs, flaky gates, stub honesty, and operator/integrator runbooks beat new BL IDs. Field soaks are **not** an open delivery queue.
 2. **No silent scope growth** — new BPMN element types, DMN, or engine swap require a **new ADR**; subset freeze ([ADR-0047](decisions/0047-custom-bpmn-subset-engine.md)) stays until then.
-3. **Parked stays parked** — live ERP (BL-169) and WebAuthn resume only with a named integration/compliance task. OT field beyond named lab pilots uses the same [ready-for-field](field-pilot-playbook.md#ready-for-field-gate-policy) bar. Board: [parked-backlog.md](parked-backlog.md).
+3. **Parked stays parked** — live ERP (BL-169), WebAuthn, and Post-S33 field tracks (AI / MES / HMI / OT plant) resume only with a named customer or site task ([ready-for-field](field-pilot-playbook.md#ready-for-field-gate-policy)). Board: [parked-backlog.md](parked-backlog.md).
 4. **New BL / phase rows** — only for customer blocker, compliance gate, or closing an honesty gap — not competitive checklist width.
 
 This policy does **not** cancel the 10/10 Definition of Done; it changes **order of attack**: usable depth on what exists before more surface.
@@ -193,13 +193,13 @@ Excellence program: OT → HMI → Security → Historian → MES → Automation
 
 | Phase | Theme | Done highlights | Still open |
 | ----- | ----- | --------------- | ---------- |
-| **25** OT Trust | Drivers / edge | BL-141 interop; **BL-191 honesty Done**; lab catalog **162/162**; BL-143/144/145 **lab Done** | BL-140 field Done (lab pilots day journals open); edge 30d field soak |
+| **25** OT Trust | Drivers / edge | BL-141 interop; **BL-191 honesty Done**; lab catalog **162/162**; BL-143/144/145 **lab Done** | BL-140 field Done / edge 30d — **parked** (`P-OT`); lab soak stopped 2026-09-14 |
 | **26** HMI | Mimics / operator | BL-146…152 Done (CI FPS @55; LH≥95 ops stretch) | — |
 | **27** Security | MFA / tenancy | BL-153…158 Done; TOTP GA; SaaS tenant-admin + PG RLS | WebAuthn → BL-194 **Parked** |
 | **28** Historian | Tiers / SLA | BL-159…163 **Done** | Enterprise L 1B CH optional |
-| **29** MES / ERP L4 | ISA-95 | BL-164…168, 170, 193, 220…225 Done on `mes-platform` / patterns | Field sites; **live ERP (BL-169) deferred** |
+| **29** MES / ERP L4 | ISA-95 | BL-164…168, 170, 193, 220…225 Done on `mes-platform` / patterns | Plant pilot **parked** (`P-MES-FIELD`); **live ERP (BL-169) deferred** |
 | **30** Automation | CEP / BPMN | BL-171…176 Done | DMN / further BPMN **blocked** without customer + ADR |
-| **31** AI | Autopilot | BL-177…182 Done (BL-178 52/52 @100%) | Soft &lt;15 min / field soak; live smoke = `ISPF_LLM_SMOKE` |
+| **31** AI | Autopilot | BL-177…182 Done (BL-178 52/52 @100%) | Soft &lt;15 min / field soak — **parked** (`P-AI-FIELD`); live smoke = `ISPF_LLM_SMOKE` |
 | **32** Ecosystem | Marketplace | BL-183…190 usable paths Done | External partners / signed packs in the field |
 | **33** Analytics | AF-capable | BL-201…216 largely Done | BL-200 charter row Planned |
 
@@ -234,14 +234,11 @@ Default: [quality over features](#execution-policy--quality-over-features).
 
 | Priority | Focus | Why |
 | -------- | ----- | --- |
-| **P0** | Harden shipped paths | Soak, live gates, runbooks, stub honesty |
-| **P0** | Phase 31 AI residual | Soft &lt;15 min / field soak |
-| **P1** | Phase 26 HMI | Field offline/FPS over new widgets |
-| **P1** | Phase 29 MES | Field sites on `mes-platform`, not new MES modules |
+| **P0** | Harden shipped paths (on demand) | Bugs, flaky gates, runbooks, stub honesty — not an open soak queue |
 | **P2** | Security / Historian / Analytics / compliance | Tenders & scale; WebAuthn only if required |
 | **P3** | Automation depth / Ecosystem | BPMN subset frozen; partners on existing marketplace |
 | **Parked** | Live ERP BL-169; WebAuthn BL-194 | Named task only |
-| **Lab track** | Phase 25 OT pilots | Named lab VLAN evidence; not OT 10/10 yet |
+| **Parked** | Post-S33 field tracks | AI soak (`P-AI-FIELD`), MES plant (`P-MES-FIELD`), HMI tablet (`P-HMI-FIELD`), OT plant (`P-OT`) — named site only |
 
 #### Domain gap audit (2026-07-09)
 
@@ -272,16 +269,16 @@ Full maturity registry: [Appendix C](#appendix-c--maturity-program-registry). Ph
 
 ## Next 90 days {#next-90-days}
 
-Aligned with execution policy. **Default work = hardening.** Live ERP (BL-169) and BPMN depth beyond ADR-0047 remain **deferred**. AI Autopilot harness is Done — residual soak. OT lab pilots continue under Wave 1 evidence; claiming OT **10/10** stays blocked until field close-out.
+Aligned with execution policy. **No scheduled feature wave and no scheduled field-soak campaign.** Live ERP (BL-169), BPMN depth beyond ADR-0047, and Post-S33 field tracks remain **parked**. AI Autopilot harness is Done. Claiming OT / MES / HMI / AI **field Done** stays blocked until a named site unparks the matching [parked-backlog](parked-backlog.md) row.
 
-| Sprint | Timeline (draft) | Scope |
-| ------ | ---------------- | ----- |
+| Sprint | Timeline | Scope |
+| ------ | -------- | ----- |
 | **S31** | Jul–Aug 2026 | BL-177/178 **Done** (52/52 live suite; multi-app smoke; live needs `ISPF_LLM_SMOKE`) |
 | **S32** | Aug 2026 | BL-180 **Done** (multi-domain live apply); BL-179 continuity Done |
 | **S33** | Sep 2026 | BL-193 genealogy lite **Done** |
-| **Post-S33** | ongoing | [AI field soak](ai-field-soak-playbook.md) · [MES field pilot](mes-field-pilot-playbook.md) · [HMI offline soak](hmi-offline-field-soak.md) + evidence under `docs/evidence/` — **not** new feature waves |
+| **Post-S33** | **Parked** (2026-11-24) | Do **not** run as an open queue: [AI field soak](ai-field-soak-playbook.md) · [MES field pilot](mes-field-pilot-playbook.md) · [HMI offline soak](hmi-offline-field-soak.md) · OT plant sign-off — see `P-AI-FIELD` / `P-MES-FIELD` / `P-HMI-FIELD` / `P-OT` |
 
-OT Wave 1 checklist: [S31 execution backlog](#s31-wave-1-execution-backlog). Draft S31–S46: [Appendix B](#appendix-b--sprint-registry).
+OT Wave 1 checklist (parked): [S31 execution backlog](#s31-wave-1-execution-backlog). Draft S31–S46: [Appendix B](#appendix-b--sprint-registry).
 
 ---
 
@@ -334,9 +331,9 @@ Evidence classes: **REAL** / **PARTIAL** / **STUB**. Only **REAL** promotes Part
 | Wave | Focus | State |
 | ---- | ----- | ----- |
 | **1** | OT trust you can deploy (Phase 25 + BL-191) | Lab track active — see [S31 backlog](#s31-wave-1-execution-backlog); field Done open |
-| **2** | Operator HMI (Phase 26 + shelving) | Lab Done; field soak per playbook |
-| **3** | Plant + business loop (historian, MES, ERP) | MES lab Done; live ERP deferred; field sites open |
-| **4** | Moat + scale (AI, analytics, ecosystem, security) | AI harness Done; residual soak / partners / scorecard |
+| **2** | Operator HMI (Phase 26 + shelving) | Lab Done; field soak **parked** (`P-HMI-FIELD`) |
+| **3** | Plant + business loop (historian, MES, ERP) | MES lab Done; live ERP deferred; plant sites **parked** (`P-MES-FIELD`) |
+| **4** | Moat + scale (AI, analytics, ecosystem, security) | AI harness Done; AI field soak **parked** (`P-AI-FIELD`); partners / scorecard not a soak queue |
 
 #### Wave 1 — OT trust you can deploy
 
@@ -1192,6 +1189,7 @@ Does **not** replace the competitive scorecard (~8.0/10).
 
 | Date | Change |
 | ---- | --------- |
+| 2026-11-24 | **Post-S33 field tracks parked:** AI soak, MES plant pilot, HMI tablet soak, OT plant sign-off removed from active 90-day queue — `P-AI-FIELD` / `P-MES-FIELD` / `P-HMI-FIELD` / `P-OT` on [parked-backlog](parked-backlog.md). No scheduled soak campaign. |
 | 2026-11-23 | **Path rewrite:** eras I–IV narrative; registries in appendices; facts preserved; compressed closed Phase 0–22 / sprint detail tables. |
 | 2026-09-04 | **HMI offline lab 2h (demostand 0.9.207):** CDP offline soak PASS (`ui-pump-station`, 27 samples); marketplace mqtt-temperature H2 SQL sync; historian JVM scale gate archived (Enterprise L still lab). |
 | 2026-09-04 | **HMI live FPS (demostand 0.9.207):** `ui-pump-station` 60 FPS / 471 WS; first unmocked **500-el** archive (`hmi-stress-500`, ~47 FPS soft floor 20). |

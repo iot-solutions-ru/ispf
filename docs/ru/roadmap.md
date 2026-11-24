@@ -9,7 +9,7 @@
 | | |
 | --- | --- |
 | **Baseline** | `main`, июль 2026 |
-| **Обновлено** | 23.11.2026 (путь платформы EN+RU; статусы по EN-канону) |
+| **Обновлено** | 24.11.2026 (Post-S33 полевые soak/пилоты сняты с активного плана) |
 | **Направление** | Открытая автономная платформа промышленных приложений — дерево объектов + SCADA HMI + автоматизация + приложения + AI ([architecture](architecture.md)) |
 
 ---
@@ -93,9 +93,9 @@ ISPF **не** полный ERP (SAP/1C) и **не** Opcenter «всё в ядр�
 
 **Как читать сводку.** Строки фаз 25–33 остаются **Частичный**, пока нет field/customer close-out ([parked-backlog](parked-backlog.md)). Многие **БЛ внутри этих фаз уже Готово в lab** — см. [взгляд на фазы 25–33](#фазы-2533-одним-взглядом). Done=0 у фаз — **не** «ничего не отгружено». Non-claims: [known-limitations](known-limitations.md). При расхождении со сводкой верить [реестру БЛ](#бл-140225--реестр-программы-зрелости) и EN-канону.
 
-**Текущий фокус:** **качество вместо новых фич** — hardening уже отгруженного; новая поверхность по умолчанию не открывается. Остаток: AI field soak / soft &lt;15 min (БЛ-177…180 Готово; live smoke opt-in `ISPF_LLM_SMOKE`).
+**Текущий фокус:** **качество вместо новых фич** — hardening уже отгруженного при баге, honesty gap или именованном blocker заказчика; новая поверхность по умолчанию не открывается. **Активной кампании полевых soak/пилотов нет.** AI Autopilot harness Готово (БЛ-177…180; live smoke opt-in `ISPF_LLM_SMOKE`). Post-S33 полевые треки (AI soak, MES plant, HMI tablet, OT plant) — **отложены** ([parked-backlog](parked-backlog.md)).
 
-**Отложено / оговорки:** живой ERP (БЛ-169); глубина BPMN/DMN сверх [ADR-0047](decisions/0047-custom-bpmn-subset-engine.md); WebAuthn (БЛ-194 / ADR-0056). OT lab-пилоты идут по Wave 1 evidence; **customer field Done / OT 10/10 ещё открыты**.
+**Отложено:** живой ERP (БЛ-169); глубина BPMN/DMN сверх [ADR-0047](decisions/0047-custom-bpmn-subset-engine.md); WebAuthn (БЛ-194 / ADR-0056); полевые soak AI/MES/HMI/OT.
 
 **Закрыто:** БЛ-01…139 (БЛ-112 Отменено); фазы 0–24. **Активный бэклог:** БЛ-140…225 (новые строки — только именованный blocker заказчика или honesty/hardening).
 
@@ -109,15 +109,15 @@ Acceleration: [acceleration-program](acceleration-program.md). VPS — толь�
 
 | Работа по умолчанию | Не по умолчанию |
 | ------------------- | --------------- |
-| Field soak, live gates, runbook’и, честность CI | Новые типы элементов / движки «для полноты» |
-| Частичный → Готово с доказательством **REAL** ([Качественный путь](#quality-path-to-done)) | Тихий рост парсера, Camunda/Flowable, полный BPMN 2.0 |
-| Scorecard / docs / UX без завышения | Параллельные волны, которые только расширяют scope |
+| Баги, flaky gates, честность stub, runbook’и, честность CI | Новые типы элементов / движки «для полноты» |
+| Частичный → Готово с доказательством **REAL** при снятии с паузы ([Качественный путь](#quality-path-to-done)) | Тихий рост парсера, Camunda/Flowable, полный BPMN 2.0 |
+| Scorecard / docs / UX без завышения | Параллельные волны; незапланированные полевые soak-кампании |
 
 **Правила:**
 
-1. **Сначала hardening** — баги, flaky gates, честность stub, runbook’и, остаточные soak важнее новых ID БЛ.
+1. **Сначала hardening** — баги, flaky gates, честность stub и runbook’и важнее новых ID БЛ. Полевые soak **не** открытая очередь доставки.
 2. **Без тихого роста scope** — новые типы BPMN, DMN или смена движка требуют **нового ADR**; freeze subset ([ADR-0047](decisions/0047-custom-bpmn-subset-engine.md)) действует до этого.
-3. **Отложенное остаётся отложенным** — OT Trust и живой ERP (БЛ-169) возобновляются только при именованной полевой/интеграционной задаче ([ready-for-field](../en/field-pilot-playbook.md#ready-for-field-gate-policy)). Доска: [parked-backlog.md](parked-backlog.md).
+3. **Отложенное остаётся отложенным** — живой ERP (БЛ-169), WebAuthn и Post-S33 полевые треки (AI / MES / HMI / OT) возобновляются только при именованной площадке/задаче ([ready-for-field](../en/field-pilot-playbook.md#ready-for-field-gate-policy)). Доска: [parked-backlog.md](parked-backlog.md).
 4. **Новые строки БЛ / фазы** — только blocker заказчика, compliance-гейт или закрытие пробела честности — не ширина конкурентного чеклиста.
 
 Политика **не** отменяет Definition of Done 10/10; меняет **порядок атаки**: пригодная глубина уже существующего раньше новой поверхности.
@@ -197,13 +197,13 @@ REQ-PF и REQ-FW закрыты полностью — [приложение A](
 
 | Фаза | Тема | Готово (акценты) | Ещё открыто |
 | ---- | ---- | ---------------- | ----------- |
-| **25** OT Trust | Драйверы / edge | БЛ-141 interop; БЛ-191 honesty; lab catalog 162/162; БЛ-143/144/145 lab Готово | Field Done БЛ-140 открыт (lab-пилоты в evidence); edge 30д soak; OT 10/10 не заявлено |
+| **25** OT Trust | Драйверы / edge | БЛ-141 interop; БЛ-191 honesty; lab catalog 162/162; БЛ-143/144/145 lab Готово | Field Done / edge 30д — **отложено** (`P-OT`); lab soak остановлен 14.09.2026 |
 | **26** HMI | Mimics / operator | БЛ-146…152 Готово (CI FPS @55; LH≥95 ops stretch) | — |
 | **27** Security | MFA / tenancy | БЛ-153…158 Готово; TOTP GA; SaaS tenant-admin | WebAuthn → БЛ-194 **Отложено** |
 | **28** Historian | Tiers / SLA | БЛ-159…163 Готово | Enterprise L 1B CH optional |
-| **29** MES / ERP L4 | ISA-95 | БЛ-164…168, 170, 193, 220…225 Готово на `mes-platform` | Полевые площадки; **живой ERP (БЛ-169) отложен** |
+| **29** MES / ERP L4 | ISA-95 | БЛ-164…168, 170, 193, 220…225 Готово на `mes-platform` | Plant pilot **отложен** (`P-MES-FIELD`); **живой ERP (БЛ-169) отложен** |
 | **30** Automation | CEP / BPMN | БЛ-171…176 Готово | DMN / глубина BPMN **заблокированы** без заказчика + ADR |
-| **31** AI | Autopilot | БЛ-177…182 Готово (БЛ-178 52/52 @100%) | Soft &lt;15 min / field soak; live smoke = `ISPF_LLM_SMOKE` |
+| **31** AI | Autopilot | БЛ-177…182 Готово (БЛ-178 52/52 @100%) | Soft &lt;15 min / field soak — **отложено** (`P-AI-FIELD`); live smoke = `ISPF_LLM_SMOKE` |
 | **32** Ecosystem | Marketplace | БЛ-183…190 пути отгружены | Partners / signed packs в поле |
 | **33** Analytics | AF-capable | БЛ-200…213 (см. реестр; многие Готово) | Charter/хвосты по EN |
 
@@ -238,13 +238,11 @@ REQ-PF и REQ-FW закрыты полностью — [приложение A](
 
 | Приоритет | Фокус | Почему |
 | --------- | ----- | ------ |
-| **P0** | Hardening отгруженных путей | Soak, live gates, runbook’и, честность stub |
-| **P0** | Фаза 31 AI — остаток | Soft &lt;15 min / field soak |
-| **P1** | Фаза 26 HMI | Полевой offline/FPS важнее новых виджетов |
-| **P1** | Фаза 29 MES | Полевые площадки на `mes-platform`, не новые модули |
+| **P0** | Hardening отгруженных путей (по запросу) | Баги, flaky gates, runbook’и, честность stub — не открытая очередь soak |
 | **P2** | Security / Historian / Analytics / compliance | Тендеры и масштаб; WebAuthn только при нужде |
 | **P3** | Automation depth / Ecosystem | BPMN subset заморожен; партнёры на существующем marketplace |
-| **Отложено** | Фаза 25 OT field; БЛ-169 живой ERP | Только при именованной задаче |
+| **Отложено** | Живой ERP БЛ-169; WebAuthn БЛ-194 | Только именованная задача |
+| **Отложено** | Post-S33 полевые треки | AI soak (`P-AI-FIELD`), MES plant (`P-MES-FIELD`), HMI tablet (`P-HMI-FIELD`), OT plant (`P-OT`) |
 
 #### Аудит доменов (09.07.2026)
 
@@ -263,18 +261,16 @@ REQ-PF и REQ-FW закрыты полностью — [приложение A](
 
 ## Ближайшие 90 дней {#ближайшие-90-дней}
 
-Согласовано с политикой исполнения. **Работа по умолчанию = hardening.** OT Trust, живой ERP (БЛ-169) и глубина BPMN сверх ADR-0047 **отложены**.
+Согласовано с политикой исполнения. **Нет запланированной волны фич и нет запланированной полевой soak-кампании.** Живой ERP (БЛ-169), BPMN сверх ADR-0047 и Post-S33 полевые треки — **отложены**. AI Autopilot harness Готово. Field Done по OT/MES/HMI/AI — только после именованной площадки ([parked-backlog](parked-backlog.md)).
 
 | Спринт | Ориентир | Область |
 | ------ | -------- | ------- |
 | **S31** | июл–авг 2026 | БЛ-177/178 **Готово** (52/52 live suite; multi-app smoke; live = `ISPF_LLM_SMOKE`) |
 | **S32** | авг 2026 | БЛ-180 **Готово** (multi-domain live apply); continuity по необходимости |
 | **S33** | сен 2026 | БЛ-193 genealogy lite **Готово** |
-| **Post-S33** | ongoing | [AI field soak](ai-field-soak-playbook.md) · [MES field pilot](mes-field-pilot-playbook.md) · [HMI offline soak](hmi-offline-field-soak.md) + evidence в `docs/evidence/` — **не** новые волны фич |
+| **Post-S33** | **Отложено** (24.11.2026) | Не вести как открытую очередь: [AI field soak](ai-field-soak-playbook.md) · [MES field pilot](mes-field-pilot-playbook.md) · [HMI offline soak](hmi-offline-field-soak.md) · OT plant — `P-AI-FIELD` / `P-MES-FIELD` / `P-HMI-FIELD` / `P-OT` |
 
-Parked: OT [Backlog волны 1](#s31-wave-1-execution-backlog); БЛ-169; расширение BPMN/DMN.
-
-Черновик спринтов S31–S46 (статусы lab): [приложение B](#приложение-b--реестр-спринтов).
+OT Wave 1 (parked): [Backlog S31](#s31-wave-1-execution-backlog). Черновик S31–S46: [приложение B](#приложение-b--реестр-спринтов).
 
 ---
 
@@ -327,9 +323,9 @@ Parked: OT [Backlog волны 1](#s31-wave-1-execution-backlog); БЛ-169; ра
 | Волна | Фокус | Статус |
 | ----- | ----- | ------ |
 | **1** | OT trust, который можно поставить (фаза 25 + БЛ-191) | **Отложено** — см. [Backlog S31](#s31-wave-1-execution-backlog) |
-| **2** | Операторский HMI (фаза 26 + shelving) | Lab Готово; field soak по playbook |
-| **3** | Цех + бизнес-контур (историк, MES, ERP) | MES lab Готово; живой ERP отложен; полевые площадки открыты |
-| **4** | Ров + масштаб (AI, analytics, ecosystem, security) | AI harness Готово; остаток soak / партнёры / scorecard |
+| **2** | Операторский HMI (фаза 26 + shelving) | Lab Готово; field soak **отложен** (`P-HMI-FIELD`) |
+| **3** | Цех + бизнес-контур (историк, MES, ERP) | MES lab Готово; живой ERP отложен; plant **отложен** (`P-MES-FIELD`) |
+| **4** | Ров + масштаб (AI, analytics, ecosystem, security) | AI harness Готово; AI field soak **отложен** (`P-AI-FIELD`); партнёры / scorecard не очередь soak |
 
 Фаза 30 (CEP / process / BPMN) — **после** REAL operator + historian + MES, иначе автоматизируются stub. Дальнейшая глубина BPMN — только с заказчиком + ADR.
 
@@ -592,7 +588,7 @@ CEP, process control, object-query, filters, ML hooks, BPMN subset — БЛ-171�
 
 #### Фаза 31 — Автопилот ИИ · Harness Готово
 
-**Сильная сторона ISPF — усиливать, не регрессировать.** Deploy e2e, regression 52/52, generator, observability — Готово. Остаток: soft &lt;15 min / field soak. [ai-development](ai-development.md).
+**Сильная сторона ISPF — усиливать, не регрессировать.** Deploy e2e, regression 52/52, generator, observability — Готово. Soft &lt;15 min / field soak — **отложено** (`P-AI-FIELD`). [ai-development](ai-development.md).
 
 #### Фаза 32 — Экосистема и рынок · Usable paths Готово
 
@@ -657,6 +653,7 @@ Charter: [analytics-platform-roadmap](analytics-platform-roadmap.md) · ADR-0038
 
 | Дата | Изменение |
 | ---- | --------- |
+| 24.11.2026 | **Post-S33 полевые треки отложены:** AI soak, MES plant, HMI tablet, OT plant сняты с активного плана — `P-AI-FIELD` / `P-MES-FIELD` / `P-HMI-FIELD` / `P-OT` |
 | 23.11.2026 | **EN+RU roadmap path rewrite:** эпохи I–IV, единые статусы/термины, реестры как приложения; EN остаётся каноном статусов |
 | 15.11.2026 | Known limitations; spool shipped; ADR-0056 Parked (EN) |
 | 09.09.2026 | Competitive audit 0.9.207: scorecard ~8,0/10 |
