@@ -32,7 +32,8 @@ class EventCorrelatorPayloadFilterTest {
     @Test
     @Transactional
     void uncomputablePayloadFilterDoesNotTriggerAndDoesNotBlockSiblings() {
-        EventCorrelator broken = index(correlator("bad-filter", "probe", "noSuchFunc(1)"));
+        // Compiles (passes create validation) but throws at eval — sibling isolation.
+        EventCorrelator broken = index(correlator("bad-filter", "probe", "int(\"x\") > 0"));
         EventCorrelator healthy = index(correlator("good-filter", "probe", "true"));
         rememberEvent("probe");
 

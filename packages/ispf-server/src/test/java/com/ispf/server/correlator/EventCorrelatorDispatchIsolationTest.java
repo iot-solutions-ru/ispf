@@ -49,7 +49,8 @@ class EventCorrelatorDispatchIsolationTest {
     @Test
     @Transactional
     void siblingCommitsWhenPeerFilterFailsInOwnTransaction() {
-        EventCorrelator broken = index(correlator("tx-bad", "probe-tx", "noSuchFunc(1)"));
+        // Compiles (passes create validation) but throws at eval — sibling isolation.
+        EventCorrelator broken = index(correlator("tx-bad", "probe-tx", "int(\"x\") > 0"));
         EventCorrelator healthy = index(correlator("tx-good", "probe-tx", "true"));
         rememberEvent("probe-tx");
 
