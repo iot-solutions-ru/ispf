@@ -128,7 +128,9 @@ public class EventCorrelatorService {
                 request.actionType(),
                 request.actionTarget(),
                 request.minOccurrences(),
-                request.windowSeconds()
+                request.windowSeconds(),
+                request.cooldownSeconds(),
+                request.sequenceGapSeconds()
         );
         return automationTreeService.createCorrelator(
                 request.name(),
@@ -160,7 +162,9 @@ public class EventCorrelatorService {
                 request.actionType() != null ? request.actionType() : current.actionType(),
                 request.actionTarget() != null ? request.actionTarget() : current.actionTarget(),
                 request.minOccurrences() != null ? request.minOccurrences() : current.minOccurrences(),
-                request.windowSeconds() != null ? request.windowSeconds() : current.windowSeconds()
+                request.windowSeconds() != null ? request.windowSeconds() : current.windowSeconds(),
+                request.cooldownSeconds() != null ? request.cooldownSeconds() : current.cooldownSeconds(),
+                request.sequenceGapSeconds() != null ? request.sequenceGapSeconds() : current.sequenceGapSeconds()
         );
         return automationTreeService.updateCorrelator(
                 id,
@@ -704,7 +708,9 @@ public class EventCorrelatorService {
             CorrelatorActionType actionType,
             String actionTarget,
             int minOccurrences,
-            int windowSeconds
+            int windowSeconds,
+            int cooldownSeconds,
+            int sequenceGapSeconds
     ) {
         if (eventName == null || eventName.isBlank()) {
             throw new IllegalArgumentException("eventName is required");
@@ -717,6 +723,12 @@ public class EventCorrelatorService {
         }
         if (windowSeconds < 0) {
             throw new IllegalArgumentException("windowSeconds must be >= 0");
+        }
+        if (cooldownSeconds < 0) {
+            throw new IllegalArgumentException("cooldownSeconds must not be negative");
+        }
+        if (sequenceGapSeconds < 0) {
+            throw new IllegalArgumentException("sequenceGapSeconds must not be negative");
         }
         if (actionType == CorrelatorActionType.SET_VARIABLE && !actionTarget.contains("=")) {
             throw new IllegalArgumentException("actionTarget must be variableName=value for SET_VARIABLE");
