@@ -43,6 +43,9 @@ public class AlarmShelfService {
 
     @Transactional
     public AlarmShelf shelve(ShelveAlarmRequest request) {
+        if (request.durationMinutes() != null && request.durationMinutes() <= 0) {
+            throw new IllegalArgumentException("durationMinutes must be positive");
+        }
         expireStale();
         repository.findActiveShelf(request.objectPath(), request.eventName(), Instant.now())
                 .ifPresent(existing -> {
