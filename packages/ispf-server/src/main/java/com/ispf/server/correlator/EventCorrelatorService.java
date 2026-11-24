@@ -132,6 +132,7 @@ public class EventCorrelatorService {
                 request.cooldownSeconds(),
                 request.sequenceGapSeconds()
         );
+        validatePayloadFilter(request.payloadFilterExpr());
         return automationTreeService.createCorrelator(
                 request.name(),
                 request.objectPath(),
@@ -166,6 +167,9 @@ public class EventCorrelatorService {
                 request.cooldownSeconds() != null ? request.cooldownSeconds() : current.cooldownSeconds(),
                 request.sequenceGapSeconds() != null ? request.sequenceGapSeconds() : current.sequenceGapSeconds()
         );
+        validatePayloadFilter(request.payloadFilterExpr() != null
+                ? request.payloadFilterExpr()
+                : current.payloadFilterExpr());
         return automationTreeService.updateCorrelator(
                 id,
                 request.name(),
@@ -695,6 +699,17 @@ public class EventCorrelatorService {
         return correlator.lastTriggeredAt()
                 .plusSeconds(correlator.cooldownSeconds())
                 .isAfter(now);
+    }
+
+    private void validatePayloadFilter(String payloadFilterExpr) {
+        if (payloadFilterExpr == null || payloadFilterExpr.isBlank()) {
+            return;
+        }
+        try {
+            expressionEngine.validatePayloadCelCompile(payloadFilterExpr);
+        } catch (ExpressionException ex) {
+            throw new IllegalArgumentException("payloadFilterExpr: " + ex.getMessage(), ex);
+        }
     }
 
     private static boolean matchesObject(String filterPath, String eventPath) {
