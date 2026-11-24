@@ -90,6 +90,9 @@ public class EventFilterObjectService {
         if (definition.eventNamePattern() != null && definition.eventNamePattern().isBlank()) {
             throw new IllegalArgumentException("eventNamePattern must not be blank");
         }
+        if (definition.sourceObjectPathPattern() != null && definition.sourceObjectPathPattern().isBlank()) {
+            throw new IllegalArgumentException("sourceObjectPathPattern must not be blank");
+        }
         validateSeverity(definition.minSeverity(), definition.maxSeverity());
         try {
             eventFilterMatcher.validateExpression(definition.filterExpression());
