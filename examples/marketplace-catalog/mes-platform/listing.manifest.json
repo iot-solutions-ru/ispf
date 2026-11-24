@@ -1,7 +1,7 @@
 {
   "slug": "mes-platform",
   "title": "MES Platform",
-  "description": "Standalone MES product (IoT Solutions): OEE, dispatch BPMN, quality SPC, ISA-88 batch lite, MES catalog folders and instance types. Install on a clean ISPF base — not included in the platform core.",
+  "description": "Standalone MES product (IoT Solutions): OEE, dispatch BPMN, quality SPC, ISA-88 batch lite, genealogy, BoM/ops, and plan execution (candidate → official plan, resources, fact, tails, alerts). Install on a clean ISPF base — not included in the platform core.",
   "pricing": "free",
   "appId": "mes-platform",
   "vendorName": "IoT Solutions",
@@ -12,7 +12,7 @@
   "vendorContactEmail": "info@vendor.example.invalid",
   "vendorContactPhone": "+7 980 630-93-33",
   "priceCents": 0,
-  "latestVersion": "1.5.2",
+  "latestVersion": "2.0.0",
   "minIspfVersion": "0.9.30",
   "bundleArtifact": "bundle.json",
   "tags": [
@@ -21,11 +21,16 @@
     "product",
     "genealogy",
     "oee",
-    "isa88"
+    "isa88",
+    "plan-execution"
   ],
-  "changelog": "1.5.0 - BL-222 Nested BoM + operations dependency graph: BoM explosion/where-used, ready-operation BFF, Operator dashboard; 1.4.0 - BL-221 Traceability DAG v2; 1.3.0 - BL-164-168/170 Done evidence",
+  "changelog": "2.0.0 - Plan execution contour: candidate/official plan, resources, fact, tails, alerts, delivery; operator tabs Official plan + Monitor. 1.5.0 - BL-222 Nested BoM + operations dependency graph.",
   "metadata": {
     "changelog": [
+      {
+        "version": "2.0.0",
+        "notes": "Plan execution: mes_plan_* BFF, mes_exec_* tables, Official plan / Monitor / Resources / Publish / Exec alerts operator tabs"
+      },
       {
         "version": "1.5.2",
         "notes": "Genealogy help uses unicode arrows; keep bom explode NUMERIC cast"
