@@ -6,7 +6,8 @@ Marketplace MES product (IoT Solutions): catalog folders + seed typed instances 
 
 | File | Purpose |
 |------|---------|
-| `bundle.json` | Deploy via `POST /api/v1/applications/mes-platform/deploy` (v1.3.0) |
+| `bundle.json` | Deploy via `POST /api/v1/applications/mes-platform/deploy` (v2.0.0) |
+| `apply_execution.py` | Idempotent injector for the plan-execution contour |
 | `work-order-instantiate.example.json` | Instantiate additional `WORK_ORDER` from `work-order-v1` |
 | `batch-instantiate.example.json` | Instantiate additional `LOT` from `batch-v1` |
 | `bpmn/work-order-dispatch.bpmn.xml` | Source BPMN for BL-166 dispatch workflow |
@@ -51,6 +52,9 @@ Operator UI: `?mode=operator&app=mes-platform`
 | Quality / SPC | BL-167 |
 | Genealogy | BL-193 |
 | Batch (ISA-88) | BL-168 |
+| Data, Resources, Publish, Official plan, Monitor, Exec alerts, Integration | plan execution (`mes_plan_*`) in the main operator app |
+
+Regenerate the contour with `python apply_execution.py bundle.json --hub root.platform.singleton-blueprints.mes-platform-hub-v1 --app mes-platform`.
 
 ## Integration tests
 

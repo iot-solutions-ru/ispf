@@ -33,6 +33,7 @@ Application logic hub (`SINGLETON`): `root.platform.singleton-blueprints.mes-pla
 | **Batch** | Track and advance ISA-88 batch phases (`charge` → `react` → `discharge` via `mes_batch_runPhase`) |
 | **Genealogy** | Trace lot genealogy (`BATCH-LINE-A01-001` ↔ material `MAT-WIDGET-A01` ↔ work order `WO-LINE-A01-001` ↔ quality records) |
 | **BoM + Ops** | Explode multi-level Bill of Materials (`mes_bom_explode` for `MAT-WIDGET-A01`) and complete ready routing operations (`mes_ops_complete`) |
+| **Data / Resources / Publish / Official plan / Monitor / Exec alerts / Integration** | Plan execution in the main operator app: data freshness, resource confirmation, official versions, plan/fact, alerts, delivery (`mes_plan_*`) |
 
 ---
 

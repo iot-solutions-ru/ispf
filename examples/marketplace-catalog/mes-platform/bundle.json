@@ -1,28 +1,76 @@
 {
-  "version": "1.5.2",
+  "version": "2.0.0",
   "displayName": "MES Platform (BL-164 / BL-165 / BL-166 / BL-167 / BL-168 / BL-170 / BL-193 / BL-221 / BL-222)",
   "tablePrefix": "",
   "schemaName": "app_mes_platform",
   "migrations": [
     {
       "id": "mes_platform_schema",
-      "sql": "CREATE TABLE IF NOT EXISTS mes_platform_line (line_code VARCHAR(32) PRIMARY KEY, display_name VARCHAR(128) NOT NULL, area_path VARCHAR(256)); INSERT INTO mes_platform_line (line_code, display_name, area_path) SELECT 'LINE-A01', 'Assembly Line A01', 'root.platform.mes.instances.plant-a.areas.assembly.lines.line-a01' WHERE NOT EXISTS (SELECT 1 FROM mes_platform_line WHERE line_code = 'LINE-A01'); CREATE TABLE IF NOT EXISTS mes_oee_shift (id UUID PRIMARY KEY, line_code VARCHAR(32) NOT NULL, shift_label VARCHAR(64) NOT NULL, planned_minutes INTEGER NOT NULL, downtime_minutes INTEGER NOT NULL, ideal_cycle_sec INTEGER NOT NULL, total_units INTEGER NOT NULL, good_units INTEGER NOT NULL); INSERT INTO mes_oee_shift (id, line_code, shift_label, planned_minutes, downtime_minutes, ideal_cycle_sec, total_units, good_units) SELECT 'dddddddd-dddd-dddd-dddd-dddddddddddd', 'LINE-A01', 'Morning', 480, 45, 12, 2100, 2050 WHERE NOT EXISTS (SELECT 1 FROM mes_oee_shift WHERE line_code = 'LINE-A01' AND shift_label = 'Morning');"
+      "sql": "CREATE TABLE IF NOT EXISTS mes_platform_line (line_code VARCHAR(32) PRIMARY KEY, display_name VARCHAR(128) NOT NULL, area_path VARCHAR(256)); CREATE TABLE IF NOT EXISTS mes_oee_shift (id UUID PRIMARY KEY, line_code VARCHAR(32) NOT NULL, shift_label VARCHAR(64) NOT NULL, planned_minutes INTEGER NOT NULL, downtime_minutes INTEGER NOT NULL, ideal_cycle_sec INTEGER NOT NULL, total_units INTEGER NOT NULL, good_units INTEGER NOT NULL);"
     },
     {
       "id": "mes_platform_phase29",
-      "sql": "CREATE TABLE IF NOT EXISTS mes_spc_sample (id UUID PRIMARY KEY, line_code VARCHAR(32) NOT NULL, measurement_mm NUMERIC(8,3) NOT NULL, sample_ts TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP); INSERT INTO mes_spc_sample (id, line_code, measurement_mm) SELECT 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 'LINE-A01', 10.02 WHERE NOT EXISTS (SELECT 1 FROM mes_spc_sample WHERE id = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee'); INSERT INTO mes_spc_sample (id, line_code, measurement_mm) SELECT 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeef', 'LINE-A01', 9.98 WHERE NOT EXISTS (SELECT 1 FROM mes_spc_sample WHERE id = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeef'); INSERT INTO mes_spc_sample (id, line_code, measurement_mm) SELECT 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee0', 'LINE-A01', 10.05 WHERE NOT EXISTS (SELECT 1 FROM mes_spc_sample WHERE id = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee0'); CREATE TABLE IF NOT EXISTS mes_erp_outbox (id UUID PRIMARY KEY, entity_type VARCHAR(32) NOT NULL, entity_id VARCHAR(64) NOT NULL, payload_json TEXT NOT NULL, idempotency_key VARCHAR(128) NOT NULL UNIQUE, status VARCHAR(16) NOT NULL DEFAULT 'pending', created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, processed_at TIMESTAMP NULL); CREATE TABLE IF NOT EXISTS mes_batch_run (batch_path VARCHAR(256) PRIMARY KEY, batch_id VARCHAR(64) NOT NULL, recipe VARCHAR(64) NOT NULL, phase VARCHAR(32) NOT NULL DEFAULT 'idle', updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP); INSERT INTO mes_batch_run (batch_path, batch_id, recipe, phase) SELECT 'root.platform.mes.lots.batch-line-a01-001', 'BATCH-LINE-A01-001', 'recipe-standard-a', 'charge' WHERE NOT EXISTS (SELECT 1 FROM mes_batch_run WHERE batch_path = 'root.platform.mes.lots.batch-line-a01-001');"
+      "sql": "CREATE TABLE IF NOT EXISTS mes_spc_sample (id UUID PRIMARY KEY, line_code VARCHAR(32) NOT NULL, measurement_mm NUMERIC(8,3) NOT NULL, sample_ts TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP); CREATE TABLE IF NOT EXISTS mes_erp_outbox (id UUID PRIMARY KEY, entity_type VARCHAR(32) NOT NULL, entity_id VARCHAR(64) NOT NULL, payload_json TEXT NOT NULL, idempotency_key VARCHAR(128) NOT NULL UNIQUE, status VARCHAR(16) NOT NULL DEFAULT 'pending', created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, processed_at TIMESTAMP NULL); CREATE TABLE IF NOT EXISTS mes_batch_run (batch_path VARCHAR(256) PRIMARY KEY, batch_id VARCHAR(64) NOT NULL, recipe VARCHAR(64) NOT NULL, phase VARCHAR(32) NOT NULL DEFAULT 'idle', updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);"
     },
     {
       "id": "mes_platform_genealogy",
-      "sql": "CREATE TABLE IF NOT EXISTS mes_genealogy_material (material_code VARCHAR(64) PRIMARY KEY, display_name VARCHAR(128) NOT NULL, uom VARCHAR(16) NOT NULL DEFAULT 'EA'); INSERT INTO mes_genealogy_material (material_code, display_name, uom) SELECT 'MAT-WIDGET-A01', 'Assembly widget A01', 'EA' WHERE NOT EXISTS (SELECT 1 FROM mes_genealogy_material WHERE material_code = 'MAT-WIDGET-A01'); CREATE TABLE IF NOT EXISTS mes_genealogy_lot (lot_id VARCHAR(64) PRIMARY KEY, lot_path VARCHAR(256) NOT NULL, material_code VARCHAR(64) NOT NULL, work_order_number VARCHAR(64) NOT NULL, line_code VARCHAR(32) NOT NULL, quantity NUMERIC(12,3) NOT NULL DEFAULT 0, status VARCHAR(32) NOT NULL DEFAULT 'active'); INSERT INTO mes_genealogy_lot (lot_id, lot_path, material_code, work_order_number, line_code, quantity, status) SELECT 'BATCH-LINE-A01-001', 'root.platform.mes.lots.batch-line-a01-001', 'MAT-WIDGET-A01', 'WO-LINE-A01-001', 'LINE-A01', 2050, 'active' WHERE NOT EXISTS (SELECT 1 FROM mes_genealogy_lot WHERE lot_id = 'BATCH-LINE-A01-001'); CREATE TABLE IF NOT EXISTS mes_genealogy_quality (quality_id VARCHAR(64) PRIMARY KEY, lot_id VARCHAR(64) NOT NULL, defect_code VARCHAR(64), severity VARCHAR(32) NOT NULL DEFAULT 'ok', result VARCHAR(32) NOT NULL DEFAULT 'pass', recorded_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP); INSERT INTO mes_genealogy_quality (quality_id, lot_id, defect_code, severity, result) SELECT 'QR-LINE-A01-001', 'BATCH-LINE-A01-001', NULL, 'ok', 'pass' WHERE NOT EXISTS (SELECT 1 FROM mes_genealogy_quality WHERE quality_id = 'QR-LINE-A01-001'); INSERT INTO mes_genealogy_quality (quality_id, lot_id, defect_code, severity, result) SELECT 'QR-LINE-A01-002', 'BATCH-LINE-A01-001', 'SCRATCH', 'minor', 'ncr' WHERE NOT EXISTS (SELECT 1 FROM mes_genealogy_quality WHERE quality_id = 'QR-LINE-A01-002');"
+      "sql": "CREATE TABLE IF NOT EXISTS mes_genealogy_material (material_code VARCHAR(64) PRIMARY KEY, display_name VARCHAR(128) NOT NULL, uom VARCHAR(16) NOT NULL DEFAULT 'EA'); CREATE TABLE IF NOT EXISTS mes_genealogy_lot (lot_id VARCHAR(64) PRIMARY KEY, lot_path VARCHAR(256) NOT NULL, material_code VARCHAR(64) NOT NULL, work_order_number VARCHAR(64) NOT NULL, line_code VARCHAR(32) NOT NULL, quantity NUMERIC(12,3) NOT NULL DEFAULT 0, status VARCHAR(32) NOT NULL DEFAULT 'active'); CREATE TABLE IF NOT EXISTS mes_genealogy_quality (quality_id VARCHAR(64) PRIMARY KEY, lot_id VARCHAR(64) NOT NULL, defect_code VARCHAR(64), severity VARCHAR(32) NOT NULL DEFAULT 'ok', result VARCHAR(32) NOT NULL DEFAULT 'pass', recorded_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);"
     },
     {
       "id": "mes_platform_genealogy_dag_v2",
-      "sql": "CREATE TABLE IF NOT EXISTS mes_tracked_entity (entity_id VARCHAR(64) PRIMARY KEY, entity_type VARCHAR(32) NOT NULL, display_name VARCHAR(128) NOT NULL, lot_id VARCHAR(64), material_code VARCHAR(64), status VARCHAR(32) NOT NULL DEFAULT 'available', attributes_json TEXT DEFAULT '{}'); CREATE TABLE IF NOT EXISTS mes_tracked_activity (activity_id VARCHAR(64) PRIMARY KEY, activity_type VARCHAR(32) NOT NULL, work_order_number VARCHAR(64) NOT NULL, line_code VARCHAR(32) NOT NULL, occurred_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, attributes_json TEXT DEFAULT '{}'); CREATE TABLE IF NOT EXISTS mes_tracked_activity_input (activity_id VARCHAR(64) NOT NULL, entity_id VARCHAR(64) NOT NULL, quantity NUMERIC(12,3) NOT NULL DEFAULT 0, PRIMARY KEY (activity_id, entity_id)); CREATE TABLE IF NOT EXISTS mes_tracked_activity_output (activity_id VARCHAR(64) NOT NULL, entity_id VARCHAR(64) NOT NULL, quantity NUMERIC(12,3) NOT NULL DEFAULT 0, PRIMARY KEY (activity_id, entity_id)); INSERT INTO mes_genealogy_material (material_code, display_name, uom) SELECT 'MAT-RAW-A01', 'Raw material A01', 'KG' WHERE NOT EXISTS (SELECT 1 FROM mes_genealogy_material WHERE material_code = 'MAT-RAW-A01'); INSERT INTO mes_genealogy_material (material_code, display_name, uom) SELECT 'MAT-WIP-A01', 'WIP material A01', 'EA' WHERE NOT EXISTS (SELECT 1 FROM mes_genealogy_material WHERE material_code = 'MAT-WIP-A01'); INSERT INTO mes_tracked_entity (entity_id, entity_type, display_name, lot_id, material_code, status, attributes_json) SELECT 'ENT-RAW-A01', 'MATERIAL_LOT', 'Raw lot A01', 'LOT-RAW-A01', 'MAT-RAW-A01', 'available', '{}' WHERE NOT EXISTS (SELECT 1 FROM mes_tracked_entity WHERE entity_id = 'ENT-RAW-A01'); INSERT INTO mes_tracked_entity (entity_id, entity_type, display_name, lot_id, material_code, status, attributes_json) SELECT 'ENT-WIP-B01', 'WIP_LOT', 'WIP lot B01', 'LOT-WIP-B01', 'MAT-WIP-A01', 'in_process', '{}' WHERE NOT EXISTS (SELECT 1 FROM mes_tracked_entity WHERE entity_id = 'ENT-WIP-B01'); INSERT INTO mes_tracked_entity (entity_id, entity_type, display_name, lot_id, material_code, status, attributes_json) SELECT 'ENT-FG-A01', 'FINISHED_GOOD', 'Finished good A01', 'BATCH-LINE-A01-001', 'MAT-WIDGET-A01', 'available', '{}' WHERE NOT EXISTS (SELECT 1 FROM mes_tracked_entity WHERE entity_id = 'ENT-FG-A01'); INSERT INTO mes_tracked_activity (activity_id, activity_type, work_order_number, line_code, attributes_json) SELECT 'ACT-TRANSFORM-1', 'TRANSFORM', 'WO-LINE-A01-001', 'LINE-A01', '{}' WHERE NOT EXISTS (SELECT 1 FROM mes_tracked_activity WHERE activity_id = 'ACT-TRANSFORM-1'); INSERT INTO mes_tracked_activity (activity_id, activity_type, work_order_number, line_code, attributes_json) SELECT 'ACT-TRANSFORM-2', 'TRANSFORM', 'WO-LINE-A01-001', 'LINE-A01', '{}' WHERE NOT EXISTS (SELECT 1 FROM mes_tracked_activity WHERE activity_id = 'ACT-TRANSFORM-2'); INSERT INTO mes_tracked_activity_input (activity_id, entity_id, quantity) SELECT 'ACT-TRANSFORM-1', 'ENT-RAW-A01', 100.000 WHERE NOT EXISTS (SELECT 1 FROM mes_tracked_activity_input WHERE activity_id = 'ACT-TRANSFORM-1' AND entity_id = 'ENT-RAW-A01'); INSERT INTO mes_tracked_activity_output (activity_id, entity_id, quantity) SELECT 'ACT-TRANSFORM-1', 'ENT-WIP-B01', 100.000 WHERE NOT EXISTS (SELECT 1 FROM mes_tracked_activity_output WHERE activity_id = 'ACT-TRANSFORM-1' AND entity_id = 'ENT-WIP-B01'); INSERT INTO mes_tracked_activity_input (activity_id, entity_id, quantity) SELECT 'ACT-TRANSFORM-2', 'ENT-WIP-B01', 100.000 WHERE NOT EXISTS (SELECT 1 FROM mes_tracked_activity_input WHERE activity_id = 'ACT-TRANSFORM-2' AND entity_id = 'ENT-WIP-B01'); INSERT INTO mes_tracked_activity_output (activity_id, entity_id, quantity) SELECT 'ACT-TRANSFORM-2', 'ENT-FG-A01', 100.000 WHERE NOT EXISTS (SELECT 1 FROM mes_tracked_activity_output WHERE activity_id = 'ACT-TRANSFORM-2' AND entity_id = 'ENT-FG-A01');"
+      "sql": "CREATE TABLE IF NOT EXISTS mes_tracked_entity (entity_id VARCHAR(64) PRIMARY KEY, entity_type VARCHAR(32) NOT NULL, display_name VARCHAR(128) NOT NULL, lot_id VARCHAR(64), material_code VARCHAR(64), status VARCHAR(32) NOT NULL DEFAULT 'available', attributes_json TEXT DEFAULT '{}'); CREATE TABLE IF NOT EXISTS mes_tracked_activity (activity_id VARCHAR(64) PRIMARY KEY, activity_type VARCHAR(32) NOT NULL, work_order_number VARCHAR(64) NOT NULL, line_code VARCHAR(32) NOT NULL, occurred_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, attributes_json TEXT DEFAULT '{}'); CREATE TABLE IF NOT EXISTS mes_tracked_activity_input (activity_id VARCHAR(64) NOT NULL, entity_id VARCHAR(64) NOT NULL, quantity NUMERIC(12,3) NOT NULL DEFAULT 0, PRIMARY KEY (activity_id, entity_id)); CREATE TABLE IF NOT EXISTS mes_tracked_activity_output (activity_id VARCHAR(64) NOT NULL, entity_id VARCHAR(64) NOT NULL, quantity NUMERIC(12,3) NOT NULL DEFAULT 0, PRIMARY KEY (activity_id, entity_id));"
     },
     {
       "id": "mes_platform_bom_ops_v1",
-      "sql": "CREATE TABLE IF NOT EXISTS mes_bom_header (bom_id VARCHAR(64) PRIMARY KEY, parent_material_code VARCHAR(64) NOT NULL, revision VARCHAR(32) NOT NULL, display_name VARCHAR(128) NOT NULL, status VARCHAR(32) NOT NULL); CREATE TABLE IF NOT EXISTS mes_bom_line (bom_id VARCHAR(64) NOT NULL, line_no INTEGER NOT NULL, component_material_code VARCHAR(64) NOT NULL, quantity NUMERIC(12,3) NOT NULL, uom VARCHAR(16) NOT NULL, PRIMARY KEY (bom_id, line_no)); CREATE TABLE IF NOT EXISTS mes_operation_def (operation_id VARCHAR(64) PRIMARY KEY, routing_id VARCHAR(64) NOT NULL, name VARCHAR(128) NOT NULL, work_center VARCHAR(64) NOT NULL, sequence_no INTEGER NOT NULL); CREATE TABLE IF NOT EXISTS mes_operation_edge (routing_id VARCHAR(64) NOT NULL, predecessor_op VARCHAR(64) NOT NULL, successor_op VARCHAR(64) NOT NULL, PRIMARY KEY (routing_id, predecessor_op, successor_op)); CREATE TABLE IF NOT EXISTS mes_operation_status (wo_number VARCHAR(64) NOT NULL, operation_id VARCHAR(64) NOT NULL, status VARCHAR(16) NOT NULL CHECK (status IN ('pending', 'ready', 'complete')), PRIMARY KEY (wo_number, operation_id)); INSERT INTO mes_genealogy_material (material_code, display_name, uom) SELECT 'MAT-WIDGET-A01', 'Assembly widget A01', 'EA' WHERE NOT EXISTS (SELECT 1 FROM mes_genealogy_material WHERE material_code = 'MAT-WIDGET-A01'); INSERT INTO mes_genealogy_material (material_code, display_name, uom) SELECT 'MAT-RAW-A01', 'Raw material A01', 'KG' WHERE NOT EXISTS (SELECT 1 FROM mes_genealogy_material WHERE material_code = 'MAT-RAW-A01'); INSERT INTO mes_genealogy_material (material_code, display_name, uom) SELECT 'MAT-WIP-A01', 'WIP material A01', 'EA' WHERE NOT EXISTS (SELECT 1 FROM mes_genealogy_material WHERE material_code = 'MAT-WIP-A01'); INSERT INTO mes_bom_header (bom_id, parent_material_code, revision, display_name, status) SELECT 'BOM-WIDGET-A01-A', 'MAT-WIDGET-A01', 'A', 'Widget A01 BoM rev A', 'active' WHERE NOT EXISTS (SELECT 1 FROM mes_bom_header WHERE bom_id = 'BOM-WIDGET-A01-A'); INSERT INTO mes_bom_line (bom_id, line_no, component_material_code, quantity, uom) SELECT 'BOM-WIDGET-A01-A', 10, 'MAT-RAW-A01', 2.000, 'KG' WHERE NOT EXISTS (SELECT 1 FROM mes_bom_line WHERE bom_id = 'BOM-WIDGET-A01-A' AND line_no = 10); INSERT INTO mes_bom_line (bom_id, line_no, component_material_code, quantity, uom) SELECT 'BOM-WIDGET-A01-A', 20, 'MAT-WIP-A01', 1.000, 'EA' WHERE NOT EXISTS (SELECT 1 FROM mes_bom_line WHERE bom_id = 'BOM-WIDGET-A01-A' AND line_no = 20); INSERT INTO mes_operation_def (operation_id, routing_id, name, work_center, sequence_no) SELECT 'OP-CUT', 'RT-WIDGET-A01', 'Cut raw material', 'WC-CUT', 10 WHERE NOT EXISTS (SELECT 1 FROM mes_operation_def WHERE operation_id = 'OP-CUT'); INSERT INTO mes_operation_def (operation_id, routing_id, name, work_center, sequence_no) SELECT 'OP-ASSEMBLE', 'RT-WIDGET-A01', 'Assemble widget', 'WC-ASSEMBLY', 20 WHERE NOT EXISTS (SELECT 1 FROM mes_operation_def WHERE operation_id = 'OP-ASSEMBLE'); INSERT INTO mes_operation_def (operation_id, routing_id, name, work_center, sequence_no) SELECT 'OP-TEST', 'RT-WIDGET-A01', 'Test widget', 'WC-TEST', 30 WHERE NOT EXISTS (SELECT 1 FROM mes_operation_def WHERE operation_id = 'OP-TEST'); INSERT INTO mes_operation_edge (routing_id, predecessor_op, successor_op) SELECT 'RT-WIDGET-A01', 'OP-CUT', 'OP-ASSEMBLE' WHERE NOT EXISTS (SELECT 1 FROM mes_operation_edge WHERE routing_id = 'RT-WIDGET-A01' AND predecessor_op = 'OP-CUT' AND successor_op = 'OP-ASSEMBLE'); INSERT INTO mes_operation_edge (routing_id, predecessor_op, successor_op) SELECT 'RT-WIDGET-A01', 'OP-ASSEMBLE', 'OP-TEST' WHERE NOT EXISTS (SELECT 1 FROM mes_operation_edge WHERE routing_id = 'RT-WIDGET-A01' AND predecessor_op = 'OP-ASSEMBLE' AND successor_op = 'OP-TEST'); INSERT INTO mes_operation_status (wo_number, operation_id, status) SELECT 'WO-LINE-A01-001', 'OP-CUT', 'complete' WHERE NOT EXISTS (SELECT 1 FROM mes_operation_status WHERE wo_number = 'WO-LINE-A01-001' AND operation_id = 'OP-CUT'); INSERT INTO mes_operation_status (wo_number, operation_id, status) SELECT 'WO-LINE-A01-001', 'OP-ASSEMBLE', 'ready' WHERE NOT EXISTS (SELECT 1 FROM mes_operation_status WHERE wo_number = 'WO-LINE-A01-001' AND operation_id = 'OP-ASSEMBLE'); INSERT INTO mes_operation_status (wo_number, operation_id, status) SELECT 'WO-LINE-A01-001', 'OP-TEST', 'pending' WHERE NOT EXISTS (SELECT 1 FROM mes_operation_status WHERE wo_number = 'WO-LINE-A01-001' AND operation_id = 'OP-TEST');"
+      "sql": "CREATE TABLE IF NOT EXISTS mes_bom_header (bom_id VARCHAR(64) PRIMARY KEY, parent_material_code VARCHAR(64) NOT NULL, revision VARCHAR(32) NOT NULL, display_name VARCHAR(128) NOT NULL, status VARCHAR(32) NOT NULL); CREATE TABLE IF NOT EXISTS mes_bom_line (bom_id VARCHAR(64) NOT NULL, line_no INTEGER NOT NULL, component_material_code VARCHAR(64) NOT NULL, quantity NUMERIC(12,3) NOT NULL, uom VARCHAR(16) NOT NULL, PRIMARY KEY (bom_id, line_no)); CREATE TABLE IF NOT EXISTS mes_operation_def (operation_id VARCHAR(64) PRIMARY KEY, routing_id VARCHAR(64) NOT NULL, name VARCHAR(128) NOT NULL, work_center VARCHAR(64) NOT NULL, sequence_no INTEGER NOT NULL); CREATE TABLE IF NOT EXISTS mes_operation_edge (routing_id VARCHAR(64) NOT NULL, predecessor_op VARCHAR(64) NOT NULL, successor_op VARCHAR(64) NOT NULL, PRIMARY KEY (routing_id, predecessor_op, successor_op)); CREATE TABLE IF NOT EXISTS mes_operation_status (wo_number VARCHAR(64) NOT NULL, operation_id VARCHAR(64) NOT NULL, status VARCHAR(16) NOT NULL CHECK (status IN ('pending', 'ready', 'complete')), PRIMARY KEY (wo_number, operation_id));"
+    },
+    {
+      "id": "mes_platform_recipe_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS mes_recipe (recipe_id VARCHAR(64) NOT NULL, revision INTEGER NOT NULL, display_name VARCHAR(128) NOT NULL, effective_from TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, effective_to TIMESTAMP, status VARCHAR(32) NOT NULL, PRIMARY KEY (recipe_id, revision));"
+    },
+    {
+      "id": "mes_platform_spc_hold_v1",
+      "sql": "ALTER TABLE mes_batch_run ADD COLUMN IF NOT EXISTS hold_reason VARCHAR(256);"
+    },
+    {
+      "id": "mes_platform_genealogy_lookup_v1",
+      "sql": "CREATE INDEX IF NOT EXISTS mes_tracked_activity_input_entity_idx ON mes_tracked_activity_input (entity_id); CREATE INDEX IF NOT EXISTS mes_tracked_activity_output_entity_idx ON mes_tracked_activity_output (entity_id);"
+    },
+    {
+      "id": "mes_platform_execution_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS mes_exec_asset (\n  asset_id VARCHAR(64) PRIMARY KEY,\n  display_name VARCHAR(128) NOT NULL,\n  site_code VARCHAR(32) NOT NULL,\n  area_code VARCHAR(32) NOT NULL,\n  asset_type VARCHAR(32) NOT NULL,\n  status VARCHAR(32) NOT NULL,\n  source_name VARCHAR(64) NOT NULL,\n  freshness VARCHAR(32) NOT NULL,\n  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP\n);\nCREATE TABLE IF NOT EXISTS mes_exec_sku (\n  sku_code VARCHAR(64) PRIMARY KEY,\n  display_name VARCHAR(128) NOT NULL,\n  uom VARCHAR(16) NOT NULL,\n  quality_status VARCHAR(32) NOT NULL DEFAULT 'released',\n  freeze_minutes INTEGER NOT NULL DEFAULT 0\n);\nCREATE TABLE IF NOT EXISTS mes_exec_resource (\n  resource_id VARCHAR(64) PRIMARY KEY,\n  resource_type VARCHAR(32) NOT NULL,\n  site_code VARCHAR(32) NOT NULL,\n  qty NUMERIC(14,3) NOT NULL,\n  reserved_qty NUMERIC(14,3) NOT NULL DEFAULT 0,\n  uom VARCHAR(16) NOT NULL,\n  data_status VARCHAR(32) NOT NULL,\n  quality_status VARCHAR(32) NOT NULL,\n  owner_role VARCHAR(64) NOT NULL,\n  freshness VARCHAR(32) NOT NULL,\n  comment_text VARCHAR(256) NOT NULL DEFAULT ''\n);\nCREATE TABLE IF NOT EXISTS mes_exec_reserve (\n  reserve_id VARCHAR(64) PRIMARY KEY,\n  resource_id VARCHAR(64) NOT NULL,\n  pub_id VARCHAR(64) NOT NULL,\n  qty NUMERIC(14,3) NOT NULL\n);\nCREATE TABLE IF NOT EXISTS mes_exec_candidate (\n  candidate_id VARCHAR(64) PRIMARY KEY,\n  site_code VARCHAR(32) NOT NULL,\n  sku_code VARCHAR(64) NOT NULL,\n  planned_qty NUMERIC(14,3) NOT NULL,\n  uom VARCHAR(16) NOT NULL,\n  quality_status VARCHAR(32) NOT NULL,\n  validation_status VARCHAR(32) NOT NULL,\n  validation_message VARCHAR(256) NOT NULL DEFAULT '',\n  idempotency_key VARCHAR(128) NOT NULL UNIQUE,\n  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP\n);\nCREATE TABLE IF NOT EXISTS mes_exec_snapshot (\n  snapshot_id VARCHAR(64) PRIMARY KEY,\n  pub_id VARCHAR(64) NOT NULL,\n  payload_json VARCHAR(4000) NOT NULL,\n  payload_hash VARCHAR(64) NOT NULL,\n  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP\n);\nCREATE TABLE IF NOT EXISTS mes_exec_pub (\n  pub_id VARCHAR(64) PRIMARY KEY,\n  pub_version INTEGER NOT NULL,\n  candidate_id VARCHAR(64) NOT NULL,\n  previous_pub_id VARCHAR(64),\n  site_code VARCHAR(32) NOT NULL,\n  sku_code VARCHAR(64) NOT NULL,\n  planned_qty NUMERIC(14,3) NOT NULL,\n  uom VARCHAR(16) NOT NULL,\n  status VARCHAR(32) NOT NULL,\n  shop_status VARCHAR(32) NOT NULL,\n  snapshot_id VARCHAR(64) NOT NULL,\n  reason_text VARCHAR(256) NOT NULL DEFAULT '',\n  published_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP\n);\nCREATE TABLE IF NOT EXISTS mes_exec_fact (\n  fact_id VARCHAR(64) PRIMARY KEY,\n  pub_id VARCHAR(64) NOT NULL,\n  sku_code VARCHAR(64) NOT NULL,\n  actual_qty NUMERIC(14,3) NOT NULL,\n  delay_minutes INTEGER NOT NULL DEFAULT 0,\n  reason_code VARCHAR(64) NOT NULL DEFAULT '',\n  recorded_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP\n);\nCREATE TABLE IF NOT EXISTS mes_exec_deviation (\n  deviation_id VARCHAR(64) PRIMARY KEY,\n  pub_id VARCHAR(64) NOT NULL,\n  severity VARCHAR(32) NOT NULL,\n  reason_code VARCHAR(64) NOT NULL,\n  delay_minutes INTEGER NOT NULL,\n  status VARCHAR(32) NOT NULL\n);\nCREATE TABLE IF NOT EXISTS mes_exec_tail (\n  tail_id VARCHAR(64) PRIMARY KEY,\n  pub_id VARCHAR(64) NOT NULL,\n  sku_code VARCHAR(64) NOT NULL,\n  tail_qty NUMERIC(14,3) NOT NULL,\n  uom VARCHAR(16) NOT NULL,\n  reason_code VARCHAR(64) NOT NULL,\n  period_code VARCHAR(32) NOT NULL,\n  idempotency_key VARCHAR(128) NOT NULL UNIQUE,\n  status VARCHAR(32) NOT NULL\n);\nCREATE TABLE IF NOT EXISTS mes_exec_period_close (\n  close_id VARCHAR(64) PRIMARY KEY,\n  pub_id VARCHAR(64) NOT NULL,\n  period_code VARCHAR(32) NOT NULL,\n  status VARCHAR(32) NOT NULL,\n  closed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  UNIQUE (pub_id, period_code)\n);\nCREATE TABLE IF NOT EXISTS mes_exec_alert (\n  alert_id VARCHAR(64) PRIMARY KEY,\n  pub_id VARCHAR(64),\n  site_code VARCHAR(32) NOT NULL,\n  severity VARCHAR(32) NOT NULL,\n  alert_type VARCHAR(64) NOT NULL,\n  status VARCHAR(32) NOT NULL,\n  owner_role VARCHAR(64) NOT NULL DEFAULT '',\n  message_text VARCHAR(256) NOT NULL\n);\nCREATE TABLE IF NOT EXISTS mes_exec_inbox (\n  message_id VARCHAR(64) PRIMARY KEY,\n  message_type VARCHAR(32) NOT NULL,\n  idempotency_key VARCHAR(128) NOT NULL UNIQUE,\n  payload_json VARCHAR(4000) NOT NULL,\n  status VARCHAR(32) NOT NULL,\n  received_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP\n);\nCREATE TABLE IF NOT EXISTS mes_exec_delivery (\n  delivery_id VARCHAR(64) PRIMARY KEY,\n  pub_id VARCHAR(64) NOT NULL,\n  recipient_code VARCHAR(64) NOT NULL,\n  status VARCHAR(32) NOT NULL,\n  error_text VARCHAR(256) NOT NULL DEFAULT '',\n  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  UNIQUE (pub_id, recipient_code)\n);"
+    }
+  ],
+  "seeds": [
+    {
+      "id": "mes_platform_schema_demo",
+      "profile": "default",
+      "sql": "INSERT INTO mes_platform_line (line_code, display_name, area_path) SELECT 'LINE-A01', 'Assembly Line A01', 'root.platform.mes.instances.plant-a.areas.assembly.lines.line-a01' WHERE NOT EXISTS (SELECT 1 FROM mes_platform_line WHERE line_code = 'LINE-A01'); INSERT INTO mes_oee_shift (id, line_code, shift_label, planned_minutes, downtime_minutes, ideal_cycle_sec, total_units, good_units) SELECT 'dddddddd-dddd-dddd-dddd-dddddddddddd', 'LINE-A01', 'Morning', 480, 45, 12, 2100, 2050 WHERE NOT EXISTS (SELECT 1 FROM mes_oee_shift WHERE line_code = 'LINE-A01' AND shift_label = 'Morning');"
+    },
+    {
+      "id": "mes_platform_phase29_demo",
+      "profile": "default",
+      "sql": "INSERT INTO mes_spc_sample (id, line_code, measurement_mm) SELECT 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 'LINE-A01', 10.02 WHERE NOT EXISTS (SELECT 1 FROM mes_spc_sample WHERE id = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee'); INSERT INTO mes_spc_sample (id, line_code, measurement_mm) SELECT 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeef', 'LINE-A01', 9.98 WHERE NOT EXISTS (SELECT 1 FROM mes_spc_sample WHERE id = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeef'); INSERT INTO mes_spc_sample (id, line_code, measurement_mm) SELECT 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee0', 'LINE-A01', 10.05 WHERE NOT EXISTS (SELECT 1 FROM mes_spc_sample WHERE id = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee0'); INSERT INTO mes_batch_run (batch_path, batch_id, recipe, phase) SELECT 'root.platform.mes.lots.batch-line-a01-001', 'BATCH-LINE-A01-001', 'recipe-standard-a', 'charge' WHERE NOT EXISTS (SELECT 1 FROM mes_batch_run WHERE batch_path = 'root.platform.mes.lots.batch-line-a01-001');"
+    },
+    {
+      "id": "mes_platform_genealogy_demo",
+      "profile": "default",
+      "sql": "INSERT INTO mes_genealogy_material (material_code, display_name, uom) SELECT 'MAT-WIDGET-A01', 'Assembly widget A01', 'EA' WHERE NOT EXISTS (SELECT 1 FROM mes_genealogy_material WHERE material_code = 'MAT-WIDGET-A01'); INSERT INTO mes_genealogy_lot (lot_id, lot_path, material_code, work_order_number, line_code, quantity, status) SELECT 'BATCH-LINE-A01-001', 'root.platform.mes.lots.batch-line-a01-001', 'MAT-WIDGET-A01', 'WO-LINE-A01-001', 'LINE-A01', 2050, 'active' WHERE NOT EXISTS (SELECT 1 FROM mes_genealogy_lot WHERE lot_id = 'BATCH-LINE-A01-001'); INSERT INTO mes_genealogy_quality (quality_id, lot_id, defect_code, severity, result) SELECT 'QR-LINE-A01-001', 'BATCH-LINE-A01-001', NULL, 'ok', 'pass' WHERE NOT EXISTS (SELECT 1 FROM mes_genealogy_quality WHERE quality_id = 'QR-LINE-A01-001'); INSERT INTO mes_genealogy_quality (quality_id, lot_id, defect_code, severity, result) SELECT 'QR-LINE-A01-002', 'BATCH-LINE-A01-001', 'SCRATCH', 'minor', 'ncr' WHERE NOT EXISTS (SELECT 1 FROM mes_genealogy_quality WHERE quality_id = 'QR-LINE-A01-002');"
+    },
+    {
+      "id": "mes_platform_genealogy_dag_v2_demo",
+      "profile": "default",
+      "sql": "INSERT INTO mes_genealogy_material (material_code, display_name, uom) SELECT 'MAT-RAW-A01', 'Raw material A01', 'KG' WHERE NOT EXISTS (SELECT 1 FROM mes_genealogy_material WHERE material_code = 'MAT-RAW-A01'); INSERT INTO mes_genealogy_material (material_code, display_name, uom) SELECT 'MAT-WIP-A01', 'WIP material A01', 'EA' WHERE NOT EXISTS (SELECT 1 FROM mes_genealogy_material WHERE material_code = 'MAT-WIP-A01'); INSERT INTO mes_tracked_entity (entity_id, entity_type, display_name, lot_id, material_code, status, attributes_json) SELECT 'ENT-RAW-A01', 'MATERIAL_LOT', 'Raw lot A01', 'LOT-RAW-A01', 'MAT-RAW-A01', 'available', '{}' WHERE NOT EXISTS (SELECT 1 FROM mes_tracked_entity WHERE entity_id = 'ENT-RAW-A01'); INSERT INTO mes_tracked_entity (entity_id, entity_type, display_name, lot_id, material_code, status, attributes_json) SELECT 'ENT-WIP-B01', 'WIP_LOT', 'WIP lot B01', 'LOT-WIP-B01', 'MAT-WIP-A01', 'in_process', '{}' WHERE NOT EXISTS (SELECT 1 FROM mes_tracked_entity WHERE entity_id = 'ENT-WIP-B01'); INSERT INTO mes_tracked_entity (entity_id, entity_type, display_name, lot_id, material_code, status, attributes_json) SELECT 'ENT-FG-A01', 'FINISHED_GOOD', 'Finished good A01', 'BATCH-LINE-A01-001', 'MAT-WIDGET-A01', 'available', '{}' WHERE NOT EXISTS (SELECT 1 FROM mes_tracked_entity WHERE entity_id = 'ENT-FG-A01'); INSERT INTO mes_tracked_activity (activity_id, activity_type, work_order_number, line_code, attributes_json) SELECT 'ACT-TRANSFORM-1', 'TRANSFORM', 'WO-LINE-A01-001', 'LINE-A01', '{}' WHERE NOT EXISTS (SELECT 1 FROM mes_tracked_activity WHERE activity_id = 'ACT-TRANSFORM-1'); INSERT INTO mes_tracked_activity (activity_id, activity_type, work_order_number, line_code, attributes_json) SELECT 'ACT-TRANSFORM-2', 'TRANSFORM', 'WO-LINE-A01-001', 'LINE-A01', '{}' WHERE NOT EXISTS (SELECT 1 FROM mes_tracked_activity WHERE activity_id = 'ACT-TRANSFORM-2'); INSERT INTO mes_tracked_activity_input (activity_id, entity_id, quantity) SELECT 'ACT-TRANSFORM-1', 'ENT-RAW-A01', 100.000 WHERE NOT EXISTS (SELECT 1 FROM mes_tracked_activity_input WHERE activity_id = 'ACT-TRANSFORM-1' AND entity_id = 'ENT-RAW-A01'); INSERT INTO mes_tracked_activity_output (activity_id, entity_id, quantity) SELECT 'ACT-TRANSFORM-1', 'ENT-WIP-B01', 100.000 WHERE NOT EXISTS (SELECT 1 FROM mes_tracked_activity_output WHERE activity_id = 'ACT-TRANSFORM-1' AND entity_id = 'ENT-WIP-B01'); INSERT INTO mes_tracked_activity_input (activity_id, entity_id, quantity) SELECT 'ACT-TRANSFORM-2', 'ENT-WIP-B01', 100.000 WHERE NOT EXISTS (SELECT 1 FROM mes_tracked_activity_input WHERE activity_id = 'ACT-TRANSFORM-2' AND entity_id = 'ENT-WIP-B01'); INSERT INTO mes_tracked_activity_output (activity_id, entity_id, quantity) SELECT 'ACT-TRANSFORM-2', 'ENT-FG-A01', 100.000 WHERE NOT EXISTS (SELECT 1 FROM mes_tracked_activity_output WHERE activity_id = 'ACT-TRANSFORM-2' AND entity_id = 'ENT-FG-A01');"
+    },
+    {
+      "id": "mes_platform_bom_ops_v1_demo",
+      "profile": "default",
+      "sql": "INSERT INTO mes_genealogy_material (material_code, display_name, uom) SELECT 'MAT-WIDGET-A01', 'Assembly widget A01', 'EA' WHERE NOT EXISTS (SELECT 1 FROM mes_genealogy_material WHERE material_code = 'MAT-WIDGET-A01'); INSERT INTO mes_genealogy_material (material_code, display_name, uom) SELECT 'MAT-RAW-A01', 'Raw material A01', 'KG' WHERE NOT EXISTS (SELECT 1 FROM mes_genealogy_material WHERE material_code = 'MAT-RAW-A01'); INSERT INTO mes_genealogy_material (material_code, display_name, uom) SELECT 'MAT-WIP-A01', 'WIP material A01', 'EA' WHERE NOT EXISTS (SELECT 1 FROM mes_genealogy_material WHERE material_code = 'MAT-WIP-A01'); INSERT INTO mes_bom_header (bom_id, parent_material_code, revision, display_name, status) SELECT 'BOM-WIDGET-A01-A', 'MAT-WIDGET-A01', 'A', 'Widget A01 BoM rev A', 'active' WHERE NOT EXISTS (SELECT 1 FROM mes_bom_header WHERE bom_id = 'BOM-WIDGET-A01-A'); INSERT INTO mes_bom_line (bom_id, line_no, component_material_code, quantity, uom) SELECT 'BOM-WIDGET-A01-A', 10, 'MAT-RAW-A01', 2.000, 'KG' WHERE NOT EXISTS (SELECT 1 FROM mes_bom_line WHERE bom_id = 'BOM-WIDGET-A01-A' AND line_no = 10); INSERT INTO mes_bom_line (bom_id, line_no, component_material_code, quantity, uom) SELECT 'BOM-WIDGET-A01-A', 20, 'MAT-WIP-A01', 1.000, 'EA' WHERE NOT EXISTS (SELECT 1 FROM mes_bom_line WHERE bom_id = 'BOM-WIDGET-A01-A' AND line_no = 20); INSERT INTO mes_operation_def (operation_id, routing_id, name, work_center, sequence_no) SELECT 'OP-CUT', 'RT-WIDGET-A01', 'Cut raw material', 'WC-CUT', 10 WHERE NOT EXISTS (SELECT 1 FROM mes_operation_def WHERE operation_id = 'OP-CUT'); INSERT INTO mes_operation_def (operation_id, routing_id, name, work_center, sequence_no) SELECT 'OP-ASSEMBLE', 'RT-WIDGET-A01', 'Assemble widget', 'WC-ASSEMBLY', 20 WHERE NOT EXISTS (SELECT 1 FROM mes_operation_def WHERE operation_id = 'OP-ASSEMBLE'); INSERT INTO mes_operation_def (operation_id, routing_id, name, work_center, sequence_no) SELECT 'OP-TEST', 'RT-WIDGET-A01', 'Test widget', 'WC-TEST', 30 WHERE NOT EXISTS (SELECT 1 FROM mes_operation_def WHERE operation_id = 'OP-TEST'); INSERT INTO mes_operation_edge (routing_id, predecessor_op, successor_op) SELECT 'RT-WIDGET-A01', 'OP-CUT', 'OP-ASSEMBLE' WHERE NOT EXISTS (SELECT 1 FROM mes_operation_edge WHERE routing_id = 'RT-WIDGET-A01' AND predecessor_op = 'OP-CUT' AND successor_op = 'OP-ASSEMBLE'); INSERT INTO mes_operation_edge (routing_id, predecessor_op, successor_op) SELECT 'RT-WIDGET-A01', 'OP-ASSEMBLE', 'OP-TEST' WHERE NOT EXISTS (SELECT 1 FROM mes_operation_edge WHERE routing_id = 'RT-WIDGET-A01' AND predecessor_op = 'OP-ASSEMBLE' AND successor_op = 'OP-TEST'); INSERT INTO mes_operation_status (wo_number, operation_id, status) SELECT 'WO-LINE-A01-001', 'OP-CUT', 'complete' WHERE NOT EXISTS (SELECT 1 FROM mes_operation_status WHERE wo_number = 'WO-LINE-A01-001' AND operation_id = 'OP-CUT'); INSERT INTO mes_operation_status (wo_number, operation_id, status) SELECT 'WO-LINE-A01-001', 'OP-ASSEMBLE', 'ready' WHERE NOT EXISTS (SELECT 1 FROM mes_operation_status WHERE wo_number = 'WO-LINE-A01-001' AND operation_id = 'OP-ASSEMBLE'); INSERT INTO mes_operation_status (wo_number, operation_id, status) SELECT 'WO-LINE-A01-001', 'OP-TEST', 'pending' WHERE NOT EXISTS (SELECT 1 FROM mes_operation_status WHERE wo_number = 'WO-LINE-A01-001' AND operation_id = 'OP-TEST');"
+    },
+    {
+      "id": "mes_platform_execution_v1_demo",
+      "profile": "default",
+      "sql": "INSERT INTO mes_exec_asset (asset_id, display_name, site_code, area_code, asset_type, status, source_name, freshness)\nSELECT 'TANK-01', 'White mass tank 01', 'PLANT-A', 'PROCESS', 'TANK', 'running', 'CUTE_PROCESS', 'fresh'\nWHERE NOT EXISTS (SELECT 1 FROM mes_exec_asset WHERE asset_id = 'TANK-01');\nINSERT INTO mes_exec_asset (asset_id, display_name, site_code, area_code, asset_type, status, source_name, freshness)\nSELECT 'LINE-A01', 'Filling line A01', 'PLANT-A', 'FILLING', 'LINE', 'running', 'CUTE_FILLING', 'stale'\nWHERE NOT EXISTS (SELECT 1 FROM mes_exec_asset WHERE asset_id = 'LINE-A01');\nINSERT INTO mes_exec_sku (sku_code, display_name, uom, quality_status, freeze_minutes)\nSELECT 'MAT-WIDGET-A01', 'Assembly widget A01', 'EA', 'released', 30\nWHERE NOT EXISTS (SELECT 1 FROM mes_exec_sku WHERE sku_code = 'MAT-WIDGET-A01');\nINSERT INTO mes_exec_sku (sku_code, display_name, uom, quality_status, freeze_minutes)\nSELECT 'MAT-BLOCKED', 'Blocked trial SKU', 'EA', 'blocked', 0\nWHERE NOT EXISTS (SELECT 1 FROM mes_exec_sku WHERE sku_code = 'MAT-BLOCKED');\nINSERT INTO mes_exec_resource (resource_id, resource_type, site_code, qty, reserved_qty, uom, data_status, quality_status, owner_role, freshness)\nSELECT 'RES-TANK-01', 'SEMI', 'PLANT-A', 1000, 0, 'KG', 'confirmed', 'released', 'production', 'fresh'\nWHERE NOT EXISTS (SELECT 1 FROM mes_exec_resource WHERE resource_id = 'RES-TANK-01');\nINSERT INTO mes_exec_resource (resource_id, resource_type, site_code, qty, reserved_qty, uom, data_status, quality_status, owner_role, freshness)\nSELECT 'RES-CELL-01', 'COOLING', 'PLANT-A', 10, 0, 'PAL', 'confirmed', 'blocked', 'cooling', 'fresh'\nWHERE NOT EXISTS (SELECT 1 FROM mes_exec_resource WHERE resource_id = 'RES-CELL-01');"
     }
   ],
   "objects": [
@@ -152,6 +200,59 @@
   "functions": [
     {
       "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "functionName": "mes_recipe_release",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "recipeId",
+              "type": "STRING"
+            },
+            {
+              "name": "revision",
+              "type": "STRING"
+            },
+            {
+              "name": "displayName",
+              "type": "STRING"
+            },
+            {
+              "name": "signature",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "recipeId",
+              "type": "STRING"
+            },
+            {
+              "name": "revision",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"signaturePolicy\":\"REQUIRED\",\"steps\":[{\"type\":\"exec\",\"sql\":\"INSERT INTO mes_recipe (recipe_id, revision, display_name, effective_from, status) SELECT ?, CAST(? AS INTEGER), ?, CURRENT_TIMESTAMP, 'released' WHERE NOT EXISTS (SELECT 1 FROM mes_recipe WHERE recipe_id = ? AND revision = CAST(? AS INTEGER))\",\"params\":[\"${input.recipeId}\",\"${input.revision}\",\"${input.displayName}\",\"${input.recipeId}\",\"${input.revision}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"recipeId\":\"${input.recipeId}\",\"revision\":\"${input.revision}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
       "functionName": "mes_oee_listShifts",
       "version": "1",
       "descriptor": {
@@ -269,7 +370,7 @@
       },
       "source": {
         "type": "script",
-        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"kpi\",\"sql\":\"SELECT line_code, shift_label, CAST(ROUND(CASE WHEN planned_minutes > 0 THEN (planned_minutes - downtime_minutes) * 100.0 / planned_minutes ELSE 0 END, 0) AS INT) AS availability_pct, CAST(ROUND(CASE WHEN (planned_minutes - downtime_minutes) > 0 AND total_units > 0 THEN LEAST(100.0, ideal_cycle_sec * total_units * 100.0 / ((planned_minutes - downtime_minutes) * 60)) ELSE 0 END, 0) AS INT) AS performance_pct, CAST(ROUND(CASE WHEN total_units > 0 THEN good_units * 100.0 / total_units ELSE 0 END, 0) AS INT) AS quality_pct, CAST(ROUND(CASE WHEN planned_minutes > 0 AND total_units > 0 THEN (CASE WHEN planned_minutes > 0 THEN (planned_minutes - downtime_minutes) * 1.0 / planned_minutes ELSE 0 END) * (CASE WHEN (planned_minutes - downtime_minutes) > 0 AND total_units > 0 THEN LEAST(1.0, ideal_cycle_sec * total_units * 1.0 / ((planned_minutes - downtime_minutes) * 60)) ELSE 0 END) * (CASE WHEN total_units > 0 THEN good_units * 1.0 / total_units ELSE 0 END) * 100 ELSE 0 END, 0) AS INT) AS oee_pct FROM mes_oee_shift WHERE id = ?\",\"params\":[\"${input.shiftId}\"]},{\"type\":\"failIfNull\",\"var\":\"kpi\",\"message\":\"Shift not found\"},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"lineCode\":\"${kpi.line_code}\",\"shiftLabel\":\"${kpi.shift_label}\",\"availabilityPct\":\"${kpi.availability_pct}\",\"performancePct\":\"${kpi.performance_pct}\",\"qualityPct\":\"${kpi.quality_pct}\",\"oeePct\":\"${kpi.oee_pct}\"}}]}"
+        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"kpi\",\"sql\":\"SELECT line_code, shift_label, CAST(ROUND(CASE WHEN planned_minutes > 0 THEN (planned_minutes - downtime_minutes) * 100.0 / planned_minutes ELSE 0 END, 0) AS INT) AS availability_pct, CAST(ROUND(CASE WHEN (planned_minutes - downtime_minutes) > 0 AND total_units > 0 THEN LEAST(100.0, ideal_cycle_sec * total_units * 100.0 / ((planned_minutes - downtime_minutes) * 60)) ELSE 0 END, 0) AS INT) AS performance_pct, CAST(ROUND(CASE WHEN total_units > 0 THEN good_units * 100.0 / total_units ELSE 0 END, 0) AS INT) AS quality_pct, CAST(ROUND(CASE WHEN planned_minutes > 0 AND total_units > 0 THEN (CASE WHEN planned_minutes > 0 THEN (planned_minutes - downtime_minutes) * 1.0 / planned_minutes ELSE 0 END) * (CASE WHEN (planned_minutes - downtime_minutes) > 0 AND total_units > 0 THEN LEAST(1.0, ideal_cycle_sec * total_units * 1.0 / ((planned_minutes - downtime_minutes) * 60)) ELSE 0 END) * (CASE WHEN total_units > 0 THEN good_units * 1.0 / total_units ELSE 0 END) * 100 ELSE 0 END, 0) AS INT) AS oee_pct FROM mes_oee_shift WHERE id = CAST(? AS uuid)\",\"params\":[\"${input.shiftId}\"]},{\"type\":\"failIfNull\",\"var\":\"kpi\",\"message\":\"Shift not found\"},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"lineCode\":\"${kpi.line_code}\",\"shiftLabel\":\"${kpi.shift_label}\",\"availabilityPct\":\"${kpi.availability_pct}\",\"performancePct\":\"${kpi.performance_pct}\",\"qualityPct\":\"${kpi.quality_pct}\",\"oeePct\":\"${kpi.oee_pct}\"}}]}"
       }
     },
     {
@@ -310,7 +411,7 @@
       },
       "source": {
         "type": "script",
-        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"shift\",\"sql\":\"SELECT id, downtime_minutes, planned_minutes FROM mes_oee_shift WHERE id = ?\",\"params\":[\"${input.shiftId}\"]},{\"type\":\"failIfNull\",\"var\":\"shift\",\"message\":\"Shift not found\"},{\"type\":\"exec\",\"sql\":\"UPDATE mes_oee_shift SET downtime_minutes = LEAST(planned_minutes, downtime_minutes + ?) WHERE id = ?\",\"params\":[\"${input.minutes}\",\"${input.shiftId}\"]},{\"type\":\"selectOne\",\"var\":\"updated\",\"sql\":\"SELECT downtime_minutes FROM mes_oee_shift WHERE id = ?\",\"params\":[\"${input.shiftId}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"downtimeMinutes\":\"${updated.downtime_minutes}\"}}]}"
+        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"shift\",\"sql\":\"SELECT id, downtime_minutes, planned_minutes FROM mes_oee_shift WHERE id = CAST(? AS uuid)\",\"params\":[\"${input.shiftId}\"]},{\"type\":\"failIfNull\",\"var\":\"shift\",\"message\":\"Shift not found\"},{\"type\":\"exec\",\"sql\":\"UPDATE mes_oee_shift SET downtime_minutes = LEAST(planned_minutes, downtime_minutes + ?) WHERE id = CAST(? AS uuid)\",\"params\":[\"${input.minutes}\",\"${input.shiftId}\"]},{\"type\":\"selectOne\",\"var\":\"updated\",\"sql\":\"SELECT downtime_minutes FROM mes_oee_shift WHERE id = CAST(? AS uuid)\",\"params\":[\"${input.shiftId}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"downtimeMinutes\":\"${updated.downtime_minutes}\"}}]}"
       }
     },
     {
@@ -372,11 +473,13 @@
           "fields": [
             {
               "name": "workOrderPath",
-              "type": "STRING", "nullable": true
+              "type": "STRING",
+              "nullable": true
             },
             {
               "name": "operatorId",
-              "type": "STRING", "nullable": true
+              "type": "STRING",
+              "nullable": true
             }
           ]
         },
@@ -397,7 +500,8 @@
             },
             {
               "name": "workOrderPath",
-              "type": "STRING", "nullable": true
+              "type": "STRING",
+              "nullable": true
             }
           ]
         }
@@ -458,6 +562,64 @@
       "source": {
         "type": "script",
         "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"samples\",\"sql\":\"SELECT id::text AS sample_id, line_code, measurement_mm, sample_ts::text AS sample_ts FROM mes_spc_sample ORDER BY sample_ts DESC LIMIT 20\"},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${samples}\",\"fields\":{\"sampleId\":\"${item.sample_id}\",\"lineCode\":\"${item.line_code}\",\"measurementMm\":\"${item.measurement_mm}\",\"sampleTs\":\"${item.sample_ts}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "functionName": "mes_quality_autoHold",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "batchId",
+              "type": "STRING"
+            },
+            {
+              "name": "measurement",
+              "type": "DOUBLE"
+            },
+            {
+              "name": "ucl",
+              "type": "DOUBLE"
+            },
+            {
+              "name": "lcl",
+              "type": "DOUBLE"
+            },
+            {
+              "name": "reason",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "phase",
+              "type": "STRING"
+            },
+            {
+              "name": "holdReason",
+              "type": "STRING",
+              "nullable": true
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"batch\",\"sql\":\"SELECT batch_path, phase FROM mes_batch_run WHERE batch_id = ?\",\"params\":[\"${input.batchId}\"]},{\"type\":\"failIfNull\",\"var\":\"batch\"},{\"type\":\"exec\",\"sql\":\"UPDATE mes_batch_run SET phase = 'hold', hold_reason = ?, updated_at = CURRENT_TIMESTAMP WHERE batch_id = ? AND (CAST(? AS DOUBLE PRECISION) > CAST(? AS DOUBLE PRECISION) OR CAST(? AS DOUBLE PRECISION) < CAST(? AS DOUBLE PRECISION))\",\"params\":[\"${input.reason}\",\"${input.batchId}\",\"${input.measurement}\",\"${input.ucl}\",\"${input.measurement}\",\"${input.lcl}\"]},{\"type\":\"selectOne\",\"var\":\"after\",\"sql\":\"SELECT phase, hold_reason FROM mes_batch_run WHERE batch_id = ?\",\"params\":[\"${input.batchId}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"phase\":\"${after.phase}\",\"holdReason\":\"${after.hold_reason}\"}}]}"
       }
     },
     {
@@ -1402,6 +1564,1873 @@
         "type": "script",
         "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"operation\",\"sql\":\"SELECT operation_id FROM mes_operation_status WHERE wo_number = ? AND operation_id = ?\",\"params\":[\"${input.workOrderNumber}\",\"${input.operationId}\"]},{\"type\":\"failIfNull\",\"var\":\"operation\",\"message\":\"Operation status not found\"},{\"type\":\"exec\",\"sql\":\"UPDATE mes_operation_status SET status = 'complete' WHERE wo_number = ? AND operation_id = ?\",\"params\":[\"${input.workOrderNumber}\",\"${input.operationId}\"]},{\"type\":\"exec\",\"sql\":\"UPDATE mes_operation_status SET status = 'ready' WHERE wo_number = ? AND status = 'pending' AND operation_id IN (SELECT e.successor_op FROM mes_operation_edge e WHERE e.predecessor_op = ? AND NOT EXISTS (SELECT 1 FROM mes_operation_edge pe LEFT JOIN mes_operation_status ps ON ps.wo_number = ? AND ps.operation_id = pe.predecessor_op WHERE pe.routing_id = e.routing_id AND pe.successor_op = e.successor_op AND (ps.status IS NULL OR ps.status <> 'complete')))\",\"params\":[\"${input.workOrderNumber}\",\"${input.operationId}\",\"${input.workOrderNumber}\"]},{\"type\":\"selectMany\",\"var\":\"ready\",\"sql\":\"SELECT s.wo_number, d.operation_id, d.routing_id, d.name, d.work_center, d.sequence_no, s.status FROM mes_operation_status s JOIN mes_operation_def d ON d.operation_id = s.operation_id WHERE s.wo_number = ? AND s.status = 'ready' AND NOT EXISTS (SELECT 1 FROM mes_operation_edge e LEFT JOIN mes_operation_status ps ON ps.wo_number = s.wo_number AND ps.operation_id = e.predecessor_op WHERE e.routing_id = d.routing_id AND e.successor_op = s.operation_id AND (ps.status IS NULL OR ps.status <> 'complete')) ORDER BY d.sequence_no\",\"params\":[\"${input.workOrderNumber}\"]},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${ready}\",\"fields\":{\"workOrderNumber\":\"${item.wo_number}\",\"operationId\":\"${item.operation_id}\",\"routingId\":\"${item.routing_id}\",\"name\":\"${item.name}\",\"workCenter\":\"${item.work_center}\",\"sequenceNo\":\"${item.sequence_no}\",\"status\":\"${item.status}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"workOrderNumber\":\"${input.workOrderNumber}\",\"operationId\":\"${input.operationId}\",\"rows\":\"${rows}\"}}]}"
       }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "functionName": "mes_plan_getDataReadiness",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "siteCode",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "status",
+              "type": "STRING"
+            },
+            {
+              "name": "staleCount",
+              "type": "STRING"
+            },
+            {
+              "name": "assetCount",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"row\",\"sql\":\"SELECT CAST(COUNT(*) AS VARCHAR(16)) AS asset_count, CAST(COALESCE(SUM(CASE WHEN freshness <> 'fresh' THEN 1 ELSE 0 END), 0) AS VARCHAR(16)) AS stale_count FROM mes_exec_asset WHERE site_code = ?\",\"params\":[\"${input.siteCode}\"]},{\"type\":\"setVar\",\"var\":\"status\",\"value\":\"ready\"},{\"type\":\"if\",\"var\":\"row.stale_count\",\"notEquals\":\"0\",\"then\":[{\"type\":\"setVar\",\"var\":\"status\",\"value\":\"partial\"}]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"status\":\"${status}\",\"staleCount\":\"${row.stale_count}\",\"assetCount\":\"${row.asset_count}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "functionName": "mes_plan_listAssets",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "siteCode",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "asset_row",
+                "fields": [
+                  {
+                    "name": "assetId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "displayName",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "freshness",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "status",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "sourceName",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"assets\",\"sql\":\"SELECT asset_id, display_name, freshness, status, source_name FROM mes_exec_asset WHERE site_code = ? ORDER BY asset_id\",\"params\":[\"${input.siteCode}\"]},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${assets}\",\"fields\":{\"assetId\":\"${item.asset_id}\",\"displayName\":\"${item.display_name}\",\"freshness\":\"${item.freshness}\",\"status\":\"${item.status}\",\"sourceName\":\"${item.source_name}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "functionName": "mes_plan_listResources",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "siteCode",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "resource_row",
+                "fields": [
+                  {
+                    "name": "resourceId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "resourceType",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "qty",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "reservedQty",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "freeQty",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "dataStatus",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "qualityStatus",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "freshness",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"resources\",\"sql\":\"SELECT resource_id, resource_type, CAST(qty AS VARCHAR(32)) AS qty, CAST(reserved_qty AS VARCHAR(32)) AS reserved_qty, CAST(qty - reserved_qty AS VARCHAR(32)) AS free_qty, data_status, quality_status, freshness FROM mes_exec_resource WHERE site_code = ? ORDER BY resource_id\",\"params\":[\"${input.siteCode}\"]},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${resources}\",\"fields\":{\"resourceId\":\"${item.resource_id}\",\"resourceType\":\"${item.resource_type}\",\"qty\":\"${item.qty}\",\"reservedQty\":\"${item.reserved_qty}\",\"freeQty\":\"${item.free_qty}\",\"dataStatus\":\"${item.data_status}\",\"qualityStatus\":\"${item.quality_status}\",\"freshness\":\"${item.freshness}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "functionName": "mes_plan_confirmResource",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "resourceId",
+              "type": "STRING"
+            },
+            {
+              "name": "actor",
+              "type": "STRING"
+            },
+            {
+              "name": "reason",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "resourceId",
+              "type": "STRING"
+            },
+            {
+              "name": "dataStatus",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"exec\",\"sql\":\"UPDATE mes_exec_resource SET data_status = 'confirmed', freshness = 'fresh', owner_role = ?, comment_text = ? WHERE resource_id = ?\",\"params\":[\"${input.actor}\",\"${input.reason}\",\"${input.resourceId}\"]},{\"type\":\"selectOne\",\"var\":\"res\",\"sql\":\"SELECT resource_id, data_status FROM mes_exec_resource WHERE resource_id = ?\",\"params\":[\"${input.resourceId}\"]},{\"type\":\"failIfNull\",\"var\":\"res\",\"message\":\"Resource not found\"},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"resourceId\":\"${res.resource_id}\",\"dataStatus\":\"${res.data_status}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "functionName": "mes_plan_reserveSoft",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "reserveId",
+              "type": "STRING"
+            },
+            {
+              "name": "resourceId",
+              "type": "STRING"
+            },
+            {
+              "name": "pubId",
+              "type": "STRING"
+            },
+            {
+              "name": "qty",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "reserveId",
+              "type": "STRING"
+            },
+            {
+              "name": "status",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"existing\",\"sql\":\"SELECT reserve_id FROM mes_exec_reserve WHERE reserve_id = ?\",\"params\":[\"${input.reserveId}\"]},{\"type\":\"if\",\"var\":\"existing.reserve_id\",\"notNull\":true,\"then\":[{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"reserveId\":\"${input.reserveId}\",\"status\":\"already_reserved\"}}]},{\"type\":\"selectOne\",\"var\":\"gate\",\"sql\":\"SELECT quality_status, data_status, CASE WHEN (qty - reserved_qty) >= ? THEN 'yes' ELSE 'no' END AS enough FROM mes_exec_resource WHERE resource_id = ?\",\"params\":[\"${input.qty}\",\"${input.resourceId}\"]},{\"type\":\"failIfNull\",\"var\":\"gate\",\"message\":\"Resource not found\"},{\"type\":\"if\",\"var\":\"gate.quality_status\",\"equals\":\"blocked\",\"then\":[{\"type\":\"return\",\"fields\":{\"error_code\":\"BLOCKED\",\"error_message\":\"Quality block forbids reservation\",\"reserveId\":\"\",\"status\":\"blocked\"}}]},{\"type\":\"if\",\"var\":\"gate.data_status\",\"notEquals\":\"confirmed\",\"then\":[{\"type\":\"return\",\"fields\":{\"error_code\":\"BLOCKED\",\"error_message\":\"Resource is not confirmed\",\"reserveId\":\"\",\"status\":\"unconfirmed\"}}]},{\"type\":\"if\",\"var\":\"gate.enough\",\"equals\":\"no\",\"then\":[{\"type\":\"return\",\"fields\":{\"error_code\":\"BLOCKED\",\"error_message\":\"Not enough free quantity\",\"reserveId\":\"\",\"status\":\"short\"}}]},{\"type\":\"exec\",\"sql\":\"UPDATE mes_exec_resource SET reserved_qty = reserved_qty + ? WHERE resource_id = ?\",\"params\":[\"${input.qty}\",\"${input.resourceId}\"]},{\"type\":\"exec\",\"sql\":\"INSERT INTO mes_exec_reserve (reserve_id, resource_id, pub_id, qty) VALUES (?, ?, ?, ?)\",\"params\":[\"${input.reserveId}\",\"${input.resourceId}\",\"${input.pubId}\",\"${input.qty}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"reserveId\":\"${input.reserveId}\",\"status\":\"reserved\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "functionName": "mes_plan_releaseReserve",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "reserveId",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "status",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"hold\",\"sql\":\"SELECT reserve_id, resource_id, CAST(qty AS VARCHAR(32)) AS qty FROM mes_exec_reserve WHERE reserve_id = ?\",\"params\":[\"${input.reserveId}\"]},{\"type\":\"if\",\"var\":\"hold\",\"notNull\":false,\"then\":[{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"status\":\"already_released\"}}]},{\"type\":\"exec\",\"sql\":\"UPDATE mes_exec_resource SET reserved_qty = reserved_qty - ? WHERE resource_id = ?\",\"params\":[\"${hold.qty}\",\"${hold.resource_id}\"]},{\"type\":\"exec\",\"sql\":\"DELETE FROM mes_exec_reserve WHERE reserve_id = ?\",\"params\":[\"${input.reserveId}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"status\":\"released\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "functionName": "mes_plan_ingestCandidate",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "candidateId",
+              "type": "STRING"
+            },
+            {
+              "name": "siteCode",
+              "type": "STRING"
+            },
+            {
+              "name": "skuCode",
+              "type": "STRING"
+            },
+            {
+              "name": "plannedQty",
+              "type": "STRING"
+            },
+            {
+              "name": "uom",
+              "type": "STRING"
+            },
+            {
+              "name": "qualityStatus",
+              "type": "STRING"
+            },
+            {
+              "name": "idempotencyKey",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "candidateId",
+              "type": "STRING"
+            },
+            {
+              "name": "validationStatus",
+              "type": "STRING"
+            },
+            {
+              "name": "idempotencyKey",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"exec\",\"sql\":\"INSERT INTO mes_exec_inbox (message_id, message_type, idempotency_key, payload_json, status) SELECT ?, 'IF-04', ?, ?, 'received' WHERE NOT EXISTS (SELECT 1 FROM mes_exec_inbox WHERE idempotency_key = ?)\",\"params\":[\"${input.candidateId}\",\"${input.idempotencyKey}\",\"${input.candidateId}\",\"${input.idempotencyKey}\"]},{\"type\":\"exec\",\"sql\":\"INSERT INTO mes_exec_candidate (candidate_id, site_code, sku_code, planned_qty, uom, quality_status, validation_status, validation_message, idempotency_key) SELECT ?, ?, ?, ?, ?, ?, 'received', '', ? WHERE NOT EXISTS (SELECT 1 FROM mes_exec_candidate WHERE idempotency_key = ?)\",\"params\":[\"${input.candidateId}\",\"${input.siteCode}\",\"${input.skuCode}\",\"${input.plannedQty}\",\"${input.uom}\",\"${input.qualityStatus}\",\"${input.idempotencyKey}\",\"${input.idempotencyKey}\"]},{\"type\":\"selectOne\",\"var\":\"row\",\"sql\":\"SELECT candidate_id, validation_status, idempotency_key FROM mes_exec_candidate WHERE idempotency_key = ?\",\"params\":[\"${input.idempotencyKey}\"]},{\"type\":\"failIfNull\",\"var\":\"row\",\"message\":\"Candidate was not stored\"},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"candidateId\":\"${row.candidate_id}\",\"validationStatus\":\"${row.validation_status}\",\"idempotencyKey\":\"${row.idempotency_key}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "functionName": "mes_plan_listCandidates",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "siteCode",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "candidate_row",
+                "fields": [
+                  {
+                    "name": "candidateId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "skuCode",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "plannedQty",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "qualityStatus",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "validationStatus",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"cands\",\"sql\":\"SELECT candidate_id, sku_code, CAST(planned_qty AS VARCHAR(32)) AS planned_qty, quality_status, validation_status FROM mes_exec_candidate WHERE site_code = ? ORDER BY created_at\",\"params\":[\"${input.siteCode}\"]},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${cands}\",\"fields\":{\"candidateId\":\"${item.candidate_id}\",\"skuCode\":\"${item.sku_code}\",\"plannedQty\":\"${item.planned_qty}\",\"qualityStatus\":\"${item.quality_status}\",\"validationStatus\":\"${item.validation_status}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "functionName": "mes_plan_validate",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "candidateId",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "candidateId",
+              "type": "STRING"
+            },
+            {
+              "name": "validationStatus",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"row\",\"sql\":\"SELECT c.candidate_id, CASE WHEN c.quality_status = 'blocked' OR COALESCE(s.quality_status, 'released') = 'blocked' THEN 'blocked' ELSE 'ok' END AS gate FROM mes_exec_candidate c LEFT JOIN mes_exec_sku s ON s.sku_code = c.sku_code WHERE c.candidate_id = ?\",\"params\":[\"${input.candidateId}\"]},{\"type\":\"failIfNull\",\"var\":\"row\",\"message\":\"Candidate not found\"},{\"type\":\"if\",\"var\":\"row.gate\",\"equals\":\"blocked\",\"then\":[{\"type\":\"exec\",\"sql\":\"UPDATE mes_exec_candidate SET validation_status = 'rejected', validation_message = 'Quality block forbids publication' WHERE candidate_id = ?\",\"params\":[\"${input.candidateId}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"BLOCKED\",\"error_message\":\"Quality block forbids publication\",\"candidateId\":\"${input.candidateId}\",\"validationStatus\":\"rejected\"}}]},{\"type\":\"exec\",\"sql\":\"UPDATE mes_exec_candidate SET validation_status = 'ready', validation_message = '' WHERE candidate_id = ?\",\"params\":[\"${input.candidateId}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"candidateId\":\"${input.candidateId}\",\"validationStatus\":\"ready\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "functionName": "mes_plan_publish",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "candidateId",
+              "type": "STRING"
+            },
+            {
+              "name": "actor",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "pubId",
+              "type": "STRING"
+            },
+            {
+              "name": "snapshotId",
+              "type": "STRING"
+            },
+            {
+              "name": "status",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"existing\",\"sql\":\"SELECT pub_id, snapshot_id, status FROM mes_exec_pub WHERE candidate_id = ? AND status <> 'cancelled'\",\"params\":[\"${input.candidateId}\"]},{\"type\":\"if\",\"var\":\"existing.pub_id\",\"notNull\":true,\"then\":[{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"pubId\":\"${existing.pub_id}\",\"snapshotId\":\"${existing.snapshot_id}\",\"status\":\"${existing.status}\"}}]},{\"type\":\"selectOne\",\"var\":\"cand\",\"sql\":\"SELECT candidate_id, site_code, sku_code, CAST(planned_qty AS VARCHAR(32)) AS planned_qty, uom, quality_status, validation_status FROM mes_exec_candidate WHERE candidate_id = ?\",\"params\":[\"${input.candidateId}\"]},{\"type\":\"failIfNull\",\"var\":\"cand\",\"message\":\"Candidate not found\"},{\"type\":\"if\",\"var\":\"cand.validation_status\",\"notEquals\":\"ready\",\"then\":[{\"type\":\"return\",\"fields\":{\"error_code\":\"BLOCKED\",\"error_message\":\"Candidate is not ready to publish\",\"pubId\":\"\",\"snapshotId\":\"\",\"status\":\"rejected\"}}]},{\"type\":\"if\",\"var\":\"cand.quality_status\",\"equals\":\"blocked\",\"then\":[{\"type\":\"return\",\"fields\":{\"error_code\":\"BLOCKED\",\"error_message\":\"Quality block forbids publication\",\"pubId\":\"\",\"snapshotId\":\"\",\"status\":\"rejected\"}}]},{\"type\":\"selectOne\",\"var\":\"ids\",\"sql\":\"SELECT CONCAT('PUB-', ?) AS pub_id, CONCAT('SNAP-', ?) AS snapshot_id\",\"params\":[\"${input.candidateId}\",\"${input.candidateId}\"]},{\"type\":\"exec\",\"sql\":\"INSERT INTO mes_exec_snapshot (snapshot_id, pub_id, payload_json, payload_hash) SELECT ?, ?, ?, ? WHERE NOT EXISTS (SELECT 1 FROM mes_exec_snapshot WHERE snapshot_id = ?)\",\"params\":[\"${ids.snapshot_id}\",\"${ids.pub_id}\",\"${cand.candidate_id}\",\"${input.candidateId}\",\"${ids.snapshot_id}\"]},{\"type\":\"exec\",\"sql\":\"INSERT INTO mes_exec_pub (pub_id, pub_version, candidate_id, previous_pub_id, site_code, sku_code, planned_qty, uom, status, shop_status, snapshot_id, reason_text) SELECT ?, 1, ?, NULL, ?, ?, ?, ?, 'published', 'awaiting_shop', ?, ? WHERE NOT EXISTS (SELECT 1 FROM mes_exec_pub WHERE pub_id = ?)\",\"params\":[\"${ids.pub_id}\",\"${cand.candidate_id}\",\"${cand.site_code}\",\"${cand.sku_code}\",\"${cand.planned_qty}\",\"${cand.uom}\",\"${ids.snapshot_id}\",\"${input.actor}\",\"${ids.pub_id}\"]},{\"type\":\"exec\",\"sql\":\"INSERT INTO mes_exec_delivery (delivery_id, pub_id, recipient_code, status) SELECT CONCAT(?, ':SPP'), ?, 'SPP', 'pending' WHERE NOT EXISTS (SELECT 1 FROM mes_exec_delivery WHERE pub_id = ? AND recipient_code = 'SPP')\",\"params\":[\"${ids.pub_id}\",\"${ids.pub_id}\",\"${ids.pub_id}\"]},{\"type\":\"exec\",\"sql\":\"INSERT INTO mes_exec_delivery (delivery_id, pub_id, recipient_code, status) SELECT CONCAT(?, ':SHOP'), ?, 'SHOP', 'pending' WHERE NOT EXISTS (SELECT 1 FROM mes_exec_delivery WHERE pub_id = ? AND recipient_code = 'SHOP')\",\"params\":[\"${ids.pub_id}\",\"${ids.pub_id}\",\"${ids.pub_id}\"]},{\"type\":\"exec\",\"sql\":\"INSERT INTO mes_erp_outbox (id, entity_type, entity_id, payload_json, idempotency_key, status) SELECT RANDOM_UUID(), 'IF-05', ?, ?, CONCAT('IF-05:', ?), 'pending' WHERE NOT EXISTS (SELECT 1 FROM mes_erp_outbox WHERE idempotency_key = CONCAT('IF-05:', ?))\",\"params\":[\"${ids.pub_id}\",\"${ids.snapshot_id}\",\"${ids.pub_id}\",\"${ids.pub_id}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"pubId\":\"${ids.pub_id}\",\"snapshotId\":\"${ids.snapshot_id}\",\"status\":\"published\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "functionName": "mes_plan_republish",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "pubId",
+              "type": "STRING"
+            },
+            {
+              "name": "reason",
+              "type": "STRING"
+            },
+            {
+              "name": "actor",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "pubId",
+              "type": "STRING"
+            },
+            {
+              "name": "previousPubId",
+              "type": "STRING"
+            },
+            {
+              "name": "status",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"again\",\"sql\":\"SELECT pub_id, status FROM mes_exec_pub WHERE previous_pub_id = ?\",\"params\":[\"${input.pubId}\"]},{\"type\":\"if\",\"var\":\"again.pub_id\",\"notNull\":true,\"then\":[{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"pubId\":\"${again.pub_id}\",\"previousPubId\":\"${input.pubId}\",\"status\":\"${again.status}\"}}]},{\"type\":\"selectOne\",\"var\":\"old\",\"sql\":\"SELECT pub_id, candidate_id, site_code, sku_code, CAST(planned_qty AS VARCHAR(32)) AS planned_qty, uom FROM mes_exec_pub WHERE pub_id = ?\",\"params\":[\"${input.pubId}\"]},{\"type\":\"failIfNull\",\"var\":\"old\",\"message\":\"Published plan not found\"},{\"type\":\"selectOne\",\"var\":\"ids\",\"sql\":\"SELECT CONCAT(?, '-R2') AS new_pub, CONCAT(CONCAT('SNAP-', ?), '-R2') AS new_snap\",\"params\":[\"${input.pubId}\",\"${input.pubId}\"]},{\"type\":\"exec\",\"sql\":\"INSERT INTO mes_exec_snapshot (snapshot_id, pub_id, payload_json, payload_hash) VALUES (?, ?, ?, 'R2')\",\"params\":[\"${ids.new_snap}\",\"${ids.new_pub}\",\"${old.pub_id}\"]},{\"type\":\"exec\",\"sql\":\"INSERT INTO mes_exec_pub (pub_id, pub_version, candidate_id, previous_pub_id, site_code, sku_code, planned_qty, uom, status, shop_status, snapshot_id, reason_text) VALUES (?, 2, ?, ?, ?, ?, ?, ?, 'published', 'awaiting_shop', ?, ?)\",\"params\":[\"${ids.new_pub}\",\"${old.candidate_id}\",\"${old.pub_id}\",\"${old.site_code}\",\"${old.sku_code}\",\"${old.planned_qty}\",\"${old.uom}\",\"${ids.new_snap}\",\"${input.reason}\"]},{\"type\":\"exec\",\"sql\":\"UPDATE mes_exec_pub SET status = 'replaced' WHERE pub_id = ?\",\"params\":[\"${input.pubId}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"pubId\":\"${ids.new_pub}\",\"previousPubId\":\"${input.pubId}\",\"status\":\"published\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "functionName": "mes_plan_cancel",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "pubId",
+              "type": "STRING"
+            },
+            {
+              "name": "reason",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "pubId",
+              "type": "STRING"
+            },
+            {
+              "name": "status",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"exec\",\"sql\":\"UPDATE mes_exec_pub SET status = 'cancelled', reason_text = ? WHERE pub_id = ?\",\"params\":[\"${input.reason}\",\"${input.pubId}\"]},{\"type\":\"selectMany\",\"var\":\"holds\",\"sql\":\"SELECT resource_id, CAST(qty AS VARCHAR(32)) AS qty FROM mes_exec_reserve WHERE pub_id = ?\",\"params\":[\"${input.pubId}\"]},{\"type\":\"for_each_row\",\"source\":\"${holds}\",\"rowVar\":\"hold\",\"steps\":[{\"type\":\"exec\",\"sql\":\"UPDATE mes_exec_resource SET reserved_qty = reserved_qty - ? WHERE resource_id = ?\",\"params\":[\"${hold.qty}\",\"${hold.resource_id}\"]}]},{\"type\":\"exec\",\"sql\":\"DELETE FROM mes_exec_reserve WHERE pub_id = ?\",\"params\":[\"${input.pubId}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"pubId\":\"${input.pubId}\",\"status\":\"cancelled\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "functionName": "mes_plan_acceptPub",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "pubId",
+              "type": "STRING"
+            },
+            {
+              "name": "actor",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "pubId",
+              "type": "STRING"
+            },
+            {
+              "name": "shopStatus",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"exec\",\"sql\":\"UPDATE mes_exec_pub SET shop_status = 'accepted', reason_text = ? WHERE pub_id = ?\",\"params\":[\"${input.actor}\",\"${input.pubId}\"]},{\"type\":\"selectOne\",\"var\":\"row\",\"sql\":\"SELECT pub_id, shop_status FROM mes_exec_pub WHERE pub_id = ?\",\"params\":[\"${input.pubId}\"]},{\"type\":\"failIfNull\",\"var\":\"row\",\"message\":\"Published plan not found\"},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"pubId\":\"${row.pub_id}\",\"shopStatus\":\"${row.shop_status}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "functionName": "mes_plan_rejectPub",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "pubId",
+              "type": "STRING"
+            },
+            {
+              "name": "reason",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "pubId",
+              "type": "STRING"
+            },
+            {
+              "name": "shopStatus",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"if\",\"var\":\"input.reason\",\"equals\":\"\",\"then\":[{\"type\":\"return\",\"fields\":{\"error_code\":\"BLOCKED\",\"error_message\":\"Rejection requires a reason\",\"pubId\":\"${input.pubId}\",\"shopStatus\":\"\"}}]},{\"type\":\"exec\",\"sql\":\"UPDATE mes_exec_pub SET shop_status = 'rejected', reason_text = ? WHERE pub_id = ?\",\"params\":[\"${input.reason}\",\"${input.pubId}\"]},{\"type\":\"selectOne\",\"var\":\"row\",\"sql\":\"SELECT pub_id, shop_status FROM mes_exec_pub WHERE pub_id = ?\",\"params\":[\"${input.pubId}\"]},{\"type\":\"failIfNull\",\"var\":\"row\",\"message\":\"Published plan not found\"},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"pubId\":\"${row.pub_id}\",\"shopStatus\":\"${row.shop_status}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "functionName": "mes_plan_listPubs",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "siteCode",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "pub_row",
+                "fields": [
+                  {
+                    "name": "pubId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "skuCode",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "plannedQty",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "status",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "shopStatus",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "snapshotId",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"pubs\",\"sql\":\"SELECT pub_id, sku_code, CAST(planned_qty AS VARCHAR(32)) AS planned_qty, status, shop_status, snapshot_id FROM mes_exec_pub WHERE site_code = ? ORDER BY published_at\",\"params\":[\"${input.siteCode}\"]},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${pubs}\",\"fields\":{\"pubId\":\"${item.pub_id}\",\"skuCode\":\"${item.sku_code}\",\"plannedQty\":\"${item.planned_qty}\",\"status\":\"${item.status}\",\"shopStatus\":\"${item.shop_status}\",\"snapshotId\":\"${item.snapshot_id}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "functionName": "mes_plan_getPub",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "pubId",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "pubId",
+              "type": "STRING"
+            },
+            {
+              "name": "status",
+              "type": "STRING"
+            },
+            {
+              "name": "shopStatus",
+              "type": "STRING"
+            },
+            {
+              "name": "snapshotId",
+              "type": "STRING"
+            },
+            {
+              "name": "plannedQty",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"row\",\"sql\":\"SELECT pub_id, status, shop_status, snapshot_id, CAST(planned_qty AS VARCHAR(32)) AS planned_qty FROM mes_exec_pub WHERE pub_id = ?\",\"params\":[\"${input.pubId}\"]},{\"type\":\"failIfNull\",\"var\":\"row\",\"message\":\"Published plan not found\"},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"pubId\":\"${row.pub_id}\",\"status\":\"${row.status}\",\"shopStatus\":\"${row.shop_status}\",\"snapshotId\":\"${row.snapshot_id}\",\"plannedQty\":\"${row.planned_qty}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "functionName": "mes_plan_recordFact",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "factId",
+              "type": "STRING"
+            },
+            {
+              "name": "pubId",
+              "type": "STRING"
+            },
+            {
+              "name": "actualQty",
+              "type": "STRING"
+            },
+            {
+              "name": "delayMinutes",
+              "type": "STRING"
+            },
+            {
+              "name": "reasonCode",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "factId",
+              "type": "STRING"
+            },
+            {
+              "name": "deviationId",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"pub\",\"sql\":\"SELECT pub_id, sku_code FROM mes_exec_pub WHERE pub_id = ?\",\"params\":[\"${input.pubId}\"]},{\"type\":\"failIfNull\",\"var\":\"pub\",\"message\":\"Published plan not found\"},{\"type\":\"exec\",\"sql\":\"INSERT INTO mes_exec_fact (fact_id, pub_id, sku_code, actual_qty, delay_minutes, reason_code) SELECT ?, ?, ?, ?, ?, ? WHERE NOT EXISTS (SELECT 1 FROM mes_exec_fact WHERE fact_id = ?)\",\"params\":[\"${input.factId}\",\"${input.pubId}\",\"${pub.sku_code}\",\"${input.actualQty}\",\"${input.delayMinutes}\",\"${input.reasonCode}\",\"${input.factId}\"]},{\"type\":\"selectOne\",\"var\":\"late\",\"sql\":\"SELECT CASE WHEN ? > 30 THEN 'yes' ELSE 'no' END AS flag\",\"params\":[\"${input.delayMinutes}\"]},{\"type\":\"setVar\",\"var\":\"deviationId\",\"value\":\"\"},{\"type\":\"if\",\"var\":\"late.flag\",\"equals\":\"yes\",\"then\":[{\"type\":\"exec\",\"sql\":\"INSERT INTO mes_exec_deviation (deviation_id, pub_id, severity, reason_code, delay_minutes, status) SELECT CONCAT(?, '-D'), ?, 'Warning', ?, ?, 'open' WHERE NOT EXISTS (SELECT 1 FROM mes_exec_deviation WHERE deviation_id = CONCAT(?, '-D'))\",\"params\":[\"${input.factId}\",\"${input.pubId}\",\"${input.reasonCode}\",\"${input.delayMinutes}\",\"${input.factId}\"]},{\"type\":\"selectOne\",\"var\":\"dev\",\"sql\":\"SELECT CONCAT(?, '-D') AS deviation_id\",\"params\":[\"${input.factId}\"]},{\"type\":\"setVar\",\"var\":\"deviationId\",\"value\":\"${dev.deviation_id}\"}]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"factId\":\"${input.factId}\",\"deviationId\":\"${deviationId}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "functionName": "mes_plan_planFact",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "pubId",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "plannedQty",
+              "type": "STRING"
+            },
+            {
+              "name": "actualQty",
+              "type": "STRING"
+            },
+            {
+              "name": "deltaQty",
+              "type": "STRING"
+            },
+            {
+              "name": "basis",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"row\",\"sql\":\"SELECT CAST(p.planned_qty AS VARCHAR(32)) AS planned_qty, CAST(COALESCE((SELECT SUM(f.actual_qty) FROM mes_exec_fact f WHERE f.pub_id = p.pub_id), 0) AS VARCHAR(32)) AS actual_qty, CAST(p.planned_qty - COALESCE((SELECT SUM(f.actual_qty) FROM mes_exec_fact f WHERE f.pub_id = p.pub_id), 0) AS VARCHAR(32)) AS delta_qty, CASE WHEN p.planned_qty = 0 THEN 'no_plan' ELSE 'comparable' END AS basis FROM mes_exec_pub p WHERE p.pub_id = ?\",\"params\":[\"${input.pubId}\"]},{\"type\":\"failIfNull\",\"var\":\"row\",\"message\":\"Published plan not found\"},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"plannedQty\":\"${row.planned_qty}\",\"actualQty\":\"${row.actual_qty}\",\"deltaQty\":\"${row.delta_qty}\",\"basis\":\"${row.basis}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "functionName": "mes_plan_listDeviations",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "pubId",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "deviation_row",
+                "fields": [
+                  {
+                    "name": "deviationId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "severity",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "reasonCode",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "delayMinutes",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "status",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"devs\",\"sql\":\"SELECT deviation_id, severity, reason_code, CAST(delay_minutes AS VARCHAR(16)) AS delay_minutes, status FROM mes_exec_deviation WHERE pub_id = ? ORDER BY deviation_id\",\"params\":[\"${input.pubId}\"]},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${devs}\",\"fields\":{\"deviationId\":\"${item.deviation_id}\",\"severity\":\"${item.severity}\",\"reasonCode\":\"${item.reason_code}\",\"delayMinutes\":\"${item.delay_minutes}\",\"status\":\"${item.status}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "functionName": "mes_plan_forecastLite",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "pubId",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "remainingQty",
+              "type": "STRING"
+            },
+            {
+              "name": "risk",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"row\",\"sql\":\"SELECT CAST(p.planned_qty - COALESCE((SELECT SUM(f.actual_qty) FROM mes_exec_fact f WHERE f.pub_id = p.pub_id), 0) AS VARCHAR(32)) AS remaining_qty, CASE WHEN COALESCE((SELECT MAX(f.delay_minutes) FROM mes_exec_fact f WHERE f.pub_id = p.pub_id), 0) > 30 THEN 'at_risk' ELSE 'on_plan' END AS risk FROM mes_exec_pub p WHERE p.pub_id = ?\",\"params\":[\"${input.pubId}\"]},{\"type\":\"failIfNull\",\"var\":\"row\",\"message\":\"Published plan not found\"},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"remainingQty\":\"${row.remaining_qty}\",\"risk\":\"${row.risk}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "functionName": "mes_plan_closePeriod",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "pubId",
+              "type": "STRING"
+            },
+            {
+              "name": "periodCode",
+              "type": "STRING"
+            },
+            {
+              "name": "toleranceQty",
+              "type": "STRING"
+            },
+            {
+              "name": "reasonCode",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "tailId",
+              "type": "STRING"
+            },
+            {
+              "name": "tailQty",
+              "type": "STRING"
+            },
+            {
+              "name": "status",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"closed\",\"sql\":\"SELECT close_id, status FROM mes_exec_period_close WHERE pub_id = ? AND period_code = ?\",\"params\":[\"${input.pubId}\",\"${input.periodCode}\"]},{\"type\":\"if\",\"var\":\"closed.close_id\",\"notNull\":true,\"then\":[{\"type\":\"selectOne\",\"var\":\"prior\",\"sql\":\"SELECT tail_id, CAST(tail_qty AS VARCHAR(32)) AS tail_qty FROM mes_exec_tail WHERE idempotency_key = CONCAT(?, CONCAT(':', ?))\",\"params\":[\"${input.pubId}\",\"${input.periodCode}\"]},{\"type\":\"setVar\",\"var\":\"tailId\",\"value\":\"\"},{\"type\":\"setVar\",\"var\":\"tailQty\",\"value\":\"0\"},{\"type\":\"if\",\"var\":\"prior.tail_id\",\"notNull\":true,\"then\":[{\"type\":\"setVar\",\"var\":\"tailId\",\"value\":\"${prior.tail_id}\"},{\"type\":\"setVar\",\"var\":\"tailQty\",\"value\":\"${prior.tail_qty}\"}]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"tailId\":\"${tailId}\",\"tailQty\":\"${tailQty}\",\"status\":\"${closed.status}\"}}]},{\"type\":\"selectOne\",\"var\":\"gap\",\"sql\":\"SELECT p.sku_code, p.uom, CAST(p.planned_qty - COALESCE((SELECT SUM(f.actual_qty) FROM mes_exec_fact f WHERE f.pub_id = p.pub_id), 0) AS VARCHAR(32)) AS tail_qty, CASE WHEN (p.planned_qty - COALESCE((SELECT SUM(f.actual_qty) FROM mes_exec_fact f WHERE f.pub_id = p.pub_id), 0)) > ? THEN 'yes' ELSE 'no' END AS over FROM mes_exec_pub p WHERE p.pub_id = ?\",\"params\":[\"${input.toleranceQty}\",\"${input.pubId}\"]},{\"type\":\"failIfNull\",\"var\":\"gap\",\"message\":\"Published plan not found\"},{\"type\":\"selectOne\",\"var\":\"ids\",\"sql\":\"SELECT CONCAT(?, CONCAT(':', ?)) AS tail_key, CONCAT('CLOSE-', CONCAT(?, CONCAT('-', ?))) AS close_id\",\"params\":[\"${input.pubId}\",\"${input.periodCode}\",\"${input.pubId}\",\"${input.periodCode}\"]},{\"type\":\"setVar\",\"var\":\"tailId\",\"value\":\"\"},{\"type\":\"if\",\"var\":\"gap.over\",\"equals\":\"yes\",\"then\":[{\"type\":\"exec\",\"sql\":\"INSERT INTO mes_exec_tail (tail_id, pub_id, sku_code, tail_qty, uom, reason_code, period_code, idempotency_key, status) SELECT ?, ?, ?, ?, ?, ?, ?, ?, 'open' WHERE NOT EXISTS (SELECT 1 FROM mes_exec_tail WHERE idempotency_key = ?)\",\"params\":[\"${ids.tail_key}\",\"${input.pubId}\",\"${gap.sku_code}\",\"${gap.tail_qty}\",\"${gap.uom}\",\"${input.reasonCode}\",\"${input.periodCode}\",\"${ids.tail_key}\",\"${ids.tail_key}\"]},{\"type\":\"setVar\",\"var\":\"tailId\",\"value\":\"${ids.tail_key}\"}]},{\"type\":\"exec\",\"sql\":\"INSERT INTO mes_exec_period_close (close_id, pub_id, period_code, status) SELECT ?, ?, ?, 'closed' WHERE NOT EXISTS (SELECT 1 FROM mes_exec_period_close WHERE pub_id = ? AND period_code = ?)\",\"params\":[\"${ids.close_id}\",\"${input.pubId}\",\"${input.periodCode}\",\"${input.pubId}\",\"${input.periodCode}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"tailId\":\"${tailId}\",\"tailQty\":\"${gap.tail_qty}\",\"status\":\"closed\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "functionName": "mes_plan_listTails",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "pubId",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "tail_row",
+                "fields": [
+                  {
+                    "name": "tailId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "tailQty",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "reasonCode",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "periodCode",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "status",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"tails\",\"sql\":\"SELECT tail_id, CAST(tail_qty AS VARCHAR(32)) AS tail_qty, reason_code, period_code, status FROM mes_exec_tail WHERE pub_id = ? ORDER BY tail_id\",\"params\":[\"${input.pubId}\"]},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${tails}\",\"fields\":{\"tailId\":\"${item.tail_id}\",\"tailQty\":\"${item.tail_qty}\",\"reasonCode\":\"${item.reason_code}\",\"periodCode\":\"${item.period_code}\",\"status\":\"${item.status}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "functionName": "mes_plan_openAlert",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "alertId",
+              "type": "STRING"
+            },
+            {
+              "name": "pubId",
+              "type": "STRING"
+            },
+            {
+              "name": "siteCode",
+              "type": "STRING"
+            },
+            {
+              "name": "severity",
+              "type": "STRING"
+            },
+            {
+              "name": "alertType",
+              "type": "STRING"
+            },
+            {
+              "name": "message",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "alertId",
+              "type": "STRING"
+            },
+            {
+              "name": "status",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"exec\",\"sql\":\"INSERT INTO mes_exec_alert (alert_id, pub_id, site_code, severity, alert_type, status, owner_role, message_text) SELECT ?, ?, ?, ?, ?, 'open', '', ? WHERE NOT EXISTS (SELECT 1 FROM mes_exec_alert WHERE alert_id = ?)\",\"params\":[\"${input.alertId}\",\"${input.pubId}\",\"${input.siteCode}\",\"${input.severity}\",\"${input.alertType}\",\"${input.message}\",\"${input.alertId}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"alertId\":\"${input.alertId}\",\"status\":\"open\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "functionName": "mes_plan_assignAlert",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "alertId",
+              "type": "STRING"
+            },
+            {
+              "name": "ownerRole",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "status",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"exec\",\"sql\":\"UPDATE mes_exec_alert SET owner_role = ?, status = 'in_progress' WHERE alert_id = ?\",\"params\":[\"${input.ownerRole}\",\"${input.alertId}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"status\":\"in_progress\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "functionName": "mes_plan_confirmRisk",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "alertId",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "status",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"exec\",\"sql\":\"UPDATE mes_exec_alert SET status = 'risk_confirmed' WHERE alert_id = ?\",\"params\":[\"${input.alertId}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"status\":\"risk_confirmed\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "functionName": "mes_plan_closeAlert",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "alertId",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "status",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"exec\",\"sql\":\"UPDATE mes_exec_alert SET status = 'closed' WHERE alert_id = ?\",\"params\":[\"${input.alertId}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"status\":\"closed\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "functionName": "mes_plan_listAlerts",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "siteCode",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "alert_row",
+                "fields": [
+                  {
+                    "name": "alertId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "severity",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "alertType",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "status",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "ownerRole",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "messageText",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"alerts\",\"sql\":\"SELECT alert_id, severity, alert_type, status, owner_role, message_text FROM mes_exec_alert WHERE site_code = ? ORDER BY alert_id\",\"params\":[\"${input.siteCode}\"]},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${alerts}\",\"fields\":{\"alertId\":\"${item.alert_id}\",\"severity\":\"${item.severity}\",\"alertType\":\"${item.alert_type}\",\"status\":\"${item.status}\",\"ownerRole\":\"${item.owner_role}\",\"messageText\":\"${item.message_text}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "functionName": "mes_plan_requestReplan",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "alertId",
+              "type": "STRING"
+            },
+            {
+              "name": "pubId",
+              "type": "STRING"
+            },
+            {
+              "name": "siteCode",
+              "type": "STRING"
+            },
+            {
+              "name": "reason",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "alertId",
+              "type": "STRING"
+            },
+            {
+              "name": "idempotencyKey",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"exec\",\"sql\":\"INSERT INTO mes_exec_alert (alert_id, pub_id, site_code, severity, alert_type, status, owner_role, message_text) SELECT ?, ?, ?, 'Critical', 'replan', 'open', 'planner', ? WHERE NOT EXISTS (SELECT 1 FROM mes_exec_alert WHERE alert_id = ?)\",\"params\":[\"${input.alertId}\",\"${input.pubId}\",\"${input.siteCode}\",\"${input.reason}\",\"${input.alertId}\"]},{\"type\":\"exec\",\"sql\":\"INSERT INTO mes_erp_outbox (id, entity_type, entity_id, payload_json, idempotency_key, status) SELECT RANDOM_UUID(), 'IF-07', ?, ?, CONCAT('IF-07:', ?), 'pending' WHERE NOT EXISTS (SELECT 1 FROM mes_erp_outbox WHERE idempotency_key = CONCAT('IF-07:', ?))\",\"params\":[\"${input.pubId}\",\"${input.reason}\",\"${input.alertId}\",\"${input.alertId}\"]},{\"type\":\"selectOne\",\"var\":\"key\",\"sql\":\"SELECT CONCAT('IF-07:', ?) AS idempotency_key\",\"params\":[\"${input.alertId}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"alertId\":\"${input.alertId}\",\"idempotencyKey\":\"${key.idempotency_key}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "functionName": "mes_plan_ackInbox",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "idempotencyKey",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "status",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"exec\",\"sql\":\"UPDATE mes_exec_inbox SET status = 'acked' WHERE idempotency_key = ?\",\"params\":[\"${input.idempotencyKey}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"status\":\"acked\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "functionName": "mes_plan_listDeliveries",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "pubId",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "delivery_row",
+                "fields": [
+                  {
+                    "name": "recipientCode",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "status",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "errorText",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"dels\",\"sql\":\"SELECT recipient_code, status, error_text FROM mes_exec_delivery WHERE pub_id = ? ORDER BY recipient_code\",\"params\":[\"${input.pubId}\"]},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${dels}\",\"fields\":{\"recipientCode\":\"${item.recipient_code}\",\"status\":\"${item.status}\",\"errorText\":\"${item.error_text}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "functionName": "mes_plan_setDelivery",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "pubId",
+              "type": "STRING"
+            },
+            {
+              "name": "recipientCode",
+              "type": "STRING"
+            },
+            {
+              "name": "status",
+              "type": "STRING"
+            },
+            {
+              "name": "errorText",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "status",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"exec\",\"sql\":\"UPDATE mes_exec_delivery SET status = ?, error_text = ?, updated_at = CURRENT_TIMESTAMP WHERE pub_id = ? AND recipient_code = ?\",\"params\":[\"${input.status}\",\"${input.errorText}\",\"${input.pubId}\",\"${input.recipientCode}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"status\":\"${input.status}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "functionName": "mes_plan_listDeliveriesBySite",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "siteCode",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "delivery_site_row",
+                "fields": [
+                  {
+                    "name": "pubId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "recipientCode",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "status",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "errorText",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"dels\",\"sql\":\"SELECT d.pub_id, d.recipient_code, d.status, d.error_text FROM mes_exec_delivery d JOIN mes_exec_pub p ON p.pub_id = d.pub_id WHERE p.site_code = ? ORDER BY d.pub_id, d.recipient_code\",\"params\":[\"${input.siteCode}\"]},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${dels}\",\"fields\":{\"pubId\":\"${item.pub_id}\",\"recipientCode\":\"${item.recipient_code}\",\"status\":\"${item.status}\",\"errorText\":\"${item.error_text}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "functionName": "mes_plan_listTailsBySite",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "siteCode",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "tail_site_row",
+                "fields": [
+                  {
+                    "name": "pubId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "tailId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "tailQty",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "reasonCode",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "periodCode",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "status",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"tails\",\"sql\":\"SELECT t.pub_id, t.tail_id, CAST(t.tail_qty AS VARCHAR(32)) AS tail_qty, t.reason_code, t.period_code, t.status FROM mes_exec_tail t JOIN mes_exec_pub p ON p.pub_id = t.pub_id WHERE p.site_code = ? ORDER BY t.tail_id\",\"params\":[\"${input.siteCode}\"]},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${tails}\",\"fields\":{\"pubId\":\"${item.pub_id}\",\"tailId\":\"${item.tail_id}\",\"tailQty\":\"${item.tail_qty}\",\"reasonCode\":\"${item.reason_code}\",\"periodCode\":\"${item.period_code}\",\"status\":\"${item.status}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "functionName": "mes_plan_listDeviationsBySite",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "siteCode",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "deviation_site_row",
+                "fields": [
+                  {
+                    "name": "pubId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "deviationId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "severity",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "reasonCode",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "delayMinutes",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "status",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"devs\",\"sql\":\"SELECT d.pub_id, d.deviation_id, d.severity, d.reason_code, CAST(d.delay_minutes AS VARCHAR(16)) AS delay_minutes, d.status FROM mes_exec_deviation d JOIN mes_exec_pub p ON p.pub_id = d.pub_id WHERE p.site_code = ? ORDER BY d.deviation_id\",\"params\":[\"${input.siteCode}\"]},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${devs}\",\"fields\":{\"pubId\":\"${item.pub_id}\",\"deviationId\":\"${item.deviation_id}\",\"severity\":\"${item.severity}\",\"reasonCode\":\"${item.reason_code}\",\"delayMinutes\":\"${item.delay_minutes}\",\"status\":\"${item.status}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "functionName": "mes_plan_planFactBySite",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "siteCode",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "plan_fact_row",
+                "fields": [
+                  {
+                    "name": "pubId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "skuCode",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "plannedQty",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "actualQty",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "deltaQty",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "risk",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"facts\",\"sql\":\"SELECT p.pub_id, p.sku_code,\\n                CAST(p.planned_qty AS VARCHAR(32)) AS planned_qty,\\n                CAST(COALESCE((SELECT SUM(f.actual_qty) FROM mes_exec_fact f WHERE f.pub_id = p.pub_id), 0) AS VARCHAR(32)) AS actual_qty,\\n                CAST(p.planned_qty - COALESCE((SELECT SUM(f.actual_qty) FROM mes_exec_fact f WHERE f.pub_id = p.pub_id), 0) AS VARCHAR(32)) AS delta_qty,\\n                CASE WHEN COALESCE((SELECT MAX(f.delay_minutes) FROM mes_exec_fact f WHERE f.pub_id = p.pub_id), 0) > 30 THEN 'at_risk' ELSE 'on_plan' END AS risk\\n                FROM mes_exec_pub p WHERE p.site_code = ? AND p.status <> 'cancelled' ORDER BY p.published_at\",\"params\":[\"${input.siteCode}\"]},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${facts}\",\"fields\":{\"pubId\":\"${item.pub_id}\",\"skuCode\":\"${item.sku_code}\",\"plannedQty\":\"${item.planned_qty}\",\"actualQty\":\"${item.actual_qty}\",\"deltaQty\":\"${item.delta_qty}\",\"risk\":\"${item.risk}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}"
+      }
     }
   ],
   "blueprints": [
@@ -1933,6 +3962,18 @@
       "bpmnXml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><definitions xmlns=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:ispf=\"http://ispf.io/bpmn\" targetNamespace=\"http://ispf.io/bpmn\"><process id=\"mes-work-order-dispatch\" name=\"MES Work Order Dispatch\" isExecutable=\"true\"><startEvent id=\"start\" name=\"Start\"/><serviceTask id=\"notifyDispatch\" name=\"Log dispatch\" ispf:action=\"log\" ispf:message=\"mes-platform: work order dispatched\"/><userTask id=\"confirmStart\" name=\"Confirm work order start\" ispf:title=\"Confirm work order start\" ispf:instructions=\"Review the dispatched work order and confirm operator acceptance\" ispf:assigneeRole=\"operator\" ispf:targetObject=\"root.platform.singleton-blueprints.mes-platform-hub-v1\" ispf:function=\"mes_dispatch_confirmWorkOrder\"/><endEvent id=\"end\" name=\"End\"/><sequenceFlow id=\"f1\" sourceRef=\"start\" targetRef=\"notifyDispatch\"/><sequenceFlow id=\"f2\" sourceRef=\"notifyDispatch\" targetRef=\"confirmStart\"/><sequenceFlow id=\"f3\" sourceRef=\"confirmStart\" targetRef=\"end\"/></process></definitions>",
       "status": "ACTIVE",
       "operatorAppId": "mes-platform"
+    },
+    {
+      "path": "root.platform.workflows.mes-plan-accept",
+      "bpmnXml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><definitions xmlns=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:ispf=\"http://ispf.io/bpmn\" targetNamespace=\"http://ispf.io/bpmn\"><process id=\"mes-plan-accept\" name=\"MES plan shop acceptance\" isExecutable=\"true\"><startEvent id=\"start\" name=\"Published\"/><userTask id=\"accept\" name=\"Shop accepts official plan\" ispf:title=\"Accept official plan\" ispf:instructions=\"Accept the published plan or reject it with a reason\" ispf:assigneeRole=\"operator\" ispf:targetObject=\"root.platform.singleton-blueprints.mes-platform-hub-v1\" ispf:function=\"mes_plan_acceptPub\"/><endEvent id=\"end\" name=\"End\"/><sequenceFlow id=\"f1\" sourceRef=\"start\" targetRef=\"accept\"/><sequenceFlow id=\"f2\" sourceRef=\"accept\" targetRef=\"end\"/></process></definitions>",
+      "status": "ACTIVE",
+      "operatorAppId": "mes-platform"
+    },
+    {
+      "path": "root.platform.workflows.mes-plan-close",
+      "bpmnXml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><definitions xmlns=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:ispf=\"http://ispf.io/bpmn\" targetNamespace=\"http://ispf.io/bpmn\"><process id=\"mes-plan-close\" name=\"MES period close\" isExecutable=\"true\"><startEvent id=\"start\" name=\"Close period\"/><userTask id=\"close\" name=\"Close shift\" ispf:title=\"Close period\" ispf:instructions=\"Confirm the period close and the resulting tail\" ispf:assigneeRole=\"operator\" ispf:targetObject=\"root.platform.singleton-blueprints.mes-platform-hub-v1\" ispf:function=\"mes_plan_closePeriod\"/><endEvent id=\"end\" name=\"End\"/><sequenceFlow id=\"f1\" sourceRef=\"start\" targetRef=\"close\"/><sequenceFlow id=\"f2\" sourceRef=\"close\" targetRef=\"end\"/></process></definitions>",
+      "status": "ACTIVE",
+      "operatorAppId": "mes-platform"
     }
   ],
   "correlators": [
@@ -1995,6 +4036,48 @@
       "title": "MES BoM + Operations",
       "refreshIntervalMs": 5000,
       "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"bom-ops-help\",\"type\":\"html-snippet\",\"title\":\"Nested BoM + operations graph\",\"x\":0,\"y\":0,\"w\":84,\"h\":14,\"htmlJson\":\"<p>BL-222: explode seed material <code>MAT-WIDGET-A01</code> and release routing <code>RT-WIDGET-A01</code> operations when predecessors are complete.</p>\"},{\"id\":\"bom-explode\",\"type\":\"function\",\"title\":\"BoM explosion\",\"x\":0,\"y\":14,\"w\":42,\"h\":21,\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"functionName\":\"mes_bom_explode\",\"buttonLabel\":\"Explode MAT-WIDGET-A01\",\"inputMapJson\":\"{\\\"materialCode\\\":\\\"MAT-WIDGET-A01\\\"}\"},{\"id\":\"bom-where-used\",\"type\":\"function\",\"title\":\"Where used\",\"x\":42,\"y\":14,\"w\":42,\"h\":21,\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"functionName\":\"mes_bom_whereUsed\",\"buttonLabel\":\"Where used MAT-WIP-A01\",\"inputMapJson\":\"{\\\"componentMaterialCode\\\":\\\"MAT-WIP-A01\\\"}\"},{\"id\":\"ops-ready\",\"type\":\"function\",\"title\":\"Ready operations\",\"x\":0,\"y\":35,\"w\":42,\"h\":21,\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"functionName\":\"mes_ops_listReady\",\"buttonLabel\":\"List ready operations\",\"inputMapJson\":\"{\\\"workOrderNumber\\\":\\\"WO-LINE-A01-001\\\"}\"},{\"id\":\"ops-complete\",\"type\":\"function\",\"title\":\"Complete OP-ASSEMBLE\",\"x\":42,\"y\":35,\"w\":42,\"h\":21,\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"functionName\":\"mes_ops_complete\",\"buttonLabel\":\"Complete and release successors\",\"inputMapJson\":\"{\\\"workOrderNumber\\\":\\\"WO-LINE-A01-001\\\",\\\"operationId\\\":\\\"OP-ASSEMBLE\\\"}\"}]}"
+    },
+    {
+      "path": "root.platform.dashboards.mes-platform-data",
+      "title": "MES Data readiness",
+      "refreshIntervalMs": 5000,
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"data-ready\",\"type\":\"function\",\"title\":\"Data readiness\",\"x\":0,\"y\":0,\"w\":42,\"h\":21,\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"functionName\":\"mes_plan_getDataReadiness\",\"buttonLabel\":\"Check PLANT-A\",\"inputMapJson\":\"{\\\"siteCode\\\":\\\"PLANT-A\\\"}\"},{\"id\":\"data-assets\",\"type\":\"function\",\"title\":\"Assets\",\"x\":42,\"y\":0,\"w\":42,\"h\":21,\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"functionName\":\"mes_plan_listAssets\",\"buttonLabel\":\"List assets\",\"inputMapJson\":\"{\\\"siteCode\\\":\\\"PLANT-A\\\"}\"}]}"
+    },
+    {
+      "path": "root.platform.dashboards.mes-platform-resources",
+      "title": "MES Resources",
+      "refreshIntervalMs": 5000,
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"res-list\",\"type\":\"function\",\"title\":\"Resources\",\"x\":0,\"y\":0,\"w\":84,\"h\":28,\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"functionName\":\"mes_plan_listResources\",\"buttonLabel\":\"List PLANT-A resources\",\"inputMapJson\":\"{\\\"siteCode\\\":\\\"PLANT-A\\\"}\"}]}"
+    },
+    {
+      "path": "root.platform.dashboards.mes-platform-exec-alerts",
+      "title": "MES Execution alerts",
+      "refreshIntervalMs": 5000,
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"alert-list\",\"type\":\"function\",\"title\":\"Alerts\",\"x\":0,\"y\":0,\"w\":84,\"h\":28,\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"functionName\":\"mes_plan_listAlerts\",\"buttonLabel\":\"List PLANT-A alerts\",\"inputMapJson\":\"{\\\"siteCode\\\":\\\"PLANT-A\\\"}\"}]}"
+    },
+    {
+      "path": "root.platform.dashboards.mes-platform-publish",
+      "title": "MES Publish",
+      "refreshIntervalMs": 5000,
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"cand-list\",\"type\":\"function\",\"title\":\"Candidates\",\"x\":0,\"y\":0,\"w\":42,\"h\":24,\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"functionName\":\"mes_plan_listCandidates\",\"buttonLabel\":\"List candidates\",\"inputMapJson\":\"{\\\"siteCode\\\":\\\"PLANT-A\\\"}\"},{\"id\":\"pub-list\",\"type\":\"function\",\"title\":\"Published plans\",\"x\":42,\"y\":0,\"w\":42,\"h\":24,\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"functionName\":\"mes_plan_listPubs\",\"buttonLabel\":\"List published plans\",\"inputMapJson\":\"{\\\"siteCode\\\":\\\"PLANT-A\\\"}\"}]}"
+    },
+    {
+      "path": "root.platform.dashboards.mes-platform-integration",
+      "title": "MES Integration status",
+      "refreshIntervalMs": 5000,
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"pub-delivery\",\"type\":\"function\",\"title\":\"Deliveries by site\",\"x\":0,\"y\":0,\"w\":84,\"h\":24,\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"functionName\":\"mes_plan_listDeliveriesBySite\",\"buttonLabel\":\"List deliveries\",\"inputMapJson\":\"{\\\"siteCode\\\":\\\"PLANT-A\\\"}\"}]}"
+    },
+    {
+      "path": "root.platform.dashboards.mes-platform-official",
+      "title": "MES Official plan",
+      "refreshIntervalMs": 5000,
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"off-ready\",\"type\":\"function\",\"title\":\"Data readiness\",\"x\":0,\"y\":0,\"w\":28,\"h\":18,\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"functionName\":\"mes_plan_getDataReadiness\",\"buttonLabel\":\"Check PLANT-A\",\"inputMapJson\":\"{\\\"siteCode\\\":\\\"PLANT-A\\\"}\"},{\"id\":\"off-pubs\",\"type\":\"function\",\"title\":\"Official versions\",\"x\":28,\"y\":0,\"w\":56,\"h\":18,\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"functionName\":\"mes_plan_listPubs\",\"buttonLabel\":\"List official plans\",\"inputMapJson\":\"{\\\"siteCode\\\":\\\"PLANT-A\\\"}\"},{\"id\":\"off-dels\",\"type\":\"function\",\"title\":\"Recipient delivery\",\"x\":0,\"y\":18,\"w\":84,\"h\":18,\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"functionName\":\"mes_plan_listDeliveriesBySite\",\"buttonLabel\":\"List deliveries\",\"inputMapJson\":\"{\\\"siteCode\\\":\\\"PLANT-A\\\"}\"}]}"
+    },
+    {
+      "path": "root.platform.dashboards.mes-platform-monitor",
+      "title": "MES Monitor",
+      "refreshIntervalMs": 5000,
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"mon-fact\",\"type\":\"function\",\"title\":\"Plan / fact\",\"x\":0,\"y\":0,\"w\":84,\"h\":18,\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"functionName\":\"mes_plan_planFactBySite\",\"buttonLabel\":\"Plan against fact\",\"inputMapJson\":\"{\\\"siteCode\\\":\\\"PLANT-A\\\"}\"},{\"id\":\"mon-tails\",\"type\":\"function\",\"title\":\"Tails\",\"x\":0,\"y\":18,\"w\":42,\"h\":18,\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"functionName\":\"mes_plan_listTailsBySite\",\"buttonLabel\":\"List tails\",\"inputMapJson\":\"{\\\"siteCode\\\":\\\"PLANT-A\\\"}\"},{\"id\":\"mon-devs\",\"type\":\"function\",\"title\":\"Deviations\",\"x\":42,\"y\":18,\"w\":42,\"h\":18,\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"functionName\":\"mes_plan_listDeviationsBySite\",\"buttonLabel\":\"List deviations\",\"inputMapJson\":\"{\\\"siteCode\\\":\\\"PLANT-A\\\"}\"}]}"
     }
   ],
   "schedules": [
@@ -2037,6 +4120,34 @@
       {
         "path": "root.platform.dashboards.mes-platform-bom-ops",
         "title": "BoM + Ops"
+      },
+      {
+        "path": "root.platform.dashboards.mes-platform-data",
+        "title": "Data"
+      },
+      {
+        "path": "root.platform.dashboards.mes-platform-resources",
+        "title": "Resources"
+      },
+      {
+        "path": "root.platform.dashboards.mes-platform-publish",
+        "title": "Publish"
+      },
+      {
+        "path": "root.platform.dashboards.mes-platform-official",
+        "title": "Official plan"
+      },
+      {
+        "path": "root.platform.dashboards.mes-platform-monitor",
+        "title": "Monitor"
+      },
+      {
+        "path": "root.platform.dashboards.mes-platform-exec-alerts",
+        "title": "Exec alerts"
+      },
+      {
+        "path": "root.platform.dashboards.mes-platform-integration",
+        "title": "Integration"
       }
     ],
     "eventJournalObjectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
@@ -2060,7 +4171,7 @@
     "product": "mes",
     "publisher": "IoT Solutions",
     "delivery": "marketplace",
-    "changelog": "1.5.0 - BL-222 Nested BoM + operations dependency graph: BoM explosion/where-used, ready-operation BFF, Operator dashboard; 1.4.0 - BL-221 Traceability DAG v2"
+    "changelog": "2.0.0 - plan execution: candidate, official plan, resources, fact, tails, alerts; 1.5.0 - BL-222 Nested BoM + operations dependency graph: BoM explosion/where-used, ready-operation BFF, Operator dashboard; 1.4.0 - BL-221 Traceability DAG v2; plan execution: candidate, official plan, resources, fact, tails, alerts"
   },
   "reports": [
     {

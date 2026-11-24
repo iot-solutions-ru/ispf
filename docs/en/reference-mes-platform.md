@@ -108,6 +108,14 @@ Test: `MesBomOpsIntegrationTest` deploys `mes-platform-bundle.json`, verifies Bo
 
 ---
 
+## Plan execution
+
+The same bundle owns the execution contour (candidate, official plan, resources, fact, tails, alerts). Logic stays on the hub. Tables use the `mes_exec_*` prefix. Functions use the `mes_plan_*` prefix. Operator tabs include Official plan and Monitor in the main app (no separate ui-pack). Acceptance notes: [mes-plan-execution](mes-plan-execution.md).
+
+Test: `MesPlanExecutionIntegrationTest` checks idempotent publish, a Quality hard block, preserved fact after republish, a single tail on a repeated period close, and recipient delivery status.
+
+---
+
 ## Production bundle (BL-170)
 
 Full walkthrough: [examples/mes-platform-production/](../../examples/mes-platform-production/)
