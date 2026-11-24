@@ -15,6 +15,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -56,6 +57,33 @@ class AlarmShelfServiceTest {
         verify(repository).save(captor.capture());
         long seconds = captor.getValue().getExpiresAt().getEpochSecond() - captor.getValue().getShelvedAt().getEpochSecond();
         assertTrue(seconds >= 14 * 60L && seconds <= 16 * 60L);
+    }
+
+    @Test
+    void nonPositiveDurationDoesNotCreateShelf() {
+        IllegalArgumentException zero = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.shelve(shelfRequest(0))
+        );
+        IllegalArgumentException negative = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.shelve(shelfRequest(-5))
+        );
+
+        assertEquals("durationMinutes must be positive", zero.getMessage());
+        assertEquals("durationMinutes must be positive", negative.getMessage());
+        verify(repository, never()).save(any());
+        verify(repository, never()).deactivateExpired(any());
+    }
+
+    private static AlarmShelfService.ShelveAlarmRequest shelfRequest(int durationMinutes) {
+        return new AlarmShelfService.ShelveAlarmRequest(
+                "root.platform.devices.shelf-proof",
+                "shelf-probe",
+                null,
+                durationMinutes,
+                null
+        );
     }
 
     @Test
