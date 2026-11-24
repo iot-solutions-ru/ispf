@@ -77,6 +77,9 @@ public class EventFilterObjectService {
         if (definition.filterId() == null || definition.filterId().isBlank()) {
             throw new IllegalArgumentException("filterId is required");
         }
+        if (definition.timeWindowMs() < 0) {
+            throw new IllegalArgumentException("timeWindowMs must not be negative");
+        }
         ensureCatalog();
         String path = pathForFilterId(definition.filterId());
         if (objectManager.tree().findByPath(path).isEmpty()) {
