@@ -47,7 +47,7 @@ dependencies {
     implementation(project(":packages:ispf-ai-openai-compatible"))
     implementation(project(":packages:ispf-ai-ollama"))
 
-    implementation("io.nats:jnats:2.26.4")
+    implementation("io.nats:jnats:2.27.0")
 
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-websocket")
@@ -102,7 +102,7 @@ dependencies {
     testRuntimeOnly("org.scala-lang:scala-library:2.13.18")
     // Moquette + Paho for BL-142 MqttDriverRuntimeIntegrationTest (matches ispf-driver-mqtt).
     // Pin (ADR-0059 registry): Moquette declares Netty 4.1.x; lift to the patched 4.2 line.
-    testImplementation(enforcedPlatform("io.netty:netty-bom:4.2.20.Final"))
+    testImplementation(enforcedPlatform("io.netty:netty-bom:4.2.21.Final"))
     // 0.18.1+ via JitPack (Central still at 0.17 — Dependabot GHSA-5f42-97gr-vfhq / GHSA-9jjc-fw8x-fmwx).
     testImplementation("io.github.moquette-io.moquette:moquette-broker:0.18.1")
     testImplementation("org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.5")

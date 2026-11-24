@@ -2,7 +2,7 @@ import net.ltgt.gradle.errorprone.errorprone
 
 plugins {
     java
-    id("org.springframework.boot") version "4.1.2" apply false
+    id("org.springframework.boot") version "4.2.0" apply false
     id("io.spring.dependency-management") version "1.1.7" apply false
     id("net.ltgt.errorprone") version "5.2.0" apply false
     // SBOM for the nightly dependency vulnerability scan (Trivy): ./gradlew cyclonedxBom
@@ -98,7 +98,7 @@ subprojects {
     if (!codeQlBuild && findProperty("ispf.errorprone")?.toString() != "false") {
         apply(plugin = "net.ltgt.errorprone")
         dependencies {
-            "errorprone"("com.google.errorprone:error_prone_core:2.52.0")
+            "errorprone"("com.google.errorprone:error_prone_core:2.53.0")
         }
         tasks.withType<JavaCompile> {
             options.errorprone {
@@ -232,7 +232,7 @@ subprojects {
                 "org.bouncycastle:bcutil-jdk18on:1.87",
                 // kafka-clients 4.3.1 -> lz4-java 1.10.2 (CVE-2026-59949); hadoop-common 3.5.0 ->
                 // commons-configuration2 2.10.1 (CVE-2026-45205). Drop when the parents move.
-                "at.yawk.lz4:lz4-java:1.14.0",
+                "at.yawk.lz4:lz4-java:1.14.1",
                 "org.apache.commons:commons-configuration2:2.15.1",
                 // Dependabot GHSA-j288-q9x7-2f5v (CVE-2025-48924): lang3 < 3.18.0.
                 // Boot 4.1.1 manages 3.20.0; force+eachDependency pin 3.21.0 so the graph
@@ -265,9 +265,9 @@ subprojects {
                 "tools.jackson:jackson-bom:3.3.0",
                 "tools.jackson.core:jackson-core:3.3.0",
                 "tools.jackson.core:jackson-databind:3.3.0",
-                "org.apache.tomcat.embed:tomcat-embed-core:11.0.27",
-                "org.apache.tomcat.embed:tomcat-embed-el:11.0.27",
-                "org.apache.tomcat.embed:tomcat-embed-websocket:11.0.27",
+                "org.apache.tomcat.embed:tomcat-embed-core:11.0.29",
+                "org.apache.tomcat.embed:tomcat-embed-el:11.0.29",
+                "org.apache.tomcat.embed:tomcat-embed-websocket:11.0.29",
                 "org.apache.logging.log4j:log4j-api:2.26.1",
             )
             eachDependency {
