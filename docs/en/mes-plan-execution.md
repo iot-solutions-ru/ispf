@@ -21,4 +21,4 @@ Lab contour inside `mes-platform`. The planning engine stays outside. Live plant
 | AM-15 | Quality block is a function result, not a role bypass |
 | AM-16 | Snapshots are insert-only rows in `mes_exec_snapshot` |
 
-Lab mapping for AM-01…16. Happy-path coverage is in `MesPlanExecutionIntegrationTest` (deploy with `?withSeeds=true`). Full AM matrix and the production mirror are not asserted there. Marketplace / plain deploy without seeds leaves `mes_exec_*` empty — readiness then reports `ready` with zero assets until plant data is loaded.
+Lab mapping for AM-01…16. `MesPlanExecutionIntegrationTest` covers the happy path plus reject-without-reason, SKU gate on publish, frozen snapshot payload, republish deliveries, and accept/reject status guards (deploy with `?withSeeds=true`). Empty site readiness is `empty`, not `ready`. Production mirror is not asserted in that test.

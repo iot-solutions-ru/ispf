@@ -12,7 +12,7 @@
   "vendorContactPhone": "+7 980 630-93-33",
   "vendorContactPerson": "Marketplace Team",
   "priceCents": 0,
-  "latestVersion": "1.2.0",
+  "latestVersion": "1.2.2",
   "minIspfVersion": "0.9.30",
   "bundleArtifact": "bundle.json",
   "tags": [
@@ -24,5 +24,15 @@
     "product",
     "plan-execution"
   ],
-  "changelog": "1.2.0 - Plan execution contour (candidate → official plan, resources, fact, tails, alerts). 1.1.0 - MES catalog + INSTANCE models shipped in bundle."
+  "changelog": "1.2.0 - Plan execution contour (candidate → official plan, resources, fact, tails, alerts). 1.1.0 - MES catalog + INSTANCE models shipped in bundle.",
+  "versions": [
+    {
+      "version": "1.2.2",
+      "releasedAt": "2026-11-24"
+    },
+    {
+      "version": "1.2.1",
+      "releasedAt": "2026-11-24"
+    }
+  ]
 }
