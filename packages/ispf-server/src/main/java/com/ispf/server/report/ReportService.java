@@ -1,5 +1,6 @@
 package com.ispf.server.report;
 
+import tools.jackson.core.JacksonException;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 import com.ispf.core.object.ObjectNotFoundException;
@@ -351,9 +352,17 @@ public class ReportService {
 
     @Transactional
     public ReportView saveLayout(String path, String layoutJson) {
+        String stored = layoutJson != null ? layoutJson : "";
+        if (!stored.isBlank()) {
+            try {
+                objectMapper.readTree(stored);
+            } catch (JacksonException ex) {
+                throw new IllegalArgumentException("Invalid layout JSON", ex);
+            }
+        }
         String resolved = resolvePath(path);
         getReport(resolved);
-        setString(resolved, "layout", layoutJson != null ? layoutJson : "");
+        setString(resolved, "layout", stored);
         return getReport(resolved);
     }
 

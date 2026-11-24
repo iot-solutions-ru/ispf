@@ -72,9 +72,10 @@ class DriverDeleteStopsRuntimeTest {
     void stopWorksAfterTreeNodeIsAlreadyGone() {
         ensureFolder();
         String path = createAndStartDevice("dev-01");
-        // Simulate the old leak: remove the tree without going through TreeCrudService.stopDriversUnder.
+        // Simulate removing the tree without TreeCrudService.stopDriversUnder.
+        // A queued poll may already stopLocal when it sees the node gone — that race
+        // used to flake on assert isActiveLocally(true). stop() must still be idempotent.
         objectManager.removePathFromMemoryIfPresent(path);
-        assertThat(driverRuntimeService.isActiveLocally(path)).isTrue();
 
         assertThatCode(() -> driverRuntimeService.stop(path)).doesNotThrowAnyException();
         assertThat(driverRuntimeService.isActiveLocally(path)).isFalse();
