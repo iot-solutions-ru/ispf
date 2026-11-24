@@ -6,6 +6,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
+import com.ispf.expression.ExpressionException;
 import com.ispf.server.bootstrap.SystemObjectCatalogSupport;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.plugin.blueprint.SystemObjectStructureService;
@@ -36,10 +37,16 @@ public class EventFilterObjectService {
 
     private final ObjectManager objectManager;
     private final SystemObjectStructureService structureService;
+    private final EventFilterMatcher eventFilterMatcher;
 
-    public EventFilterObjectService(ObjectManager objectManager, SystemObjectStructureService structureService) {
+    public EventFilterObjectService(
+            ObjectManager objectManager,
+            SystemObjectStructureService structureService,
+            EventFilterMatcher eventFilterMatcher
+    ) {
         this.objectManager = objectManager;
         this.structureService = structureService;
+        this.eventFilterMatcher = eventFilterMatcher;
     }
 
     @Transactional
@@ -79,6 +86,11 @@ public class EventFilterObjectService {
         }
         if (definition.timeWindowMs() < 0) {
             throw new IllegalArgumentException("timeWindowMs must not be negative");
+        }
+        try {
+            eventFilterMatcher.validateExpression(definition.filterExpression());
+        } catch (ExpressionException ex) {
+            throw new IllegalArgumentException("filterExpression: " + ex.getMessage(), ex);
         }
         ensureCatalog();
         String path = pathForFilterId(definition.filterId());
