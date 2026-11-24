@@ -108,10 +108,14 @@ public class HaystackExportService {
         if (requiredTags.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "At least one tag is required.");
         }
+        if (limit < 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "limit must not be negative");
+        }
         String kindFilter = normalizeEntityKind(entityKind);
-        int cappedLimit = Math.max(1, Math.min(limit > 0 ? limit : SEARCH_DEFAULT_LIMIT, SEARCH_MAX_LIMIT));
+        int cappedLimit = Math.min(limit, SEARCH_MAX_LIMIT);
 
         List<Map<String, Object>> matches = new ArrayList<>();
+        if (cappedLimit > 0) {
         for (PlatformObject node : objectManager.tree().all()) {
             if (matches.size() >= cappedLimit) {
                 break;
@@ -165,6 +169,7 @@ public class HaystackExportService {
                         variableName
                 ));
             }
+        }
         }
 
         Map<String, Object> payload = new LinkedHashMap<>();

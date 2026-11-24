@@ -4,9 +4,11 @@ import com.ispf.server.platform.haystack.HaystackFilterParser;
 import com.ispf.server.security.acl.ObjectAccessService;
 import com.ispf.server.security.acl.VariableMemberAccessService;
 import com.ispf.server.tenant.TenantScopeService;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -45,8 +47,17 @@ public class HaystackQueryService {
             int offset,
             int limit
     ) {
+        if (offset < 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "offset must not be negative");
+        }
+        if (limit < 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "limit must not be negative");
+        }
         List<String> requiredMarkers = HaystackFilterParser.parseRequiredMarkers(filter);
-        int scanLimit = Math.max(1, Math.min(offset + limit, HaystackExportService.SEARCH_MAX_LIMIT));
+        int safeLimit = Math.min(limit, HaystackExportService.SEARCH_MAX_LIMIT);
+        int scanLimit = safeLimit == 0
+                ? 0
+                : (int) Math.min((long) offset + safeLimit, HaystackExportService.SEARCH_MAX_LIMIT);
         Map<String, Object> raw = haystackExportService.searchByTags(
                 authentication,
                 rootPath,
@@ -81,10 +92,7 @@ public class HaystackQueryService {
             visible.add(enrichQueryMatch(match));
         }
 
-        int safeOffset = Math.max(0, offset);
-        int safeLimit = Math.max(1, Math.min(limit > 0 ? limit : HaystackExportService.SEARCH_DEFAULT_LIMIT,
-                HaystackExportService.SEARCH_MAX_LIMIT));
-        int fromIndex = Math.min(safeOffset, visible.size());
+        int fromIndex = Math.min(offset, visible.size());
         int toIndex = Math.min(fromIndex + safeLimit, visible.size());
         List<Map<String, Object>> page = visible.subList(fromIndex, toIndex);
 
@@ -94,7 +102,7 @@ public class HaystackQueryService {
         payload.put("filter", HaystackFilterParser.toFilterString(requiredMarkers));
         payload.put("rootPath", raw.get("rootPath"));
         payload.put("entityKind", raw.get("entityKind"));
-        payload.put("offset", safeOffset);
+        payload.put("offset", offset);
         payload.put("limit", safeLimit);
         payload.put("count", page.size());
         payload.put("totalVisible", visible.size());
