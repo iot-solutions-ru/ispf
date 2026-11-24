@@ -204,7 +204,7 @@ subprojects {
             implementation("org.apache.commons:commons-lang3:3.22.0")
             implementation("org.xerial.snappy:snappy-java:1.1.10.12")
             implementation("com.google.guava:guava:33.8.0-jre")
-            implementation("org.mariadb.jdbc:mariadb-java-client:3.5.11")
+            implementation("org.mariadb.jdbc:mariadb-java-client:4.0.0")
             implementation("org.apache.kerby:kerby-asn1:2.1.2")
             implementation("org.apache.kerby:kerb-core:2.1.2")
             implementation("org.apache.kerby:kerb-util:2.1.2")
@@ -246,7 +246,7 @@ subprojects {
                 "com.google.guava:guava:33.8.0-jre",
                 // Dependabot #148–#151 (CVE-2026-119210 / 119276 / 119280 / 119281): Connector/J
                 // < 3.5.11. Drop when Boot's mariadb.version is ≥ 3.5.11.
-                "org.mariadb.jdbc:mariadb-java-client:3.5.11",
+                "org.mariadb.jdbc:mariadb-java-client:4.0.0",
                 "org.apache.kerby:kerby-asn1:2.1.2",
                 "org.apache.kerby:kerb-core:2.1.2",
                 "org.apache.kerby:kerb-util:2.1.2",
