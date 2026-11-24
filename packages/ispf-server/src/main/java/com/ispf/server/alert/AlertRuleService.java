@@ -81,6 +81,7 @@ public class AlertRuleService {
 
     @Transactional
     public AlertRule create(CreateAlertRuleRequest request) {
+        validateTiming(request.delaySeconds(), request.pollIntervalMs(), request.deactivateDelaySeconds());
         validateTargetAndExpressions(
                 request.objectPath(),
                 request.conditionExpr(),
@@ -120,6 +121,7 @@ public class AlertRuleService {
 
     @Transactional
     public AlertRule update(String id, UpdateAlertRuleRequest request) {
+        validateTiming(request.delaySeconds(), request.pollIntervalMs(), request.deactivateDelaySeconds());
         AlertRule current = get(id);
         if (request.objectPath() != null || request.conditionExpr() != null
                 || request.deactivateExpr() != null || request.anomalyModelId() != null) {
@@ -530,6 +532,18 @@ public class AlertRuleService {
             return;
         }
         OutboundUrlSafety.requireSafeHttpUrl(webhookUrl, "", false);
+    }
+
+    private static void validateTiming(Integer delaySeconds, Integer pollIntervalMs, Integer deactivateDelaySeconds) {
+        if (delaySeconds != null && delaySeconds < 0) {
+            throw new IllegalArgumentException("delaySeconds must not be negative");
+        }
+        if (pollIntervalMs != null && pollIntervalMs < 0) {
+            throw new IllegalArgumentException("pollIntervalMs must not be negative");
+        }
+        if (deactivateDelaySeconds != null && deactivateDelaySeconds < 0) {
+            throw new IllegalArgumentException("deactivateDelaySeconds must not be negative");
+        }
     }
 
     public record CreateAlertRuleRequest(
