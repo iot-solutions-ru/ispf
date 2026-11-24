@@ -12,7 +12,7 @@
   "vendorContactEmail": "info@vendor.example.invalid",
   "vendorContactPhone": "+7 980 630-93-33",
   "priceCents": 0,
-  "latestVersion": "2.0.0",
+  "latestVersion": "2.0.1",
   "minIspfVersion": "0.9.30",
   "bundleArtifact": "bundle.json",
   "tags": [
@@ -40,5 +40,11 @@
         "notes": "Fix mes_bom_explode recursive NUMERIC cast for PostgreSQL"
       }
     ]
-  }
+  },
+  "versions": [
+    {
+      "version": "2.0.1",
+      "releasedAt": "2026-11-24"
+    }
+  ]
 }

@@ -6,7 +6,7 @@ Marketplace MES product (IoT Solutions): catalog folders + seed typed instances 
 
 | File | Purpose |
 |------|---------|
-| `bundle.json` | Deploy via `POST /api/v1/applications/mes-platform/deploy` (v2.0.0) |
+| `bundle.json` | Deploy via `POST /api/v1/applications/mes-platform/deploy` (v2.0.1) |
 | `apply_execution.py` | Idempotent injector for the plan-execution contour |
 | `work-order-instantiate.example.json` | Instantiate additional `WORK_ORDER` from `work-order-v1` |
 | `batch-instantiate.example.json` | Instantiate additional `LOT` from `batch-v1` |

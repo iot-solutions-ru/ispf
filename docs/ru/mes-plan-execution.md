@@ -21,4 +21,4 @@
 | AM-15 | Блокировка качества — результат функции, её не обходят ролью |
 | AM-16 | Снимки только добавляются в `mes_exec_snapshot` |
 
-Лабораторная карта AM-01…16. Happy-path — в `MesPlanExecutionIntegrationTest` (деплой с `?withSeeds=true`). Полная матрица AM и production-зеркало там не проверяются. Установка с витрины / деплой без seeds оставляет `mes_exec_*` пустыми — readiness тогда `ready` с нулём активов, пока не загружены данные площадки.
+Лабораторная карта AM-01…16. `MesPlanExecutionIntegrationTest` покрывает happy-path плюс reject без причины, SKU-гейт на publish, замороженный снимок, доставки при republish и проверки статуса accept/reject (деплой с `?withSeeds=true`). Пустая площадка даёт readiness `empty`, не `ready`. Production-зеркало в этом тесте не проверяется.

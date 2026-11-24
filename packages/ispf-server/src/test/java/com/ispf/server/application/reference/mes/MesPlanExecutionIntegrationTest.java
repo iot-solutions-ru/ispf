@@ -66,6 +66,9 @@ class MesPlanExecutionIntegrationTest {
                 .andExpect(jsonPath("$.result.snapshotId").value("SNAP-CAND-1"));
         invoke("mes_plan_publish", fields("candidateId", "actor"), row("candidateId", "CAND-1", "actor", "planner"))
                 .andExpect(jsonPath("$.result.pubId").value("PUB-CAND-1"));
+        invoke("mes_plan_getPub", fields("pubId"), row("pubId", "PUB-CAND-1"))
+                .andExpect(jsonPath("$.result.payloadJson").value(org.hamcrest.Matchers.containsString("\"candidateId\":\"CAND-1\"")))
+                .andExpect(jsonPath("$.result.payloadJson").value(org.hamcrest.Matchers.containsString("\"skuCode\":\"MAT-WIDGET-A01\"")));
 
         invoke("mes_plan_ingestCandidate",
                 fields("candidateId", "siteCode", "skuCode", "plannedQty", "uom", "qualityStatus", "idempotencyKey"),
@@ -86,6 +89,8 @@ class MesPlanExecutionIntegrationTest {
                 row("reserveId", "RSV-2", "resourceId", "RES-TANK-01", "pubId", "PUB-CAND-1", "qty", "25"))
                 .andExpect(jsonPath("$.result.status").value("reserved"));
 
+        invoke("mes_plan_rejectPub", fields("pubId", "reason"), row("pubId", "PUB-CAND-1", "reason", ""))
+                .andExpect(jsonPath("$.error_code").value("BLOCKED"));
         invoke("mes_plan_acceptPub", fields("pubId", "actor"), row("pubId", "PUB-CAND-1", "actor", "shop"))
                 .andExpect(jsonPath("$.result.shopStatus").value("accepted"));
         invoke("mes_plan_recordFact",
@@ -97,9 +102,18 @@ class MesPlanExecutionIntegrationTest {
                 row("pubId", "PUB-CAND-1", "reason", "line down", "actor", "planner"))
                 .andExpect(jsonPath("$.result.pubId").value("PUB-CAND-1-R2"))
                 .andExpect(jsonPath("$.result.previousPubId").value("PUB-CAND-1"));
+        invoke("mes_plan_listDeliveries", fields("pubId"), row("pubId", "PUB-CAND-1-R2"))
+                .andExpect(jsonPath("$.result.rows[?(@.recipientCode=='SHOP')].status").value("pending"))
+                .andExpect(jsonPath("$.result.rows[?(@.recipientCode=='SPP')].status").value("pending"));
         invoke("mes_plan_planFact", fields("pubId"), row("pubId", "PUB-CAND-1"))
                 .andExpect(jsonPath("$.error_code").value("OK"))
                 .andExpect(jsonPath("$.result.basis").value("comparable"));
+        invoke("mes_plan_acceptPub", fields("pubId", "actor"), row("pubId", "PUB-CAND-1", "actor", "shop"))
+                .andExpect(jsonPath("$.error_code").value("BLOCKED"));
+        invoke("mes_plan_setDelivery",
+                fields("pubId", "recipientCode", "status", "errorText"),
+                row("pubId", "PUB-MISSING", "recipientCode", "SHOP", "status", "error", "errorText", "no row"))
+                .andExpect(jsonPath("$.error_code").value("BLOCKED"));
 
         invoke("mes_plan_closePeriod",
                 fields("pubId", "periodCode", "toleranceQty", "reasonCode"),
@@ -121,6 +135,8 @@ class MesPlanExecutionIntegrationTest {
                 .andExpect(jsonPath("$.result.status").value("error"));
         invoke("mes_plan_listDeliveries", fields("pubId"), row("pubId", "PUB-CAND-1"))
                 .andExpect(jsonPath("$.result.rows[?(@.recipientCode=='SHOP')].status").value("error"));
+        invoke("mes_plan_getDataReadiness", fields("siteCode"), row("siteCode", "NO-SUCH-SITE"))
+                .andExpect(jsonPath("$.result.status").value("empty"));
     }
 
     private void deployBundle() throws Exception {
