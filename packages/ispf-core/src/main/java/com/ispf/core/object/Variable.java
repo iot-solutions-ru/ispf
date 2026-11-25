@@ -3,6 +3,7 @@ package com.ispf.core.object;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldDefinition;
+import com.ispf.core.model.FieldType;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -394,8 +395,9 @@ public class Variable {
     }
 
     /**
-     * Rejects a write whose overlapping fields change type (e.g. STRING into INTEGER).
-     * Extra or missing fields are allowed so partial telemetry writes keep working.
+     * Rejects a write whose overlapping fields cannot be assigned into the declared type
+     * (e.g. STRING into INTEGER). Extra or missing fields are allowed so partial telemetry
+     * and analytics writes that coerce into STRING keep working.
      */
     private void rejectIncompatibleFieldTypes(DataSchema declared, DataSchema incoming) {
         if (incoming == null) {
@@ -403,10 +405,31 @@ public class Variable {
         }
         for (FieldDefinition field : incoming.fields()) {
             Optional<FieldDefinition> expected = declared.field(field.name());
-            if (expected.isPresent() && expected.get().type() != field.type()) {
+            if (expected.isPresent() && !isAssignable(expected.get().type(), field.type())) {
                 throw new IllegalArgumentException("value schema is not compatible with variable " + name);
             }
         }
+    }
+
+    /**
+     * Declared STRING accepts any incoming type (stringify). Numeric widening into DOUBLE/LONG
+     * is allowed; narrowing into INTEGER is not.
+     */
+    static boolean isAssignable(FieldType declared, FieldType incoming) {
+        if (declared == incoming) {
+            return true;
+        }
+        if (declared == FieldType.STRING) {
+            return true;
+        }
+        if (declared == FieldType.DOUBLE
+                && (incoming == FieldType.INTEGER || incoming == FieldType.LONG)) {
+            return true;
+        }
+        if (declared == FieldType.LONG && incoming == FieldType.INTEGER) {
+            return true;
+        }
+        return false;
     }
 
     private static DataRecord projectOntoDeclaredSchema(DataSchema declared, DataRecord incoming) {
@@ -417,13 +440,27 @@ public class Variable {
         for (Map<String, Object> row : incoming.rows()) {
             Map<String, Object> projected = new LinkedHashMap<>();
             for (FieldDefinition field : declared.fields()) {
-                if (row.containsKey(field.name())) {
-                    projected.put(field.name(), row.get(field.name()));
+                if (!row.containsKey(field.name())) {
+                    continue;
                 }
+                projected.put(field.name(), coerceCell(field.type(), row.get(field.name())));
             }
             rows.add(projected);
         }
         return new DataRecord(declared, rows);
+    }
+
+    private static Object coerceCell(FieldType declared, Object raw) {
+        if (raw == null) {
+            return null;
+        }
+        return switch (declared) {
+            case STRING -> raw instanceof String text ? text : String.valueOf(raw);
+            case DOUBLE -> raw instanceof Number number ? number.doubleValue() : raw;
+            case LONG -> raw instanceof Number number ? number.longValue() : raw;
+            case INTEGER -> raw instanceof Number number ? number.intValue() : raw;
+            default -> raw;
+        };
     }
 
     /**

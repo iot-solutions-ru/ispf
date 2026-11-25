@@ -75,4 +75,22 @@ class VariableSetValueSchemaTest {
         assertThat(variable.value().orElseThrow().schema().field("value").orElseThrow().type()).isEqualTo(FieldType.DOUBLE);
         assertThat(variable.value().orElseThrow().firstRow().get("value")).isEqualTo(21.5);
     }
+
+    @Test
+    void coercesNumericWriteIntoStringVariable() {
+        DataSchema text = DataSchema.builder("derivedValue").field("value", FieldType.STRING).build();
+        Variable variable = new Variable(
+                "derivedValue",
+                text,
+                true,
+                true,
+                DataRecord.single(text, Map.of("value", "0"))
+        );
+        DataSchema fractional = DataSchema.builder("doubleValue").field("value", FieldType.DOUBLE).build();
+
+        variable.setValue(DataRecord.single(fractional, Map.of("value", 42.0)));
+
+        assertThat(variable.value().orElseThrow().schema().field("value").orElseThrow().type()).isEqualTo(FieldType.STRING);
+        assertThat(variable.value().orElseThrow().firstRow().get("value")).isEqualTo("42.0");
+    }
 }
