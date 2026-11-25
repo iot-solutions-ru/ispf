@@ -521,6 +521,7 @@ public class AlertRuleService {
             if (conditionExpr == null || conditionExpr.isBlank()) {
                 throw new IllegalArgumentException("conditionExpr is required when anomalyModelId is empty");
             }
+            expressionEngine.requireBooleanAlertCondition(conditionExpr);
             formalVerificationService.requireSafeConditionForApply(conditionExpr);
         }
         if (deactivateExpr != null && !deactivateExpr.isBlank()) {

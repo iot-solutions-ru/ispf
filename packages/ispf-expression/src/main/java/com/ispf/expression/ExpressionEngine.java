@@ -275,6 +275,28 @@ public class ExpressionEngine {
         payloadCompiledCache.computeIfAbsent(expression, this::compilePayloadUncached);
     }
 
+    /**
+     * Alert conditions are evaluated as booleans. A numeric literal compiles, then
+     * {@code Boolean.parseBoolean} turns it into false, so reject that type before save.
+     */
+    public void requireBooleanAlertCondition(String expression) {
+        if (expression == null || expression.isBlank()) {
+            return;
+        }
+        String normalized = normalizeMapIndexSelects(expression);
+        try {
+            CelAbstractSyntaxTree ast = compiler.compile(normalized).getAst();
+            var resultType = ast.getResultType();
+            if (!SimpleType.BOOL.equals(resultType) && !SimpleType.DYN.equals(resultType)) {
+                throw new ExpressionException(
+                        "Alert condition must return a boolean (got " + resultType.name() + ")"
+                );
+            }
+        } catch (CelValidationException e) {
+            throw new ExpressionException("Invalid expression: " + expression, e);
+        }
+    }
+
     private PayloadCompiledExpression compilePayloadUncached(String expression) {
         String normalized = normalizeMapIndexSelects(expression);
         try {
