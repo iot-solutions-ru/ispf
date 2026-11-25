@@ -17,6 +17,7 @@ import com.ispf.core.object.VariableStorageMode;
 import com.ispf.server.application.script.FunctionScriptValidator;
 import com.ispf.server.function.FunctionExpressionBody;
 import com.ispf.server.history.VariableHistoryService;
+import com.ispf.server.workflow.WorkflowStoredJson;
 import com.ispf.server.spi.DeviceTelemetryPolicy;
 import com.ispf.server.function.java.JavaFunctionRuntimeService;
 import com.ispf.server.persistence.ObjectEntityMapper;
@@ -93,6 +94,7 @@ public class ObjectVariableService {
         objectManager.assertExpectedRevision(path);
         PlatformObject node = objectManager.tree().require(path);
         rejectNonPositiveRefreshInterval(node, name, value);
+        WorkflowStoredJson.rejectUnreadable(node, name, value);
         long revisionBefore = node.revision();
         DataRecord before = node.getVariable(name).flatMap(Variable::value).orElse(null);
         node.setVariableValue(name, value);
