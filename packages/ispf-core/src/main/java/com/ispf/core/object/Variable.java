@@ -2,13 +2,16 @@ package com.ispf.core.object;
 
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
+import com.ispf.core.model.FieldDefinition;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
-
-import java.util.Locale;
 /**
  * A typed property on a {@link PlatformObject}.
  */
@@ -381,11 +384,46 @@ public class Variable {
         if (!writable) {
             throw new IllegalStateException("Variable is read-only: " + name);
         }
-        if (newValue != null && schema != null && !schema.isCompatibleWith(newValue.schema())) {
-            throw new IllegalArgumentException("value schema is not compatible with variable " + name);
+        if (newValue != null && schema != null) {
+            rejectIncompatibleFieldTypes(schema, newValue.schema());
+            value.set(projectOntoDeclaredSchema(schema, newValue));
+        } else {
+            value.set(newValue);
         }
-        value.set(newValue);
         updatedAt = Instant.now();
+    }
+
+    /**
+     * Rejects a write whose overlapping fields change type (e.g. STRING into INTEGER).
+     * Extra or missing fields are allowed so partial telemetry writes keep working.
+     */
+    private void rejectIncompatibleFieldTypes(DataSchema declared, DataSchema incoming) {
+        if (incoming == null) {
+            return;
+        }
+        for (FieldDefinition field : incoming.fields()) {
+            Optional<FieldDefinition> expected = declared.field(field.name());
+            if (expected.isPresent() && expected.get().type() != field.type()) {
+                throw new IllegalArgumentException("value schema is not compatible with variable " + name);
+            }
+        }
+    }
+
+    private static DataRecord projectOntoDeclaredSchema(DataSchema declared, DataRecord incoming) {
+        if (declared.isCompatibleWith(incoming.schema())) {
+            return incoming;
+        }
+        List<Map<String, Object>> rows = new ArrayList<>();
+        for (Map<String, Object> row : incoming.rows()) {
+            Map<String, Object> projected = new LinkedHashMap<>();
+            for (FieldDefinition field : declared.fields()) {
+                if (row.containsKey(field.name())) {
+                    projected.put(field.name(), row.get(field.name()));
+                }
+            }
+            rows.add(projected);
+        }
+        return new DataRecord(declared, rows);
     }
 
     /**

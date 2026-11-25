@@ -53,4 +53,26 @@ class VariableSetValueSchemaTest {
         assertThat(variable.value().orElseThrow().schema().field("value").orElseThrow().type()).isEqualTo(FieldType.INTEGER);
         assertThat(variable.value().orElseThrow().firstRow().get("value")).isEqualTo(2);
     }
+
+    @Test
+    void acceptsPartialWriteAndKeepsDeclaredSchema() {
+        DataSchema temperature = DataSchema.builder("temperature")
+                .field("value", FieldType.DOUBLE)
+                .field("unit", FieldType.STRING)
+                .build();
+        Variable variable = new Variable(
+                "temperature",
+                temperature,
+                true,
+                true,
+                DataRecord.single(temperature, Map.of("value", 20.0, "unit", "C"))
+        );
+        DataSchema valueOnly = DataSchema.builder("doubleValue").field("value", FieldType.DOUBLE).build();
+
+        variable.setValue(DataRecord.single(valueOnly, Map.of("value", 21.5)));
+
+        assertThat(variable.value().orElseThrow().schema().fieldCount()).isEqualTo(2);
+        assertThat(variable.value().orElseThrow().schema().field("value").orElseThrow().type()).isEqualTo(FieldType.DOUBLE);
+        assertThat(variable.value().orElseThrow().firstRow().get("value")).isEqualTo(21.5);
+    }
 }
