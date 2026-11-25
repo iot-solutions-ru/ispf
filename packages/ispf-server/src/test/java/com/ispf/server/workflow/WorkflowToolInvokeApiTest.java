@@ -109,8 +109,8 @@ class WorkflowToolInvokeApiTest {
         doAnswer(invocation -> {
             invocation.callRealMethod();
             String path = invocation.getArgument(0);
-            objectManager.setVariableValue(
-                    path,
+            // Plant corrupt JSON on the live node so ObjectVariableService write guards do not block the fixture.
+            objectManager.require(path).setVariableValue(
                     "instanceState",
                     DataRecord.single(
                             DataSchema.builder("stringValue").field("value", FieldType.STRING).build(),

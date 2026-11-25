@@ -21,6 +21,7 @@ import com.ispf.server.workflow.WorkflowCronDue;
 import com.ispf.server.workflow.WorkflowStoredJson;
 import com.ispf.server.spi.DeviceTelemetryPolicy;
 import com.ispf.server.function.java.JavaFunctionRuntimeService;
+import com.ispf.server.workflow.WorkflowRuntimeFields;
 import com.ispf.server.persistence.ObjectEntityMapper;
 import com.ispf.server.persistence.ObjectVariableRepository;
 import com.ispf.server.persistence.entity.ObjectVariableEntity;
@@ -97,6 +98,7 @@ public class ObjectVariableService {
         rejectNonPositiveRefreshInterval(node, name, value);
         WorkflowStoredJson.rejectUnreadable(node, name, value);
         rejectInvalidWorkflowCron(node, name, value);
+        rejectInvalidWorkflowRuntimeFields(node, name, value);
         long revisionBefore = node.revision();
         DataRecord before = node.getVariable(name).flatMap(Variable::value).orElse(null);
         node.setVariableValue(name, value);
@@ -605,6 +607,20 @@ public class ObjectVariableService {
             return;
         }
         WorkflowCronDue.requireValid(text);
+    }
+
+    private static void rejectInvalidWorkflowRuntimeFields(PlatformObject node, String name, DataRecord value) {
+        if (node.type() != ObjectType.WORKFLOW || value == null || value.rowCount() == 0) {
+            return;
+        }
+        if (!"instanceState".equals(name) && !"lastRunAt".equals(name)) {
+            return;
+        }
+        Object raw = value.firstRow().get("value");
+        if (!(raw instanceof String text)) {
+            return;
+        }
+        WorkflowRuntimeFields.requireReadable(name, text);
     }
 
     private static void rejectNonPositiveRefreshInterval(PlatformObject node, String name, DataRecord value) {

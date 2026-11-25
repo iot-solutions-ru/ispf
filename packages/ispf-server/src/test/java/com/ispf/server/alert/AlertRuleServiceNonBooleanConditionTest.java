@@ -1,6 +1,7 @@
 package com.ispf.server.alert;
 
 import com.ispf.core.object.PlatformObject;
+import com.ispf.core.object.Variable;
 import com.ispf.expression.ExpressionEngine;
 import com.ispf.expression.ExpressionException;
 import com.ispf.server.alert.AlertRuleService.CreateAlertRuleRequest;
@@ -12,6 +13,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -39,11 +42,15 @@ class AlertRuleServiceNonBooleanConditionTest {
     @Mock
     private PlatformObject device;
 
+    @Mock
+    private Variable watchVariable;
+
     private final ExpressionEngine expressionEngine = new ExpressionEngine();
 
     @Test
     void numericConditionIsRejectedBeforeSave() {
         when(objectManager.require(DEVICE)).thenReturn(device);
+        when(device.getVariable("temp")).thenReturn(Optional.of(watchVariable));
 
         ExpressionException error = assertThrows(
                 ExpressionException.class,
