@@ -77,6 +77,7 @@ public class ApplicationReportService {
 
     @Transactional(readOnly = true)
     public List<Map<String, Object>> list(String appId) {
+        applicationDataStore.requireApp(appId);
         return reportService.listByDataSource(dataSourceObjectService.pathForNodeName(appId));
     }
 

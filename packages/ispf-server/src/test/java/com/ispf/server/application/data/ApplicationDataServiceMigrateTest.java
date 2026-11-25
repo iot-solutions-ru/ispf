@@ -37,7 +37,7 @@ class ApplicationDataServiceMigrateTest {
 
     @Test
     void unchangedScriptIsSkippedWhenTheVersionChanges() {
-        when(store.findApp("plant")).thenReturn(Optional.of(Map.of("schema_name", "app_plant")));
+        when(store.requireApp("plant")).thenReturn(Map.of("schema_name", "app_plant"));
         when(store.appliedMigrationChecksum("plant", "init")).thenReturn(MigrationLedger.checksum("SELECT 1"));
 
         Map<String, Object> result = service(new H2Dialect()).migrate(
@@ -52,7 +52,7 @@ class ApplicationDataServiceMigrateTest {
 
     @Test
     void editedScriptIsRejectedBeforeSql() {
-        when(store.findApp("plant")).thenReturn(Optional.of(Map.of("schema_name", "app_plant")));
+        when(store.requireApp("plant")).thenReturn(Map.of("schema_name", "app_plant"));
         when(store.appliedMigrationChecksum("plant", "init")).thenReturn(MigrationLedger.checksum("SELECT 1"));
 
         assertThrows(IllegalStateException.class, () -> service(new H2Dialect()).migrate(

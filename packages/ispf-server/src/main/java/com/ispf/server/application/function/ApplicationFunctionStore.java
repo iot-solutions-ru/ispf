@@ -1,5 +1,6 @@
 package com.ispf.server.application.function;
 
+import com.ispf.server.application.data.ApplicationDataStore;
 import com.ispf.server.application.data.PlatformSqlCatalog;
 import com.ispf.server.application.script.FunctionScriptValidator;
 import com.ispf.server.relational.RelationalDialect;
@@ -20,17 +21,20 @@ public class ApplicationFunctionStore {
     private final JdbcTemplate jdbcTemplate;
     private final FunctionScriptValidator scriptValidator;
     private final RelationalDialect relationalDialect;
+    private final ApplicationDataStore dataStore;
     private final String functionsTable;
 
     public ApplicationFunctionStore(
             JdbcTemplate jdbcTemplate,
             FunctionScriptValidator scriptValidator,
             PlatformSqlCatalog platformSqlCatalog,
-            RelationalDialect relationalDialect
+            RelationalDialect relationalDialect,
+            ApplicationDataStore dataStore
     ) {
         this.jdbcTemplate = jdbcTemplate;
         this.scriptValidator = scriptValidator;
         this.relationalDialect = relationalDialect;
+        this.dataStore = dataStore;
         this.functionsTable = platformSqlCatalog.table("application_functions");
     }
 
@@ -145,6 +149,7 @@ public class ApplicationFunctionStore {
     }
 
     public List<Map<String, Object>> listVersions(String appId, String objectPath, String functionName) {
+        dataStore.requireApp(appId);
         return jdbcTemplate.query("""
                 SELECT version, source_type, deployed_at
                 FROM %s

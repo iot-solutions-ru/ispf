@@ -110,6 +110,7 @@ public class ApplicationSqlBindingService {
     }
 
     public List<Map<String, Object>> list(String appId) {
+        dataStore.requireApp(appId);
         return store.listByApp(appId).stream().map(this::toMap).toList();
     }
 

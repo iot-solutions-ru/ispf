@@ -1,5 +1,6 @@
 package com.ispf.server.application.catalog;
 
+import com.ispf.server.application.data.ApplicationDataStore;
 import com.ispf.server.config.IspfRoles;
 import com.ispf.server.config.IspfSecurityProperties;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,7 +29,12 @@ class ApplicationEventCatalogServiceTest {
         store = mock(ApplicationEventCatalogStore.class);
         securityProperties = new IspfSecurityProperties();
         securityProperties.setRbacEnabled(true);
-        service = new ApplicationEventCatalogService(store, objectMapper, securityProperties);
+        service = new ApplicationEventCatalogService(
+                store,
+                objectMapper,
+                securityProperties,
+                mock(ApplicationDataStore.class)
+        );
     }
 
     @Test
