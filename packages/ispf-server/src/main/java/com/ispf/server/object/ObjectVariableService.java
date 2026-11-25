@@ -92,7 +92,7 @@ public class ObjectVariableService {
         assertUserVariable(name);
         objectManager.assertExpectedRevision(path);
         PlatformObject node = objectManager.tree().require(path);
-        rejectNonPositiveDashboardRefresh(node, name, value);
+        rejectNonPositiveRefreshInterval(node, name, value);
         long revisionBefore = node.revision();
         DataRecord before = node.getVariable(name).flatMap(Variable::value).orElse(null);
         node.setVariableValue(name, value);
@@ -592,8 +592,12 @@ public class ObjectVariableService {
         return true;
     }
 
-    private static void rejectNonPositiveDashboardRefresh(PlatformObject node, String name, DataRecord value) {
-        if (node.type() != ObjectType.DASHBOARD || !"refreshIntervalMs".equals(name) || value == null || value.rowCount() == 0) {
+    private static void rejectNonPositiveRefreshInterval(PlatformObject node, String name, DataRecord value) {
+        ObjectType type = node.type();
+        if ((type != ObjectType.DASHBOARD && type != ObjectType.MIMIC)
+                || !"refreshIntervalMs".equals(name)
+                || value == null
+                || value.rowCount() == 0) {
             return;
         }
         Object raw = value.firstRow().get("value");
