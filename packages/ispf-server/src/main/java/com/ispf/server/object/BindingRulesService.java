@@ -461,7 +461,10 @@ public class BindingRulesService {
                 onEventRef = null;
             }
         }
-        long periodicMs = Math.max(0L, activators.periodicMs());
+        if (activators.periodicMs() < 0) {
+            throw new IllegalArgumentException("periodicMs must not be negative");
+        }
+        long periodicMs = activators.periodicMs();
         if (!Objects.equals(onEvent, activators.onEvent())
                 || !Objects.equals(onEventRef, activators.onEventRef())
                 || periodicMs != activators.periodicMs()) {
