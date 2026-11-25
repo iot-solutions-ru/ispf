@@ -86,6 +86,7 @@ public class SqlBindingObjectService {
     @Transactional
     public void upsert(BindingDefinition definition) {
         requirePositiveRefreshInterval(definition.refreshIntervalMs());
+        requireExistingTarget(definition.targetObjectPath());
         tenantLocalDataAccessGuard.requireAllowedDataSourcePath(definition.dataSourcePath());
         ensureCatalogInternal();
         ApplicationSchemaSupport.validateSelectQuery(definition.query(), "Binding query");
@@ -200,6 +201,13 @@ public class SqlBindingObjectService {
         if (refreshIntervalMs <= 0) {
             throw new IllegalArgumentException("refreshIntervalMs must be positive");
         }
+    }
+
+    private void requireExistingTarget(String objectPath) {
+        if (objectPath == null || objectPath.isBlank()) {
+            return;
+        }
+        objectManager.require(objectPath);
     }
 
     public String pathForBindingId(String bindingId) {
