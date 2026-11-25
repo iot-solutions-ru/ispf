@@ -17,6 +17,7 @@ import com.ispf.core.object.VariableStorageMode;
 import com.ispf.server.application.script.FunctionScriptValidator;
 import com.ispf.server.function.FunctionExpressionBody;
 import com.ispf.server.history.VariableHistoryService;
+import com.ispf.server.workflow.WorkflowCronDue;
 import com.ispf.server.workflow.WorkflowStoredJson;
 import com.ispf.server.spi.DeviceTelemetryPolicy;
 import com.ispf.server.function.java.JavaFunctionRuntimeService;
@@ -95,6 +96,7 @@ public class ObjectVariableService {
         PlatformObject node = objectManager.tree().require(path);
         rejectNonPositiveRefreshInterval(node, name, value);
         WorkflowStoredJson.rejectUnreadable(node, name, value);
+        rejectInvalidWorkflowCron(node, name, value);
         long revisionBefore = node.revision();
         DataRecord before = node.getVariable(name).flatMap(Variable::value).orElse(null);
         node.setVariableValue(name, value);
@@ -592,6 +594,17 @@ public class ObjectVariableService {
             return previousNested.isCompatibleWith(nextNested);
         }
         return true;
+    }
+
+    private static void rejectInvalidWorkflowCron(PlatformObject node, String name, DataRecord value) {
+        if (node.type() != ObjectType.WORKFLOW || !"cronExpression".equals(name) || value == null || value.rowCount() == 0) {
+            return;
+        }
+        Object raw = value.firstRow().get("value");
+        if (!(raw instanceof String text)) {
+            return;
+        }
+        WorkflowCronDue.requireValid(text);
     }
 
     private static void rejectNonPositiveRefreshInterval(PlatformObject node, String name, DataRecord value) {

@@ -14,7 +14,7 @@ import java.util.regex.Pattern;
  * Due-check for a workflow {@code cronExpression}. Same forms as schedule objects:
  * {@code every:Nm} and Spring 5/6-field cron. Blank is not a schedule.
  */
-final class WorkflowCronDue {
+public final class WorkflowCronDue {
 
     private static final Pattern EVERY_MINUTES = Pattern.compile(
             "^every:\\s*(\\d+)\\s*m?$",
@@ -22,6 +22,17 @@ final class WorkflowCronDue {
     );
 
     private WorkflowCronDue() {
+    }
+
+    public static void requireValid(String cronExpression) {
+        String cron = cronExpression == null ? "" : cronExpression.trim();
+        if (cron.isBlank()) {
+            return;
+        }
+        if (EVERY_MINUTES.matcher(cron).matches()) {
+            return;
+        }
+        parseCron(cron);
     }
 
     static boolean isDue(Instant now, Instant lastRunAt, String cronExpression) {
