@@ -73,6 +73,9 @@ public class VisualGroupService {
 
     @Transactional
     public List<VisualGroupMember> addMembers(String groupPath, List<String> paths) {
+        if (paths == null) {
+            throw new IllegalArgumentException("paths is required");
+        }
         requireVisualGroup(groupPath);
         List<VisualGroupMember> current = new ArrayList<>(listMembers(groupPath));
         Set<String> existing = new HashSet<>();
