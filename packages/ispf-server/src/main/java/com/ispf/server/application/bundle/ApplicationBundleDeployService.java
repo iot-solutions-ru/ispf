@@ -626,6 +626,7 @@ public class ApplicationBundleDeployService {
     }
 
     public List<Map<String, Object>> deployHistory(String appId) {
+        dataService.requireApp(appId);
         return snapshotStore.listHistory(appId);
     }
 

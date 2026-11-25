@@ -69,6 +69,10 @@ public class ApplicationDataStore {
         );
     }
 
+    public Map<String, Object> requireApp(String appId) {
+        return findApp(appId).orElseThrow(() -> new IllegalArgumentException("Unknown application: " + appId));
+    }
+
     public Optional<Map<String, Object>> findApp(String appId) {
         List<Map<String, Object>> rows = jdbcTemplate.queryForList(
                 "SELECT app_id, display_name, table_prefix, schema_name, created_at FROM "

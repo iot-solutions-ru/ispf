@@ -2,6 +2,7 @@ package com.ispf.server.application.catalog;
 
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
+import com.ispf.server.application.data.ApplicationDataStore;
 import com.ispf.server.config.IspfRoles;
 import com.ispf.server.config.IspfSecurityProperties;
 import org.springframework.stereotype.Service;
@@ -19,15 +20,18 @@ public class ApplicationEventCatalogService {
     private final ApplicationEventCatalogStore store;
     private final ObjectMapper objectMapper;
     private final IspfSecurityProperties securityProperties;
+    private final ApplicationDataStore dataStore;
 
     public ApplicationEventCatalogService(
             ApplicationEventCatalogStore store,
             ObjectMapper objectMapper,
-            IspfSecurityProperties securityProperties
+            IspfSecurityProperties securityProperties,
+            ApplicationDataStore dataStore
     ) {
         this.store = store;
         this.objectMapper = objectMapper;
         this.securityProperties = securityProperties;
+        this.dataStore = dataStore;
     }
 
     public void replaceFromBundle(String appId, List<BundleEventDefinition> events) {
@@ -54,6 +58,7 @@ public class ApplicationEventCatalogService {
     }
 
     public List<Map<String, Object>> listEvents(String appId) {
+        dataStore.requireApp(appId);
         List<Map<String, Object>> rows = store.listForApp(appId);
         List<Map<String, Object>> result = new ArrayList<>();
         for (Map<String, Object> row : rows) {

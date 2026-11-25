@@ -166,8 +166,12 @@ public class ApplicationDataService {
         );
     }
 
+    public void requireApp(String appId) {
+        ensureApp(appId);
+    }
+
     private Map<String, Object> ensureApp(String appId) {
-        return store.findApp(appId).orElseThrow(() -> new IllegalArgumentException("Unknown application: " + appId));
+        return store.requireApp(appId);
     }
 
     private static List<String> splitStatements(String sql) {
