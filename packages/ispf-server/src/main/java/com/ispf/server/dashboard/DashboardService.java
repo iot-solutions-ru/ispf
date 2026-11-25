@@ -137,6 +137,7 @@ public class DashboardService {
 
     @Transactional
     public DashboardView saveLayout(String path, String layoutJson) {
+        rejectInvalidLayoutBounds(layoutJson);
         layoutJson = DashboardWidgetNormalizer.normalizeLayoutJson(layoutJson, objectMapper);
         validateLayoutJson(layoutJson);
         PlatformObject node = objectManager.require(path);
@@ -279,6 +280,81 @@ public class DashboardService {
                 "scada-facility-overview",
                 "empty"
         );
+    }
+
+    private void rejectInvalidLayoutBounds(String layoutJson) {
+        if (layoutJson == null || layoutJson.isBlank()) {
+            return;
+        }
+        JsonNode root;
+        try {
+            root = objectMapper.readTree(layoutJson);
+        } catch (JacksonException ex) {
+            return;
+        }
+        if (!root.isObject()) {
+            return;
+        }
+        requirePositiveNumber(root, "columns");
+        requirePositiveNumber(root, "rowHeight");
+        requireNonNegativeMargin(root.get("margin"));
+        JsonNode widgets = root.get("widgets");
+        if (widgets == null || !widgets.isArray()) {
+            return;
+        }
+        for (JsonNode widget : widgets) {
+            if (!widget.isObject()) {
+                continue;
+            }
+            requireNonNegativeNumber(widget, "x");
+            requireNonNegativeNumber(widget, "y");
+            requirePositiveNumber(widget, "w");
+            requirePositiveNumber(widget, "h");
+            requirePositiveNumber(widget, "minW");
+            requirePositiveNumber(widget, "minH");
+            requireNonNegativeNumber(widget, "refreshIntervalMs");
+            requireNonNegativeMargin(widget.get("margin"));
+        }
+    }
+
+    private static void requirePositiveNumber(JsonNode node, String field) {
+        JsonNode value = node.get(field);
+        if (value == null || !value.isNumber()) {
+            return;
+        }
+        if (value.doubleValue() <= 0) {
+            throw new IllegalArgumentException(field + " must be positive");
+        }
+    }
+
+    private static void requireNonNegativeNumber(JsonNode node, String field) {
+        JsonNode value = node.get(field);
+        if (value == null || !value.isNumber()) {
+            return;
+        }
+        if (value.doubleValue() < 0) {
+            throw new IllegalArgumentException(field + " must not be negative");
+        }
+    }
+
+    private static void requireNonNegativeMargin(JsonNode margin) {
+        if (margin == null || margin.isNull()) {
+            return;
+        }
+        if (margin.isNumber()) {
+            if (margin.doubleValue() < 0) {
+                throw new IllegalArgumentException("margin must not be negative");
+            }
+            return;
+        }
+        if (!margin.isArray()) {
+            return;
+        }
+        for (JsonNode item : margin) {
+            if (item.isNumber() && item.doubleValue() < 0) {
+                throw new IllegalArgumentException("margin must not be negative");
+            }
+        }
     }
 
     private void validateLayoutJson(String layoutJson) {
