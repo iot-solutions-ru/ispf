@@ -83,6 +83,7 @@ public class AlertRuleService {
     public AlertRule create(CreateAlertRuleRequest request) {
         validateTiming(request.delaySeconds(), request.pollIntervalMs(), request.deactivateDelaySeconds());
         notificationDispatchService.validateEmailTarget(request.notificationEmailTarget());
+        requireExistingVariables(request.objectPath(), request.watchVariable(), true, request.payloadVariable());
         validateTargetAndExpressions(
                 request.objectPath(),
                 request.conditionExpr(),
@@ -125,6 +126,8 @@ public class AlertRuleService {
         validateTiming(request.delaySeconds(), request.pollIntervalMs(), request.deactivateDelaySeconds());
         notificationDispatchService.validateEmailTarget(request.notificationEmailTarget());
         AlertRule current = get(id);
+        String objectPath = request.objectPath() != null ? request.objectPath() : current.objectPath();
+        requireExistingVariables(objectPath, request.watchVariable(), request.watchVariable() != null, request.payloadVariable());
         if (request.objectPath() != null || request.conditionExpr() != null
                 || request.deactivateExpr() != null || request.anomalyModelId() != null) {
             validateTargetAndExpressions(
@@ -507,6 +510,29 @@ public class AlertRuleService {
     private static boolean isAnomalyHistoryFailure(IllegalStateException ex) {
         String message = ex.getMessage();
         return message != null && message.startsWith("Anomaly history read failed");
+    }
+
+    /** A blank watch name and a missing watch or payload name must not replace the stored rule. */
+    private void requireExistingVariables(
+            String objectPath,
+            String watchVariable,
+            boolean watchProvided,
+            String payloadVariable
+    ) {
+        boolean checkPayload = payloadVariable != null && !payloadVariable.isBlank();
+        if (!watchProvided && !checkPayload) {
+            return;
+        }
+        if (watchProvided && (watchVariable == null || watchVariable.isBlank())) {
+            throw new IllegalArgumentException("watchVariable is required");
+        }
+        PlatformObject node = objectManager.require(objectPath);
+        if (watchProvided && node.getVariable(watchVariable).isEmpty()) {
+            throw new IllegalArgumentException("Unknown watchVariable: " + watchVariable);
+        }
+        if (checkPayload && node.getVariable(payloadVariable).isEmpty()) {
+            throw new IllegalArgumentException("Unknown payloadVariable: " + payloadVariable);
+        }
     }
 
     /** Validate target object exists and CEL expressions compile + formal-verify. Events live on the ALERT node. */
