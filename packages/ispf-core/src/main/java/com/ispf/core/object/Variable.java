@@ -381,6 +381,9 @@ public class Variable {
         if (!writable) {
             throw new IllegalStateException("Variable is read-only: " + name);
         }
+        if (newValue != null && schema != null && !schema.isCompatibleWith(newValue.schema())) {
+            throw new IllegalArgumentException("value schema is not compatible with variable " + name);
+        }
         value.set(newValue);
         updatedAt = Instant.now();
     }
