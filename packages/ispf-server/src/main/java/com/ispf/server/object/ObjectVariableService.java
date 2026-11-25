@@ -10,6 +10,7 @@ import com.ispf.plugin.blueprint.BlueprintRegistry;
 import com.ispf.core.object.EventDescriptor;
 import com.ispf.core.object.FunctionDescriptor;
 import com.ispf.core.object.HistorySampleMode;
+import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
 import com.ispf.core.object.VariableStorageMode;
@@ -91,6 +92,7 @@ public class ObjectVariableService {
         assertUserVariable(name);
         objectManager.assertExpectedRevision(path);
         PlatformObject node = objectManager.tree().require(path);
+        rejectNonPositiveDashboardRefresh(node, name, value);
         long revisionBefore = node.revision();
         DataRecord before = node.getVariable(name).flatMap(Variable::value).orElse(null);
         node.setVariableValue(name, value);
@@ -588,6 +590,19 @@ public class ObjectVariableService {
             return previousNested.isCompatibleWith(nextNested);
         }
         return true;
+    }
+
+    private static void rejectNonPositiveDashboardRefresh(PlatformObject node, String name, DataRecord value) {
+        if (node.type() != ObjectType.DASHBOARD || !"refreshIntervalMs".equals(name) || value == null || value.rowCount() == 0) {
+            return;
+        }
+        Object raw = value.firstRow().get("value");
+        if (!(raw instanceof Number number)) {
+            return;
+        }
+        if (number.longValue() <= 0) {
+            throw new IllegalArgumentException("refreshIntervalMs must be positive");
+        }
     }
 
     private static void assertUserVariable(String name) {
