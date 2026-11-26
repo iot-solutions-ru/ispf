@@ -83,8 +83,8 @@ class EventCorrelatorWindowTest {
                 1,
                 0,
                 0,
-                CorrelatorActionType.SET_VARIABLE,
-                "flag=1",
+                CorrelatorActionType.SEND_WEBHOOK,
+                "http://127.0.0.1:9/hook",
                 true
         ));
         rememberAlert("root.platform.alert-rules.win-a", "raiseA", device);

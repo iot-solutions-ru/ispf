@@ -73,8 +73,8 @@ class EventCorrelatorDispatchIsolationTest {
                 1,
                 0,
                 0,
-                CorrelatorActionType.RUN_WORKFLOW,
-                "root.platform.workflows.missing-for-action-failure",
+                CorrelatorActionType.SEND_WEBHOOK,
+                "http://127.0.0.1:9/hook",
                 "true",
                 true
         ));
@@ -105,7 +105,7 @@ class EventCorrelatorDispatchIsolationTest {
             String eventName,
             String filter
     ) {
-        return correlator(name, eventName, filter, "flag=1");
+        return correlator(name, eventName, filter, "http://127.0.0.1:9/hook");
     }
 
     private static EventCorrelatorService.CreateCorrelatorRequest correlator(
@@ -124,7 +124,7 @@ class EventCorrelatorDispatchIsolationTest {
                 1,
                 0,
                 0,
-                CorrelatorActionType.SET_VARIABLE,
+                CorrelatorActionType.SEND_WEBHOOK,
                 actionTarget,
                 filter,
                 true

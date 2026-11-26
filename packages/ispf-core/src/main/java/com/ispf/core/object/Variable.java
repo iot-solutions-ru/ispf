@@ -385,13 +385,20 @@ public class Variable {
         if (!writable) {
             throw new IllegalStateException("Variable is read-only: " + name);
         }
+        requireCompatibleValue(newValue);
         if (newValue != null && schema != null) {
-            rejectIncompatibleFieldTypes(schema, newValue.schema());
             value.set(projectOntoDeclaredSchema(schema, newValue));
         } else {
             value.set(newValue);
         }
         updatedAt = Instant.now();
+    }
+
+    /** Same field-type check as {@link #setValue}, without writing. */
+    public void requireCompatibleValue(DataRecord newValue) {
+        if (newValue != null && schema != null) {
+            rejectIncompatibleFieldTypes(schema, newValue.schema());
+        }
     }
 
     /**

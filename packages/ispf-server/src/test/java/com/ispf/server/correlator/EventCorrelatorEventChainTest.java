@@ -32,8 +32,8 @@ class EventCorrelatorEventChainTest {
                 1,
                 0,
                 0,
-                CorrelatorActionType.SET_VARIABLE,
-                "chainLatched=true",
+                CorrelatorActionType.SEND_WEBHOOK,
+                "http://127.0.0.1:9/hook",
                 true
         ));
         ruleIndex.addCorrelator(created);
