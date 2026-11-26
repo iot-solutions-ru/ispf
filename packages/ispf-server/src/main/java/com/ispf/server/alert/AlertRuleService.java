@@ -548,7 +548,9 @@ public class AlertRuleService {
             String deactivateExpr
     ) {
         objectManager.require(targetObjectPath);
-        if (anomalyModelId == null || anomalyModelId.isBlank()) {
+        if (anomalyModelId != null && !anomalyModelId.isBlank()) {
+            anomalyAlertRuleEvaluator.requireKnownModel(anomalyModelId);
+        } else {
             if (conditionExpr == null || conditionExpr.isBlank()) {
                 throw new IllegalArgumentException("conditionExpr is required when anomalyModelId is empty");
             }

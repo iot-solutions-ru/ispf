@@ -39,6 +39,17 @@ public class AnomalyAlertRuleEvaluator {
         this.objectManager = objectManager;
     }
 
+    /** A non-blank id must be the model loaded for scoring. A blank id is not an anomaly rule. */
+    public void requireKnownModel(String anomalyModelId) {
+        if (anomalyModelId == null || anomalyModelId.isBlank()) {
+            return;
+        }
+        String known = anomalyDetectionSpi.modelId();
+        if (known == null || !anomalyModelId.equals(known)) {
+            throw new IllegalArgumentException("Unknown anomalyModelId: " + anomalyModelId);
+        }
+    }
+
     public boolean evaluate(String objectPath, String watchVariable, String anomalyModelId) {
         if (!properties.isEnabled()) {
             return false;
