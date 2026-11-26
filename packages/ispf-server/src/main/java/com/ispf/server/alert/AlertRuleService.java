@@ -558,6 +558,7 @@ public class AlertRuleService {
             formalVerificationService.requireSafeConditionForApply(conditionExpr);
         }
         if (deactivateExpr != null && !deactivateExpr.isBlank()) {
+            expressionEngine.requireBooleanAlertDeactivate(deactivateExpr);
             formalVerificationService.requireSafeConditionForApply(deactivateExpr);
         }
     }

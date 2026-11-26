@@ -280,6 +280,15 @@ public class ExpressionEngine {
      * {@code Boolean.parseBoolean} turns it into false, so reject that type before save.
      */
     public void requireBooleanAlertCondition(String expression) {
+        requireBooleanAlertResult(expression, "Alert condition");
+    }
+
+    /** Deactivate expressions are evaluated the same way as conditions. */
+    public void requireBooleanAlertDeactivate(String expression) {
+        requireBooleanAlertResult(expression, "Alert deactivate expression");
+    }
+
+    private void requireBooleanAlertResult(String expression, String label) {
         if (expression == null || expression.isBlank()) {
             return;
         }
@@ -289,7 +298,7 @@ public class ExpressionEngine {
             var resultType = ast.getResultType();
             if (!SimpleType.BOOL.equals(resultType) && !SimpleType.DYN.equals(resultType)) {
                 throw new ExpressionException(
-                        "Alert condition must return a boolean (got " + resultType.name() + ")"
+                        label + " must return a boolean (got " + resultType.name() + ")"
                 );
             }
         } catch (CelValidationException e) {
