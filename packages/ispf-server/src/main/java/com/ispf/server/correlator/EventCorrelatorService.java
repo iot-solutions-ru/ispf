@@ -7,6 +7,7 @@ import com.ispf.expression.ExpressionEngine;
 import com.ispf.expression.ExpressionException;
 import com.ispf.server.automation.AutomationTreeService;
 import com.ispf.core.object.ObjectEvent;
+import com.ispf.core.object.PlatformObject;
 import com.ispf.server.event.EventJournalRecord;
 import com.ispf.server.event.EventJournalStore;
 import com.ispf.server.event.EventService;
@@ -133,6 +134,7 @@ public class EventCorrelatorService {
                 request.sequenceGapSeconds()
         );
         validateEmailAction(request.actionType(), request.actionTarget());
+        validateFireEventAction(request.objectPath(), request.actionType(), request.actionTarget());
         validatePayloadFilter(request.payloadFilterExpr());
         return automationTreeService.createCorrelator(
                 request.name(),
@@ -169,6 +171,11 @@ public class EventCorrelatorService {
                 request.sequenceGapSeconds() != null ? request.sequenceGapSeconds() : current.sequenceGapSeconds()
         );
         validateEmailAction(
+                request.actionType() != null ? request.actionType() : current.actionType(),
+                request.actionTarget() != null ? request.actionTarget() : current.actionTarget()
+        );
+        validateFireEventAction(
+                request.objectPath() != null ? request.objectPath() : current.objectPath(),
                 request.actionType() != null ? request.actionType() : current.actionType(),
                 request.actionTarget() != null ? request.actionTarget() : current.actionTarget()
         );
@@ -719,6 +726,22 @@ public class EventCorrelatorService {
 
     private static boolean matchesObject(String filterPath, String eventPath) {
         return filterPath == null || filterPath.isBlank() || filterPath.equals(eventPath);
+    }
+
+    private void validateFireEventAction(String objectPath, CorrelatorActionType actionType, String actionTarget) {
+        if (actionType != CorrelatorActionType.FIRE_EVENT) {
+            return;
+        }
+        if (objectPath == null || objectPath.isBlank()) {
+            throw new IllegalArgumentException("FIRE_EVENT requires objectPath");
+        }
+        PlatformObject node = objectManager.tree().findByPath(objectPath).orElse(null);
+        if (node == null) {
+            throw new IllegalArgumentException("Unknown object: " + objectPath);
+        }
+        if (!node.events().containsKey(actionTarget)) {
+            throw new IllegalArgumentException("Unknown event: " + actionTarget);
+        }
     }
 
     private static void validateRequest(
