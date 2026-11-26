@@ -325,6 +325,13 @@ public class BindingRulesService {
         } else if (BindingVariableRef.ANY.equals(activatorPath)) {
             return;
         }
+        // Remote activators may name a variable that first telemetry creates later.
+        if (!objectPath.equals(activatorPath)) {
+            if (objectManager.tree().findByPath(activatorPath).isEmpty()) {
+                throw new IllegalArgumentException("Unknown object: " + activatorPath);
+            }
+            return;
+        }
         boolean present = objectManager.tree().findByPath(activatorPath)
                 .flatMap(node -> node.getVariable(variableName))
                 .isPresent();
