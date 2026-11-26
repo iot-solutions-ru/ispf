@@ -132,6 +132,7 @@ public class EventCorrelatorService {
                 request.cooldownSeconds(),
                 request.sequenceGapSeconds()
         );
+        validateObjectPath(request.objectPath());
         validatePayloadFilter(request.payloadFilterExpr());
         return automationTreeService.createCorrelator(
                 request.name(),
@@ -167,6 +168,7 @@ public class EventCorrelatorService {
                 request.cooldownSeconds() != null ? request.cooldownSeconds() : current.cooldownSeconds(),
                 request.sequenceGapSeconds() != null ? request.sequenceGapSeconds() : current.sequenceGapSeconds()
         );
+        validateObjectPath(request.objectPath() != null ? request.objectPath() : current.objectPath());
         validatePayloadFilter(request.payloadFilterExpr() != null
                 ? request.payloadFilterExpr()
                 : current.payloadFilterExpr());
@@ -714,6 +716,15 @@ public class EventCorrelatorService {
 
     private static boolean matchesObject(String filterPath, String eventPath) {
         return filterPath == null || filterPath.isBlank() || filterPath.equals(eventPath);
+    }
+
+    private void validateObjectPath(String objectPath) {
+        if (objectPath == null || objectPath.isBlank()) {
+            return;
+        }
+        if (objectManager.tree().findByPath(objectPath).isEmpty()) {
+            throw new IllegalArgumentException("Unknown object: " + objectPath);
+        }
     }
 
     private static void validateRequest(
