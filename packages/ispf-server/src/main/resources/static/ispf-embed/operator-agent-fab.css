@@ -1,3 +1,7 @@
+#ispf-operator-agent[hidden] {
+  display: none !important;
+}
+
 .ispf-op-agent-fab {
   position: fixed;
   right: 1.25rem;
@@ -69,6 +73,29 @@
   border-radius: 8px;
   padding: 0.35rem 0.6rem;
   cursor: pointer;
+}
+
+.ispf-op-agent-lang {
+  display: flex;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.ispf-op-agent-actions .ispf-op-agent-lang button {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #8b949e;
+  padding: 0.35rem 0.45rem;
+  font: 700 0.72rem/1 system-ui, sans-serif;
+}
+
+.ispf-op-agent-actions .ispf-op-agent-lang button[aria-pressed="true"] {
+  background: #1f6feb;
+  color: #fff;
 }
 
 .ispf-op-agent-log {

@@ -19,42 +19,45 @@
     return;
   }
 
-  var ru = /^(ru)\b/i.test(
-    (document.documentElement && document.documentElement.lang) || navigator.language || ""
-  );
-  var text = ru
-    ? {
-        open: "Открыть ИИ-помощника",
-        title: "ИИ-помощник",
-        readOnly: "только чтение",
-        docs: "документов",
-        newChat: "Новый чат",
-        close: "Закрыть",
-        send: "Отправить",
-        placeholder: "Спросите про это приложение…",
-        thinking: "Думаю…",
-        unavailable: "Языковая модель недоступна",
-        failed: "Не удалось отправить",
-        suggestions: [
-          "Какие тревоги сейчас активны?",
-          "Покажи сводку за смену",
-          "Что в очереди задач?",
-        ],
-      }
-    : {
-        open: "Open AI assistant",
-        title: "AI assistant",
-        readOnly: "read-only",
-        docs: "documents",
-        newChat: "New chat",
-        close: "Close",
-        send: "Send",
-        placeholder: "Ask about this application…",
-        thinking: "Thinking…",
-        unavailable: "Language model is unavailable",
-        failed: "Send failed",
-        suggestions: ["Which alarms are active?", "Summarize this shift", "What is in the task queue?"],
-      };
+  var STRINGS = {
+    ru: {
+      open: "Открыть ИИ-помощника",
+      title: "ИИ-помощник",
+      readOnly: "только чтение",
+      docs: "документов",
+      newChat: "Новый чат",
+      close: "Закрыть",
+      send: "Отправить",
+      placeholder: "Спросите про это приложение…",
+      thinking: "Думаю…",
+      unavailable: "Языковая модель недоступна",
+      failed: "Не удалось отправить",
+      language: "Язык",
+      suggestions: [
+        "Какие тревоги сейчас активны?",
+        "Покажи сводку за смену",
+        "Что в очереди задач?",
+      ],
+    },
+    en: {
+      open: "Open AI assistant",
+      title: "AI assistant",
+      readOnly: "read-only",
+      docs: "documents",
+      newChat: "New chat",
+      close: "Close",
+      send: "Send",
+      placeholder: "Ask about this application…",
+      thinking: "Thinking…",
+      unavailable: "Language model is unavailable",
+      failed: "Send failed",
+      language: "Language",
+      suggestions: ["Which alarms are active?", "Summarize this shift", "What is in the task queue?"],
+    },
+  };
+  var LANG_KEY = "ispf-operator-agent-lang";
+  var lang = initialLang();
+  var text = STRINGS[lang];
 
   var capturedToken = "";
   var capturedUser = "";
@@ -68,13 +71,69 @@
 
   hookFetch();
   hookXhr();
+  hookHistory();
   window.addEventListener("storage", onStorage);
   setInterval(syncVisibility, 1000);
   syncVisibility();
 
+  function initialLang() {
+    var saved = "";
+    try {
+      saved = localStorage.getItem(LANG_KEY) || "";
+    } catch (ignore) {}
+    if (saved === "ru" || saved === "en") {
+      return saved;
+    }
+    var explicit = (script.getAttribute("data-lang") || "").trim();
+    if (/^(en)\b/i.test(explicit)) {
+      return "en";
+    }
+    return "ru";
+  }
+
+  function setLang(next) {
+    if ((next !== "ru" && next !== "en") || next === lang) {
+      return;
+    }
+    lang = next;
+    text = STRINGS[lang];
+    try {
+      localStorage.setItem(LANG_KEY, lang);
+    } catch (ignore) {}
+    if (fab) {
+      fab.setAttribute("aria-label", text.open);
+      fab.title = text.open;
+    }
+    render();
+  }
+
   function appIdFromLocation() {
     var match = (location.pathname || "").match(/^\/apps\/([^/]+)/);
     return match ? decodeURIComponent(match[1]) : "";
+  }
+
+  function loginScreen() {
+    var path = (location.pathname || "/").replace(/\/+$/, "") || "/";
+    return /\/(auth\/login|auth\/register|login|signin|sign-in|register)$/i.test(path);
+  }
+
+  function hookHistory() {
+    function wrap(name) {
+      var original = history[name];
+      if (!original || original.__ispfAgentHook) {
+        return;
+      }
+      function wrapped() {
+        var result = original.apply(this, arguments);
+        syncVisibility();
+        return result;
+      }
+      wrapped.__ispfAgentHook = true;
+      history[name] = wrapped;
+    }
+    wrap("pushState");
+    wrap("replaceState");
+    window.addEventListener("popstate", syncVisibility);
   }
 
   function hookFetch() {
@@ -242,6 +301,14 @@
   }
 
   function syncVisibility() {
+    if (loginScreen()) {
+      open = false;
+      if (root) {
+        root.hidden = true;
+        render();
+      }
+      return;
+    }
     var identity = currentIdentity();
     if (!identity || !identity.token) {
       if (root) {
@@ -264,7 +331,7 @@
     var href = script.src || "/ispf-embed/operator-agent-fab.js";
     var css = document.createElement("link");
     css.rel = "stylesheet";
-    css.href = href.replace(/\.js(\?.*)?$/, ".css");
+    css.href = href.replace(/\.js(\?.*)?$/, ".css$1");
     document.head.appendChild(css);
 
     root = document.createElement("div");
@@ -348,7 +415,13 @@
       " · " +
       escapeHtml(text.readOnly) +
       escapeHtml(docs) +
-      '</p></div><div class="ispf-op-agent-actions"><button type="button" data-action="new">' +
+      '</p></div><div class="ispf-op-agent-actions"><div class="ispf-op-agent-lang" role="group" aria-label="' +
+      escapeAttr(text.language) +
+      '"><button type="button" data-lang="ru" aria-pressed="' +
+      (lang === "ru" ? "true" : "false") +
+      '">RU</button><button type="button" data-lang="en" aria-pressed="' +
+      (lang === "en" ? "true" : "false") +
+      '">EN</button></div><button type="button" data-action="new">' +
       escapeHtml(text.newChat) +
       '</button><button type="button" data-action="close" aria-label="' +
       escapeAttr(text.close) +
@@ -366,6 +439,11 @@
     if (!existing) {
       root.appendChild(drawer);
     }
+    drawer.querySelectorAll(".ispf-op-agent-lang [data-lang]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        setLang(button.getAttribute("data-lang"));
+      });
+    });
     drawer.querySelector('[data-action="close"]').addEventListener("click", function () {
       open = false;
       fab.classList.remove("open");
@@ -409,6 +487,58 @@
       });
   }
 
+  function pageContext() {
+    var host = document.getElementById("ispf-operator-agent");
+    function outside(node) {
+      return node && (!host || !host.contains(node));
+    }
+    var heading = "";
+    var heads = document.querySelectorAll("h1, h2");
+    for (var i = 0; i < heads.length; i++) {
+      var label = (heads[i].innerText || "").replace(/\s+/g, " ").trim();
+      if (outside(heads[i]) && label) {
+        heading = label;
+        break;
+      }
+    }
+    var lines = [];
+    var tables = document.querySelectorAll("table");
+    for (var t = 0; t < tables.length && lines.length < 40; t++) {
+      if (!outside(tables[t])) {
+        continue;
+      }
+      var rows = tables[t].querySelectorAll("tr");
+      for (var r = 0; r < rows.length && lines.length < 40; r++) {
+        var cells = rows[r].querySelectorAll("th, td");
+        var parts = [];
+        for (var c = 0; c < cells.length && c < 12; c++) {
+          var bit = (cells[c].innerText || "").replace(/\s+/g, " ").trim();
+          if (bit) {
+            parts.push(bit);
+          }
+        }
+        if (parts.length) {
+          lines.push(parts.join(" | "));
+        }
+      }
+    }
+    var table = lines.join("\n");
+    if (table.length > 4000) {
+      table = table.slice(0, 4000);
+    }
+    if (!heading && !table) {
+      return "";
+    }
+    return (
+      "\n\n[Контекст экрана. Это то, что пользователь видит сейчас. Если вопрос про открытый раздел, отвечай по этой таблице и не пиши, что данных нет, когда строки ниже есть.]\n" +
+      "Страница: " +
+      (location.pathname || "") +
+      "\n" +
+      (heading ? "Заголовок: " + heading + "\n" : "") +
+      (table ? "Таблица:\n" + table : "")
+    );
+  }
+
   function send(raw) {
     var message = String(raw || "").trim();
     var identity = currentIdentity();
@@ -418,13 +548,13 @@
     messages.push({ role: "user", text: message });
     pending = true;
     render();
-    var locale = (document.documentElement && document.documentElement.lang) || (ru ? "ru" : "en");
+    var locale = lang;
     ensureSession(identity)
       .then(function (id) {
         sessionId = id;
         return agent("/sessions/" + encodeURIComponent(id) + "/messages", {
           method: "POST",
-          body: JSON.stringify({ message: message, uiLocale: locale }),
+          body: JSON.stringify({ message: message + pageContext(), uiLocale: locale }),
         });
       })
       .then(function (body) {
