@@ -292,15 +292,51 @@ public class BindingRulesService {
                 throw new IllegalArgumentException("onEventRef must use /evt/ grammar: " + onEventRef);
             }
         }
+        String onEvent = activators.onEvent();
+        if (onEvent != null && !onEvent.isBlank()) {
+            String event = onEvent.trim();
+            if (!event.isBlank()) {
+                PlatformObject object = objectManager.require(objectPath);
+                if (object.events().get(event) == null) {
+                    throw new IllegalArgumentException("Unknown event: " + event);
+                }
+            }
+        }
         for (BindingVariableRef variableRef : activators.onVariableChange()) {
             String raw = variableRef.ref();
-            if (raw == null || raw.isBlank()) {
-                continue;
+            if (raw != null && !raw.isBlank()) {
+                if (raw.contains("${")) {
+                    throw new IllegalArgumentException("Unresolved placeholder in onVariableChange ref: " + raw);
+                }
+                PlatformRefParser.parseVariableSource(raw);
             }
-            if (raw.contains("${")) {
-                throw new IllegalArgumentException("Unresolved placeholder in onVariableChange ref: " + raw);
+            validateActivatorVariable(objectPath, variableRef);
+        }
+    }
+
+    private void validateActivatorVariable(String objectPath, BindingVariableRef variableRef) {
+        String variableName = variableRef.variableName();
+        if (variableName == null || variableName.isBlank() || BindingVariableRef.ANY.equals(variableName)) {
+            return;
+        }
+        String activatorPath = variableRef.objectPath();
+        if (activatorPath == null || activatorPath.isBlank() || BindingVariableRef.SELF.equals(activatorPath)) {
+            activatorPath = objectPath;
+        } else if (BindingVariableRef.ANY.equals(activatorPath)) {
+            return;
+        }
+        // Remote activators may name a variable that first telemetry creates later.
+        if (!objectPath.equals(activatorPath)) {
+            if (objectManager.tree().findByPath(activatorPath).isEmpty()) {
+                throw new IllegalArgumentException("Unknown object: " + activatorPath);
             }
-            PlatformRefParser.parseVariableSource(raw);
+            return;
+        }
+        boolean present = objectManager.tree().findByPath(activatorPath)
+                .flatMap(node -> node.getVariable(variableName))
+                .isPresent();
+        if (!present) {
+            throw new IllegalArgumentException("Unknown variable: " + variableName);
         }
     }
 
