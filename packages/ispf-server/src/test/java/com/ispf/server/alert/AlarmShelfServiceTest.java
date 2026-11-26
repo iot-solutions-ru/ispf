@@ -1,5 +1,9 @@
 package com.ispf.server.alert;
 
+import com.ispf.core.object.EventDescriptor;
+import com.ispf.core.object.ObjectTree;
+import com.ispf.core.object.PlatformObject;
+import com.ispf.server.object.ObjectManager;
 import com.ispf.server.persistence.AlarmShelfRepository;
 import com.ispf.server.persistence.entity.AlarmShelfEntity;
 import org.junit.jupiter.api.BeforeEach;
@@ -11,6 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -29,17 +34,29 @@ class AlarmShelfServiceTest {
     @Mock
     private AlarmShelfRepository repository;
 
+    @Mock
+    private ObjectManager objectManager;
+
+    @Mock
+    private ObjectTree objectTree;
+
+    @Mock
+    private PlatformObject device;
+
     private AlarmShelfService service;
 
     @BeforeEach
     void setUp() {
-        service = new AlarmShelfService(repository);
+        service = new AlarmShelfService(repository, objectManager);
     }
 
     @Test
     void shelveCreatesActiveRecord() {
         when(repository.findActiveShelf(any(), any(), any())).thenReturn(Optional.empty());
         when(repository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(objectManager.tree()).thenReturn(objectTree);
+        when(objectTree.findByPath("root.platform.devices.demo-sensor-01")).thenReturn(Optional.of(device));
+        when(device.events()).thenReturn(Map.of("thresholdExceeded", org.mockito.Mockito.mock(EventDescriptor.class)));
 
         AlarmShelf shelf = service.shelve(new AlarmShelfService.ShelveAlarmRequest(
                 "root.platform.devices.demo-sensor-01",
