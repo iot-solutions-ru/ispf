@@ -240,6 +240,11 @@ public class BindingRulesService {
             if (object.getVariable(target.variableName()).isEmpty()) {
                 throw new IllegalArgumentException("Unknown target variable: " + target.variableName());
             }
+            Variable variable = object.getVariable(target.variableName()).orElseThrow();
+            DataSchema schema = variable.schema();
+            if (schema == null || schema.field(target.field()).isEmpty()) {
+                throw new IllegalArgumentException("Unknown target field: " + target.field());
+            }
             return;
         }
         if (target.isContext()) {
