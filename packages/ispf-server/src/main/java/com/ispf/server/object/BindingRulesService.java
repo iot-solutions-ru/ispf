@@ -292,6 +292,13 @@ public class BindingRulesService {
                 throw new IllegalArgumentException("onEventRef must use /evt/ grammar: " + onEventRef);
             }
         }
+        String onEvent = activators.onEvent();
+        if (onEvent != null && !onEvent.isBlank()) {
+            PlatformObject object = objectManager.require(objectPath);
+            if (object.events().get(onEvent) == null) {
+                throw new IllegalArgumentException("Unknown event: " + onEvent);
+            }
+        }
         for (BindingVariableRef variableRef : activators.onVariableChange()) {
             String raw = variableRef.ref();
             if (raw == null || raw.isBlank()) {
