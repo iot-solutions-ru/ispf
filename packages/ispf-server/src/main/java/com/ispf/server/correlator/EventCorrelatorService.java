@@ -132,6 +132,7 @@ public class EventCorrelatorService {
                 request.cooldownSeconds(),
                 request.sequenceGapSeconds()
         );
+        validateEmailAction(request.actionType(), request.actionTarget());
         validatePayloadFilter(request.payloadFilterExpr());
         return automationTreeService.createCorrelator(
                 request.name(),
@@ -166,6 +167,10 @@ public class EventCorrelatorService {
                 request.windowSeconds() != null ? request.windowSeconds() : current.windowSeconds(),
                 request.cooldownSeconds() != null ? request.cooldownSeconds() : current.cooldownSeconds(),
                 request.sequenceGapSeconds() != null ? request.sequenceGapSeconds() : current.sequenceGapSeconds()
+        );
+        validateEmailAction(
+                request.actionType() != null ? request.actionType() : current.actionType(),
+                request.actionTarget() != null ? request.actionTarget() : current.actionTarget()
         );
         validatePayloadFilter(request.payloadFilterExpr() != null
                 ? request.payloadFilterExpr()
@@ -775,6 +780,12 @@ public class EventCorrelatorService {
             if (windowSeconds <= 0) {
                 throw new IllegalArgumentException("windowSeconds must be > 0 for WINDOW pattern");
             }
+        }
+    }
+
+    private void validateEmailAction(CorrelatorActionType actionType, String actionTarget) {
+        if (actionType == CorrelatorActionType.SEND_EMAIL) {
+            notificationDispatchService.validateEmailTarget(actionTarget);
         }
     }
 
