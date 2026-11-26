@@ -149,6 +149,7 @@
   "operatorApps.uploadingDocument": "Uploading…",
   "agent.title": "AI assistant",
   "agent.open": "Open AI assistant",
+  "agent.move": "Drag to move",
   "agent.close": "Close assistant",
   "agent.newChat": "New chat",
   "agent.readOnlyHint": "read-only · this application only",

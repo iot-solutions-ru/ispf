@@ -9,6 +9,7 @@
   "agent.llmUnavailable": "AI ist auf dem Server nicht konfiguriert.",
   "agent.memoryCount": "{{count}} Erinnerungen",
   "agent.open": "Öffnen Sie den KI-Assistenten",
+  "agent.move": "Ziehen zum Verschieben",
   "agent.openDashboard": "Dashboard öffnen",
   "agent.openReport": "Bericht öffnen",
   "agent.openTable": "Tabelle anzeigen: {{title}} ({{count}} Zeilen)",

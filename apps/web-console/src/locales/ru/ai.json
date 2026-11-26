@@ -200,6 +200,7 @@
   "copilot.title": "Admin Copilot",
   "copilot.subtitle": "Отдельный экранный помощник (не AI Studio) — отвечает по текущему UI, без глубокой истории",
   "copilot.open": "Открыть Admin Copilot",
+  "copilot.move": "Можно перетащить",
   "copilot.close": "Закрыть Copilot",
   "copilot.ask": "Спросить Copilot",
   "copilot.focusNone": "Фокус экрана не задан",

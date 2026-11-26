@@ -200,6 +200,7 @@
   "copilot.title": "Admin Copilot",
   "copilot.subtitle": "Dedicated screen helper (not AI Studio) — answers from live UI, no deep chat history",
   "copilot.open": "Open Admin Copilot",
+  "copilot.move": "Drag to move",
   "copilot.close": "Close Copilot",
   "copilot.ask": "Ask Copilot",
   "copilot.focusNone": "No screen focus",
