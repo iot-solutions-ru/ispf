@@ -33,6 +33,7 @@
       unavailable: "Языковая модель недоступна",
       failed: "Не удалось отправить",
       language: "Язык",
+      move: "Можно перетащить",
       suggestions: [
         "Какие тревоги сейчас активны?",
         "Покажи сводку за смену",
@@ -52,10 +53,12 @@
       unavailable: "Language model is unavailable",
       failed: "Send failed",
       language: "Language",
+      move: "Drag to move",
       suggestions: ["Which alarms are active?", "Summarize this shift", "What is in the task queue?"],
     },
   };
   var LANG_KEY = "ispf-operator-agent-lang";
+  var POS_KEY = "ispf-operator-agent-pos";
   var lang = initialLang();
   var text = STRINGS[lang];
 
@@ -101,8 +104,8 @@
       localStorage.setItem(LANG_KEY, lang);
     } catch (ignore) {}
     if (fab) {
-      fab.setAttribute("aria-label", text.open);
-      fab.title = text.open;
+      fab.setAttribute("aria-label", fabLabel());
+      fab.title = fabLabel();
     }
     render();
   }
@@ -340,9 +343,15 @@
     fab.type = "button";
     fab.className = "ispf-op-agent-fab";
     fab.textContent = "AI";
-    fab.setAttribute("aria-label", text.open);
-    fab.title = text.open;
-    fab.addEventListener("click", function () {
+    fab.setAttribute("aria-label", fabLabel());
+    fab.title = fabLabel();
+    fab.addEventListener("click", function (event) {
+      if (fab.dataset.dragged === "1") {
+        fab.dataset.dragged = "";
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
       open = !open;
       fab.classList.toggle("open", open);
       fab.textContent = open ? "×" : "AI";
@@ -352,8 +361,134 @@
         loadStatus();
       }
     });
+    hookDrag();
     root.appendChild(fab);
     document.body.appendChild(root);
+    applyPos(readPos());
+    window.addEventListener("resize", function () {
+      applyPos(clampPos(readPos()));
+    });
+  }
+
+  function fabLabel() {
+    return text.open + ". " + text.move;
+  }
+
+  function readPos() {
+    try {
+      var raw = localStorage.getItem(POS_KEY);
+      if (raw) {
+        var parsed = JSON.parse(raw);
+        if (parsed && typeof parsed.x === "number" && typeof parsed.y === "number") {
+          return clampPos(parsed);
+        }
+      }
+    } catch (ignore) {}
+    return clampPos({
+      x: window.innerWidth - 72,
+      y: window.innerHeight - 72,
+    });
+  }
+
+  function clampPos(pos) {
+    var size = 52;
+    var margin = 8;
+    return {
+      x: Math.min(Math.max(margin, pos.x), Math.max(margin, window.innerWidth - size - margin)),
+      y: Math.min(Math.max(margin, pos.y), Math.max(margin, window.innerHeight - size - margin)),
+    };
+  }
+
+  function applyPos(pos) {
+    if (!fab) {
+      return;
+    }
+    fab.style.left = pos.x + "px";
+    fab.style.top = pos.y + "px";
+    fab.style.right = "auto";
+    fab.style.bottom = "auto";
+    placeDrawer(pos);
+  }
+
+  function placeDrawer(pos) {
+    var drawer = root && root.querySelector(".ispf-op-agent-drawer");
+    if (!drawer) {
+      return;
+    }
+    var width = Math.min(420, window.innerWidth - 16);
+    var height = drawer.offsetHeight || 360;
+    var left = pos.x + 52 - width;
+    if (left < 8) {
+      left = 8;
+    }
+    if (left + width > window.innerWidth - 8) {
+      left = Math.max(8, window.innerWidth - width - 8);
+    }
+    var top = pos.y - height - 12;
+    if (top < 8) {
+      top = pos.y + 64;
+    }
+    if (top + height > window.innerHeight - 8) {
+      top = Math.max(8, window.innerHeight - height - 8);
+    }
+    drawer.style.left = left + "px";
+    drawer.style.top = top + "px";
+    drawer.style.right = "auto";
+    drawer.style.bottom = "auto";
+    drawer.style.width = width + "px";
+  }
+
+  function hookDrag() {
+    var drag = null;
+    fab.addEventListener("pointerdown", function (event) {
+      if (event.button != null && event.button !== 0) {
+        return;
+      }
+      var pos = readPos();
+      drag = {
+        id: event.pointerId,
+        sx: event.clientX,
+        sy: event.clientY,
+        ox: pos.x,
+        oy: pos.y,
+        moved: false,
+      };
+      try {
+        fab.setPointerCapture(event.pointerId);
+      } catch (ignore) {}
+    });
+    fab.addEventListener("pointermove", function (event) {
+      if (!drag || drag.id !== event.pointerId) {
+        return;
+      }
+      var dx = event.clientX - drag.sx;
+      var dy = event.clientY - drag.sy;
+      if (!drag.moved && Math.abs(dx) + Math.abs(dy) < 6) {
+        return;
+      }
+      drag.moved = true;
+      fab.classList.add("dragging");
+      applyPos(clampPos({ x: drag.ox + dx, y: drag.oy + dy }));
+    });
+    function endDrag(event) {
+      if (!drag || drag.id !== event.pointerId) {
+        return;
+      }
+      var moved = drag.moved;
+      drag = null;
+      fab.classList.remove("dragging");
+      if (!moved) {
+        return;
+      }
+      fab.dataset.dragged = "1";
+      var left = parseFloat(fab.style.left);
+      var top = parseFloat(fab.style.top);
+      try {
+        localStorage.setItem(POS_KEY, JSON.stringify(clampPos({ x: left, y: top })));
+      } catch (ignore) {}
+    }
+    fab.addEventListener("pointerup", endDrag);
+    fab.addEventListener("pointercancel", endDrag);
   }
 
   function render() {
@@ -472,6 +607,7 @@
     });
     var logEl = drawer.querySelector(".ispf-op-agent-log");
     logEl.scrollTop = logEl.scrollHeight;
+    placeDrawer(readPos());
   }
 
   function loadStatus() {

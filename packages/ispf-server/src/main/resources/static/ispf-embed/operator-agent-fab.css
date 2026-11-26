@@ -15,7 +15,13 @@
   color: #fff;
   font: 700 0.85rem/1 system-ui, sans-serif;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
-  cursor: pointer;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.ispf-op-agent-fab.dragging {
+  cursor: grabbing;
 }
 
 .ispf-op-agent-fab.open {
@@ -24,8 +30,8 @@
 
 .ispf-op-agent-drawer {
   position: fixed;
-  right: 1rem;
-  bottom: 5rem;
+  right: auto;
+  bottom: auto;
   z-index: 2147483001;
   width: min(420px, calc(100vw - 2rem));
   max-height: min(70vh, 640px);
