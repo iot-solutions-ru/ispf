@@ -87,6 +87,9 @@ public class EventFilterObjectService {
         if (definition.timeWindowMs() < 0) {
             throw new IllegalArgumentException("timeWindowMs must not be negative");
         }
+        if (definition.timeWindowMs() > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("timeWindowMs must not exceed " + Integer.MAX_VALUE);
+        }
         if (definition.eventNamePattern() != null && definition.eventNamePattern().isBlank()) {
             throw new IllegalArgumentException("eventNamePattern must not be blank");
         }
@@ -193,10 +196,13 @@ public class EventFilterObjectService {
     }
 
     private void setInteger(String path, String variable, long value) {
+        if (value < Integer.MIN_VALUE || value > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException(variable + " must fit in an integer");
+        }
         objectManager.setVariableValue(
                 path,
                 variable,
-                DataRecord.single(INTEGER_SCHEMA, Map.of("value", (int) Math.min(value, Integer.MAX_VALUE)))
+                DataRecord.single(INTEGER_SCHEMA, Map.of("value", (int) value))
         );
     }
 
