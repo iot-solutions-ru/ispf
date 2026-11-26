@@ -102,8 +102,8 @@ class EventCorrelatorServiceInvalidPayloadFilterTest {
                 1,
                 0,
                 0,
-                CorrelatorActionType.RUN_WORKFLOW,
-                "root.platform.workflows.none",
+                CorrelatorActionType.SEND_WEBHOOK,
+                "http://127.0.0.1:9/hook",
                 payloadFilterExpr,
                 false
         );
