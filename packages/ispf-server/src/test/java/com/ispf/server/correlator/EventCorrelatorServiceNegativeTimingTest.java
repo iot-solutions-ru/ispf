@@ -95,8 +95,8 @@ class EventCorrelatorServiceNegativeTimingTest {
                 1,
                 cooldownSeconds,
                 sequenceGapSeconds,
-                CorrelatorActionType.RUN_WORKFLOW,
-                "root.platform.workflows.none",
+                CorrelatorActionType.SEND_WEBHOOK,
+                "http://127.0.0.1:9/hook",
                 "",
                 false
         );

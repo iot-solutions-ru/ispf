@@ -54,8 +54,8 @@ class EventCorrelatorWindowTest {
                 1,
                 0,
                 0,
-                CorrelatorActionType.RUN_WORKFLOW,
-                "root.platform.workflows.mes-work-order-dispatch",
+                CorrelatorActionType.SEND_WEBHOOK,
+                "http://127.0.0.1:9/hook",
                 true
         ));
 

@@ -139,6 +139,7 @@ public class EventCorrelatorService {
         validateFireEventAction(request.objectPath(), request.actionType(), request.actionTarget());
         validateOpenReportAction(request.actionType(), request.actionTarget());
         validateSetVariableAction(request.objectPath(), request.actionType(), request.actionTarget());
+        validateWorkflowAction(request.actionType(), request.actionTarget());
         validatePayloadFilter(request.payloadFilterExpr());
         return automationTreeService.createCorrelator(
                 request.name(),
@@ -189,6 +190,10 @@ public class EventCorrelatorService {
         );
         validateSetVariableAction(
                 request.objectPath() != null ? request.objectPath() : current.objectPath(),
+                request.actionType() != null ? request.actionType() : current.actionType(),
+                request.actionTarget() != null ? request.actionTarget() : current.actionTarget()
+        );
+        validateWorkflowAction(
                 request.actionType() != null ? request.actionType() : current.actionType(),
                 request.actionTarget() != null ? request.actionTarget() : current.actionTarget()
         );
@@ -794,6 +799,18 @@ public class EventCorrelatorService {
             throw new IllegalArgumentException("Unknown variable: " + variableName);
         }
         variable.requireCompatibleValue(parseVariableAssignment(rawValue));
+    }
+
+    private void validateWorkflowAction(CorrelatorActionType actionType, String actionTarget) {
+        if (actionType != CorrelatorActionType.RUN_WORKFLOW) {
+            return;
+        }
+        boolean workflow = objectManager.tree().findByPath(actionTarget)
+                .filter(node -> node.type() == ObjectType.WORKFLOW)
+                .isPresent();
+        if (!workflow) {
+            throw new IllegalArgumentException("Unknown workflow: " + actionTarget);
+        }
     }
 
     private static void validateRequest(
