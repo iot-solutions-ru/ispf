@@ -304,13 +304,32 @@ public class BindingRulesService {
         }
         for (BindingVariableRef variableRef : activators.onVariableChange()) {
             String raw = variableRef.ref();
-            if (raw == null || raw.isBlank()) {
-                continue;
+            if (raw != null && !raw.isBlank()) {
+                if (raw.contains("${")) {
+                    throw new IllegalArgumentException("Unresolved placeholder in onVariableChange ref: " + raw);
+                }
+                PlatformRefParser.parseVariableSource(raw);
             }
-            if (raw.contains("${")) {
-                throw new IllegalArgumentException("Unresolved placeholder in onVariableChange ref: " + raw);
-            }
-            PlatformRefParser.parseVariableSource(raw);
+            validateActivatorVariable(objectPath, variableRef);
+        }
+    }
+
+    private void validateActivatorVariable(String objectPath, BindingVariableRef variableRef) {
+        String variableName = variableRef.variableName();
+        if (variableName == null || variableName.isBlank() || BindingVariableRef.ANY.equals(variableName)) {
+            return;
+        }
+        String activatorPath = variableRef.objectPath();
+        if (activatorPath == null || activatorPath.isBlank() || BindingVariableRef.SELF.equals(activatorPath)) {
+            activatorPath = objectPath;
+        } else if (BindingVariableRef.ANY.equals(activatorPath)) {
+            return;
+        }
+        boolean present = objectManager.tree().findByPath(activatorPath)
+                .flatMap(node -> node.getVariable(variableName))
+                .isPresent();
+        if (!present) {
+            throw new IllegalArgumentException("Unknown variable: " + variableName);
         }
     }
 
