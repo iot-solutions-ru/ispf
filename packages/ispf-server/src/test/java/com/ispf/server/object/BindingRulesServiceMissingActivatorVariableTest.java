@@ -5,6 +5,8 @@ import com.ispf.core.binding.BindingRule;
 import com.ispf.core.binding.BindingRulesConstants;
 import com.ispf.core.binding.BindingTarget;
 import com.ispf.core.binding.BindingVariableRef;
+import com.ispf.core.model.DataSchema;
+import com.ispf.core.model.FieldType;
 import com.ispf.core.object.ObjectTree;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
@@ -72,9 +74,11 @@ class BindingRulesServiceMissingActivatorVariableTest {
 
     @Test
     void existingActivatorVariableIsSaved() {
+        Variable temp = mock(Variable.class);
+        when(temp.schema()).thenReturn(DataSchema.builder("temp").field("value", FieldType.DOUBLE).build());
         when(objectManager.require(PATH)).thenReturn(device);
         when(device.getVariable(BindingRulesConstants.RULES_VARIABLE)).thenReturn(Optional.empty());
-        when(device.getVariable("temp")).thenReturn(Optional.of(mock(Variable.class)));
+        when(device.getVariable("temp")).thenReturn(Optional.of(temp));
         when(objectManager.tree()).thenReturn(objectTree);
         when(objectTree.findByPath(PATH)).thenReturn(Optional.of(device));
         when(bindingFormulaResolver.resolve(any())).thenAnswer(invocation -> invocation.getArgument(0));
@@ -86,9 +90,11 @@ class BindingRulesServiceMissingActivatorVariableTest {
 
     @Test
     void anyVariableActivatorIsSaved() {
+        Variable temp = mock(Variable.class);
+        when(temp.schema()).thenReturn(DataSchema.builder("temp").field("value", FieldType.DOUBLE).build());
         when(objectManager.require(PATH)).thenReturn(device);
         when(device.getVariable(BindingRulesConstants.RULES_VARIABLE)).thenReturn(Optional.empty());
-        when(device.getVariable("temp")).thenReturn(Optional.of(mock(Variable.class)));
+        when(device.getVariable("temp")).thenReturn(Optional.of(temp));
         when(bindingFormulaResolver.resolve(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         service().saveRules(PATH, List.of(rule(BindingVariableRef.ANY)));
