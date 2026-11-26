@@ -294,9 +294,12 @@ public class BindingRulesService {
         }
         String onEvent = activators.onEvent();
         if (onEvent != null && !onEvent.isBlank()) {
-            PlatformObject object = objectManager.require(objectPath);
-            if (object.events().get(onEvent) == null) {
-                throw new IllegalArgumentException("Unknown event: " + onEvent);
+            String event = onEvent.trim();
+            if (!event.isBlank()) {
+                PlatformObject object = objectManager.require(objectPath);
+                if (object.events().get(event) == null) {
+                    throw new IllegalArgumentException("Unknown event: " + event);
+                }
             }
         }
         for (BindingVariableRef variableRef : activators.onVariableChange()) {
