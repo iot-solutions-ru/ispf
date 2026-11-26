@@ -105,6 +105,14 @@ Content-Type: application/json
 Store the returned `token` and pass `Authorization: Bearer <token>` on subsequent requests (returning to the login screen on HTTP `401`).
 *(Note: third-party partner packs configured with restricted `uiPackTrust` (`partner` / `signedPartner`) do not call `/api/v1/auth/login` directly and instead receive a BFF-scoped token carrying `uiPackAppId` — see [ADR-0073](decisions/0073-hosted-ui-pack-trust.md).)*
 
+### Operator AI assistant (default)
+
+Every hosted pack HTML response includes `/ispf-embed/operator-agent-fab.js` (circle, bottom-right). The script does not log in. It sends the Bearer the page already uses for `/api/v1`, so tools and ACLs are that user’s. Requests go to `/api/v1/operator-apps/{appId}/agent/**` where `{appId}` is the pack’s canonical id, so instructions, knowledge documents, and scope are that operator application’s — not another demo’s.
+
+Turn the inject off only as an emergency: `ispf.ui-pack.inject-operator-agent=false` (`ISPF_UI_PACK_INJECT_OPERATOR_AGENT`). There is no per-app switch.
+
+Split nginx must proxy `location ^~ /ispf-embed/` to the JVM the same way as `/apps/`, or the script request falls through to the console `try_files`. An external SPA on another host (mes-demo) loads the same file from its own origin and sets `data-app-id` to its operator app.
+
 ### Calling backend functions (`POST /api/v1/bff/invoke`)
 
 Every screen reads data and submits commands through `/api/v1/bff/invoke` targeting your application's **`SINGLETON`** or **`INSTANCE`** hub object (never a `DEVICE` node):

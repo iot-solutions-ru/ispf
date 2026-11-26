@@ -224,7 +224,7 @@ public final class IspfAuthorizationRules {
         if ("/api/v1/info".equals(path) || path.startsWith("/actuator/health")) {
             return true;
         }
-        return false;
+        return operatorAgentAppId(path) != null;
     }
 
     /**
@@ -238,13 +238,38 @@ public final class IspfAuthorizationRules {
         if (!isPackScopedPathAllowed(path)) {
             return true;
         }
+        String agentAppId = operatorAgentAppId(path);
+        if (agentAppId != null) {
+            return !agentAppId.equals(uiPackAppId) || !packContextMatches(request, uiPackAppId);
+        }
         if (path.startsWith("/api/v1/bff/")) {
-            return !bffMatchesApp(request, uiPackAppId);
+            return !packContextMatches(request, uiPackAppId);
         }
         return false;
     }
 
-    private static boolean bffMatchesApp(HttpServletRequest request, String uiPackAppId) {
+    /**
+     * {@code /api/v1/operator-apps/{appId}/agent/**} after trailing-slash trim, or null.
+     */
+    static String operatorAgentAppId(String path) {
+        String prefix = "/api/v1/operator-apps/";
+        if (path == null || !path.startsWith(prefix)) {
+            return null;
+        }
+        String rest = path.substring(prefix.length());
+        int slash = rest.indexOf('/');
+        if (slash <= 0) {
+            return null;
+        }
+        String appId = rest.substring(0, slash);
+        String tail = rest.substring(slash);
+        if (!tail.equals("/agent") && !tail.startsWith("/agent/")) {
+            return null;
+        }
+        return appId;
+    }
+
+    private static boolean packContextMatches(HttpServletRequest request, String uiPackAppId) {
         if (uiPackAppId == null || uiPackAppId.isBlank()) {
             return false;
         }

@@ -4,6 +4,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import com.ispf.server.config.UiPackProperties;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.MediaType;
@@ -12,6 +14,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -34,9 +37,17 @@ public class HostedUiPackFilter extends OncePerRequestFilter {
                     + "img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'";
 
     private final DropInUiPackLoader uiPackLoader;
+    private final UiPackProperties properties;
 
-    public HostedUiPackFilter(DropInUiPackLoader uiPackLoader) {
+    @Autowired
+    public HostedUiPackFilter(DropInUiPackLoader uiPackLoader, UiPackProperties properties) {
         this.uiPackLoader = uiPackLoader;
+        this.properties = properties;
+    }
+
+    /** Tests that keep the default inject-on behaviour. */
+    public HostedUiPackFilter(DropInUiPackLoader uiPackLoader) {
+        this(uiPackLoader, new UiPackProperties());
     }
 
     @Override
@@ -107,9 +118,38 @@ public class HostedUiPackFilter extends OncePerRequestFilter {
             response.setContentLengthLong(Files.size(asset));
             return;
         }
+        writeBody(response, asset, contentType, injectAppId(canonicalAppId, appId));
+    }
+
+    private void writeBody(
+            HttpServletResponse response,
+            Path asset,
+            String contentType,
+            String injectAppId
+    ) throws IOException {
+        if (contentType != null && contentType.toLowerCase(Locale.ROOT).contains("text/html")) {
+            String html = Files.readString(asset);
+            String body = HostedUiPackAgentHtml.inject(
+                    html,
+                    injectAppId,
+                    properties.isInjectOperatorAgent()
+            );
+            byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
+            response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+            response.setContentLength(bytes.length);
+            response.getOutputStream().write(bytes);
+            return;
+        }
         try (OutputStream out = response.getOutputStream()) {
             Files.copy(asset, out);
         }
+    }
+
+    private static String injectAppId(String canonicalAppId, String requestAppId) {
+        if (canonicalAppId != null && !canonicalAppId.isBlank() && isSafeAppId(canonicalAppId)) {
+            return canonicalAppId;
+        }
+        return isSafeAppId(requestAppId) ? requestAppId : "";
     }
 
     /**

@@ -59,8 +59,27 @@ class HostedUiPackCspTest {
         filter.doFilter(request, response, (req, res) -> {
         });
         assertEquals(200, response.getStatus());
-        assertTrue(response.getContentAsString().contains("pack"));
+        String body = response.getContentAsString();
+        assertTrue(body.contains("pack"));
+        assertTrue(body.contains("operator-agent-fab.js"));
+        assertTrue(body.contains("data-app-id=\"demo-app\""));
         assertIsolation(response);
+    }
+
+    @Test
+    void injectCanBeDisabled() throws Exception {
+        UiPackProperties properties = new UiPackProperties();
+        properties.setPacksDir(tempDir.resolve("installed").toString());
+        properties.setInjectOperatorAgent(false);
+        DropInUiPackLoader loader = new DropInUiPackLoader(properties, new ObjectMapper());
+        HostedUiPackFilter quiet = new HostedUiPackFilter(loader, properties);
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/apps/demo-app/");
+        request.setRequestURI("/apps/demo-app/");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        quiet.doFilter(request, response, (req, res) -> {
+        });
+        assertEquals(200, response.getStatus());
+        assertFalse(response.getContentAsString().contains("operator-agent-fab.js"));
     }
 
     @Test

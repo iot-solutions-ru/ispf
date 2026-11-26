@@ -598,6 +598,7 @@ ispf:
   ui-pack:
     packs-dir: ${ISPF_UI_PACKS_DIR:./data/ui-packs}
     max-zip-bytes: ${ISPF_UI_PACK_MAX_ZIP_BYTES:52428800}
+    inject-operator-agent: ${ISPF_UI_PACK_INJECT_OPERATOR_AGENT:true}
   license:
     data-dir: ${ISPF_DATA_DIR:./data}
     public-key-pem: ${ISPF_LICENSE_PUBLIC_KEY_PEM:}
