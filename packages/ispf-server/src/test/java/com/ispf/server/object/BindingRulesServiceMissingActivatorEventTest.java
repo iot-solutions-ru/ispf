@@ -4,6 +4,8 @@ import com.ispf.core.binding.BindingActivators;
 import com.ispf.core.binding.BindingRule;
 import com.ispf.core.binding.BindingRulesConstants;
 import com.ispf.core.binding.BindingTarget;
+import com.ispf.core.model.DataSchema;
+import com.ispf.core.model.FieldType;
 import com.ispf.core.object.EventDescriptor;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
@@ -68,9 +70,11 @@ class BindingRulesServiceMissingActivatorEventTest {
 
     @Test
     void existingActivatorEventIsSaved() {
+        Variable temp = mock(Variable.class);
+        when(temp.schema()).thenReturn(DataSchema.builder("temp").field("value", FieldType.DOUBLE).build());
         when(objectManager.require(PATH)).thenReturn(device);
         when(device.getVariable(BindingRulesConstants.RULES_VARIABLE)).thenReturn(Optional.empty());
-        when(device.getVariable("temp")).thenReturn(Optional.of(mock(Variable.class)));
+        when(device.getVariable("temp")).thenReturn(Optional.of(temp));
         when(device.events()).thenReturn(Map.of("probe", mock(EventDescriptor.class)));
         when(bindingFormulaResolver.resolve(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
