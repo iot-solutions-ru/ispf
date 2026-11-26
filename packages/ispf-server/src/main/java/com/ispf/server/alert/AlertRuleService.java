@@ -123,7 +123,12 @@ public class AlertRuleService {
 
     @Transactional
     public AlertRule update(String id, UpdateAlertRuleRequest request) {
-        validateTiming(request.delaySeconds(), request.pollIntervalMs(), request.deactivateDelaySeconds());
+        validateTiming(
+                request.delaySeconds(),
+                request.pollIntervalMs(),
+                request.deactivateDelaySeconds(),
+                request.rateLimitSeconds()
+        );
         notificationDispatchService.validateEmailTarget(request.notificationEmailTarget());
         AlertRule current = get(id);
         String objectPath = request.objectPath() != null ? request.objectPath() : current.objectPath();
@@ -564,6 +569,15 @@ public class AlertRuleService {
     }
 
     private static void validateTiming(Integer delaySeconds, Integer pollIntervalMs, Integer deactivateDelaySeconds) {
+        validateTiming(delaySeconds, pollIntervalMs, deactivateDelaySeconds, null);
+    }
+
+    private static void validateTiming(
+            Integer delaySeconds,
+            Integer pollIntervalMs,
+            Integer deactivateDelaySeconds,
+            Integer rateLimitSeconds
+    ) {
         if (delaySeconds != null && delaySeconds < 0) {
             throw new IllegalArgumentException("delaySeconds must not be negative");
         }
@@ -572,6 +586,9 @@ public class AlertRuleService {
         }
         if (deactivateDelaySeconds != null && deactivateDelaySeconds < 0) {
             throw new IllegalArgumentException("deactivateDelaySeconds must not be negative");
+        }
+        if (rateLimitSeconds != null && rateLimitSeconds < 0) {
+            throw new IllegalArgumentException("rateLimitSeconds must not be negative");
         }
     }
 
