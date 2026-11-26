@@ -9,6 +9,7 @@ import com.ispf.server.automation.AutomationTreeService;
 import com.ispf.core.object.ObjectEvent;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
+import com.ispf.core.object.Variable;
 import com.ispf.server.event.EventJournalRecord;
 import com.ispf.server.event.EventJournalStore;
 import com.ispf.server.event.EventService;
@@ -137,6 +138,7 @@ public class EventCorrelatorService {
         validateEmailAction(request.actionType(), request.actionTarget());
         validateFireEventAction(request.objectPath(), request.actionType(), request.actionTarget());
         validateOpenReportAction(request.actionType(), request.actionTarget());
+        validateSetVariableAction(request.objectPath(), request.actionType(), request.actionTarget());
         validatePayloadFilter(request.payloadFilterExpr());
         return automationTreeService.createCorrelator(
                 request.name(),
@@ -182,6 +184,11 @@ public class EventCorrelatorService {
                 request.actionTarget() != null ? request.actionTarget() : current.actionTarget()
         );
         validateOpenReportAction(
+                request.actionType() != null ? request.actionType() : current.actionType(),
+                request.actionTarget() != null ? request.actionTarget() : current.actionTarget()
+        );
+        validateSetVariableAction(
+                request.objectPath() != null ? request.objectPath() : current.objectPath(),
                 request.actionType() != null ? request.actionType() : current.actionType(),
                 request.actionTarget() != null ? request.actionTarget() : current.actionTarget()
         );
@@ -760,6 +767,33 @@ public class EventCorrelatorService {
         if (!report) {
             throw new IllegalArgumentException("Unknown report: " + actionTarget);
         }
+    }
+
+    private void validateSetVariableAction(String objectPath, CorrelatorActionType actionType, String actionTarget) {
+        if (actionType != CorrelatorActionType.SET_VARIABLE) {
+            return;
+        }
+        int separator = actionTarget.indexOf('=');
+        if (separator <= 0 || separator >= actionTarget.length() - 1) {
+            throw new IllegalArgumentException("SET_VARIABLE actionTarget must be variableName=value");
+        }
+        String variableName = actionTarget.substring(0, separator).trim();
+        String rawValue = actionTarget.substring(separator + 1).trim();
+        if (variableName.isBlank() || rawValue.isBlank()) {
+            throw new IllegalArgumentException("SET_VARIABLE actionTarget must be variableName=value");
+        }
+        if (objectPath == null || objectPath.isBlank()) {
+            throw new IllegalArgumentException("SET_VARIABLE requires objectPath");
+        }
+        PlatformObject node = objectManager.tree().findByPath(objectPath).orElse(null);
+        if (node == null) {
+            throw new IllegalArgumentException("Unknown object: " + objectPath);
+        }
+        Variable variable = node.getVariable(variableName).orElse(null);
+        if (variable == null) {
+            throw new IllegalArgumentException("Unknown variable: " + variableName);
+        }
+        variable.requireCompatibleValue(parseVariableAssignment(rawValue));
     }
 
     private static void validateRequest(
