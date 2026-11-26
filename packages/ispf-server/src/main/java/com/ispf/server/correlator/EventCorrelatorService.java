@@ -7,6 +7,7 @@ import com.ispf.expression.ExpressionEngine;
 import com.ispf.expression.ExpressionException;
 import com.ispf.server.automation.AutomationTreeService;
 import com.ispf.core.object.ObjectEvent;
+import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.server.event.EventJournalRecord;
 import com.ispf.server.event.EventJournalStore;
@@ -135,6 +136,7 @@ public class EventCorrelatorService {
         );
         validateEmailAction(request.actionType(), request.actionTarget());
         validateFireEventAction(request.objectPath(), request.actionType(), request.actionTarget());
+        validateOpenReportAction(request.actionType(), request.actionTarget());
         validatePayloadFilter(request.payloadFilterExpr());
         return automationTreeService.createCorrelator(
                 request.name(),
@@ -176,6 +178,10 @@ public class EventCorrelatorService {
         );
         validateFireEventAction(
                 request.objectPath() != null ? request.objectPath() : current.objectPath(),
+                request.actionType() != null ? request.actionType() : current.actionType(),
+                request.actionTarget() != null ? request.actionTarget() : current.actionTarget()
+        );
+        validateOpenReportAction(
                 request.actionType() != null ? request.actionType() : current.actionType(),
                 request.actionTarget() != null ? request.actionTarget() : current.actionTarget()
         );
@@ -741,6 +747,18 @@ public class EventCorrelatorService {
         }
         if (!node.events().containsKey(actionTarget)) {
             throw new IllegalArgumentException("Unknown event: " + actionTarget);
+        }
+    }
+
+    private void validateOpenReportAction(CorrelatorActionType actionType, String actionTarget) {
+        if (actionType != CorrelatorActionType.OPEN_OPERATOR_REPORT) {
+            return;
+        }
+        boolean report = objectManager.tree().findByPath(actionTarget)
+                .filter(node -> node.type() == ObjectType.REPORT)
+                .isPresent();
+        if (!report) {
+            throw new IllegalArgumentException("Unknown report: " + actionTarget);
         }
     }
 
