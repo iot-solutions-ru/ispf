@@ -18,9 +18,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 @Service
 public class DataSourceObjectService {
+
+    private static final Pattern SCHEMA_NAME = Pattern.compile("^[A-Za-z_][A-Za-z0-9_]{0,62}$");
 
     private static final DataSchema STRING_SCHEMA = DataSchema.builder("stringValue")
             .field("value", FieldType.STRING)
@@ -166,6 +169,10 @@ public class DataSourceObjectService {
         if (node.type() != ObjectType.DATA_SOURCE) {
             throw new IllegalArgumentException("Not a data source object: " + path);
         }
+        String effectiveMode = request.connectionMode() != null && !request.connectionMode().isBlank()
+                ? request.connectionMode()
+                : readString(node, "connectionMode").orElse(DataSourceConnectionResolver.MODE_INTERNAL);
+        validateSchemaName(request.schemaName(), effectiveMode);
         enforceTenantDataSourceWrite(path, request);
         externalRegistry.evict(path);
         String nextDisplayName = request.displayName() != null && !request.displayName().isBlank()
@@ -272,6 +279,27 @@ public class DataSourceObjectService {
             }
         } else if (request.schemaName() == null || request.schemaName().isBlank()) {
             throw new IllegalArgumentException("schemaName is required for internal data source");
+        }
+        validateSchemaName(request.schemaName(), mode);
+    }
+
+    /**
+     * Blank schema is normal for external sources (console always sends {@code schemaName.trim()}).
+     * Internal blank/non-identifier names stay rejected so a saved schema cannot be wiped.
+     */
+    private static void validateSchemaName(String schemaName, String connectionMode) {
+        if (schemaName == null) {
+            return;
+        }
+        boolean external = DataSourceConnectionResolver.MODE_EXTERNAL.equalsIgnoreCase(connectionMode);
+        if (schemaName.isBlank()) {
+            if (external) {
+                return;
+            }
+            throw new IllegalArgumentException("Invalid schema");
+        }
+        if (!SCHEMA_NAME.matcher(schemaName).matches()) {
+            throw new IllegalArgumentException("Invalid schema");
         }
     }
 
