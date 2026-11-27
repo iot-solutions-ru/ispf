@@ -355,6 +355,9 @@ public class ObjectVariableService {
                     );
                 }
                 scriptValidator.validate(toSave.sourceBody());
+                if (scriptValidator.containsSqlStep(toSave.sourceBody())) {
+                    requireSqlDataSource(toSave.dataSourcePath());
+                }
             } catch (IllegalArgumentException ex) {
                 throw new IllegalArgumentException("Function " + function.name() + ": " + ex.getMessage(), ex);
             }
@@ -380,6 +383,18 @@ public class ObjectVariableService {
         );
         objectManager.publishConfigChange(ObjectChangeType.UPDATED, path, revisionBefore);
         return toSave;
+    }
+
+    private void requireSqlDataSource(String dataSourcePath) {
+        if (dataSourcePath == null || dataSourcePath.isBlank()) {
+            throw new IllegalArgumentException("dataSourcePath is required for SQL steps");
+        }
+        String path = dataSourcePath.trim();
+        PlatformObject source = objectManager.tree().findByPath(path)
+                .orElseThrow(() -> new IllegalArgumentException("Unknown data source: " + path));
+        if (source.type() != ObjectType.DATA_SOURCE) {
+            throw new IllegalArgumentException("Unknown data source: " + path);
+        }
     }
 
     @Transactional
