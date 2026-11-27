@@ -254,6 +254,9 @@ public class BindingRulesService {
             if (target.path() == null || target.path().isBlank()) {
                 throw new IllegalArgumentException("Context target.path is required");
             }
+            if (objectManager.tree().findByPath(target.path()).isEmpty()) {
+                throw new IllegalArgumentException("Unknown object: " + target.path());
+            }
             return;
         }
         if (target.isEvent()) {
