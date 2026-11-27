@@ -100,6 +100,7 @@ public class ObjectVariableService {
         objectManager.assertExpectedRevision(path);
         PlatformObject node = objectManager.tree().require(path);
         rejectNonPositiveRefreshInterval(node, name, value);
+        rejectNonPositiveCycleInterval(node, name, value);
         WorkflowStoredJson.rejectUnreadable(node, name, value);
         rejectInvalidWorkflowCron(node, name, value);
         rejectInvalidWorkflowRuntimeFields(node, name, value);
@@ -674,6 +675,22 @@ public class ObjectVariableService {
         }
         if (number.longValue() <= 0) {
             throw new IllegalArgumentException("refreshIntervalMs must be positive");
+        }
+    }
+
+    private static void rejectNonPositiveCycleInterval(PlatformObject node, String name, DataRecord value) {
+        if (node.type() != ObjectType.PROCESS_PROGRAM
+                || !"cycleIntervalMs".equals(name)
+                || value == null
+                || value.rowCount() == 0) {
+            return;
+        }
+        Object raw = value.firstRow().get("value");
+        if (!(raw instanceof Number number)) {
+            return;
+        }
+        if (number.longValue() <= 0) {
+            throw new IllegalArgumentException("cycleIntervalMs must be positive");
         }
     }
 
