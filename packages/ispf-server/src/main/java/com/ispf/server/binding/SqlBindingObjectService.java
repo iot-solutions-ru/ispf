@@ -201,6 +201,9 @@ public class SqlBindingObjectService {
         if (refreshIntervalMs <= 0) {
             throw new IllegalArgumentException("refreshIntervalMs must be positive");
         }
+        if (refreshIntervalMs > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("refreshIntervalMs must not exceed " + Integer.MAX_VALUE);
+        }
     }
 
     private void requireExistingTarget(String objectPath) {
@@ -505,7 +508,10 @@ public class SqlBindingObjectService {
     }
 
     private void setInteger(String path, String variable, long value) {
-        objectManager.setVariableValue(path, variable, DataRecord.single(INTEGER_SCHEMA, Map.of("value", (int) Math.min(value, Integer.MAX_VALUE))));
+        if (value > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException(variable + " must not exceed " + Integer.MAX_VALUE);
+        }
+        objectManager.setVariableValue(path, variable, DataRecord.single(INTEGER_SCHEMA, Map.of("value", (int) value)));
     }
 
     private void setBoolean(String path, String variable, boolean value) {
