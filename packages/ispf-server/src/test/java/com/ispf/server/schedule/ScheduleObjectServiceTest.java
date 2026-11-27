@@ -75,4 +75,19 @@ class ScheduleObjectServiceTest {
         assertEquals("intervalMs must be positive", zero.getMessage());
         verify(objectManager, never()).create(any(), any(), any(), any(), any(), any());
     }
+
+    @Test
+    void oversizedIntervalIsRejectedBeforeSave() {
+        when(objectManager.tree()).thenReturn(new ObjectTree());
+
+        IllegalArgumentException created = assertThrows(IllegalArgumentException.class, () ->
+                service.create("sched-proof", null, null, false, 999_999_999_999L, null, null, null, null));
+        IllegalArgumentException updated = assertThrows(IllegalArgumentException.class, () ->
+                service.update("root.platform.schedules.sched-proof", null, null, null, 999_999_999_999L, null, null, null, null));
+
+        assertEquals("intervalMs must not exceed 2147483647", created.getMessage());
+        assertEquals("intervalMs must not exceed 2147483647", updated.getMessage());
+        verify(objectManager, never()).create(any(), any(), any(), any(), any(), any());
+        verify(objectManager, never()).require(any());
+    }
 }
