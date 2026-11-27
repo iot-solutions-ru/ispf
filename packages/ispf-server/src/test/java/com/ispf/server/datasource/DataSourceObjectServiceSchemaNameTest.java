@@ -88,13 +88,10 @@ class DataSourceObjectServiceSchemaNameTest {
                 null
         );
 
-        when(objectManager.create(any(), any(), any(), any(), any(), any()))
-                .thenReturn(mock(PlatformObject.class));
-
-        // Schema check must not 400; remaining null collaborators NPE after ObjectManager.create.
+        // Schema check must not 400; null virtual-root / tenant guard NPEs before ObjectManager.create.
         assertThatThrownBy(() -> service.create(request))
                 .isInstanceOf(NullPointerException.class);
-        verify(objectManager).create(any(), any(), any(), any(), any(), any());
+        verify(objectManager, never()).create(any(), any(), any(), any(), any(), any());
     }
 
     @Test
