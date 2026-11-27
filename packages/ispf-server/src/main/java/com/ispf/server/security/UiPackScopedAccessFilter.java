@@ -17,8 +17,8 @@ import java.io.IOException;
 
 /**
  * ADR-0073: a principal with claim {@code uiPackAppId} (or {@code ROLE_UI_PACK}) may call
- * BFF invoke for that app, {@code /auth/me}, and logout. Admin and other APIs are rejected
- * even when realm roles include {@code admin}.
+ * BFF invoke for that app, the operator agent for that same app, {@code /auth/me}, and logout.
+ * Admin and other APIs are rejected even when realm roles include {@code admin}.
  * Registered inside the security chain by {@code SecurityConfig} / {@code LocalSecurityConfig}
  * so the check runs while the security context is still populated.
  */

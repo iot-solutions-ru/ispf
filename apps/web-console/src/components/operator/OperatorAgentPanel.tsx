@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type Ref } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -33,6 +33,8 @@ interface OperatorAgentPanelProps {
   onClose: () => void;
   onOpenDashboard?: (path: string) => void;
   onOpenReport?: (path: string) => void;
+  panelRef?: Ref<HTMLDivElement>;
+  style?: CSSProperties;
 }
 
 export default function OperatorAgentPanel({
@@ -41,6 +43,8 @@ export default function OperatorAgentPanel({
   onClose,
   onOpenDashboard,
   onOpenReport,
+  panelRef,
+  style,
 }: OperatorAgentPanelProps) {
   const { t, i18n } = useTranslation("operator");
   const statusQuery = useQuery({
@@ -182,7 +186,7 @@ export default function OperatorAgentPanel({
   }
 
   return (
-    <div className="operator-agent-drawer" role="dialog" aria-label={t("agent.title")}>
+    <div ref={panelRef} style={style} className="operator-agent-drawer" role="dialog" aria-label={t("agent.title")}>
       <div className="operator-agent-drawer-head">
         <div>
           <strong>{t("agent.title")}</strong>

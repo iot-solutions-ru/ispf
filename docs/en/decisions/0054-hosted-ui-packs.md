@@ -54,6 +54,9 @@ location ^~ /apps/ {
     proxy_pass http://ispf_single;   # or 127.0.0.1:8080 / edge upstream
     # … Host / X-Forwarded-* / Authorization as for /api/
 }
+location ^~ /ispf-embed/ {
+    proxy_pass http://ispf_single;   # operator AI FAB script; same upstream as /apps/
+}
 ```
 
 Smoke after every nginx or platform deploy:

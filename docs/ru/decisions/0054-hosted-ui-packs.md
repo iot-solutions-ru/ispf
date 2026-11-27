@@ -46,6 +46,9 @@ location ^~ /apps/ {
     proxy_pass http://127.0.0.1:8080;
     # … те же Host / X-Forwarded-* / Authorization, что у /api/
 }
+location ^~ /ispf-embed/ {
+    proxy_pass http://127.0.0.1:8080;   # скрипт ИИ-помощника, тот же upstream
+}
 ```
 
 Smoke после деплоя nginx/платформы:

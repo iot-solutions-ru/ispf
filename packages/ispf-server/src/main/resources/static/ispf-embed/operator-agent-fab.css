@@ -1,0 +1,157 @@
+#ispf-operator-agent[hidden] {
+  display: none !important;
+}
+
+.ispf-op-agent-fab {
+  position: fixed;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  z-index: 2147483000;
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 999px;
+  border: 1px solid #30363d;
+  background: linear-gradient(145deg, #238636, #1f6feb);
+  color: #fff;
+  font: 700 0.85rem/1 system-ui, sans-serif;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.ispf-op-agent-fab.dragging {
+  cursor: grabbing;
+}
+
+.ispf-op-agent-fab.open {
+  background: #30363d;
+}
+
+.ispf-op-agent-drawer {
+  position: fixed;
+  right: auto;
+  bottom: auto;
+  z-index: 2147483001;
+  width: min(420px, calc(100vw - 2rem));
+  max-height: min(70vh, 640px);
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #30363d;
+  border-radius: 12px;
+  background: #161b22;
+  color: #e6edf3;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+  font: 14px/1.4 system-ui, sans-serif;
+}
+
+.ispf-op-agent-head,
+.ispf-op-agent-compose {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem 0.9rem;
+  background: #161b22;
+}
+
+.ispf-op-agent-head {
+  justify-content: space-between;
+  border-bottom: 1px solid #30363d;
+}
+
+.ispf-op-agent-sub {
+  margin: 0.15rem 0 0;
+  color: #8b949e;
+  font-size: 0.8rem;
+}
+
+.ispf-op-agent-actions {
+  display: flex;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+.ispf-op-agent-actions button,
+.ispf-op-agent-compose button {
+  border: 1px solid #30363d;
+  background: #21262d;
+  color: #e6edf3;
+  border-radius: 8px;
+  padding: 0.35rem 0.6rem;
+  cursor: pointer;
+}
+
+.ispf-op-agent-lang {
+  display: flex;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.ispf-op-agent-actions .ispf-op-agent-lang button {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #8b949e;
+  padding: 0.35rem 0.45rem;
+  font: 700 0.72rem/1 system-ui, sans-serif;
+}
+
+.ispf-op-agent-actions .ispf-op-agent-lang button[aria-pressed="true"] {
+  background: #1f6feb;
+  color: #fff;
+}
+
+.ispf-op-agent-log {
+  flex: 1;
+  overflow: auto;
+  padding: 0.75rem;
+  min-height: 8rem;
+}
+
+.ispf-op-agent-bubble {
+  margin: 0 0 0.6rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 10px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.ispf-op-agent-bubble.user {
+  background: #1f6feb33;
+}
+
+.ispf-op-agent-bubble.agent {
+  background: #21262d;
+}
+
+.ispf-op-agent-alert {
+  margin: 0.5rem 0.9rem 0;
+  color: #ff7b72;
+  font-size: 0.85rem;
+}
+
+.ispf-op-agent-compose {
+  flex-direction: column;
+  border-top: 1px solid #30363d;
+}
+
+.ispf-op-agent-compose textarea {
+  width: 100%;
+  min-height: 2.5rem;
+  resize: vertical;
+  box-sizing: border-box;
+  background: #21262d;
+  color: #e6edf3;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 0.45rem 0.55rem;
+  font: inherit;
+}
+
+.ispf-op-agent-compose-row {
+  display: flex;
+  justify-content: flex-end;
+}

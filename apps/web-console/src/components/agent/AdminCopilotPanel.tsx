@@ -1,5 +1,5 @@
 import { Alert, Button, Space } from "antd";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type Ref } from "react";
 import { useTranslation } from "react-i18next";
 import { useAdminCopilotChat } from "../../context/useAdminCopilotChat";
 import { formatAdminFocusChip } from "../../context/adminFocusUtils";
@@ -12,6 +12,8 @@ import { AgentChatMessageBody } from "../../utils/agent/AgentChatMessageBody";
 interface AdminCopilotPanelProps {
   open: boolean;
   onClose: () => void;
+  panelRef?: Ref<HTMLDivElement>;
+  style?: CSSProperties;
 }
 
 type Translate = ReturnType<typeof useTranslation>["t"];
@@ -163,7 +165,7 @@ function suggestionKeysForFocus(focus: AdminClientFocus | null): string[] {
   }
 }
 
-export default function AdminCopilotPanel({ open, onClose }: AdminCopilotPanelProps) {
+export default function AdminCopilotPanel({ open, onClose, panelRef, style }: AdminCopilotPanelProps) {
   const { t } = useTranslation(["ai", "operator"]);
   const {
     provider,
@@ -249,7 +251,13 @@ export default function AdminCopilotPanel({ open, onClose }: AdminCopilotPanelPr
   }
 
   return (
-    <div className="admin-copilot-drawer operator-agent-drawer" role="dialog" aria-label={t("ai:copilot.title")}>
+    <div
+      ref={panelRef}
+      style={style}
+      className="admin-copilot-drawer operator-agent-drawer"
+      role="dialog"
+      aria-label={t("ai:copilot.title")}
+    >
       <div className="operator-agent-drawer-head">
         <div>
           <strong>{t("ai:copilot.title")}</strong>

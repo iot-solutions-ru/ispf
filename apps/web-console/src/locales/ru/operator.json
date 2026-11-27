@@ -9,6 +9,7 @@
   "agent.llmUnavailable": "ИИ не настроен на сервере.",
   "agent.memoryCount": "память: {{count}}",
   "agent.open": "Открыть ИИ-помощник",
+  "agent.move": "Можно перетащить",
   "agent.openDashboard": "Открыть дашборд",
   "agent.openReport": "Открыть отчёт",
   "agent.openTable": "Показать таблицу: {{title}} ({{count}} строк)",

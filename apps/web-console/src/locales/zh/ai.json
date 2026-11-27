@@ -200,6 +200,7 @@
   "copilot.title": "Admin Copilot",
   "copilot.subtitle": "针对当前屏幕与实时平台的帮助 — 与 AI Studio 构建分离",
   "copilot.open": "打开 Admin Copilot",
+  "copilot.move": "可拖动",
   "copilot.close": "关闭 Copilot",
   "copilot.ask": "询问 Copilot",
   "copilot.focusNone": "无屏幕焦点",

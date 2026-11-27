@@ -71,7 +71,7 @@ ispf:
 | `analytics-pack` | Устанавливается в `ISPF_ANALYTICS_PACKS_DIR` и регистрирует новые функции расчёта в каталоге аналитики | [Каталог аналитических формул](analytics-formulas-and-packs.md) |
 | `ui-pack` | Устанавливается в `ISPF_UI_PACKS_DIR` и раздаётся сервером как веб-приложение оператора по адресу `/apps/<appId>/` ([ADR-0054](decisions/0054-hosted-ui-packs.md)) | [Разработка собственного React-интерфейса](external-ide.md) |
 
-> **Важная настройка nginx для пакетов `ui-pack`:** если перед `ispf-server` стоит внешний nginx, обязательно проксируйте префикс `location ^~ /apps/` на `ispf-server` (аналогично `/api/`), чтобы запросы к `/apps/<appId>/` не перехватывались статикой консоли администратора (см. пример в `deploy/nginx-ispf.conf`).
+> **Важная настройка nginx для пакетов `ui-pack`:** если перед `ispf-server` стоит внешний nginx, обязательно проксируйте префикс `location ^~ /apps/` на `ispf-server` (аналогично `/api/`), чтобы запросы к `/apps/<appId>/` не перехватывались статикой консоли администратора (см. пример в `deploy/nginx-ispf.conf`). Туда же — `location ^~ /ispf-embed/`, иначе скрипт ИИ-помощника подменится HTML консоли.
 
 ---
 

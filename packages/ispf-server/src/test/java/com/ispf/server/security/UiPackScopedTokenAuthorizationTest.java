@@ -126,6 +126,16 @@ class UiPackScopedTokenAuthorizationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(invoke))
                 .andExpect(status().isForbidden());
+
+        mockMvc.perform(get("/api/v1/operator-apps/other-app/agent/status")
+                        .header("Authorization", "Bearer " + scoped)
+                        .header("Referer", "http://localhost/apps/partner-app/"))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/v1/operator-apps/partner-app/agent/status")
+                        .header("Authorization", "Bearer " + scoped)
+                        .header("Referer", "http://localhost/apps/partner-app/"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.appId").value("partner-app"));
     }
 
     @Test

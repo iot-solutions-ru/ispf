@@ -78,7 +78,7 @@ All users and roles are mirrored into the object tree under `root.platform.secur
 | Platform administration (`/security/**`, `/objects/by-path/acl`, `/platform/backup/**`, `/platform/metrics`, `/runtime-settings`, `/federation/**`, `/tenants/**`) | ✓ | — | — | — |
 
 ### Scoped Tokens for Hosted UI Packs ([ADR-0073](decisions/0073-hosted-ui-pack-trust.md))
-A token carrying the `uiPackAppId` claim is restricted to that hosted React application (`/apps/<appId>/`): `IspfAuthorizationRules` allows only `GET /api/v1/auth/me`, `POST /api/v1/auth/logout`, `GET /api/v1/info`, and `POST /api/v1/bff/**` for that `appId`, denying all administrative APIs regardless of realm roles. A `Referer` of `/apps/<other>/` or header `X-ISPF-Ui-Pack-App` that disagrees with the claim is rejected. Realm role `admin` does not lift this.
+A token carrying the `uiPackAppId` claim is restricted to that hosted React application (`/apps/<appId>/`): `IspfAuthorizationRules` allows only `GET /api/v1/auth/me`, `POST /api/v1/auth/logout`, `GET /api/v1/info`, `POST /api/v1/bff/**` for that `appId`, and `/api/v1/operator-apps/{appId}/agent/**` for the same `appId`, denying all administrative APIs regardless of realm roles. A `Referer` of `/apps/<other>/` or header `X-ISPF-Ui-Pack-App` that disagrees with the claim is rejected. Realm role `admin` does not lift this.
 
 Partner packs (`ui-pack.json` `uiPackTrust`: `partner` or `signedPartner`) must not call `POST /api/v1/auth/login`. A request whose `Referer` is `/apps/<appId>/` for such a pack is **403**. That check is not a guarantee if the pack omits `Referer`. First-party packs may still log in on `/apps/`.
 

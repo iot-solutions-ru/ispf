@@ -11,6 +11,12 @@ public class UiPackProperties {
     /** Max zip size accepted on install (bytes). Default 50 MiB. */
     private long maxZipBytes = 50L * 1024L * 1024L;
 
+    /**
+     * Inject the operator AI FAB into hosted pack HTML. Default on for every pack.
+     * Emergency kill-switch only — not a per-app opt-in.
+     */
+    private boolean injectOperatorAgent = true;
+
     public String getPacksDir() {
         return packsDir;
     }
@@ -25,5 +31,13 @@ public class UiPackProperties {
 
     public void setMaxZipBytes(long maxZipBytes) {
         this.maxZipBytes = maxZipBytes;
+    }
+
+    public boolean isInjectOperatorAgent() {
+        return injectOperatorAgent;
+    }
+
+    public void setInjectOperatorAgent(boolean injectOperatorAgent) {
+        this.injectOperatorAgent = injectOperatorAgent;
     }
 }

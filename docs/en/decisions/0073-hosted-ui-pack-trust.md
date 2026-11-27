@@ -56,6 +56,7 @@ Claim name: **`uiPackAppId`**.
 When the claim is present (local session column, or OIDC access-token claim), `IspfAuthorizationRules.deniesPackScopedApi` rejects every `/api/**` and `/actuator/**` route except:
 
 - `POST /api/v1/bff/**` for **that** app (a `Referer` of `/apps/<other>/` or header `X-ISPF-Ui-Pack-App` that disagrees with the claim is rejected; a missing Referer does not widen the token to admin APIs)
+- `GET`/`POST` `/api/v1/operator-apps/{appId}/agent/**` only when `{appId}` equals `uiPackAppId` (same Referer / `X-ISPF-Ui-Pack-App` check). The call still runs as that user — not as admin. This is how the default operator AI FAB on `/apps/<appId>/` reaches the app’s instructions, documents, and tool allowlist.
 - `GET /api/v1/auth/me`
 - `POST /api/v1/auth/logout`
 - `GET /api/v1/info` and `/actuator/health`
