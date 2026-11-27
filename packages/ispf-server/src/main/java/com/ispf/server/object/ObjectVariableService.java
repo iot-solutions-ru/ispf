@@ -717,44 +717,28 @@ public class ObjectVariableService {
     }
 
     private void rejectMissingProcessProgramTarget(PlatformObject node, String name, DataRecord value) {
-        if (node.type() != ObjectType.PROCESS_PROGRAM
-                || (!"targetObjectPath".equals(name) && !"outputVariable".equals(name))) {
+        if (node.type() != ObjectType.PROCESS_PROGRAM || !"targetObjectPath".equals(name)) {
             return;
         }
-        String text = stringValue(value);
-        if (text == null || text.isBlank()) {
+        if (value == null || value.rowCount() == 0) {
+            return;
+        }
+        Object raw = value.firstRow().get("value");
+        if (raw == null) {
+            return;
+        }
+        if (!(raw instanceof String text)) {
+            throw new IllegalArgumentException("targetObjectPath must be a string");
+        }
+        if (text.isBlank()) {
             return;
         }
         String requested = text.trim();
-        if ("targetObjectPath".equals(name)) {
-            PlatformObject target = objectManager.tree().findByPath(requested)
-                    .orElseThrow(() -> new IllegalArgumentException("Unknown object: " + requested));
-            String output = storedString(node, "outputVariable");
-            if (output != null && !output.isBlank() && target.getVariable(output.trim()).isEmpty()) {
-                throw new IllegalArgumentException("Unknown variable: " + output.trim());
-            }
-            return;
+        if (objectManager.tree().findByPath(requested).isEmpty()) {
+            throw new IllegalArgumentException("Unknown object: " + requested);
         }
-        String targetPath = storedString(node, "targetObjectPath");
-        PlatformObject target = targetPath == null || targetPath.isBlank()
-                ? node
-                : objectManager.tree().findByPath(targetPath.trim())
-                        .orElseThrow(() -> new IllegalArgumentException("Unknown object: " + targetPath.trim()));
-        if (target.getVariable(requested).isEmpty()) {
-            throw new IllegalArgumentException("Unknown variable: " + requested);
-        }
-    }
-
-    private static String storedString(PlatformObject node, String name) {
-        return node.getVariable(name).flatMap(Variable::value).map(ObjectVariableService::stringValue).orElse(null);
-    }
-
-    private static String stringValue(DataRecord value) {
-        if (value == null || value.rowCount() == 0) {
-            return null;
-        }
-        Object raw = value.firstRow().get("value");
-        return raw instanceof String text ? text : null;
+        // Do not re-check stored outputVariable against the new target: the console saves
+        // targetObjectPath and outputVariable in separate PUTs, so a paired retarget would 400.
     }
 
     private static void assertUserVariable(String name) {
