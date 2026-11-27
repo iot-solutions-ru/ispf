@@ -23,6 +23,10 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 - **Virtual cluster preset** — `POST /api/v1/platform/presets/virt-cluster` installs the built-in project (three `virtual` devices, hub, overview and detail dashboards, alert `virt-cluster-error`, operator app `platform`). Docs: [docs/en/virt-cluster.md](docs/en/virt-cluster.md). A taken port 8080 is identified with `GET /api/v1/info` and `GET /api/v1/auth/config`. Those calls do not name the checkout directory. Spring profiles are `profile.activeProfiles` on `GET /api/v1/platform/effective-config` when a profile is active.
 - **Start a checkout** — `AGENTS.md` and Getting started Option C give the `local` profile command for PowerShell and for bash. The API is up when `/api/v1/info` includes `version` and `/actuator/health` is `UP`. A source `bootRun` serves only the API on port 8080; `npm run dev` in `apps/web-console` serves the console on port 5173. The wrapper starts on JDK 17–27; the server runs on JDK 25, downloaded by the Foojay plugin when JDK 25 is not installed. Python 3 is required on `PATH`. `docs/http/local-session.ps1` checks driver `virtual` and starts `demo-sensor-01`. After that, demo solutions are free cards on System, tab Solutions (`https://marketplace.ispf.ai`): `POST /api/v1/solutions/marketplaces/default-publisher/listings/{slug}/install`. `operator` is 403.
 
+### Changed
+
+- **Alert `triggerMessage`** — create and update compile a non-blank `triggerMessage` as CEL before save (HTTP 400 `Invalid expression: …`). Plain prose without quotes no longer stores; use a string literal such as `'Temperature exceeded 80 C'`. Blank/`null` stay allowed. Already-stored plain text is left until the next write that sends the field (the console re-sends the current value on save, so editing such a rule needs a CEL message first). Example and ADR-0039 sample updated.
+
 ### Fixed
 
 - **MariaDB Connector/J** — pin `org.mariadb.jdbc:mariadb-java-client` to **3.5.11** (BOM `mariadb.version` + force/eachDependency) for Dependabot #148–#151 (CVE-2026-119210 / 119276 / 119280 / 119281). Drop when Boot manages ≥ 3.5.11.

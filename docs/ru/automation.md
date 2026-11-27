@@ -87,7 +87,7 @@ root.platform
 | `deactivateDelaySeconds` | Выдержка времени перед сбросом тревоги |
 | `clearEventName` | Имя события при возврате в норму (например, `thresholdCleared`) |
 | `pollIntervalMs` | Периодическая перепроверка в мс (`0` — проверять только при изменении переменной) |
-| `triggerMessage` | Текст сообщения (статический или выражение CEL) |
+| `triggerMessage` | Сообщение как выражение CEL (строковый литерал `'…'` или формула); пустое — без отдельного текста |
 | `notificationWebhookUrl` | HTTP URL для отправки POST-уведомления |
 | `notificationEmailTarget` | Получатель письма в формате `to@host\|тема\|текст` |
 
