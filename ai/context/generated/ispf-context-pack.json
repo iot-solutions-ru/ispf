@@ -1,6 +1,6 @@
 {
   "contextPackVersion": "ispf-1.0.0",
-  "generatedAt": "2026-11-27T14:30:13.687199+00:00",
+  "generatedAt": "2026-11-27T21:29:33.125700+00:00",
   "platformVersion": "1.0.0",
   "bundleManifest": {
     "fields": [
@@ -76519,5 +76519,5 @@
   "embeddingModel": "ispf-hash-v1",
   "embeddingDims": 384,
   "embeddingCoverage": 41,
-  "contentSha256": "35b96fa39eedb368062c516e738b00f812f9d28e928d6a927d4cfde8d6c3cbb3"
+  "contentSha256": "26b8dbca90fce461ac386e3cdb2f4981b24b22d9e991d23f2bb7cfeee2790c0b"
 }

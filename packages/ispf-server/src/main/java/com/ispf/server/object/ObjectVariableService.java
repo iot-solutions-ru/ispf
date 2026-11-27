@@ -14,7 +14,7 @@ import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
 import com.ispf.core.object.VariableStorageMode;
-import com.ispf.expression.ExpressionEngine;
+import com.ispf.expression.BindingExpressionValidator;
 import com.ispf.expression.ExpressionException;
 import com.ispf.server.application.script.FunctionScriptValidator;
 import com.ispf.server.function.FunctionExpressionBody;
@@ -663,8 +663,6 @@ public class ObjectVariableService {
         WorkflowRuntimeFields.requireReadable(name, text);
     }
 
-    private static final ExpressionEngine PROCESS_PROGRAM_EXPRESSIONS = new ExpressionEngine();
-
     private static void rejectInvalidProcessProgramExpression(PlatformObject node, String name, DataRecord value) {
         if (node.type() != ObjectType.PROCESS_PROGRAM
                 || (!"controlExpression".equals(name) && !"interlockExpression".equals(name))
@@ -677,7 +675,7 @@ public class ObjectVariableService {
             return;
         }
         try {
-            PROCESS_PROGRAM_EXPRESSIONS.validateCelCompile(text);
+            BindingExpressionValidator.validateOrThrow(text);
         } catch (ExpressionException ex) {
             throw new IllegalArgumentException(name + ": " + ex.getMessage(), ex);
         }
