@@ -1,6 +1,10 @@
 spring:
   application:
     name: ispf-server
+  jackson:
+    deserialization:
+      # Reject float tokens for Integer/int request fields (1.5, 2.0, 1e2 → 400). Whole-number tokens stay valid.
+      accept-float-as-int: false
   config:
     import: optional:file:${ISPF_DATA_DIR:./data}/runtime-settings.properties
   autoconfigure:
