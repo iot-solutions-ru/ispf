@@ -48,6 +48,14 @@ public class NotificationDispatchService {
         EmailTarget.parse(target);
     }
 
+    /** Same parse as {@link #sendSms}. A blank target means no SMS and is left unchanged. */
+    public void validateSmsTarget(String target) {
+        if (target == null || target.isBlank()) {
+            return;
+        }
+        SmsTarget.parse(target);
+    }
+
     public void sendEmail(String target, Map<String, Object> context) {
         EmailTarget parsed = EmailTarget.parse(target);
         String relay = properties.getEmailRelayUrl();

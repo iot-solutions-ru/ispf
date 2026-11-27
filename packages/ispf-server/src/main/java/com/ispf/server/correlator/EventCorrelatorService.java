@@ -136,6 +136,7 @@ public class EventCorrelatorService {
                 request.sequenceGapSeconds()
         );
         validateEmailAction(request.actionType(), request.actionTarget());
+        validateSmsAction(request.actionType(), request.actionTarget());
         validateFireEventAction(request.objectPath(), request.actionType(), request.actionTarget());
         validateOpenReportAction(request.actionType(), request.actionTarget());
         validateSetVariableAction(request.objectPath(), request.actionType(), request.actionTarget());
@@ -176,6 +177,10 @@ public class EventCorrelatorService {
                 request.sequenceGapSeconds() != null ? request.sequenceGapSeconds() : current.sequenceGapSeconds()
         );
         validateEmailAction(
+                request.actionType() != null ? request.actionType() : current.actionType(),
+                request.actionTarget() != null ? request.actionTarget() : current.actionTarget()
+        );
+        validateSmsAction(
                 request.actionType() != null ? request.actionType() : current.actionType(),
                 request.actionTarget() != null ? request.actionTarget() : current.actionTarget()
         );
@@ -878,6 +883,12 @@ public class EventCorrelatorService {
     private void validateEmailAction(CorrelatorActionType actionType, String actionTarget) {
         if (actionType == CorrelatorActionType.SEND_EMAIL) {
             notificationDispatchService.validateEmailTarget(actionTarget);
+        }
+    }
+
+    private void validateSmsAction(CorrelatorActionType actionType, String actionTarget) {
+        if (actionType == CorrelatorActionType.SEND_SMS) {
+            notificationDispatchService.validateSmsTarget(actionTarget);
         }
     }
 
