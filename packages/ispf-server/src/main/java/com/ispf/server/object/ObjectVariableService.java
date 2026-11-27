@@ -107,6 +107,7 @@ public class ObjectVariableService {
         rejectInvalidWorkflowCron(node, name, value);
         rejectInvalidWorkflowRuntimeFields(node, name, value);
         rejectInvalidProcessProgramExpression(node, name, value);
+        rejectMissingProcessProgramTarget(node, name, value);
         long revisionBefore = node.revision();
         DataRecord before = node.getVariable(name).flatMap(Variable::value).orElse(null);
         node.setVariableValue(name, value);
@@ -713,6 +714,47 @@ public class ObjectVariableService {
         if (number.longValue() <= 0) {
             throw new IllegalArgumentException("cycleIntervalMs must be positive");
         }
+    }
+
+    private void rejectMissingProcessProgramTarget(PlatformObject node, String name, DataRecord value) {
+        if (node.type() != ObjectType.PROCESS_PROGRAM
+                || (!"targetObjectPath".equals(name) && !"outputVariable".equals(name))) {
+            return;
+        }
+        String text = stringValue(value);
+        if (text == null || text.isBlank()) {
+            return;
+        }
+        String requested = text.trim();
+        if ("targetObjectPath".equals(name)) {
+            PlatformObject target = objectManager.tree().findByPath(requested)
+                    .orElseThrow(() -> new IllegalArgumentException("Unknown object: " + requested));
+            String output = storedString(node, "outputVariable");
+            if (output != null && !output.isBlank() && target.getVariable(output.trim()).isEmpty()) {
+                throw new IllegalArgumentException("Unknown variable: " + output.trim());
+            }
+            return;
+        }
+        String targetPath = storedString(node, "targetObjectPath");
+        PlatformObject target = targetPath == null || targetPath.isBlank()
+                ? node
+                : objectManager.tree().findByPath(targetPath.trim())
+                        .orElseThrow(() -> new IllegalArgumentException("Unknown object: " + targetPath.trim()));
+        if (target.getVariable(requested).isEmpty()) {
+            throw new IllegalArgumentException("Unknown variable: " + requested);
+        }
+    }
+
+    private static String storedString(PlatformObject node, String name) {
+        return node.getVariable(name).flatMap(Variable::value).map(ObjectVariableService::stringValue).orElse(null);
+    }
+
+    private static String stringValue(DataRecord value) {
+        if (value == null || value.rowCount() == 0) {
+            return null;
+        }
+        Object raw = value.firstRow().get("value");
+        return raw instanceof String text ? text : null;
     }
 
     private static void assertUserVariable(String name) {
