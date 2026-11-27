@@ -14,6 +14,8 @@ import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
 import com.ispf.core.object.VariableStorageMode;
+import com.ispf.expression.ExpressionEngine;
+import com.ispf.expression.ExpressionException;
 import com.ispf.server.application.script.FunctionScriptValidator;
 import com.ispf.server.function.FunctionExpressionBody;
 import com.ispf.server.function.PulseVariableFunctionHandler;
@@ -103,6 +105,7 @@ public class ObjectVariableService {
         WorkflowStoredJson.rejectUnreadable(node, name, value);
         rejectInvalidWorkflowCron(node, name, value);
         rejectInvalidWorkflowRuntimeFields(node, name, value);
+        rejectInvalidProcessProgramExpression(node, name, value);
         long revisionBefore = node.revision();
         DataRecord before = node.getVariable(name).flatMap(Variable::value).orElse(null);
         node.setVariableValue(name, value);
@@ -658,6 +661,26 @@ public class ObjectVariableService {
             return;
         }
         WorkflowRuntimeFields.requireReadable(name, text);
+    }
+
+    private static final ExpressionEngine PROCESS_PROGRAM_EXPRESSIONS = new ExpressionEngine();
+
+    private static void rejectInvalidProcessProgramExpression(PlatformObject node, String name, DataRecord value) {
+        if (node.type() != ObjectType.PROCESS_PROGRAM
+                || (!"controlExpression".equals(name) && !"interlockExpression".equals(name))
+                || value == null
+                || value.rowCount() == 0) {
+            return;
+        }
+        Object raw = value.firstRow().get("value");
+        if (!(raw instanceof String text) || text.isBlank()) {
+            return;
+        }
+        try {
+            PROCESS_PROGRAM_EXPRESSIONS.validateCelCompile(text);
+        } catch (ExpressionException ex) {
+            throw new IllegalArgumentException(name + ": " + ex.getMessage(), ex);
+        }
     }
 
     private static void rejectNonPositiveRefreshInterval(PlatformObject node, String name, DataRecord value) {
