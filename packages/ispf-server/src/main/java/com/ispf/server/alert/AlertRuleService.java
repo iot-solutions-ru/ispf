@@ -91,6 +91,7 @@ public class AlertRuleService {
                 request.deactivateExpr()
         );
         validateNotificationWebhookUrl(request.notificationWebhookUrl());
+        requireTriggerMessage(request.triggerMessage());
         AlertRule created = automationTreeService.createAlertRule(
                 request.name(),
                 request.objectPath(),
@@ -143,6 +144,7 @@ public class AlertRuleService {
             );
         }
         validateNotificationWebhookUrl(request.notificationWebhookUrl());
+        requireTriggerMessage(request.triggerMessage());
         AlertRule updated = automationTreeService.updateAlertRule(
                 id,
                 request.name(),
@@ -561,6 +563,13 @@ public class AlertRuleService {
             expressionEngine.requireBooleanAlertDeactivate(deactivateExpr);
             formalVerificationService.requireSafeConditionForApply(deactivateExpr);
         }
+    }
+
+    private void requireTriggerMessage(String triggerMessage) {
+        if (triggerMessage == null || triggerMessage.isBlank()) {
+            return;
+        }
+        expressionEngine.validateCelCompile(triggerMessage);
     }
 
     /** Webhook targets are checked against SSRF at config time and again at dispatch. */

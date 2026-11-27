@@ -10,7 +10,7 @@
   "sustainWhileTrue": false,
   "eventName": "thresholdExceeded",
   "clearEventName": "thresholdCleared",
-  "triggerMessage": "Temperature exceeded 80 C",
+  "triggerMessage": "'Temperature exceeded 80 C'",
   "payloadVariable": "temperature",
   "enabled": true,
   "edgeTrigger": true,

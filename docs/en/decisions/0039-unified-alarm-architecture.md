@@ -157,7 +157,7 @@ Same node type as today — extended `POST /api/v1/alert-rules` body:
   "sustainWhileTrue": false,
   "eventName": "thresholdExceeded",
   "clearEventName": "thresholdCleared",
-  "triggerMessage": "Temperature exceeded 80 C",
+  "triggerMessage": "'Temperature exceeded 80 C'",
   "payloadVariable": "temperature",
   "enabled": true,
   "edgeTrigger": true,
