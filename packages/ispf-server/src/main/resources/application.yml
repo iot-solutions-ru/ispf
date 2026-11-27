@@ -1,6 +1,9 @@
 spring:
   application:
     name: ispf-server
+  jackson:
+    deserialization:
+      accept-float-as-int: false
   config:
     import: optional:file:${ISPF_DATA_DIR:./data}/runtime-settings.properties
   autoconfigure:
