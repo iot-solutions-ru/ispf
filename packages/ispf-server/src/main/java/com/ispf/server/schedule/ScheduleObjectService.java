@@ -207,13 +207,13 @@ public class ScheduleObjectService {
             String objectPath,
             String functionName
     ) {
+        requirePositiveInterval(intervalMs);
         PlatformObject node = objectManager.require(path);
         if (node.type() != ObjectType.SCHEDULE) {
             throw new IllegalArgumentException("Not a schedule object: " + path);
         }
         String scheduleId = readString(node, "scheduleId").orElse(path.substring(path.lastIndexOf('.') + 1));
         requireValidScheduleInputs(cronExpression, timeZone);
-        requirePositiveInterval(intervalMs);
         String nextDisplayName = displayName != null && !displayName.isBlank() ? displayName : node.displayName();
         String nextDescription = description != null ? description : node.description();
         objectManager.updateInfo(path, nextDisplayName, nextDescription);
@@ -237,6 +237,9 @@ public class ScheduleObjectService {
     private static void requirePositiveInterval(Long intervalMs) {
         if (intervalMs != null && intervalMs <= 0) {
             throw new IllegalArgumentException("intervalMs must be positive");
+        }
+        if (intervalMs != null && intervalMs > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("intervalMs must not exceed " + Integer.MAX_VALUE);
         }
     }
 
@@ -373,7 +376,10 @@ public class ScheduleObjectService {
     }
 
     private void setInteger(String path, String variable, long value) {
-        objectManager.setVariableValue(path, variable, DataRecord.single(INTEGER_SCHEMA, java.util.Map.of("value", (int) Math.min(value, Integer.MAX_VALUE))));
+        if (value > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException(variable + " must not exceed " + Integer.MAX_VALUE);
+        }
+        objectManager.setVariableValue(path, variable, DataRecord.single(INTEGER_SCHEMA, java.util.Map.of("value", (int) value)));
     }
 
     private void setBoolean(String path, String variable, boolean value) {
