@@ -135,6 +135,7 @@ public class EventCorrelatorService {
                 request.cooldownSeconds(),
                 request.sequenceGapSeconds()
         );
+        validateSourceEvent(request.objectPath(), request.eventName());
         validateEmailAction(request.actionType(), request.actionTarget());
         validateFireEventAction(request.objectPath(), request.actionType(), request.actionTarget());
         validateOpenReportAction(request.actionType(), request.actionTarget());
@@ -174,6 +175,10 @@ public class EventCorrelatorService {
                 request.windowSeconds() != null ? request.windowSeconds() : current.windowSeconds(),
                 request.cooldownSeconds() != null ? request.cooldownSeconds() : current.cooldownSeconds(),
                 request.sequenceGapSeconds() != null ? request.sequenceGapSeconds() : current.sequenceGapSeconds()
+        );
+        validateSourceEvent(
+                request.objectPath() != null ? request.objectPath() : current.objectPath(),
+                request.eventName() != null ? request.eventName() : current.eventName()
         );
         validateEmailAction(
                 request.actionType() != null ? request.actionType() : current.actionType(),
@@ -744,6 +749,19 @@ public class EventCorrelatorService {
 
     private static boolean matchesObject(String filterPath, String eventPath) {
         return filterPath == null || filterPath.isBlank() || filterPath.equals(eventPath);
+    }
+
+    private void validateSourceEvent(String objectPath, String eventName) {
+        if (objectPath == null || objectPath.isBlank()) {
+            return;
+        }
+        String path = objectPath.trim();
+        PlatformObject node = objectManager.tree().findByPath(path)
+                .orElseThrow(() -> new IllegalArgumentException("Unknown object: " + path));
+        String name = eventName == null ? "" : eventName.trim();
+        if (name.isEmpty() || !node.events().containsKey(name)) {
+            throw new IllegalArgumentException("Unknown event: " + name);
+        }
     }
 
     private void validateFireEventAction(String objectPath, CorrelatorActionType actionType, String actionTarget) {
