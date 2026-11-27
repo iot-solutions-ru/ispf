@@ -546,6 +546,60 @@ class ObjectVariableServiceTest {
     }
 
     @Test
+    void upsertFunctionRejectsUnknownSourceTypeBeforeSaving() {
+        FunctionDescriptor unknown = new FunctionDescriptor(
+                "probeFn",
+                "Probe",
+                null,
+                null,
+                "NO_SUCH",
+                "{\"steps\":[{\"type\":\"return\",\"fields\":{\"ok\":true}}]}",
+                null,
+                null
+        );
+        FunctionDescriptor javascript = new FunctionDescriptor(
+                "probeFn",
+                "Probe",
+                null,
+                null,
+                "javascript",
+                "{\"steps\":[{\"type\":\"return\",\"fields\":{\"ok\":true}}]}",
+                null,
+                null
+        );
+
+        assertThatThrownBy(() -> variableService.upsertFunction(PATH, unknown))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Function probeFn: Unknown source type: NO_SUCH");
+        assertThatThrownBy(() -> variableService.upsertFunction(PATH, javascript))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Function probeFn: Unknown source type: javascript");
+        assertThat(node.functions()).doesNotContainKey("probeFn");
+        verify(javaFunctionRuntimeService, never()).syncOnSave(any(), any(), any());
+        verify(objectManager, never()).persistNodeConfig(any(), any(), any(), any());
+    }
+
+    @Test
+    void upsertFunctionStoresCanonicalSourceType() {
+        FunctionDescriptor function = new FunctionDescriptor(
+                "probeFn",
+                "Probe",
+                null,
+                null,
+                "Script",
+                "{\"steps\":[{\"type\":\"return\",\"fields\":{\"ok\":true}}]}",
+                null,
+                null
+        );
+        when(mapper.auditDiff(any(), any())).thenReturn("{}");
+
+        FunctionDescriptor saved = variableService.upsertFunction(PATH, function);
+
+        assertThat(saved.sourceType()).isEqualTo("script");
+        assertThat(node.functions().get("probeFn").sourceType()).isEqualTo("script");
+    }
+
+    @Test
     void upsertFunctionSavesValidScript() {
         FunctionDescriptor function = new FunctionDescriptor(
                 "ok",
