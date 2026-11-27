@@ -144,10 +144,11 @@ public class DataSourceObjectService {
         validateCreate(request);
         String path = pathForNodeName(request.name());
         enforceTenantDataSourceWrite(path, request);
+        String mode = canonicalConnectionMode(request.connectionMode());
         ensureDataSource(
                 request.name(),
                 request.displayName(),
-                request.connectionMode(),
+                mode != null ? mode : DataSourceConnectionResolver.MODE_INTERNAL,
                 request.schemaName(),
                 request.jdbcUrl(),
                 request.jdbcDriverClass(),
@@ -161,6 +162,7 @@ public class DataSourceObjectService {
 
     @Transactional
     public DataSourceView update(String path, DataSourceWriteRequest request) {
+        String mode = canonicalConnectionMode(request.connectionMode());
         PlatformObject node = objectManager.require(path);
         if (node.type() != ObjectType.DATA_SOURCE) {
             throw new IllegalArgumentException("Not a data source object: " + path);
@@ -174,7 +176,7 @@ public class DataSourceObjectService {
         applyFields(
                 path,
                 nextDisplayName,
-                request.connectionMode(),
+                mode,
                 request.schemaName(),
                 request.jdbcUrl(),
                 request.jdbcDriverClass(),
@@ -263,14 +265,30 @@ public class DataSourceObjectService {
         if (request.name() == null || request.name().isBlank()) {
             throw new IllegalArgumentException("name is required");
         }
-        String mode = request.connectionMode() != null ? request.connectionMode() : DataSourceConnectionResolver.MODE_INTERNAL;
-        if (DataSourceConnectionResolver.MODE_EXTERNAL.equalsIgnoreCase(mode)) {
+        String mode = canonicalConnectionMode(request.connectionMode());
+        if (mode == null) {
+            mode = DataSourceConnectionResolver.MODE_INTERNAL;
+        }
+        if (DataSourceConnectionResolver.MODE_EXTERNAL.equals(mode)) {
             if (request.jdbcUrl() == null || request.jdbcUrl().isBlank()) {
                 throw new IllegalArgumentException("jdbcUrl is required for external data source");
             }
         } else if (request.schemaName() == null || request.schemaName().isBlank()) {
             throw new IllegalArgumentException("schemaName is required for internal data source");
         }
+    }
+
+    private static String canonicalConnectionMode(String connectionMode) {
+        if (connectionMode == null) {
+            return null;
+        }
+        if (DataSourceConnectionResolver.MODE_INTERNAL.equalsIgnoreCase(connectionMode.trim())) {
+            return DataSourceConnectionResolver.MODE_INTERNAL;
+        }
+        if (DataSourceConnectionResolver.MODE_EXTERNAL.equalsIgnoreCase(connectionMode.trim())) {
+            return DataSourceConnectionResolver.MODE_EXTERNAL;
+        }
+        throw new IllegalArgumentException("connectionMode must be internal or external");
     }
 
     private DataSourceView toView(String path, PlatformObject node) {
