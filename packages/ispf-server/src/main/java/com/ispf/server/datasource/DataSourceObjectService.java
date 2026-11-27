@@ -18,9 +18,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 @Service
 public class DataSourceObjectService {
+
+    private static final Pattern SCHEMA_NAME = Pattern.compile("^[A-Za-z_][A-Za-z0-9_]{0,62}$");
 
     private static final DataSchema STRING_SCHEMA = DataSchema.builder("stringValue")
             .field("value", FieldType.STRING)
@@ -162,6 +165,7 @@ public class DataSourceObjectService {
     @Transactional
     public DataSourceView update(String path, DataSourceWriteRequest request) {
         validatePoolSize(request.poolSize());
+        validateSchemaName(request.schemaName());
         PlatformObject node = objectManager.require(path);
         if (node.type() != ObjectType.DATA_SOURCE) {
             throw new IllegalArgumentException("Not a data source object: " + path);
@@ -272,6 +276,16 @@ public class DataSourceObjectService {
             }
         } else if (request.schemaName() == null || request.schemaName().isBlank()) {
             throw new IllegalArgumentException("schemaName is required for internal data source");
+        }
+        validateSchemaName(request.schemaName());
+    }
+
+    private static void validateSchemaName(String schemaName) {
+        if (schemaName == null) {
+            return;
+        }
+        if (!SCHEMA_NAME.matcher(schemaName).matches()) {
+            throw new IllegalArgumentException("Invalid schema");
         }
     }
 
