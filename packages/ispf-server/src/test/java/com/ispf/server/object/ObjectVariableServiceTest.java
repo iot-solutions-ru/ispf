@@ -504,12 +504,40 @@ class ObjectVariableServiceTest {
                 null,
                 null
         );
+        FunctionDescriptor emptyFromObject = new FunctionDescriptor(
+                "probeFn",
+                "Probe",
+                null,
+                null,
+                "object-query",
+                "{\"from\":{}}",
+                null,
+                null
+        );
+        FunctionDescriptor blankPattern = new FunctionDescriptor(
+                "probeFn",
+                "Probe",
+                null,
+                null,
+                "object-query",
+                "{\"from\":{\"sourcePathPattern\":\"\"}}",
+                null,
+                null
+        );
 
         assertThatThrownBy(() -> variableService.upsertFunction(PATH, broken))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("probeFn")
                 .hasMessageContaining("Invalid OQ spec JSON");
         assertThatThrownBy(() -> variableService.upsertFunction(PATH, missingFrom))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("probeFn")
+                .hasMessageContaining("from.sourcePathPattern is required");
+        assertThatThrownBy(() -> variableService.upsertFunction(PATH, emptyFromObject))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("probeFn")
+                .hasMessageContaining("from.sourcePathPattern is required");
+        assertThatThrownBy(() -> variableService.upsertFunction(PATH, blankPattern))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("probeFn")
                 .hasMessageContaining("from.sourcePathPattern is required");

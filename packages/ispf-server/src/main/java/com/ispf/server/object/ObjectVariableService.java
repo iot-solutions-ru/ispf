@@ -380,7 +380,12 @@ public class ObjectVariableService {
         }
         if (function.sourceType() != null && "object-query".equalsIgnoreCase(function.sourceType().trim())) {
             try {
-                objectQuerySpecParser.parse(function.sourceBody());
+                var spec = objectQuerySpecParser.parse(function.sourceBody());
+                if (spec.from() == null
+                        || spec.from().sourcePathPattern() == null
+                        || spec.from().sourcePathPattern().isBlank()) {
+                    throw new IllegalArgumentException("from.sourcePathPattern is required");
+                }
             } catch (IllegalArgumentException ex) {
                 throw new IllegalArgumentException("Function " + function.name() + ": " + ex.getMessage(), ex);
             }
