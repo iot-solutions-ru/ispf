@@ -90,4 +90,16 @@ class ScheduleObjectServiceTest {
         verify(objectManager, never()).create(any(), any(), any(), any(), any(), any());
         verify(objectManager, never()).require(any());
     }
+
+    @Test
+    void zeroEveryCronDoesNotCreateTheSchedule() {
+        when(objectManager.tree()).thenReturn(new ObjectTree());
+
+        for (String cron : List.of("every:0m", "every:0", "every:000m")) {
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
+                    service.create("sched-proof", null, null, false, 60_000L, cron, null, null, null));
+            assertEquals("cronExpression every: minutes must be positive", ex.getMessage());
+        }
+        verify(objectManager, never()).create(any(), any(), any(), any(), any(), any());
+    }
 }
