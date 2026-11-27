@@ -24,6 +24,21 @@ class SqlBindingObjectServiceNegativeIntervalTest {
         assertRejected(0L);
     }
 
+    @Test
+    void oversizedIntervalIsRejectedBeforeWrite() {
+        IllegalArgumentException created = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.create(definition(3_000_000_000L))
+        );
+        IllegalArgumentException updated = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.update("root.platform.bindings.interval-proof", definition(3_000_000_000L))
+        );
+        assertEquals("refreshIntervalMs must not exceed 2147483647", created.getMessage());
+        assertEquals("refreshIntervalMs must not exceed 2147483647", updated.getMessage());
+        verifyNoInteractions(objectManager);
+    }
+
     private void assertRejected(long refreshIntervalMs) {
         IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
