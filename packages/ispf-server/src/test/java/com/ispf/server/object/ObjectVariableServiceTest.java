@@ -447,6 +447,42 @@ class ObjectVariableServiceTest {
     }
 
     @Test
+    void upsertFunctionRejectsSqlStepWithoutDataSource() {
+        String body = "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"row\",\"sql\":\"SELECT 1\"},{\"type\":\"return\",\"fields\":{\"ok\":true}}]}";
+        FunctionDescriptor missing = new FunctionDescriptor(
+                "probeFn",
+                "Probe",
+                null,
+                null,
+                "script",
+                body,
+                "root.platform.data-sources.script-ds-missing",
+                null
+        );
+        FunctionDescriptor blank = new FunctionDescriptor(
+                "probeFn",
+                "Probe",
+                null,
+                null,
+                "script",
+                body,
+                null,
+                null
+        );
+
+        assertThatThrownBy(() -> variableService.upsertFunction(PATH, missing))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("probeFn")
+                .hasMessageContaining("Unknown data source: root.platform.data-sources.script-ds-missing");
+        assertThatThrownBy(() -> variableService.upsertFunction(PATH, blank))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("probeFn")
+                .hasMessageContaining("dataSourcePath is required for SQL steps");
+        assertThat(node.functions()).doesNotContainKey("probeFn");
+        verify(objectManager, never()).persistNodeConfig(any(), any(), any(), any());
+    }
+
+    @Test
     void upsertFunctionSavesValidScript() {
         FunctionDescriptor function = new FunctionDescriptor(
                 "ok",
