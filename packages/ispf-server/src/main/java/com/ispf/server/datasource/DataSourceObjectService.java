@@ -161,6 +161,7 @@ public class DataSourceObjectService {
 
     @Transactional
     public DataSourceView update(String path, DataSourceWriteRequest request) {
+        validatePoolSize(request.poolSize());
         PlatformObject node = objectManager.require(path);
         if (node.type() != ObjectType.DATA_SOURCE) {
             throw new IllegalArgumentException("Not a data source object: " + path);
@@ -260,6 +261,7 @@ public class DataSourceObjectService {
     }
 
     private static void validateCreate(DataSourceWriteRequest request) {
+        validatePoolSize(request.poolSize());
         if (request.name() == null || request.name().isBlank()) {
             throw new IllegalArgumentException("name is required");
         }
@@ -270,6 +272,12 @@ public class DataSourceObjectService {
             }
         } else if (request.schemaName() == null || request.schemaName().isBlank()) {
             throw new IllegalArgumentException("schemaName is required for internal data source");
+        }
+    }
+
+    private static void validatePoolSize(Integer poolSize) {
+        if (poolSize != null && poolSize <= 0) {
+            throw new IllegalArgumentException("poolSize must be positive");
         }
     }
 
