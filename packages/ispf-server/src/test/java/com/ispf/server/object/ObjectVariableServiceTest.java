@@ -447,6 +447,37 @@ class ObjectVariableServiceTest {
     }
 
     @Test
+    void upsertFunctionRejectsUnresolvedScriptStepBeforeSaving() {
+        String writeGhost = "{\"steps\":[{\"type\":\"writeVariable\",\"objectPath\":\"self\",\"variable\":\"ghost\",\"fields\":{\"value\":1}},{\"type\":\"return\",\"fields\":{\"ok\":true}}]}";
+        String brokenExpr = "{\"steps\":[{\"type\":\"setVar\",\"var\":\"n\",\"expression\":\"1 +\"},{\"type\":\"return\",\"fields\":{\"ok\":true}}]}";
+        String twoSql = "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"row\",\"sql\":\"SELECT 1 AS value; SELECT 2 AS value\"},{\"type\":\"return\",\"fields\":{\"ok\":true}}]}";
+        String notSql = "{\"steps\":[{\"type\":\"exec\",\"sql\":\"not sql\"},{\"type\":\"return\",\"fields\":{\"ok\":true}}]}";
+        String brokenSpec = "{\"steps\":[{\"type\":\"queryRows\",\"var\":\"rows\",\"spec\":\"{\"},{\"type\":\"return\",\"fields\":{\"ok\":true}}]}";
+
+        assertThatThrownBy(() -> variableService.upsertFunction(PATH, script("probeFn", writeGhost)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Unknown variable: ghost");
+        assertThatThrownBy(() -> variableService.upsertFunction(PATH, script("probeFn", brokenExpr)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("setVar expression is incomplete");
+        assertThatThrownBy(() -> variableService.upsertFunction(PATH, script("probeFn", twoSql)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("query must be a single SQL statement");
+        assertThatThrownBy(() -> variableService.upsertFunction(PATH, script("probeFn", notSql)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Invalid SQL statement");
+        assertThatThrownBy(() -> variableService.upsertFunction(PATH, script("probeFn", brokenSpec)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Invalid OQ spec JSON");
+        assertThat(node.functions()).doesNotContainKey("probeFn");
+        verify(objectManager, never()).persistNodeConfig(any(), any(), any(), any());
+    }
+
+    private static FunctionDescriptor script(String name, String body) {
+        return new FunctionDescriptor(name, "Probe", null, null, "script", body, null, null);
+    }
+
+    @Test
     void upsertFunctionSavesValidScript() {
         FunctionDescriptor function = new FunctionDescriptor(
                 "ok",

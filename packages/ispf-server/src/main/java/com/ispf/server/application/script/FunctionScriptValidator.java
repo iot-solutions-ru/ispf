@@ -1,10 +1,16 @@
 package com.ispf.server.application.script;
 
+import com.ispf.core.object.ObjectTree;
+import com.ispf.core.object.ObjectType;
+import com.ispf.core.object.PlatformObject;
+import com.ispf.server.datasource.DataSourceSqlSupport;
+import com.ispf.server.query.oq.ObjectQuerySpecParser;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Component;
 
 import java.util.Set;
+import java.util.regex.Pattern;
 
 @Component
 public class FunctionScriptValidator {
@@ -39,10 +45,18 @@ public class FunctionScriptValidator {
             "return"
     );
 
+    private static final Pattern TRAILING_OPERATOR = Pattern.compile(".*(?:==|!=|<=|>=|[+*/<>=]|-)\\s*$");
+    private static final Pattern SQL_COMMAND = Pattern.compile(
+            "^(SELECT|INSERT|UPDATE|DELETE|WITH|MERGE|CALL|SHOW|EXPLAIN|VALUES)\\b",
+            Pattern.CASE_INSENSITIVE
+    );
+
     private final ObjectMapper objectMapper;
+    private final ObjectQuerySpecParser objectQuerySpecParser;
 
     public FunctionScriptValidator(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
+        this.objectQuerySpecParser = new ObjectQuerySpecParser(objectMapper);
     }
 
     /**
@@ -169,6 +183,132 @@ public class FunctionScriptValidator {
             throw new IllegalArgumentException("Script must contain a non-empty steps array");
         }
         validateSteps(steps, true);
+    }
+
+    public void validateResolvedTargets(String sourceBody, String hostPath, ObjectTree tree) {
+        JsonNode root;
+        try {
+            root = objectMapper.readTree(sourceBody);
+        } catch (Exception ex) {
+            throw new IllegalArgumentException("Script body must be valid JSON: " + ex.getMessage());
+        }
+        JsonNode steps = root.get("steps");
+        if (steps != null && steps.isArray()) {
+            validateResolvedSteps(steps, hostPath, tree);
+        }
+    }
+
+    private void validateResolvedSteps(JsonNode steps, String hostPath, ObjectTree tree) {
+        for (JsonNode step : steps) {
+            validateResolvedStep(step, hostPath, tree);
+        }
+    }
+
+    private void validateResolvedStep(JsonNode step, String hostPath, ObjectTree tree) {
+        if (step == null || !step.isObject()) {
+            return;
+        }
+        switch (step.path("type").asText("")) {
+            case "selectOne", "selectMany", "selectForUpdate", "exec" -> requireSingleSql(step.path("sql").asText(""));
+            case "setVar" -> {
+                if (step.has("expression")) {
+                    requireSetVarExpression(step.path("expression").asText(""));
+                }
+            }
+            case "readVariable", "writeVariable" -> requireVariable(step, hostPath, tree);
+            case "invoke_function", "invoke" -> requireFunction(step, hostPath, tree);
+            case "cancel_workflows" -> requireWorkflow(step, tree);
+            case "queryRows" -> objectQuerySpecParser.parse(step.path("spec").asText(""));
+            default -> {
+            }
+        }
+        validateNested(step.get("then"), hostPath, tree);
+        validateNested(step.get("else"), hostPath, tree);
+        validateNested(step.get("steps"), hostPath, tree);
+    }
+
+    private void validateNested(JsonNode node, String hostPath, ObjectTree tree) {
+        if (node != null && node.isArray()) {
+            validateResolvedSteps(node, hostPath, tree);
+        }
+    }
+
+    private static void requireSingleSql(String sql) {
+        String normalized = DataSourceSqlSupport.normalizeSql(sql);
+        if (!SQL_COMMAND.matcher(normalized).find()) {
+            throw new IllegalArgumentException("Invalid SQL statement");
+        }
+    }
+
+    private static void requireSetVarExpression(String expression) {
+        String trimmed = expression == null ? "" : expression.trim();
+        if (trimmed.isBlank() || TRAILING_OPERATOR.matcher(trimmed).matches()) {
+            throw new IllegalArgumentException("setVar expression is incomplete");
+        }
+    }
+
+    private static void requireVariable(JsonNode step, String hostPath, ObjectTree tree) {
+        String name = step.path("variable").asText("");
+        if (name.isBlank() || isTemplate(name)) {
+            return;
+        }
+        String objectPath = literalObjectPath(step, hostPath);
+        if (objectPath == null) {
+            return;
+        }
+        PlatformObject node = tree.findByPath(objectPath)
+                .orElseThrow(() -> new IllegalArgumentException("Unknown object: " + objectPath));
+        if (node.getVariable(name).isEmpty()) {
+            throw new IllegalArgumentException("Unknown variable: " + name);
+        }
+    }
+
+    private static void requireFunction(JsonNode step, String hostPath, ObjectTree tree) {
+        String name = step.path("functionName").asText("");
+        if (name.isBlank()) {
+            name = step.path("function").asText("");
+        }
+        if (name.isBlank() || isTemplate(name)) {
+            return;
+        }
+        String objectPath = literalObjectPath(step, hostPath);
+        if (objectPath == null) {
+            return;
+        }
+        PlatformObject node = tree.findByPath(objectPath)
+                .orElseThrow(() -> new IllegalArgumentException("Unknown object: " + objectPath));
+        if (!node.functions().containsKey(name)) {
+            throw new IllegalArgumentException("Unknown function: " + name);
+        }
+    }
+
+    private static void requireWorkflow(JsonNode step, ObjectTree tree) {
+        String workflowPath = step.path("workflowPath").asText("").trim();
+        if (workflowPath.isBlank() || isTemplate(workflowPath)) {
+            return;
+        }
+        PlatformObject node = tree.findByPath(workflowPath).orElse(null);
+        if (node == null || node.type() != ObjectType.WORKFLOW) {
+            throw new IllegalArgumentException("Unknown workflow: " + workflowPath);
+        }
+    }
+
+    private static String literalObjectPath(JsonNode step, String hostPath) {
+        String raw = step.path("objectPath").asText("");
+        if (raw.isBlank()) {
+            raw = step.path("path").asText("");
+        }
+        if (raw.isBlank() || "self".equalsIgnoreCase(raw)) {
+            return hostPath;
+        }
+        if (isTemplate(raw)) {
+            return null;
+        }
+        return raw.trim();
+    }
+
+    private static boolean isTemplate(String value) {
+        return value.contains("${") || value.contains("{{");
     }
 
     private void validateSteps(JsonNode steps, boolean requireReturn) {

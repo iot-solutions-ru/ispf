@@ -355,6 +355,7 @@ public class ObjectVariableService {
                     );
                 }
                 scriptValidator.validate(toSave.sourceBody());
+                scriptValidator.validateResolvedTargets(toSave.sourceBody(), path, objectManager.tree());
             } catch (IllegalArgumentException ex) {
                 throw new IllegalArgumentException("Function " + function.name() + ": " + ex.getMessage(), ex);
             }
