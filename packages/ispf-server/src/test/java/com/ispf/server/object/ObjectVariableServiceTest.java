@@ -447,6 +447,42 @@ class ObjectVariableServiceTest {
     }
 
     @Test
+    void upsertFunctionRejectsUnreadablePulseBeforeSaving() {
+        FunctionDescriptor broken = new FunctionDescriptor(
+                "probeFn",
+                "Probe",
+                null,
+                null,
+                "pulse",
+                "not-json",
+                null,
+                null
+        );
+        FunctionDescriptor missing = new FunctionDescriptor(
+                "probeFn",
+                "Probe",
+                null,
+                null,
+                "pulse",
+                "{\"variable\":\"ghost\"}",
+                null,
+                null
+        );
+
+        assertThatThrownBy(() -> variableService.upsertFunction(PATH, broken))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("probeFn")
+                .hasMessageContaining("Invalid pulse sourceBody");
+        assertThatThrownBy(() -> variableService.upsertFunction(PATH, missing))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("probeFn")
+                .hasMessageContaining("Unknown variable: ghost");
+        assertThat(node.functions()).doesNotContainKey("probeFn");
+        verify(javaFunctionRuntimeService, never()).syncOnSave(any(), any(), any());
+        verify(objectManager, never()).persistNodeConfig(any(), any(), any(), any());
+    }
+
+    @Test
     void upsertFunctionSavesValidScript() {
         FunctionDescriptor function = new FunctionDescriptor(
                 "ok",

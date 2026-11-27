@@ -16,6 +16,7 @@ import com.ispf.core.object.Variable;
 import com.ispf.core.object.VariableStorageMode;
 import com.ispf.server.application.script.FunctionScriptValidator;
 import com.ispf.server.function.FunctionExpressionBody;
+import com.ispf.server.function.PulseVariableFunctionHandler;
 import com.ispf.server.history.VariableHistoryService;
 import com.ispf.server.workflow.WorkflowCronDue;
 import com.ispf.server.workflow.WorkflowStoredJson;
@@ -28,6 +29,7 @@ import com.ispf.server.persistence.entity.ObjectVariableEntity;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.databind.ObjectMapper;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -366,8 +368,29 @@ public class ObjectVariableService {
                 throw new IllegalArgumentException("Function " + function.name() + ": " + ex.getMessage(), ex);
             }
         }
+        PulseVariableFunctionHandler.PulseConfig pulseConfig = null;
+        if (function.sourceType() != null && "pulse".equalsIgnoreCase(function.sourceType().trim())) {
+            try {
+                pulseConfig = PulseVariableFunctionHandler.parseConfig(new ObjectMapper(), function.sourceBody());
+            } catch (IllegalArgumentException ex) {
+                throw new IllegalArgumentException("Function " + function.name() + ": " + ex.getMessage(), ex);
+            }
+        }
         objectManager.assertExpectedRevision(path);
         PlatformObject node = objectManager.tree().require(path);
+        if (pulseConfig != null) {
+            String targetPath = pulseConfig.objectPath() != null && !pulseConfig.objectPath().isBlank()
+                    ? pulseConfig.objectPath()
+                    : path;
+            PlatformObject target = targetPath.equals(path)
+                    ? node
+                    : objectManager.tree().findByPath(targetPath).orElseThrow(
+                            () -> new IllegalArgumentException("Unknown object: " + targetPath));
+            if (target.getVariable(pulseConfig.variable()).isEmpty()) {
+                throw new IllegalArgumentException(
+                        "Function " + function.name() + ": Unknown variable: " + pulseConfig.variable());
+            }
+        }
         long revisionBefore = node.revision();
         FunctionDescriptor before = node.functions().get(toSave.name());
         javaFunctionRuntimeService.syncOnSave(path, toSave, before);

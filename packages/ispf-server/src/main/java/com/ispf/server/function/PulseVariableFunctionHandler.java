@@ -52,7 +52,7 @@ public class PulseVariableFunctionHandler implements FunctionHandler {
         if (descriptor == null || !descriptor.hasPulseBody()) {
             throw new IllegalArgumentException("Unknown pulse function: " + functionName);
         }
-        PulseConfig config = parseConfig(descriptor.sourceBody());
+        PulseConfig config = parseConfig(objectMapper, descriptor.sourceBody());
         String targetPath = config.objectPath() != null && !config.objectPath().isBlank()
                 ? config.objectPath()
                 : objectPath;
@@ -64,7 +64,7 @@ public class PulseVariableFunctionHandler implements FunctionHandler {
         return DataRecord.single(RESULT, Map.of("success", true, "message", "Command sent"));
     }
 
-    private PulseConfig parseConfig(String sourceBody) {
+    public static PulseConfig parseConfig(ObjectMapper objectMapper, String sourceBody) {
         try {
             JsonNode root = objectMapper.readTree(sourceBody);
             String variable = root.path("variable").asText("");
@@ -81,6 +81,6 @@ public class PulseVariableFunctionHandler implements FunctionHandler {
         }
     }
 
-    private record PulseConfig(String variable, boolean value, String objectPath) {
+    public record PulseConfig(String variable, boolean value, String objectPath) {
     }
 }
