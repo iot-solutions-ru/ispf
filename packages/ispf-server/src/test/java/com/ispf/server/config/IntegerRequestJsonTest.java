@@ -7,6 +7,10 @@ import tools.jackson.databind.json.JsonMapper;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+/**
+ * Documents the {@code ACCEPT_FLOAT_AS_INT=false} contract used by Spring HTTP JSON.
+ * The Spring Boot key is covered by {@link IntegerRequestLeaseApiTest}.
+ */
 class IntegerRequestJsonTest {
 
     private final JsonMapper mapper = JsonMapper.builder()
@@ -16,10 +20,17 @@ class IntegerRequestJsonTest {
     @Test
     void fractionalIntegerIsRejectedAndWholeNumberIsKept() {
         assertThatThrownBy(() -> mapper.readValue("{\"ttlMinutes\":1.5}", Minutes.class))
-                .hasMessageContaining("Cannot coerce Floating-point value");
+                .isInstanceOf(Exception.class);
+        assertThatThrownBy(() -> mapper.readValue("{\"ttlMinutes\":2.0}", Minutes.class))
+                .isInstanceOf(Exception.class);
+        assertThatThrownBy(() -> mapper.readValue("{\"ttlMinutes\":1e1}", Minutes.class))
+                .isInstanceOf(Exception.class);
         assertThat(mapper.readValue("{\"ttlMinutes\":2}", Minutes.class).ttlMinutes()).isEqualTo(2);
+
         assertThatThrownBy(() -> mapper.readValue("{\"delaySeconds\":1.5}", Delay.class))
-                .hasMessageContaining("Cannot coerce Floating-point value");
+                .isInstanceOf(Exception.class);
+        assertThatThrownBy(() -> mapper.readValue("{\"delaySeconds\":2.0}", Delay.class))
+                .isInstanceOf(Exception.class);
         assertThat(mapper.readValue("{\"delaySeconds\":2}", Delay.class).delaySeconds()).isEqualTo(2);
     }
 

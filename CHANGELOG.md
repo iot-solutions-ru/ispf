@@ -26,6 +26,7 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 ### Changed
 
 - **Alert `triggerMessage`** — create and update compile a non-blank `triggerMessage` as CEL before save (HTTP 400 `Invalid expression: …`). Plain prose without quotes no longer stores; use a string literal such as `'Temperature exceeded 80 C'`. Blank/`null` stay allowed. Already-stored plain text is left until the next write that sends the field (the console re-sends the current value on save, so editing such a rule needs a CEL message first). Example and ADR-0039 sample updated.
+- **Integer JSON request fields** — `spring.jackson.deserialization.accept-float-as-int` is `false`. A floating-point token for an `Integer`/`int` field (`ttlMinutes`, `delaySeconds`, …) is HTTP 400 `Invalid JSON request body` instead of silent truncation. Whole-number tokens such as `2` still deserialize. Tokens with a decimal or exponent (`2.0`, `1e2`) are also rejected, even when the numeric value is whole — clients that emit floats for integers must send a JSON integer. The Spring HTTP mapper is affected (pack manifests, federation payloads, dashboard JSON, NATS/Redis via that mapper); code that builds `new ObjectMapper()` / `new JsonMapper()` without disabling the feature still truncates.
 
 ### Fixed
 
