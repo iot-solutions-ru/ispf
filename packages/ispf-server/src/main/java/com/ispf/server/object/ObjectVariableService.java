@@ -17,6 +17,7 @@ import com.ispf.core.object.VariableStorageMode;
 import com.ispf.server.application.script.FunctionScriptValidator;
 import com.ispf.server.function.FunctionExpressionBody;
 import com.ispf.server.function.PulseVariableFunctionHandler;
+import com.ispf.server.query.oq.ObjectQuerySpecParser;
 import com.ispf.server.history.VariableHistoryService;
 import com.ispf.server.workflow.WorkflowCronDue;
 import com.ispf.server.workflow.WorkflowStoredJson;
@@ -66,6 +67,7 @@ public class ObjectVariableService {
     private final FunctionScriptValidator scriptValidator;
     private final BlueprintRegistry blueprintRegistry;
     private final VariableHistoryService variableHistoryService;
+    private final ObjectQuerySpecParser objectQuerySpecParser = new ObjectQuerySpecParser(new ObjectMapper());
 
     public ObjectVariableService(
             @Lazy ObjectManager objectManager,
@@ -372,6 +374,13 @@ public class ObjectVariableService {
         if (function.sourceType() != null && "pulse".equalsIgnoreCase(function.sourceType().trim())) {
             try {
                 pulseConfig = PulseVariableFunctionHandler.parseConfig(new ObjectMapper(), function.sourceBody());
+            } catch (IllegalArgumentException ex) {
+                throw new IllegalArgumentException("Function " + function.name() + ": " + ex.getMessage(), ex);
+            }
+        }
+        if (function.sourceType() != null && "object-query".equalsIgnoreCase(function.sourceType().trim())) {
+            try {
+                objectQuerySpecParser.parse(function.sourceBody());
             } catch (IllegalArgumentException ex) {
                 throw new IllegalArgumentException("Function " + function.name() + ": " + ex.getMessage(), ex);
             }

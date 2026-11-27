@@ -483,6 +483,41 @@ class ObjectVariableServiceTest {
     }
 
     @Test
+    void upsertFunctionRejectsUnreadableObjectQueryBeforeSaving() {
+        FunctionDescriptor broken = new FunctionDescriptor(
+                "probeFn",
+                "Probe",
+                null,
+                null,
+                "object-query",
+                "{",
+                null,
+                null
+        );
+        FunctionDescriptor missingFrom = new FunctionDescriptor(
+                "probeFn",
+                "Probe",
+                null,
+                null,
+                "object-query",
+                "{\"from\":\"missing\"}",
+                null,
+                null
+        );
+
+        assertThatThrownBy(() -> variableService.upsertFunction(PATH, broken))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("probeFn")
+                .hasMessageContaining("Invalid OQ spec JSON");
+        assertThatThrownBy(() -> variableService.upsertFunction(PATH, missingFrom))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("probeFn")
+                .hasMessageContaining("from.sourcePathPattern is required");
+        assertThat(node.functions()).doesNotContainKey("probeFn");
+        verify(objectManager, never()).persistNodeConfig(any(), any(), any(), any());
+    }
+
+    @Test
     void upsertFunctionSavesValidScript() {
         FunctionDescriptor function = new FunctionDescriptor(
                 "ok",
