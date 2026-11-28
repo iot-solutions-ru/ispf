@@ -45,6 +45,20 @@ class ScheduleDueCheckerTest {
     }
 
     @Test
+    void zeroEveryMinutesIsRejectedAndPositiveEveryIsKept() {
+        assertThatThrownBy(() -> ScheduleDueChecker.normalizeCronOrBlank("every:0m"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("cronExpression every: minutes must be positive");
+        assertThatThrownBy(() -> ScheduleDueChecker.normalizeCronOrBlank("every:0"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("cronExpression every: minutes must be positive");
+        assertThatThrownBy(() -> ScheduleDueChecker.normalizeCronOrBlank("every:000m"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("cronExpression every: minutes must be positive");
+        assertThat(ScheduleDueChecker.normalizeCronOrBlank("every:5m")).isEqualTo("every:5m");
+    }
+
+    @Test
     void rejectsBadTimezone() {
         assertThatThrownBy(() -> ScheduleDueChecker.isDue(
                 Instant.now(), null, 1000, "0 8 * * *", "Not/AZone"))

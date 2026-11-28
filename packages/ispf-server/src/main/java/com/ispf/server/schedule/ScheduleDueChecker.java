@@ -95,7 +95,11 @@ public final class ScheduleDueChecker {
             return "";
         }
         String cron = cronExpression.trim();
-        if (EVERY_MINUTES.matcher(cron).matches()) {
+        Matcher every = EVERY_MINUTES.matcher(cron);
+        if (every.matches()) {
+            if (Long.parseLong(every.group(1)) == 0) {
+                throw new IllegalArgumentException("cronExpression every: minutes must be positive");
+            }
             return cron.toLowerCase(Locale.ROOT).replace(" ", "");
         }
         parseCron(cron);
