@@ -345,6 +345,25 @@ public class ObjectVariableService {
         if (function == null || function.name() == null || function.name().isBlank()) {
             throw new IllegalArgumentException("Function name is required");
         }
+        String sourceType;
+        try {
+            sourceType = canonicalSourceType(function.sourceType());
+        } catch (IllegalArgumentException ex) {
+            throw new IllegalArgumentException("Function " + function.name() + ": " + ex.getMessage(), ex);
+        }
+        if (sourceType != null && !sourceType.equals(function.sourceType())) {
+            function = new FunctionDescriptor(
+                    function.name(),
+                    function.description(),
+                    function.inputSchema(),
+                    function.outputSchema(),
+                    sourceType,
+                    function.sourceBody(),
+                    function.dataSourcePath(),
+                    function.version(),
+                    function.invokeRoles()
+            );
+        }
         FunctionDescriptor toSave = function;
         if (function.hasScriptBody()) {
             try {
@@ -421,6 +440,29 @@ public class ObjectVariableService {
         );
         objectManager.publishConfigChange(ObjectChangeType.UPDATED, path, revisionBefore);
         return toSave;
+    }
+
+    private static String canonicalSourceType(String sourceType) {
+        if (sourceType == null) {
+            return null;
+        }
+        String trimmed = sourceType.trim();
+        if ("script".equalsIgnoreCase(trimmed)) {
+            return "script";
+        }
+        if ("expression".equalsIgnoreCase(trimmed)) {
+            return "expression";
+        }
+        if ("object-query".equalsIgnoreCase(trimmed)) {
+            return "object-query";
+        }
+        if ("pulse".equalsIgnoreCase(trimmed)) {
+            return "pulse";
+        }
+        if ("java".equalsIgnoreCase(trimmed)) {
+            return "java";
+        }
+        throw new IllegalArgumentException("Unknown source type: " + sourceType);
     }
 
     @Transactional
