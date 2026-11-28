@@ -107,6 +107,7 @@ public class ObjectVariableService {
         rejectInvalidWorkflowCron(node, name, value);
         rejectInvalidWorkflowRuntimeFields(node, name, value);
         rejectInvalidProcessProgramExpression(node, name, value);
+        rejectMissingProcessProgramTarget(node, name, value);
         long revisionBefore = node.revision();
         DataRecord before = node.getVariable(name).flatMap(Variable::value).orElse(null);
         node.setVariableValue(name, value);
@@ -713,6 +714,31 @@ public class ObjectVariableService {
         if (number.longValue() <= 0) {
             throw new IllegalArgumentException("cycleIntervalMs must be positive");
         }
+    }
+
+    private void rejectMissingProcessProgramTarget(PlatformObject node, String name, DataRecord value) {
+        if (node.type() != ObjectType.PROCESS_PROGRAM || !"targetObjectPath".equals(name)) {
+            return;
+        }
+        if (value == null || value.rowCount() == 0) {
+            return;
+        }
+        Object raw = value.firstRow().get("value");
+        if (raw == null) {
+            return;
+        }
+        if (!(raw instanceof String text)) {
+            throw new IllegalArgumentException("targetObjectPath must be a string");
+        }
+        if (text.isBlank()) {
+            return;
+        }
+        String requested = text.trim();
+        if (objectManager.tree().findByPath(requested).isEmpty()) {
+            throw new IllegalArgumentException("Unknown object: " + requested);
+        }
+        // Do not re-check stored outputVariable against the new target: the console saves
+        // targetObjectPath and outputVariable in separate PUTs, so a paired retarget would 400.
     }
 
     private static void assertUserVariable(String name) {
